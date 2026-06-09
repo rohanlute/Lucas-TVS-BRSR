@@ -1,0 +1,764 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% block title %}
+Dashboard
+{% endblock %}
+
+{% block content %}
+
+<!-- [ page-header ] start -->
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Create Company </h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'companies:company_list' %}">Home</a></li>
+            <li class="breadcrumb-item">Create</li>
+        </ul>
+    </div>
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex d-md-none">
+                <a href="javascript:void(0)" class="page-header-right-close-toggle">
+                    <i class="feather-arrow-left me-2"></i>
+                    <span>Back</span>
+                </a>
+            </div>
+            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                <a href="javascript:void(0);" class="btn btn-primary">
+                    <i class="feather-send me-2"></i>
+                    <span>Sent Invitation</span>
+                </a>
+            </div>
+        </div>
+        <div class="d-md-none d-flex align-items-center">
+            <a href="javascript:void(0)" class="page-header-right-open-toggle">
+                <i class="feather-align-right fs-20"></i>
+            </a>
+        </div>
+    </div>
+</div>
+<!-- [ page-header ] end -->
+<!-- [ Main Content ] start -->
+<div class="main-content">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card border-top-0">
+                <div class="card-body p-0 wizard-full-width">
+                    <div id="company-create-steps">
+                        <div class="step-title border-top">Details</div>
+                        <section class="step-body mt-4">
+                            <form id="company-details">
+                                <fieldset>
+                                    <div class="mb-5">
+                                        <h2 class="fs-16 fw-bold">Company details</h2>
+                                        <p class="text-muted">You Company details gose here.</p>
+                                    </div>
+                                    <fieldset>
+                                        <div class="mb-4">
+                                            <label for="companyName" class="form-label">Company Name <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="companyName" name="companyName" value="xyz..." required>
+                                        </div>
+                                        <div class="mb-4">
+                                            <label class="form-label">Company Description</label>
+                                            <div id="companyDescription" class="ht-200">
+                                                <p> </p>
+                                            </div>
+                                        </div>
+                                        <div class="mb-4"> 
+                                            <label for="companytype" class="form-label">Company Type </label> 
+                                            <select id="companytype" class="form-select" name="companytype"> 
+                                                <option value="1" data-user="1" selected>Private Ltd</option> 
+                                                <option value="2" data-user="2">LLP</option> 
+                                                <option value="3" data-user="3">Partnership</option> 
+                                                <option value="4" data-user="4">Proprietorship</option> 
+                                                <option value="5" data-user="5">Public Ltd</option> 
+                                            </select> 
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="industrytype" class="form-label">Industry Type</label>
+                                            <input type="text" class="form-control" id="industrytype" name="industrytype" value="">
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="businesscategory" class="form-label">Business Category</label>
+                                            <input type="text" class="form-control" id="businesscategory" name="businesscategory" value="">
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="company_logo" class="form-label">Company Logo</label>
+                                            <input type="text" class="form-control" id="company_logo" name="company_logo" value="">
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="website_URL" class="form-label">Company Website</label>
+                                            <input type="text" class="form-control" id="website_URL" name="website_URL" value="">
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="companyStatus" class="form-label">Company status <span class="text-danger">*</span></label>
+                                            <select id="companyStatus" class="form-select" name="companyStatus">
+                                                <option value="success" data-bg="bg-success" selected>Active</option>
+                                                <option value="warning" data-bg="bg-warning">Inactive</option>
+                                                <option value="danger" data-bg="bg-danger">Declined</option>
+                                                <option value="primary" data-bg="bg-primary">InProgress</option>
+                                                <option value="success" data-bg="bg-success">Finished</option>
+                                            </select>
+                                        </div>
+                                    </fieldset>
+                                </fieldset>
+                            </form>
+                        </section>
+                        <div class="step-title border-top">Registration & Compliance Details</div>
+                        <section class="step-body mt-4">
+                            <form id="company-Registration-Compliance">
+                                <!-- <fieldset>
+                                    <div class="mb-4">
+                                        <label for="sendcontactsNotifications" class="form-label">Send contacts notifications</label>
+                                        <select id="sendcontactsNotifications" class="form-select" name="sendcontactsNotifications">
+                                            <option value="1" data-icon="feather-user">Specific contacts</option>
+                                            <option value="2" data-icon="feather-bell-off">Don't send notification</option>
+                                            <option value="3" data-icon="feather-bell" selected>All contact with notification</option>
+                                        </select>
+                                    </div>
+                                </fieldset>
+                                <hr class="mb-5"> -->
+                                <fieldset>
+                                    <div class="row">
+                                        <div class="mb-4">
+                                            <label for="company_gstno" class="form-label">GST Number <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="company_gstno" name="company_gstno" value="xyz...">
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="company_panno" class="form-label">PAN Number <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="company_panno" name="company_panno" value="xyz...">
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="company_tanno" class="form-label">TAN Number <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="company_tanno" name="company_tanno" value="xyz...">
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="company_cinno" class="form-label">CIN (Corporate Identification Number) <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="company_cinno" name="company_cinno" value="xyz...">
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="company_msme" class="form-label">MSME Registration Number <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="company_msme" name="company_msme" value="xyz...">
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="company_ieccode" class="form-label">IEC Code (Import Export Code) <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="company_ieccode" name="company_ieccode" value="xyz...">
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="company_pfno" class="form-label">PF Registration Number <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="company_pfno" name="company_pfno" value="xyz...">
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="company_esic" class="form-label">ESIC Registration Number <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="company_esic" name="company_esic" value="xyz...">
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="company_professionaltax" class="form-label">Professional Tax Number <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="company_professionaltax" name="company_professionaltax" value="xyz...">
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="company_factorylicn" class="form-label">Factory License Number <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="company_factorylicn" name="company_factorylicn" value="xyz...">
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="company_isocert" class="form-label">ISO Certifications <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="company_isocert" name="company_isocert" value="xyz...">
+                                        </div>
+                                    </div>
+                                </fieldset>
+                            </form>
+                        </section>
+                        <div class="step-title border-top">Address/Contact Information</div>
+                        <section class="step-body mt-4">
+                            <form id="project-budgets">
+                                <fieldset>
+                                    <fieldset>
+                                        <div class="mb-5">
+                                            <h2 class="fs-16 fw-bold">Contact Details</h2>
+                                        </div>
+                                        <fieldset>
+                                            
+                                        </fieldset>
+                                    </fieldset>
+                                    <hr class="mb-5">
+                                    <fieldset>
+                                        <div class="mb-5">
+                                            <h2 class="fs-16 fw-bold">Budgets spend</h2>
+                                            <p class="text-muted">If you need more info, please check <a href="javascript:void(0);">FAQ's</a></p>
+                                            <label class="error" style="display: none"></label>
+                                        </div>
+                                        <fieldset>
+                                            <label class="w-100" for="precise_usage">
+                                                <input class="card-input-element" type="radio" name="project-spend" id="precise_usage" required>
+                                                <span class="card card-body d-flex flex-row justify-content-between align-items-center">
+                                                    <span class="hstack gap-3">
+                                                        <span class="avatar-text">
+                                                            <i class="feather-user"></i>
+                                                        </span>
+                                                        <span>
+                                                            <span class="d-block fs-13 fw-bold text-dark">Precise Usage</span>
+                                                            <span class="d-block text-muted mb-0">Withdraw money to your bank account per transaction under <strong>$5000</strong> budget</span>
+                                                        </span>
+                                                    </span>
+                                                </span>
+                                            </label>
+                                            <label class="w-100" for="extreme_usage">
+                                                <input class="card-input-element" type="radio" name="project-spend" id="extreme_usage">
+                                                <span class="card card-body d-flex flex-row justify-content-between align-items-center">
+                                                    <span class="hstack gap-3">
+                                                        <span class="avatar-text">
+                                                            <i class="feather-users"></i>
+                                                        </span>
+                                                        <span>
+                                                            <span class="d-block fs-13 fw-bold text-dark">Extreme Usage</span>
+                                                            <span class="d-block text-muted mb-0">Withdraw money to your bank account per transaction under <strong>$50,000</strong> budget</span>
+                                                        </span>
+                                                    </span>
+                                                </span>
+                                            </label>
+                                        </fieldset>
+                                        <hr class="mb-5">
+                                        <div class="custom-control custom-checkbox mb-2">
+                                            <input type="checkbox" class="custom-control-input" id="allowChanges" checked>
+                                            <label class="custom-control-label c-pointer" for="allowChanges">Allow Changes in Budget.</label>
+                                        </div>
+                                        <div class="custom-control custom-checkbox mb-2">
+                                            <input type="checkbox" class="custom-control-input" id="budgetReset" checked>
+                                            <label class="custom-control-label c-pointer" for="budgetReset">Budgets reset every month.</label>
+                                        </div>
+                                        <div class="custom-control custom-checkbox mb-2">
+                                            <input type="checkbox" class="custom-control-input" id="promectAlert" checked>
+                                            <label class="custom-control-label c-pointer" for="promectAlert">Send email alarts if project <span class="badge bg-gray-200 text-dark">80.00</span>% of budget.</label>
+                                        </div>
+                                    </fieldset>
+                                </fieldset>
+                            </form>
+                        </section>
+                        <div class="step-title border-top">Assagined</div>
+                        <section class="step-body mt-4">
+                            <fieldset>
+                                <div class="mb-5">
+                                    <h2 class="fs-16 fw-bold">Project Assagined</h2>
+                                    <p class="text-muted">If you need more info, please check <a href="javascript:void(0);">help center</a></p>
+                                </div>
+                                <fieldset>
+                                    <div class="mb-4">
+                                        <label for="inviteTeammates" class="fw-semibold text-dark">Invite Teammates</label>
+                                        <input type="text" class="form-control" id="inviteTeammates" name="inviteTeammates" placeholder="Add project memnbers by name or email..">
+                                    </div>
+                                    <hr class="my-5">
+                                    <div class="mb-4">
+                                        <h6 class="fs-13 fw-semibold pb-3 mb-3 border-bottom">Team Members</h6>
+                                        <div class="d-flex align-items-center justify-content-between mb-4">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="avatar-image d-none d-sm-block">
+                                                    <img src="{% static 'images/avatar/1.png' %}" alt="" class="img-fluid">
+                                                </div>
+                                                <a href="javascript:void(0);" class="w-75">
+                                                    <span class="text-truncate-1-line">Alexandra Della</span>
+                                                    <span class="fs-12 fw-normal text-muted text-truncate-1-line">alex.della@gmail.com</span>
+                                                </a>
+                                            </div>
+                                            <div class="wd-150">
+                                                <select class="form-select" data-select2-teammates="teammates">
+                                                    <option value="primary" data-bg="bg-primary">Admin</option>
+                                                    <option value="teal" data-bg="bg-teal">Guest</option>
+                                                    <option value="danger" data-bg="bg-danger" selected>Editor</option>
+                                                    <option value="warning" data-bg="bg-warning">Owner</option>
+                                                    <option value="success" data-bg="bg-success">Customer</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-between mb-4">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="avatar-image d-none d-sm-block">
+                                                    <img src="{% static 'images/avatar/2.png' %}" alt="" class="img-fluid">
+                                                </div>
+                                                <a href="javascript:void(0);" class="w-75">
+                                                    <span class="text-truncate-1-line">Archie Cantones</span>
+                                                    <span class="fs-12 fw-normal text-muted text-truncate-1-line">arcie.tones@gmail.com</span>
+                                                </a>
+                                            </div>
+                                            <div class="wd-150">
+                                                <select class="form-select" data-select2-teammates="teammates">
+                                                    <option value="primary" data-bg="bg-primary" selected>Admin</option>
+                                                    <option value="teal" data-bg="bg-teal">Guest</option>
+                                                    <option value="danger" data-bg="bg-danger">Editor</option>
+                                                    <option value="warning" data-bg="bg-warning">Owner</option>
+                                                    <option value="success" data-bg="bg-success">Customer</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-between mb-4">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="avatar-image d-none d-sm-block">
+                                                    <img src="{% static 'images/avatar/3.png' %}" alt="" class="img-fluid">
+                                                </div>
+                                                <a href="javascript:void(0);" class="w-75">
+                                                    <span class="text-truncate-1-line">Holmes Cherryman</span>
+                                                    <span class="fs-12 fw-normal text-muted text-truncate-1-line">golms.chan@gmail.com</span>
+                                                </a>
+                                            </div>
+                                            <div class="wd-150">
+                                                <select class="form-select" data-select2-teammates="teammates">
+                                                    <option value="primary" data-bg="bg-primary">Admin</option>
+                                                    <option value="teal" data-bg="bg-teal" selected>Guest</option>
+                                                    <option value="danger" data-bg="bg-danger">Editor</option>
+                                                    <option value="warning" data-bg="bg-warning">Owner</option>
+                                                    <option value="success" data-bg="bg-success">Customer</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-between mb-4">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="avatar-image d-none d-sm-block">
+                                                    <img src="{% static 'images/avatar/4.png' %}" alt="" class="img-fluid">
+                                                </div>
+                                                <a href="javascript:void(0);" class="w-75">
+                                                    <span class="text-truncate-1-line">Malanie Hanvey</span>
+                                                    <span class="fs-12 fw-normal text-muted text-truncate-1-line">lanie.nveyn@gmail.com</span>
+                                                </a>
+                                            </div>
+                                            <div class="wd-150">
+                                                <select class="form-select" data-select2-teammates="teammates">
+                                                    <option value="primary" data-bg="bg-primary">Admin</option>
+                                                    <option value="teal" data-bg="bg-teal">Guest</option>
+                                                    <option value="danger" data-bg="bg-danger">Editor</option>
+                                                    <option value="warning" data-bg="bg-warning">Owner</option>
+                                                    <option value="success" data-bg="bg-success" selected>Customer</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-between mb-4">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="avatar-image d-none d-sm-block">
+                                                    <img src="{% static 'images/avatar/5.png' %}" alt="" class="img-fluid">
+                                                </div>
+                                                <a href="javascript:void(0);" class="w-75">
+                                                    <span class="text-truncate-1-line">Kenneth Hune</span>
+                                                    <span class="fs-12 fw-normal text-muted text-truncate-1-line">nneth.une@gmail.com</span>
+                                                </a>
+                                            </div>
+                                            <div class="wd-150">
+                                                <select class="form-select" data-select2-teammates="teammates">
+                                                    <option value="primary" data-bg="bg-primary">Admin</option>
+                                                    <option value="teal" data-bg="bg-teal">Guest</option>
+                                                    <option value="danger" data-bg="bg-danger">Editor</option>
+                                                    <option value="warning" data-bg="bg-warning" selected>Owner</option>
+                                                    <option value="success" data-bg="bg-success">Customer</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <hr class="my-5">
+                                    <div class="custom-control custom-checkbox">
+                                        <input type="checkbox" class="custom-control-input" id="addingUsers" checked>
+                                        <label class="custom-control-label c-pointer" for="addingUsers">Adding Users by Team Members</label>
+                                    </div>
+                                    <div class="fs-12 fw-normal text-muted">If you need more info, please check budget planning</div>
+                                </fieldset>
+                            </fieldset>
+                        </section>
+                        <div class="step-title border-top">Target</div>
+                        <section class="step-body mt-4">
+                            <form id="project-target">
+                                <fieldset>
+                                    <div class="mb-5">
+                                        <h2 class="fs-16 fw-bold">Project target</h2>
+                                        <p class="text-muted">If you need more info, please check <a href="javascript:void(0);">help center</a></p>
+                                    </div>
+                                    <fieldset>
+                                        <div class="mb-4">
+                                            <label for="targetTitle" class="fw-semibold text-dark">Target title</label>
+                                            <input type="text" class="form-control" id="targetTitle" name="targetTitle" placeholder="First target title..">
+                                        </div>
+                                        <div class="mb-4">
+                                            <label class="form-label">Target Description <span class="text-danger">*</span></label>
+                                            <div id="targetDescription" class="ht-200">
+                                                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Asperiores beatae inventore reiciendis ipsum natus, porro recusandae sunt accusantium reprehenderit aliquid commodi est veniam sit molestiae, nesciunt cupiditate. Laborum, culpa maxime.</p>
+                                            </div>
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="targetReleaseDate" class="form-label">Release Date <span class="text-danger">*</span></label>
+                                            <input class="form-control" id="targetReleaseDate" name="targetReleaseDate" placeholder="Release Date" value="26/03/2023" required>
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="tragetAssigned" class="form-label">Taget assigned<span class="text-danger">*</span></label>
+                                            <select id="tragetAssigned" class="form-select" name="tragetAssigned" multiple required>
+                                                <option value="alex@outlook.com" data-user="1" selected>alex@outlook.com</option>
+                                                <option value="john.deo@outlook.com" data-user="2">john.deo@outlook.com</option>
+                                                <option value="green.cutte@outlook.com" data-user="3">green.cutte@outlook.com</option>
+                                                <option value="nancy.elliot@outlook.com" data-user="4">nancy.elliot@outlook.com</option>
+                                                <option value="mar.audrey@gmail.com" data-user="5">mar.audrey@gmail.com</option>
+                                                <option value="erna.serpa@outlook.com" data-user="6">erna.serpa@outlook.com</option>
+                                                <option value="green.cutte@outlook.com" data-user="7">green.cutte@outlook.com</option>
+                                                <option value="nancy.elliot@outlook.com" data-user="8">nancy.elliot@outlook.com</option>
+                                                <option value="mar.audrey@gmail.com" data-user="9">mar.audrey@gmail.com</option>
+                                                <option value="erna.serpa@outlook.com" data-user="10">erna.serpa@outlook.com</option>
+                                                <option value="mar.audrey@gmail.com" data-user="11">mar.audrey@gmail.com</option>
+                                                <option value="erna.serpa@outlook.com" data-user="12">erna.serpa@outlook.com</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-4">
+                                            <label for="tragetTags" class="form-label">Project tags <span class="text-danger">*</span></label>
+                                            <select id="tragetTags" class="form-select" name="tragetTags" multiple required>
+                                                <option value="success" data-bg="bg-success" selected>VIP</option>
+                                                <option value="info" data-bg="bg-info">Bugs</option>
+                                                <option value="primary" data-bg="bg-primary" selected>Team</option>
+                                                <option value="teal" data-bg="bg-teal" selected>Primary</option>
+                                                <option value="success" data-bg="bg-success">Updates</option>
+                                                <option value="warning" data-bg="bg-warning">Personal</option>
+                                                <option value="danger" data-bg="bg-danger" selected>Promotions</option>
+                                                <option value="indigo" data-bg="bg-indigo">Customs</option>
+                                                <option value="primary" data-bg="bg-primary">Wholesale</option>
+                                                <option value="danger" data-bg="bg-danger">Low Budget</option>
+                                                <option value="teal" data-bg="bg-teal">High Budget</option>
+                                            </select>
+                                        </div>
+                                    </fieldset>
+                                    <hr class="my-5">
+                                    <div class="custom-control custom-checkbox mb-2">
+                                        <input type="checkbox" class="custom-control-input" id="allowChanges_2" checked>
+                                        <label class="custom-control-label c-pointer" for="allowChanges_2">Allow Changes in Budget.</label>
+                                    </div>
+                                    <div class="custom-control custom-checkbox mb-2">
+                                        <input type="checkbox" class="custom-control-input" id="allowNotifications_2" checked>
+                                        <label class="custom-control-label c-pointer" for="allowNotifications_2">Allow Notifications by Phone or Email.</label>
+                                    </div>
+                                </fieldset>
+                            </form>
+                        </section>
+                        <div class="step-title border-top">Attachement</div>
+                        <section class="step-body mt-4">
+                            <div>
+                                <div class="mb-5">
+                                    <h2 class="fs-16 fw-bold">Attachement files</h2>
+                                    <p class="text-muted">If you need more info, please check <a href="javascript:void(0);">help center</a></p>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="choose-file" class="custom-file-upload" id="choose-file-label"> Upload Document </label>
+                                    <input name="uploadDocument" type="file" id="choose-file" style="display: none">
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-6">
+                                        <div class="card stretch stretch-full">
+                                            <div class="card-body p-0 ht-200 position-relative">
+                                                <a href="javascript:void(0);" class="w-100 h-100 d-flex align-items-center justify-content-center">
+                                                    <img src="{% static 'images/file-icons/zip.png' %}" class="img-fluid wd-80 ht-80" alt="">
+                                                </a>
+                                                <div class="dropdown position-absolute" style="top: 15px; right: 15px">
+                                                    <a href="javascript:void(0)" class="avatar-text avatar-sm" data-bs-toggle="dropdown">
+                                                        <i class="feather feather-more-vertical"></i>
+                                                    </a>
+                                                    <ul class="dropdown-menu overflow-hidden">
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item">
+                                                                <i class="feather feather-share-2 me-3"></i>
+                                                                <span>Share</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item">
+                                                                <i class="feather feather-info me-3"></i>
+                                                                <span>Details</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item">
+                                                                <i class="feather feather-edit-2 me-3"></i>
+                                                                <span>Rename</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item file-download">
+                                                                <i class="feather feather-download me-3"></i>
+                                                                <span>Download</span>
+                                                            </a>
+                                                        </li>
+                                                        <li class="dropdown-divider"></li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item">
+                                                                <i class="feather feather-copy me-3"></i>
+                                                                <span>Copy to...</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item">
+                                                                <i class="feather feather-move me-3"></i>
+                                                                <span>Move to...</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="#!"  class="dropdown-item">
+                                                                <i class="feather feather-link-2 me-3"></i>
+                                                                <span>Open with...</span>
+                                                            </a>
+                                                        </li>
+                                                        <li class="dropdown-divider"></li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item successAlertMessage">
+                                                                <i class="feather feather-scissors me-3"></i>
+                                                                <span>Backup</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item" data-action-target="#fileFolderDeleteAction">
+                                                                <i class="feather feather-trash-2 me-3"></i>
+                                                                <span>Remove</span>
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <div class="card-footer p-4">
+                                                <h2 class="fs-13 mb-1 text-truncate-1-line">UI/UX Design Templates</h2>
+                                                <small class="fs-10 text-uppercase"><a href="javascript:void(0);">Project</a> / <a href="javascript:void(0);">Dashboard</a> / <span class="text-gray-500">Webapps</span></small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="card stretch stretch-full">
+                                            <div class="card-body p-0 ht-200 position-relative">
+                                                <a href="javascript:void(0);" class="w-100 h-100 d-flex align-items-center justify-content-center"> <img src="{% static 'images/file-icons/png.png' %}" class="img-fluid wd-80 ht-80" alt=""> </a>
+                                                <div class="dropdown position-absolute" style="top: 15px; right: 15px">
+                                                    <a href="javascript:void(0)" class="avatar-text avatar-sm" data-bs-toggle="dropdown">
+                                                        <i class="feather feather-more-vertical"></i>
+                                                    </a>
+                                                    <ul class="dropdown-menu overflow-hidden">
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item">
+                                                                <i class="feather feather-share-2 me-3"></i>
+                                                                <span>Share</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item">
+                                                                <i class="feather feather-info me-3"></i>
+                                                                <span>Details</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item">
+                                                                <i class="feather feather-edit-2 me-3"></i>
+                                                                <span>Rename</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item file-download">
+                                                                <i class="feather feather-download me-3"></i>
+                                                                <span>Download</span>
+                                                            </a>
+                                                        </li>
+                                                        <li class="dropdown-divider"></li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item">
+                                                                <i class="feather feather-copy me-3"></i>
+                                                                <span>Copy to...</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item">
+                                                                <i class="feather feather-move me-3"></i>
+                                                                <span>Move to...</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="#!"  class="dropdown-item">
+                                                                <i class="feather feather-link-2 me-3"></i>
+                                                                <span>Open with...</span>
+                                                            </a>
+                                                        </li>
+                                                        <li class="dropdown-divider"></li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item successAlertMessage">
+                                                                <i class="feather feather-scissors me-3"></i>
+                                                                <span>Backup</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item" data-action-target="#fileFolderDeleteAction">
+                                                                <i class="feather feather-trash-2 me-3"></i>
+                                                                <span>Remove</span>
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <div class="card-footer">
+                                                <h2 class="fs-13 mb-1 text-truncate-1-line">UI/UX Design Templates</h2>
+                                                <small class="fs-10 text-uppercase"><a href="javascript:void(0);">Project</a> / <a href="javascript:void(0);">Dashboard</a> / <span class="text-gray-500">Webapps</span></small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="card stretch stretch-full">
+                                            <div class="card-body p-0 ht-200 position-relative">
+                                                <a href="javascript:void(0);" class="w-100 h-100 d-flex align-items-center justify-content-center"> <img src="{% static 'images/file-icons/pdf.png' %}" class="img-fluid wd-80 ht-80" alt=""> </a>
+                                                <div class="dropdown position-absolute" style="top: 15px; right: 15px">
+                                                    <a href="javascript:void(0)" class="avatar-text avatar-sm" data-bs-toggle="dropdown">
+                                                        <i class="feather feather-more-vertical"></i>
+                                                    </a>
+                                                    <ul class="dropdown-menu overflow-hidden">
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item">
+                                                                <i class="feather feather-share-2 me-3"></i>
+                                                                <span>Share</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item">
+                                                                <i class="feather feather-info me-3"></i>
+                                                                <span>Details</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item">
+                                                                <i class="feather feather-edit-2 me-3"></i>
+                                                                <span>Rename</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item file-download">
+                                                                <i class="feather feather-download me-3"></i>
+                                                                <span>Download</span>
+                                                            </a>
+                                                        </li>
+                                                        <li class="dropdown-divider"></li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item">
+                                                                <i class="feather feather-copy me-3"></i>
+                                                                <span>Copy to...</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item">
+                                                                <i class="feather feather-move me-3"></i>
+                                                                <span>Move to...</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="#!"  class="dropdown-item">
+                                                                <i class="feather feather-link-2 me-3"></i>
+                                                                <span>Open with...</span>
+                                                            </a>
+                                                        </li>
+                                                        <li class="dropdown-divider"></li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item successAlertMessage">
+                                                                <i class="feather feather-scissors me-3"></i>
+                                                                <span>Backup</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item" data-action-target="#fileFolderDeleteAction">
+                                                                <i class="feather feather-trash-2 me-3"></i>
+                                                                <span>Remove</span>
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <div class="card-footer">
+                                                <h2 class="fs-13 mb-1 text-truncate-1-line">UI/UX Design Templates</h2>
+                                                <small class="fs-10 text-uppercase"><a href="javascript:void(0);">Project</a> / <a href="javascript:void(0);">Dashboard</a> / <span class="text-gray-500">Webapps</span></small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <div class="card mb-4 stretch stretch-full">
+                                            <div class="card-body p-0 ht-200 position-relative">
+                                                <a href="javascript:void(0);" class="w-100 h-100 d-flex align-items-center justify-content-center"> <img src="{% static 'images/file-icons/psd.png' %}" class="img-fluid wd-80 ht-80" alt=""> </a>
+                                                <div class="dropdown position-absolute" style="top: 15px; right: 15px">
+                                                    <a href="javascript:void(0)" class="avatar-text avatar-sm" data-bs-toggle="dropdown">
+                                                        <i class="feather feather-more-vertical"></i>
+                                                    </a>
+                                                    <ul class="dropdown-menu overflow-hidden">
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item">
+                                                                <i class="feather feather-share-2 me-3"></i>
+                                                                <span>Share</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item">
+                                                                <i class="feather feather-info me-3"></i>
+                                                                <span>Details</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item">
+                                                                <i class="feather feather-edit-2 me-3"></i>
+                                                                <span>Rename</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item file-download">
+                                                                <i class="feather feather-download me-3"></i>
+                                                                <span>Download</span>
+                                                            </a>
+                                                        </li>
+                                                        <li class="dropdown-divider"></li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item">
+                                                                <i class="feather feather-copy me-3"></i>
+                                                                <span>Copy to...</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item">
+                                                                <i class="feather feather-move me-3"></i>
+                                                                <span>Move to...</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="#!"  class="dropdown-item">
+                                                                <i class="feather feather-link-2 me-3"></i>
+                                                                <span>Open with...</span>
+                                                            </a>
+                                                        </li>
+                                                        <li class="dropdown-divider"></li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item successAlertMessage">
+                                                                <i class="feather feather-scissors me-3"></i>
+                                                                <span>Backup</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="javascript:void(0)" class="dropdown-item" data-action-target="#fileFolderDeleteAction">
+                                                                <i class="feather feather-trash-2 me-3"></i>
+                                                                <span>Remove</span>
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                            <div class="card-footer">
+                                                <h2 class="fs-13 mb-1 text-truncate-1-line">UI/UX Design Templates</h2>
+                                                <small class="fs-10 text-uppercase"><a href="javascript:void(0);">Project</a> / <a href="javascript:void(0);">Dashboard</a> / <span class="text-gray-500">Webapps</span></small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                        <div class="step-title border-top">Completed</div>
+                        <section class="step-body mt-4 text-center">
+                            <img src="{% static 'images/general/completed-steps.png' %}" alt="" class="img-fluid wd-300 mb-4">
+                            <h4 class="fw-bold">Project Created!</h4>
+                            <p class="text-muted mt-2">If you need more info, please check how to create project</p>
+                            <div class="d-flex justify-content-center gap-1 mt-5">
+                                <a href="javascript:void(0);" class="btn btn-light">Create New Project</a>
+                                <a href="./projects-view.html" class="btn btn-primary">Preview Project</a>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- [ Main Content ] end -->
+
+{% endblock %}

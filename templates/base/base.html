@@ -1,0 +1,115 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="x-ua-compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="" />
+    <meta name="keyword" content="" />
+    <meta name="author" content="flexilecode" />
+
+    <title>{% block title %}GRI{% endblock %}</title>
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'images/favicon.ico' %}" />
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}" />
+
+    <!-- Vendors CSS -->
+    <link rel="stylesheet" href="{% static 'vendors/css/vendors.min.css' %}" />
+    <link rel="stylesheet" type="text/css" href="{% static 'vendors/css/dataTables.bs5.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'vendors/css/select2.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'vendors/css/select2-theme.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'vendors/css/jquery.steps.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'vendors/css/quill.min.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'vendors/css/datepicker.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/extra_css.css' %}">
+    <link rel="stylesheet" href="{% static 'vendors/css/daterangepicker.min.css' %}" />
+    <!-- Theme CSS -->
+    <link rel="stylesheet" href="{% static 'css/theme.min.css' %}" />
+
+    {% block extra_css %}
+    {% endblock %}
+</head>
+
+<body>
+
+    <!-- Main Wrapper -->
+    <div class="main-wrapper">
+
+        <!-- Sidebar -->
+        {% include 'base/sidebar.html' %}
+
+        <!-- Page Wrapper -->
+        <div class="page-wrapper">
+
+            <!-- Navbar -->
+            {% include 'base/navbar.html' %}
+
+            <!-- Page Content -->
+            <main class="nxl-container">
+                <div class="nxl-content">
+
+                    <!-- Breadcrumb / Page Header -->
+                    {% block page_header %}
+                    {% endblock %}
+
+                    <!-- Main Content -->
+                    {% block content %}
+                    {% endblock %}
+                </div>
+                <!-- Footer -->
+                {% include 'base/footer.html' %}
+
+            </main>
+
+        </div>
+
+    </div>
+
+    <!-- Global JS -->
+    <script src="{% static 'js/script.js' %}"></script>
+    <!--! Footer Script !-->
+    <!--! ================================================================ !-->
+    <!--! BEGIN: Vendors JS !-->
+    <script src="{% static 'vendors/js/vendors.min.js' %}"></script>
+    <!-- vendors.min.js {always must need to be top} -->
+    <script src="{% static 'vendors/js/daterangepicker.min.js' %}"></script>
+    <script src="{% static 'vendors/js/apexcharts.min.js' %}"></script>
+    <script src="{% static 'vendors/js/circle-progress.min' %}.js"></script>
+    <!--! END: Vendors JS !-->
+    <!--! BEGIN: Apps Init  !-->
+    <script src="{% static 'js/common-init.min.js' %}"></script>
+    <script src="{% static 'js/dashboard-init.min.js' %}"></script>
+    <!--! END: Apps Init !-->
+    <!--! BEGIN: Theme Customizer  !-->
+    <script src="{% static 'js/theme-customizer-init.min.js' %}"></script>
+    <!--! END: Theme Customizer !-->
+
+    <!-- vendors.min.js {always must need to be top} -->
+    <script src="{% static 'vendors/js/dataTables.min.js' %}"></script>
+    <script src="{% static 'vendors/js/dataTables.bs5.min.js' %}"></script>
+    <script src="{% static 'vendors/js/select2.min.js' %}"></script>
+    <script src="{% static 'vendors/js/select2-active.min.js' %}"></script>
+    <!--! END: Vendors JS !-->
+    <!-- Page Specific JS -->
+
+    <!-- vendors.min.js {always must need to be top} -->
+    <script src="{% static 'vendors/js/jquery.steps.min.js' %}"></script>
+    <script src="{% static 'vendors/js/jquery.validate.min.js' %}"></script>
+    <script src="{% static 'vendors/js/quill.min.js' %}"></script>
+    <script src="{% static 'vendors/js/datepicker.min.js' %}"></script>
+    <script src="{% static 'js/projects-create-init.min.js' %}"></script>
+    <!--! BEGIN: Apps Init  !-->
+    <script src="{% static 'js/customers-init.min.js' %}"></script>
+    <!--! END: Apps Init !-->
+    
+    {% block extra_js %}
+    {% endblock %}
+
+</body>
+
+</html>

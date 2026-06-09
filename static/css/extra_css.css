@@ -1,0 +1,50 @@
+/* ==========================================
+   COMMON WIZARD LAYOUT
+   ========================================== */
+
+.wizard-full-width .wizard > .content {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 30px !important;
+}
+
+.wizard-full-width .wizard > .content > .body {
+    width: 100% !important;
+    padding: 0 !important;
+}
+
+/* Wizard Steps */
+.wizard-full-width .steps ul {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.wizard-full-width .steps ul li {
+    float: none;
+}
+
+/* Large Screens */
+@media (min-width: 1200px) {
+    .wizard-full-width .wizard > .content {
+        padding: 30px 40px !important;
+    }
+}
+
+/* Tablets */
+@media (max-width: 991px) {
+    .wizard-full-width .wizard > .content {
+        padding: 20px !important;
+    }
+
+    .wizard-full-width .steps ul {
+        gap: 5px;
+    }
+
+    .wizard-full-width .steps ul li a {
+        font-size: 13px;
+        padding: 10px 12px;
+    }
+}

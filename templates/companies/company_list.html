@@ -1,0 +1,285 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% block title %}
+Dashboard
+{% endblock %}
+
+{% block content %}
+
+<!-- [ page-header ] start -->
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Company Management</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/dashboard/">Home</a></li>
+            <li class="breadcrumb-item">Company Management</li>
+        </ul>
+    </div>
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex d-md-none">
+                <a href="javascript:void(0)" class="page-header-right-close-toggle">
+                    <i class="feather-arrow-left me-2"></i>
+                    <span>Back</span>
+                </a>
+            </div>
+            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                <a href="javascript:void(0);" class="btn btn-icon btn-light-brand" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                    <i class="feather-bar-chart"></i>
+                </a>
+                <a href="{% url 'companies:company_create' %}" class="btn btn-primary">
+                    <i class="feather-plus me-2"></i>
+                    <span>Create New Company</span>
+                </a>
+            </div>
+        </div>
+        <div class="d-md-none d-flex align-items-center">
+            <a href="javascript:void(0)" class="page-header-right-open-toggle">
+                <i class="feather-align-right fs-20"></i>
+            </a>
+        </div>
+    </div>
+</div>
+<div id="collapseOne" class="accordion-collapse collapse page-header-collapse">
+    <div class="accordion-body pb-2">
+        <div class="row">
+            <div class="col-xxl-3 col-md-6">
+                <div class="card stretch stretch-full">
+                    <div class="card-body">
+                        <a href="javascript:void(0);" class="fw-bold d-block">
+                            <span class="d-block">Not Started</span>
+                            <span class="fs-24 fw-bolder d-block">04</span>
+                        </a>
+                        <div class="pt-4">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <a href="javascript:void(0);" class="fs-12 fw-medium text-muted">
+                                    <span>Invoices Awaiting</span>
+                                    <i class="feather-link-2 fs-10 ms-1"></i>
+                                </a>
+                                <div>
+                                    <span class="fs-12 text-muted">$5,569</span>
+                                    <span class="fs-11 text-muted">(56%)</span>
+                                </div>
+                            </div>
+                            <div class="progress mt-2 ht-3">
+                                <div class="progress-bar bg-primary" role="progressbar" style="width: 56%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xxl-3 col-md-6">
+                <div class="card stretch stretch-full">
+                    <div class="card-body">
+                        <a href="javascript:void(0);" class="fw-bold d-block">
+                            <span class="d-block">In Progress</span>
+                            <span class="fs-24 fw-bolder d-block">06</span>
+                        </a>
+                        <div class="pt-4">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <a href="javascript:void(0);" class="fs-12 fw-medium text-muted">
+                                    <span>Projects In Progress</span>
+                                    <i class="feather-link-2 fs-10 ms-1"></i>
+                                </a>
+                                <div>
+                                    <span class="fs-12 text-muted">16 Completed</span>
+                                    <span class="fs-11 text-muted">(78%)</span>
+                                </div>
+                            </div>
+                            <div class="progress mt-2 ht-3">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: 78%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xxl-3 col-md-6">
+                <div class="card stretch stretch-full">
+                    <div class="card-body">
+                        <a href="javascript:void(0);" class="fw-bold d-block">
+                            <span class="d-block">Cancelled</span>
+                            <span class="fs-24 fw-bolder d-block">02</span>
+                        </a>
+                        <div class="pt-4">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <a href="javascript:void(0);" class="fs-12 fw-medium text-muted">
+                                    <span>Converted Leads</span>
+                                    <i class="feather-link-2 fs-10 ms-1"></i>
+                                </a>
+                                <div>
+                                    <span class="fs-12 text-muted">52 Completed</span>
+                                    <span class="fs-11 text-muted">(63%)</span>
+                                </div>
+                            </div>
+                            <div class="progress mt-2 ht-3">
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: 63%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xxl-3 col-md-6">
+                <div class="card stretch stretch-full">
+                    <div class="card-body">
+                        <a href="javascript:void(0);" class="fw-bold d-block">
+                            <span class="d-block">Finished</span>
+                            <span class="fs-24 fw-bolder d-block">25</span>
+                        </a>
+                        <div class="pt-4">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <a href="javascript:void(0);" class="fs-12 fw-medium text-muted">
+                                    <span>Conversion Rate</span>
+                                    <i class="feather-link-2 fs-10 ms-1"></i>
+                                </a>
+                                <div>
+                                    <span class="fs-12 text-muted">$2,254</span>
+                                    <span class="fs-11 text-muted">(46%)</span>
+                                </div>
+                            </div>
+                            <div class="progress mt-2 ht-3">
+                                <div class="progress-bar bg-danger" role="progressbar" style="width: 46%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- [ page-header ] end -->
+<!-- [ Main Content ] start -->
+<div class="main-content">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card stretch stretch-full">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="projectList">
+                            <thead>
+                                <tr>
+                                    <th class="wd-30">
+                                        <div class="btn-group mb-1">
+                                            <div class="custom-control custom-checkbox ms-1">
+                                                <input type="checkbox" class="custom-control-input" id="checkAllProject">
+                                                <label class="custom-control-label" for="checkAllProject"></label>
+                                            </div>
+                                        </div>
+                                    </th>
+                                    <th>Company Name</th>
+                                    <th>Customer</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Assigned</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="single-item">
+                                    <td>
+                                        <div class="item-checkbox ms-1">
+                                            <div class="custom-control custom-checkbox">
+                                                <input type="checkbox" class="custom-control-input checkbox" id="checkBox_1">
+                                                <label class="custom-control-label" for="checkBox_1"></label>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="project-name-td">
+                                        <div class="hstack gap-4">
+                                            <div class="avatar-image border-0">
+                                                <img src="{% static 'images/brand/app-store.png' %}" alt="" class="img-fluid">
+                                            </div>
+                                            <div>
+                                                <a href="{% url 'companies:company_view' %}" class="text-truncate-1-line">Spark: This name could work well for a project related to innovation, creativity, or inspiration.</a>
+                                                <p class="fs-12 text-muted mt-2 text-truncate-1-line project-list-desc">Lorem ipsum dolor, sit amet consectetur adipisicing elit.</p>
+                                                <div class="project-list-action fs-12 d-flex align-items-center gap-3 mt-2">
+                                                    <a href="javascript:void(0);">Start</a>
+                                                    <span class="vr text-muted"></span>
+                                                    <a href="javascript:void(0);">Edit</a>
+                                                    <span class="vr text-muted"></span>
+                                                    <a href="javascript:void(0);" class="text-danger">Delete</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'companies:company_view' %}" class="hstack gap-3">
+                                            <div class="avatar-image avatar-md">
+                                                <img src="{% static 'images/avatar/1.png' %}" alt="" class="img-fluid">
+                                            </div>
+                                            <div>
+                                                <span class="text-truncate-1-line">Alexandra Della</span>
+                                            </div>
+                                        </a>
+                                    </td>
+                                    <td>2023-04-05</td>
+                                    <td>2023-04-10</td>
+                                    <td>
+                                        <select class="form-select form-control" data-select2-selector="user">
+                                            <option value="alex@outlook.com" data-user="1">alex@outlook.com</option>
+                                            <option value="john.deo@outlook.com" data-user="2">john.deo@outlook.com</option>
+                                            <option value="green.cutte@outlook.com" data-user="3">green.cutte@outlook.com</option>
+                                            <option value="nancy.elliot@outlook.com" data-user="4">nancy.elliot@outlook.com</option>
+                                            <option value="mar.audrey@gmail.com" data-user="5">mar.audrey@gmail.com</option>
+                                            <option value="erna.serpa@outlook.com" data-user="6">erna.serpa@outlook.com</option>
+                                            <option value="green.cutte@outlook.com" data-user="7">green.cutte@outlook.com</option>
+                                            <option value="nancy.elliot@outlook.com" data-user="8">nancy.elliot@outlook.com</option>
+                                            <option value="mar.audrey@gmail.com" data-user="9" selected>mar.audrey@gmail.com</option>
+                                            <option value="erna.serpa@outlook.com" data-user="10">erna.serpa@outlook.com</option>
+                                            <option value="mar.audrey@gmail.com" data-user="11">mar.audrey@gmail.com</option>
+                                            <option value="erna.serpa@outlook.com" data-user="12">erna.serpa@outlook.com</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select class="form-control" data-select2-selector="status">
+                                            <option value="success" data-bg="bg-success">Active</option>
+                                            <option value="danger" data-bg="bg-danger">Declined</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <div class="hstack gap-2 justify-content-end">
+                                            <a href="{% url 'companies:company_view' %}" class="avatar-text avatar-md">
+                                                <i class="feather feather-eye"></i>
+                                            </a>
+                                            <div class="dropdown">
+                                                <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21">
+                                                    <i class="feather feather-more-horizontal"></i>
+                                                </a>
+                                                <ul class="dropdown-menu">
+                                                    <li>
+                                                        <a class="dropdown-item" href="javascript:void(0)">
+                                                            <i class="feather feather-edit-3 me-3"></i>
+                                                            <span>Edit</span>
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item printBTN" href="javascript:void(0)">
+                                                            <i class="feather feather-printer me-3"></i>
+                                                            <span>Print</span>
+                                                        </a>
+                                                    </li>
+                                                    <li class="dropdown-divider"></li>
+                                                    <li>
+                                                        <a class="dropdown-item" href="javascript:void(0)">
+                                                            <i class="feather feather-trash-2 me-3"></i>
+                                                            <span>Delete</span>
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- [ Main Content ] end -->
+
+{% endblock %}
