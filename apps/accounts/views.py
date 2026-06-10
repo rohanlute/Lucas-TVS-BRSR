@@ -1,116 +1,102 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from .decorators import superadmin_required
+from django.views import View
+from django.views.generic import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin
+from .mixins import SuperAdminRequiredMixin
 
 # -----------------------------------------------
 # ============= LOGIN ===========================
 # -----------------------------------------------
 
-def login_view(request):
+class LoginView(View):
 
-    if request.method == 'POST':
+    template_name = 'base/login.html'
+
+    def get(self, request):
+        return render(request,self.template_name)
+
+    def post(self, request):
 
         username = request.POST.get('username')
         password = request.POST.get('password')
 
-        user = authenticate(
-            request,
-            username=username,
-            password=password
-        )
-
-        if user is not None:
-            login(request, user)
-            if user.role and user.role.role_code == 'SUPERADMIN':
-                return redirect('accounts:dashboard')
-
+        user = authenticate(request,username=username,password=password)
+        if user:
+            login(request,user)
             return redirect('accounts:dashboard')
 
-        messages.error(
-            request,
-            'Invalid Username or Password'
-        )
+        messages.error(request,'Invalid Username or Password')
 
-    return render(request, 'base/login.html')
+        return render(request,self.template_name)
 
 
 # -----------------------------------------------
 # ============= LOGOUT ==========================
 # -----------------------------------------------
 
-def logout_view(request):
+class LogoutView(View):
 
-    logout(request)
+    def get(self, request):
 
-    messages.success(
-        request,
-        'Logged out successfully'
-    )
+        logout(request)
 
-    return redirect('accounts:login')
+        messages.success(request,'Logged out successfully')
 
-
+        return redirect('accounts:login')
+    
 # -----------------------------------------------
 # ============= DASHBOARD =======================
 # -----------------------------------------------
 
-@login_required(login_url='accounts:login')
-@superadmin_required
-def dashboard(request):
+class DashboardView(LoginRequiredMixin,TemplateView):
 
-    context = {
-        'user': request.user
-    }
+    login_url = 'accounts:login'
 
-    return render(request,'dashboard/dashboard.html',context)
+    template_name = ('dashboard/dashboard.html')
+
+    def get_context_data(self,**kwargs):
+
+        context = super().get_context_data(**kwargs)
+
+        context['user'] = (self.request.user)
+
+        return context
 
 
 # -----------------------------------------------
 # ============= USER LIST =======================
 # -----------------------------------------------
 
-@login_required(login_url='accounts:login')
-@superadmin_required
-def user_list(request):
+class UserListView(LoginRequiredMixin,SuperAdminRequiredMixin,TemplateView):
 
-    return render(
-        request,
-        'accounts/user_management/user_list.html'
-    )
+    login_url = 'accounts:login'
+
+    template_name = ('accounts/user_management/user_list.html')
 
 # ============= USER LIST =======================
 
-@login_required(login_url='accounts:login')
-@superadmin_required
-def user_create(request):
+class UserCreateView(LoginRequiredMixin,SuperAdminRequiredMixin,TemplateView):
 
-    return render(
-        request,
-        'accounts/user_management/user_create.html'
-    )
+    login_url = 'accounts:login'
+
+    template_name = ('accounts/user_management/user_create.html')
 
 
 # -----------------------------------------------
 # ============= Department =======================
 # -----------------------------------------------
 
-@login_required(login_url='accounts:login')
-@superadmin_required
-def department_list(request):
+class DepartmentListView(LoginRequiredMixin,SuperAdminRequiredMixin,TemplateView):
 
-    return render(
-        request,
-        'accounts/department/department_list.html'
-    )
+    login_url = 'accounts:login'
+
+    template_name = ('accounts/department/department_list.html')
 
 # ================= Department Create ==============
-@login_required(login_url='accounts:login')
-@superadmin_required
-def department_create(request):
+class DepartmentCreateView(LoginRequiredMixin,SuperAdminRequiredMixin,TemplateView):
 
-    return render(
-        request,
-        'accounts/department/department_create.html'
-    )
+    login_url = 'accounts:login'
+
+    template_name = ('accounts/department/department_create.html')

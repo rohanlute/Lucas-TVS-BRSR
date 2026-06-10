@@ -1,24 +1,34 @@
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
+from django.views.generic import (ListView,TemplateView)
+from django.contrib.auth.mixins import (LoginRequiredMixin)
 from .models import Company
-from apps.accounts.decorators import superadmin_required
-
-@login_required(login_url='accounts:login')
-@superadmin_required
-def company_list(request):
-    companies = Company.objects.all()
-    context = {
-        'companies': companies
-    }
-    return render(request,'companies/company_list.html',context)
+from apps.accounts.mixins import (SuperAdminRequiredMixin)
 
 
-@login_required(login_url='accounts:login')
-@superadmin_required
-def company_create(request):
-    return render(request,'companies/company_create.html')
+# -----------------------------------------------
+# ============= Company Management - Admin =======================
+# -----------------------------------------------
+class CompanyListView(LoginRequiredMixin,SuperAdminRequiredMixin,ListView):
 
-@login_required(login_url='accounts:login')
-@superadmin_required
-def company_view(request):
-    return render(request,'companies/company_view.html')
+    model = Company
+
+    template_name = ('companies/company_list.html')
+
+    context_object_name = ('companies')
+
+    login_url = ('accounts:login')
+
+# ============= Company Management - Create =======================
+
+class CompanyCreateView(LoginRequiredMixin,SuperAdminRequiredMixin,TemplateView):
+
+    template_name = ('companies/company_create.html')
+
+    login_url = ('accounts:login')
+
+
+# ============= Company Management - View =======================
+class CompanyDetailView(LoginRequiredMixin,SuperAdminRequiredMixin,TemplateView):
+
+    template_name = ('companies/company_view.html')
+
+    login_url = ('accounts:login')
