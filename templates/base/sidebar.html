@@ -26,6 +26,8 @@
                         <li class="nxl-item"><a class="nxl-link" href="analytics.html">Analytics</a></li>
                     </ul>
                 </li>
+
+                {% if request.user.is_super_admin %}
                 <li class="nxl-item nxl-hasmenu">
                     <a href="javascript:void(0);" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-briefcase"></i></span>
@@ -35,6 +37,8 @@
                         <li class="nxl-item"><a class="nxl-link" href="{% url 'companies:company_list' %}">Company Management</a></li>
                     </ul>
                 </li>
+                {% endif %}
+                {% if request.user.is_super_admin %}
                 <li class="nxl-item nxl-hasmenu">
                     <a href="javascript:void(0);" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-users"></i></span>
@@ -47,7 +51,8 @@
                         <li class="nxl-item"><a class="nxl-link" href="analytics.html">Analytics</a></li>
                     </ul>
                 </li>
-                <li class="nxl-item nxl-hasmenu">
+                {% endif %}
+                <!-- <li class="nxl-item nxl-hasmenu">
                     <a href="javascript:void(0);" class="nxl-link">
                         <span class="nxl-micon"><i class="feather-cast"></i></span>
                         <span class="nxl-mtext">Reports</span><span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
@@ -241,16 +246,8 @@
                         <li class="nxl-item"><a class="nxl-link" href="help-knowledgebase.html">KnowledgeBase</a></li>
                         <li class="nxl-item"><a class="nxl-link" href="/docs/documentations">Documentations</a></li>
                     </ul>
-                </li>
+                </li> -->
             </ul>
-            <div class="card text-center">
-                <div class="card-body">
-                    <i class="feather-sunrise fs-4 text-dark"></i>
-                    <h6 class="mt-4 text-dark fw-bolder">Downloading Center</h6>
-                    <p class="fs-11 my-3 text-dark">Duralux is a production ready CRM to get started up and running easily.</p>
-                    <a href="https://www.themewagon.com/themes/Duralux-admin" target="_blank" class="btn btn-primary text-dark w-100">Download Now</a>
-                </div>
-            </div>
         </div>
     </div>
 </nav>

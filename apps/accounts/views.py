@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-
+from .decorators import superadmin_required
 
 # -----------------------------------------------
 # ============= LOGIN ===========================
@@ -23,6 +23,9 @@ def login_view(request):
 
         if user is not None:
             login(request, user)
+            if user.role and user.role.role_code == 'SUPERADMIN':
+                return redirect('accounts:dashboard')
+
             return redirect('accounts:dashboard')
 
         messages.error(
@@ -54,12 +57,14 @@ def logout_view(request):
 # -----------------------------------------------
 
 @login_required(login_url='accounts:login')
+@superadmin_required
 def dashboard(request):
 
-    return render(
-        request,
-        'dashboard/dashboard.html'
-    )
+    context = {
+        'user': request.user
+    }
+
+    return render(request,'dashboard/dashboard.html',context)
 
 
 # -----------------------------------------------
@@ -67,6 +72,7 @@ def dashboard(request):
 # -----------------------------------------------
 
 @login_required(login_url='accounts:login')
+@superadmin_required
 def user_list(request):
 
     return render(
@@ -77,6 +83,7 @@ def user_list(request):
 # ============= USER LIST =======================
 
 @login_required(login_url='accounts:login')
+@superadmin_required
 def user_create(request):
 
     return render(
@@ -90,6 +97,7 @@ def user_create(request):
 # -----------------------------------------------
 
 @login_required(login_url='accounts:login')
+@superadmin_required
 def department_list(request):
 
     return render(
@@ -99,6 +107,7 @@ def department_list(request):
 
 # ================= Department Create ==============
 @login_required(login_url='accounts:login')
+@superadmin_required
 def department_create(request):
 
     return render(

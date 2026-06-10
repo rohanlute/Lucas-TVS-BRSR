@@ -167,7 +167,7 @@ Dashboard
                                             </div>
                                         </div>
                                     </th>
-                                    <th>Company Name</th>
+                                    <th>Project Name</th>
                                     <th>Customer</th>
                                     <th>Start Date</th>
                                     <th>End Date</th>
@@ -192,7 +192,7 @@ Dashboard
                                                 <img src="{% static 'images/brand/app-store.png' %}" alt="" class="img-fluid">
                                             </div>
                                             <div>
-                                                <a href="{% url 'companies:company_view' %}" class="text-truncate-1-line">Spark: This name could work well for a project related to innovation, creativity, or inspiration.</a>
+                                                <a href="projects-view.html" class="text-truncate-1-line">Spark: This name could work well for a project related to innovation, creativity, or inspiration.</a>
                                                 <p class="fs-12 text-muted mt-2 text-truncate-1-line project-list-desc">Lorem ipsum dolor, sit amet consectetur adipisicing elit.</p>
                                                 <div class="project-list-action fs-12 d-flex align-items-center gap-3 mt-2">
                                                     <a href="javascript:void(0);">Start</a>
@@ -205,9 +205,9 @@ Dashboard
                                         </div>
                                     </td>
                                     <td>
-                                        <a href="{% url 'companies:company_view' %}" class="hstack gap-3">
+                                        <a href="projects-view.html" class="hstack gap-3">
                                             <div class="avatar-image avatar-md">
-                                                <img src="{% static 'images/avatar/1.png' %}" alt="" class="img-fluid">
+                                                <img src="{% static '/images/avatar/1.png' %}" alt="" class="img-fluid">
                                             </div>
                                             <div>
                                                 <span class="text-truncate-1-line">Alexandra Della</span>
@@ -234,13 +234,16 @@ Dashboard
                                     </td>
                                     <td>
                                         <select class="form-control" data-select2-selector="status">
-                                            <option value="success" data-bg="bg-success">Active</option>
+                                            <option value="primary" data-bg="bg-primary" selected>In Projress</option>
+                                            <option value="warning" data-bg="bg-warning">Not Started</option>
+                                            <option value="success" data-bg="bg-success">On Hold</option>
                                             <option value="danger" data-bg="bg-danger">Declined</option>
+                                            <option value="teal" data-bg="bg-teal">Finished</option>
                                         </select>
                                     </td>
                                     <td>
                                         <div class="hstack gap-2 justify-content-end">
-                                            <a href="{% url 'companies:company_view' %}" class="avatar-text avatar-md">
+                                            <a href="projects-view.html" class="avatar-text avatar-md">
                                                 <i class="feather feather-eye"></i>
                                             </a>
                                             <div class="dropdown">
@@ -258,6 +261,25 @@ Dashboard
                                                         <a class="dropdown-item printBTN" href="javascript:void(0)">
                                                             <i class="feather feather-printer me-3"></i>
                                                             <span>Print</span>
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item" href="javascript:void(0)">
+                                                            <i class="feather feather-clock me-3"></i>
+                                                            <span>Remind</span>
+                                                        </a>
+                                                    </li>
+                                                    <li class="dropdown-divider"></li>
+                                                    <li>
+                                                        <a class="dropdown-item" href="javascript:void(0)">
+                                                            <i class="feather feather-archive me-3"></i>
+                                                            <span>Archive</span>
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item" href="javascript:void(0)">
+                                                            <i class="feather feather-alert-octagon me-3"></i>
+                                                            <span>Report Spam</span>
                                                         </a>
                                                     </li>
                                                     <li class="dropdown-divider"></li>

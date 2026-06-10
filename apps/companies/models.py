@@ -51,4 +51,4 @@ class Company(models.Model):
     )
 
     def __str__(self):
-        return self.company_name
+        return f"{self.company_code} - {self.company_name}"
