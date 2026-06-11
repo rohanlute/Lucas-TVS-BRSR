@@ -1,0 +1,118 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% block title %}
+Dashboard
+{% endblock %}
+
+{% block content %}
+<!-- [ page-header ] start -->
+<form method="POST" enctype="multipart/form-data" novalidate>
+{% csrf_token %}
+<!-- [ page-header ] start -->
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Customers</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="index.html">Home</a></li>
+            <li class="breadcrumb-item">View</li>
+        </ul>
+    </div>
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex d-md-none">
+                <a href="javascript:void(0)" class="page-header-right-close-toggle">
+                    <i class="feather-arrow-left me-2"></i>
+                    <span>Back</span>
+                </a>
+            </div>
+            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                <a href="javascript:void(0);" class="btn btn-icon btn-light-brand successAlertMessage">
+                    <i class="feather-star"></i>
+                </a>
+                <a href="javascript:void(0);" class="btn btn-icon btn-light-brand">
+                    <i class="feather-eye me-2"></i>
+                    <span>Follow</span>
+                </a>
+                <a href="customers-create.html" class="btn btn-primary">
+                    <i class="feather-plus me-2"></i>
+                    <span>Create Customer</span>
+                </a>
+            </div>
+        </div>
+        <div class="d-md-none d-flex align-items-center">
+            <a href="javascript:void(0)" class="page-header-right-open-toggle">
+                <i class="feather-align-right fs-20"></i>
+            </a>
+        </div>
+    </div>
+</div>
+<!-- [ page-header ] end -->
+<!-- [ Main Content ] start -->
+<div class="main-content">
+    <div class="row">
+        <div class="col-xxl-12 col-xl-12">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="mb-4 text-center">
+                        <div class="wd-150 ht-150 mx-auto mb-3 position-relative">
+                            <div class="avatar-image wd-150 ht-150 border border-5 border-gray-3">
+                                {% if user_obj.profile_image %}
+                                <img src="{{ user_obj.profile_image.url }}"
+                                    alt=""
+                                    class="img-fluid">
+                                {% else %}
+                                <img src="{% static 'images/avatar/1.png' %}"
+                                    alt=""
+                                    class="img-fluid">
+                                {% endif %}
+                            </div>
+                            <div class="wd-10 ht-10 text-success rounded-circle position-absolute translate-middle" style="top: 76%; right: 10px">
+                                <i class="bi bi-patch-check-fill"></i>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <a href="javascript:void(0);" class="fs-14 fw-bold d-block">{{ user_obj.full_name }}</a>
+                            <a href="javascript:void(0);" class="fs-12 fw-normal text-muted d-block">{{ user_obj.email }}</a>
+                        </div>
+                    </div>
+                    <ul class="list-unstyled mb-4">
+                        <li class="hstack justify-content-between mb-4">
+                            <span class="text-muted fw-medium hstack gap-3"><i class="feather-phone"></i>Phone</span>
+                            <a href="javascript:void(0);" class="float-end">{{ user_obj.mobile_number }}</a>
+                        </li>
+                        <li class="hstack justify-content-between mb-0">
+                            <span class="text-muted fw-medium hstack gap-3"><i class="feather-mail"></i>Email</span>
+                            <a href="javascript:void(0);" class="float-end">{{ user_obj.email }}</a>
+                        </li>
+                        <li class="hstack justify-content-between mb-4">
+                            <span class="text-muted fw-medium hstack gap-3"><i class="feather-briefcase"></i>Department</span>
+                            <span>{{ user_obj.department }}</span>
+                        </li>
+                        <li class="hstack justify-content-between mb-4">
+                            <span class="text-muted fw-medium hstack gap-3"><i class="feather-hash"></i>Employee Code</span>
+                            <span>{{ user_obj.employee_code }}</span>
+                        </li>
+                        <li class="hstack justify-content-between mb-4">
+                            <span class="text-muted fw-medium hstack gap-3"><i class="feather-home"></i>Company</span>
+                            <span>{{ user_obj.company.company_name }}</span>
+                        </li>
+                    </ul>
+                    <div class="d-flex gap-2 text-center pt-4">
+                        <a href="javascript:void(0);" class="w-50 btn btn-light-brand">
+                            <i class="feather-trash-2 me-2"></i>
+                            <span>Delete</span>
+                        </a>
+                        <a href="{% url 'accounts:user_edit' user_obj.id %}" class="w-50 btn btn-primary">
+                            <i class="feather-edit me-2"></i>
+                            <span>Edit Profile</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- [ Main Content ] end -->
+{% endblock %}

@@ -217,16 +217,16 @@ Dashboard
                                             </div>
                                         </div>
                                     </th>
-                                    <th>Customer</th>
+                                    <th>Name</th>
+                                    <th>User Name</th>
                                     <th>Email</th>
-                                    <th>Group</th>
                                     <th>Phone</th>
-                                    <th>Date</th>
+                                    <th>Depatment</th>
                                     <th>Status</th>
                                     <th class="text-end">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <!-- <tbody>
                                 <tr class="single-item">
                                     <td>
                                         <div class="item-checkbox ms-1">
@@ -239,31 +239,17 @@ Dashboard
                                     <td>
                                         <a href="customers-view.html" class="hstack gap-3">
                                             <div class="avatar-image avatar-md">
-                                                <img src="assets/images/avatar/1.png" alt="" class="img-fluid">
+                                                <img src="{% static 'images/avatar/1.png' %}" alt="" class="img-fluid">
                                             </div>
                                             <div>
                                                 <span class="text-truncate-1-line">Alexandra Della</span>
                                             </div>
                                         </a>
                                     </td>
+                                    <td>username</td>
                                     <td><a href="apps-email.html">alex@example.com</a></td>
-                                    <td>
-                                        <select class="form-select form-control max-select" data-select2-selector="tag" data-max-select2="tag" multiple>
-                                            <option value="success" data-bg="bg-success">VIP</option>
-                                            <option value="info" data-bg="bg-info">Bugs</option>
-                                            <option value="primary" data-bg="bg-primary">Team</option>
-                                            <option value="teal" data-bg="bg-teal">Primary</option>
-                                            <option value="success" data-bg="bg-success">Updates</option>
-                                            <option value="warning" data-bg="bg-warning">Personal</option>
-                                            <option value="danger" data-bg="bg-danger" selected>Promotions</option>
-                                            <option value="indigo" data-bg="bg-indigo">Customs</option>
-                                            <option value="primary" data-bg="bg-primary">Wholesale</option>
-                                            <option value="danger" data-bg="bg-danger">Low Budget</option>
-                                            <option value="teal" data-bg="bg-teal" selected>High Budget</option>
-                                        </select>
-                                    </td>
-                                    <td><a href="tel:">+1 (375) 9632 548</a></td>
-                                    <td>2023-04-05, 00:05PM</td>
+                                    <td>+1 (375) 9632 548</td>
+                                    <td>Department Name</td>
                                     <td>
                                         <select class="form-control" data-select2-selector="status">
                                             <option value="success" data-bg="bg-success" selected>Active</option>
@@ -324,7 +310,122 @@ Dashboard
                                         </div>
                                     </td>
                                 </tr>
-                            </tbody>
+                            </tbody> -->
+                            <tbody>
+
+                                {% for user in users %}
+
+                                <tr class="single-item">
+
+                                    <td>
+                                        <div class="item-checkbox ms-1">
+                                            <div class="custom-control custom-checkbox">
+                                                <input type="checkbox" class="custom-control-input checkbox"
+                                                    id="checkBox_{{ user.id }}">
+
+                                                <label class="custom-control-label" 
+                                                    for="checkBox_{{ user.id }}">
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        <div class="hstack gap-3">
+
+                                            <div class="avatar-image avatar-md">
+
+                                                {% if user.profile_image %}
+                                                    <img src="{{ user.profile_image.url }}"
+                                                        class="img-fluid">
+                                                {% else %}
+                                                    <img src="{% static 'images/avatar/1.png' %}"
+                                                        class="img-fluid">
+                                                {% endif %}
+
+                                            </div>
+
+                                            <div>
+                                                {{ user.full_name }}
+                                            </div>
+
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        {{ user.username }}
+                                    </td>
+
+                                    <td>
+                                        {{ user.email }}
+                                    </td>
+
+                                    <td>
+                                        {{ user.mobile_number }}
+                                    </td>
+
+                                    <td>
+                                        {{ user.department }}
+                                    </td>
+
+                                    <td>
+
+                                        {% if user.is_active %}
+
+                                            <span class="badge bg-soft-success text-success">
+                                                Active
+                                            </span>
+
+                                        {% else %}
+
+                                            <span class="badge bg-soft-danger text-danger">
+                                                Inactive
+                                            </span>
+
+                                        {% endif %}
+
+                                    </td>
+
+                                    <td>
+                                        <div class="hstack gap-2 justify-content-end">
+                                            <a href="{% url 'accounts:user_view' user.id %}" class="avatar-text avatar-md">
+                                                <i class="feather feather-eye"></i>
+                                            </a>
+                                            <div class="dropdown">
+                                                <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,21">
+                                                    <i class="feather feather-more-horizontal"></i>
+                                                </a>
+                                                <ul class="dropdown-menu">
+                                                    <li>
+                                                        <a class="dropdown-item" href="{% url 'accounts:user_edit' user.id %}">
+                                                            <i class="feather feather-edit-3 me-3"></i>
+                                                            <span>Edit</span>
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item" href="javascript:void(0)">
+                                                            <i class="feather feather-trash-2 me-3"></i>
+                                                            <span>Delete</span>
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                </tr>
+
+                                {% empty %}
+
+                                <tr>
+                                    <td colspan="8" class="text-center">
+                                        No Users Found
+                                    </td>
+                                </tr>
+
+                                {% endfor %}
+
+                                </tbody>
                         </table>
                     </div>
                 </div>

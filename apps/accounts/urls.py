@@ -2,7 +2,8 @@ from django.urls import path
 
 from .views import (
     LoginView,LogoutView,DashboardView,UserListView,
-    UserCreateView,DepartmentListView,DepartmentCreateView,
+    UserCreateView,DepartmentListView,DepartmentCreateView,UserUpdateView,
+    UserDetailView,
 )
 
 app_name = 'accounts'
@@ -28,6 +29,10 @@ urlpatterns = [
     path('user_list/',UserListView.as_view(),name='user_list'),
 
     path('user_create/',UserCreateView.as_view(),name='user_create'),
+
+    path('user_edit/<int:pk>/',UserUpdateView.as_view(),name='user_edit'),
+
+    path('user_view/<int:pk>/',UserDetailView.as_view(),name='user_view'),
 
     # -----------------------------------------------
     # ============= Department =======================

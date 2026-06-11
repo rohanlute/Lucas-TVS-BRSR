@@ -11,6 +11,18 @@ class User(AbstractUser):
         null=True
     )
 
+    full_name = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True
+    )
+
+    department = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+
     company = models.ForeignKey(
         'companies.Company',
         on_delete=models.SET_NULL,

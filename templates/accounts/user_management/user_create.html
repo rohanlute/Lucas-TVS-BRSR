@@ -6,6 +6,8 @@ Dashboard
 
 {% block content %}
 <!-- [ page-header ] start -->
+<form method="POST" enctype="multipart/form-data" novalidate>
+{% csrf_token %}
 <div class="page-header">
     <div class="page-header-left d-flex align-items-center">
         <div class="page-header-title">
@@ -13,7 +15,11 @@ Dashboard
         </div>
         <ul class="breadcrumb">
             <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-            <li class="breadcrumb-item">Create</li>
+            {% if object %}
+                <li class="breadcrumb-item">Edit</li>
+            {% else %}
+                <li class="breadcrumb-item">Create</li>
+            {% endif %}
         </ul>
     </div>
     <div class="page-header-right ms-auto">
@@ -25,10 +31,10 @@ Dashboard
                 </a>
             </div>
             <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
-                <a href="javascript:void(0);" class="btn btn-primary successAlertMessage">
+                <button type="submit" class="btn btn-primary">
                     <i class="feather-layers me-2"></i>
                     <span>Save User</span>
-                </a>
+                </button>
             </div>
         </div>
         <div class="d-md-none d-flex align-items-center">
@@ -41,174 +47,188 @@ Dashboard
 <!-- [ page-header ] end -->
 <!-- [ Main Content ] start -->
 <div class="main-content">
-    <div class="row">
-        <div class="col-lg-12">
-            <div class="card border-top-0">
-                <div class="card-header p-0">
-                    <!-- Nav tabs -->
-                    <ul class="nav nav-tabs flex-wrap w-100 text-center customers-nav-tabs" id="myTab" role="tablist">
-                        <li class="nav-item flex-fill border-top" role="presentation">
-                            <a href="javascript:void(0);" class="nav-link active" data-bs-toggle="tab" data-bs-target="#profileTab" role="tab">Profile</a>
-                        </li>
-                        <li class="nav-item flex-fill border-top" role="presentation">
-                            <a href="javascript:void(0);" class="nav-link" data-bs-toggle="tab" data-bs-target="#passwordTab" role="tab">Password</a>
-                        </li>
-                    </ul>
-                </div>
-                <div class="tab-content">
-                    <div class="tab-pane fade show active" id="profileTab" role="tabpanel">
-                        <div class="card-body personal-info">
-                            <div class="mb-4 d-flex align-items-center justify-content-between">
-                                <h5 class="fw-bold mb-0 me-4">
-                                    <span class="d-block mb-2">Personal Information:</span>
-                                    <span class="fs-12 fw-normal text-muted text-truncate-1-line">Following information is publicly displayed, be careful! </span>
-                                </h5>
-                                <a href="javascript:void(0);" class="btn btn-sm btn-light-brand">Add New</a>
-                            </div>
-                            <div class="row mb-4 align-items-center">
-                                <div class="col-lg-4">
-                                    <label class="fw-semibold">Avatar: </label>
+        <div class="row">
+            <div class="col-lg-12">
+                <div class="card border-top-0">
+                    <div class="card-header p-0">
+                        <!-- Nav tabs -->
+                        <ul class="nav nav-tabs flex-wrap w-100 text-center customers-nav-tabs" id="myTab" role="tablist">
+                            <li class="nav-item flex-fill border-top" role="presentation">
+                                <a href="javascript:void(0);" class="nav-link active" data-bs-toggle="tab" data-bs-target="#INprofileTab" role="tab">Profile</a>
+                            </li>
+                            <li class="nav-item flex-fill border-top" role="presentation">
+                                <a href="javascript:void(0);" class="nav-link" data-bs-toggle="tab" data-bs-target="#INpasswordTab" role="tab">Password</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="INprofileTab" role="tabpanel">
+                            <div class="card-body personal-info">
+                                <div class="mb-4 d-flex align-items-center justify-content-between">
+                                    <h5 class="fw-bold mb-0 me-4">
+                                        <span class="d-block mb-2">Personal Information:</span>
+                                        <span class="fs-12 fw-normal text-muted text-truncate-1-line">Following information is are for In-House employees only! </span>
+                                    </h5>
                                 </div>
-                                <div class="col-lg-8">
-                                    <div class="mb-4 mb-md-0 d-flex gap-4 your-brand">
-                                        <div class="wd-100 ht-100 position-relative overflow-hidden border border-gray-2 rounded">
-                                            <img src="{% static 'images/avatar/1.png' %}" class="upload-pic img-fluid rounded h-100 w-100" alt="">
-                                            <div class="position-absolute start-50 top-50 end-0 bottom-0 translate-middle h-100 w-100 hstack align-items-center justify-content-center c-pointer upload-button">
-                                                <i class="feather feather-camera" aria-hidden="true"></i>
+                                <div class="row mb-4 align-items-center">
+                                    <div class="col-lg-4">
+                                        <label class="fw-semibold">Avatar: </label>
+                                    </div>
+                                    <div class="col-lg-8">
+                                        <div class="mb-4 mb-md-0 d-flex gap-4 your-brand">
+                                            <div class="wd-100 ht-100 position-relative overflow-hidden border border-gray-2 rounded">
+                                                {% if object.profile_image %}
+                                                    <img src="{{ object.profile_image.url }}" class="upload-pic img-fluid rounded h-100 w-100">
+                                                {% else %}
+                                                    <img src="{% static 'images/avatar/1.png' %}" class="upload-pic img-fluid rounded h-100 w-100">
+                                                {% endif %}
+                                                <div class="position-absolute start-50 top-50 end-0 bottom-0 translate-middle h-100 w-100 hstack align-items-center justify-content-center c-pointer upload-button">
+                                                    <i class="feather feather-camera" aria-hidden="true"></i>
+                                                </div>
+                                                <input name="profile_image" class="file-upload" type="file" accept="image/*">
                                             </div>
-                                            <input class="file-upload" type="file" accept="image/*">
+                                            <div class="d-flex flex-column gap-1">
+                                                <div class="fs-11 text-gray-500 mt-2"># Upload your prifile</div>
+                                                <div class="fs-11 text-gray-500"># Avatar size 150x150</div>
+                                                <div class="fs-11 text-gray-500"># Max upload size 2mb</div>
+                                                <div class="fs-11 text-gray-500"># Allowed file types: png, jpg, jpeg</div>
+                                            </div>
                                         </div>
-                                        <div class="d-flex flex-column gap-1">
-                                            <div class="fs-11 text-gray-500 mt-2"># Upload your prifile</div>
-                                            <div class="fs-11 text-gray-500"># Avatar size 150x150</div>
-                                            <div class="fs-11 text-gray-500"># Max upload size 2mb</div>
-                                            <div class="fs-11 text-gray-500"># Allowed file types: png, jpg, jpeg</div>
+                                    </div>
+                                </div>
+                                <div class="row mb-4 align-items-center">
+                                    <div class="col-lg-4">
+                                        <label for="fullnameInput" class="fw-semibold">Name: <span class="text-danger">*</span></label>
+                                    </div>
+                                    <div class="col-lg-8">
+                                        <div class="input-group">
+                                            <div class="input-group-text"><i class="feather-user"></i></div>
+                                            <input name="full_name" type="text" class="form-control" id="fullnameInput" placeholder="Name" value="{{ object.full_name|default:'' }}" required>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="row mb-4 align-items-center">
-                                <div class="col-lg-4">
-                                    <label for="fullnameInput" class="fw-semibold">Name: </label>
-                                </div>
-                                <div class="col-lg-8">
-                                    <div class="input-group">
-                                        <div class="input-group-text"><i class="feather-user"></i></div>
-                                        <input type="text" class="form-control" id="fullnameInput" placeholder="Name">
+                                <div class="row mb-4 align-items-center">
+                                    <div class="col-lg-4">
+                                        <label for="mailInput" class="fw-semibold">Email: </label>
+                                    </div>
+                                    <div class="col-lg-8">
+                                        <div class="input-group">
+                                            <div class="input-group-text"><i class="feather-mail"></i></div>
+                                            <input name="email" type="text" class="form-control" id="mailInput" placeholder="Email" value="{{ object.email|default:'' }}" required>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="row mb-4 align-items-center">
-                                <div class="col-lg-4">
-                                    <label for="mailInput" class="fw-semibold">Email: </label>
-                                </div>
-                                <div class="col-lg-8">
-                                    <div class="input-group">
-                                        <div class="input-group-text"><i class="feather-mail"></i></div>
-                                        <input type="text" class="form-control" id="mailInput" placeholder="Email">
+                                <div class="row mb-4 align-items-center">
+                                    <div class="col-lg-4">
+                                        <label for="usernameInput" class="fw-semibold">Username: </label>
+                                    </div>
+                                    <div class="col-lg-8">
+                                        <div class="input-group">
+                                            <div class="input-group-text"><i class="feather-link-2"></i></div>
+                                            <input name="username" type="text" class="form-control" id="usernameInput" value="{{ object.username|default:'' }}" placeholder="Username">
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="row mb-4 align-items-center">
-                                <div class="col-lg-4">
-                                    <label for="usernameInput" class="fw-semibold">Username: </label>
-                                </div>
-                                <div class="col-lg-8">
-                                    <div class="input-group">
-                                        <div class="input-group-text"><i class="feather-link-2"></i></div>
-                                        <div class="input-group-text">https://www.themewagon.com/</div>
-                                        <input type="url" class="form-control" id="usernameInput" placeholder="Username">
+                                <div class="row mb-4 align-items-center">
+                                    <div class="col-lg-4">
+                                        <label for="phoneInput" class="fw-semibold">Phone: </label>
+                                    </div>
+                                    <div class="col-lg-8">
+                                        <div class="input-group">
+                                            <div class="input-group-text"><i class="feather-phone"></i></div>
+                                            <input name="mobile_number" type="number" class="form-control" id="phoneInput" value="{{ object.mobile_number|default:'' }}" placeholder="Phone">
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="row mb-4 align-items-center">
-                                <div class="col-lg-4">
-                                    <label for="phoneInput" class="fw-semibold">Phone: </label>
-                                </div>
-                                <div class="col-lg-8">
-                                    <div class="input-group">
-                                        <div class="input-group-text"><i class="feather-phone"></i></div>
-                                        <input type="text" class="form-control" id="phoneInput" placeholder="Phone">
+                                <div class="row mb-4 align-items-center">
+                                    <div class="col-lg-4">
+                                        <label for="companyInput" class="fw-semibold">Company: </label>
+                                    </div>
+                                    <div class="col-lg-8">
+                                        <div class="input-group">
+                                            <div class="input-group-text"><i class="feather-compass"></i></div>
+                                            <input name="companyname" type="text" class="form-control" id="companyInput" value="Protegk IT" readonly >
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="row mb-4 align-items-center">
-                                <div class="col-lg-4">
-                                    <label for="companyInput" class="fw-semibold">Company: </label>
-                                </div>
-                                <div class="col-lg-8">
-                                    <div class="input-group">
-                                        <div class="input-group-text"><i class="feather-compass"></i></div>
-                                        <input type="text" class="form-control" id="companyInput" placeholder="Company">
+                                <div class="row mb-4 align-items-center">
+                                    <div class="col-lg-4">
+                                        <label for="departmentInput" class="fw-semibold">Department: </label>
+                                    </div>
+                                    <div class="col-lg-8">
+                                        <div class="input-group">
+                                            <div class="input-group-text"><i class="feather-briefcase"></i></div>
+                                            <input name="department" type="text" class="form-control" id="DepartmentInput" placeholder="Department" value="{{ object.department|default:'' }}">
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="row mb-4 align-items-center">
-                                <div class="col-lg-4">
-                                    <label for="designationInput" class="fw-semibold">Designation: </label>
-                                </div>
-                                <div class="col-lg-8">
-                                    <div class="input-group">
-                                        <div class="input-group-text"><i class="feather-briefcase"></i></div>
-                                        <input type="text" class="form-control" id="designationInput" placeholder="Designation">
+                                <div class="row mb-4 align-items-center">
+                                    <div class="col-lg-4">
+                                        <label for="employee_codeInput" class="fw-semibold">Employee ID: </label>
+                                    </div>
+                                    <div class="col-lg-8">
+                                        <div class="input-group">
+                                            <div class="input-group-text"><i class="feather-briefcase"></i></div>
+                                            <input name="employee_code" type="text" class="form-control" id="employee_codeInput" placeholder="Employee ID" value="{{ object.employee_code|default:'' }}">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="tab-pane fade" id="passwordTab" role="tabpanel">
-                        <div class="card-body pass-info">
-                            <div class="mb-4 d-flex align-items-center justify-content-between">
-                                <h5 class="fw-bold mb-0 me-4">
-                                    <span class="d-block mb-2">Password Information:</span>
-                                    <span class="fs-12 fw-normal text-muted text-truncate-1-line">You can only change your password twice within 24 hours! </span>
-                                </h5>
-                                <a href="javascript:void(0);" class="btn btn-sm btn-light-brand">Reset</a>
-                            </div>
-                            <div class="row mb-4 align-items-center">
-                                <div class="col-lg-4">
-                                    <label for="Input" class="fw-semibold">Password: </label>
+                        <div class="tab-pane fade" id="INpasswordTab" role="tabpanel">
+                            <div class="card-body pass-info">
+                                <div class="mb-4 d-flex align-items-center justify-content-between">
+                                    <h5 class="fw-bold mb-0 me-4">
+                                        <span class="d-block mb-2">Password Information:</span>
+                                        <span class="fs-12 fw-normal text-muted text-truncate-1-line">You can only change your password twice within 24 hours! </span>
+                                    </h5>
+                                    <a href="javascript:void(0);" class="btn btn-sm btn-light-brand">Reset</a>
                                 </div>
-                                <div class="col-lg-8">
-                                    <div class="input-group">
-                                        <div class="input-group-text"><i class="feather-key"></i></div>
-                                        <input type="password" class="form-control" id="Input" placeholder="Password">
+                                <div class="row mb-4 align-items-center">
+                                    <div class="col-lg-4">
+                                        <label for="Input" class="fw-semibold">Password: </label>
+                                    </div>
+                                    <div class="col-lg-8">
+                                        <div class="input-group">
+                                            <div class="input-group-text"><i class="feather-key"></i></div>
+                                            <input name="password" type="password" class="form-control" id="Input" placeholder="Password" required>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="row mb-4 align-items-center">
-                                <div class="col-lg-4">
-                                    <label for="Input" class="fw-semibold">Password Confirm: </label>
-                                </div>
-                                <div class="col-lg-8 generate-pass">
-                                    <div class="input-group field">
-                                        <div class="input-group-text"><i class="feather-key"></i></div>
-                                        <input type="password" class="form-control password" id="newPassword" placeholder="Password Confirm">
-                                        <div class="input-group-text c-pointer gen-pass"><i class="feather-hash"></i></div>
-                                        <div class="input-group-text border-start bg-gray-2 c-pointer show-pass"><i></i></div>
+                                <div class="row mb-4 align-items-center">
+                                    <div class="col-lg-4">
+                                        <label for="Input" class="fw-semibold">Password Confirm: </label>
                                     </div>
-                                    <div class="progress-bar mt-2">
-                                        <div></div>
-                                        <div></div>
-                                        <div></div>
-                                        <div></div>
+                                    <div class="col-lg-8 generate-pass">
+                                        <div class="input-group field">
+                                            <div class="input-group-text"><i class="feather-key"></i></div>
+                                            <input name="confirm_password" type="password" class="form-control password" id="newPassword" placeholder="Password Confirm" required>
+                                            <div class="input-group-text c-pointer gen-pass"><i class="feather-hash"></i></div>
+                                            <div class="input-group-text border-start bg-gray-2 c-pointer show-pass"><i></i></div>
+                                        </div>
+                                        <div class="progress-bar mt-2">
+                                            <div></div>
+                                            <div></div>
+                                            <div></div>
+                                            <div></div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="pass-hint">
-                                <p class="fw-bold">Password Requirements:</p>
-                                <ul class="fs-12 ps-1 ms-2 text-muted">
-                                    <li class="mb-1">At least one lowercase character</li>
-                                    <li class="mb-1">Minimum 8 characters long - the more, the better</li>
-                                    <li>At least one number, symbol, or whitespace character</li>
-                                </ul>
+                                <div class="pass-hint">
+                                    <p class="fw-bold">Password Requirements:</p>
+                                    <ul class="fs-12 ps-1 ms-2 text-muted">
+                                        <li class="mb-1">At least one lowercase character</li>
+                                        <li class="mb-1">Minimum 8 characters long - the more, the better</li>
+                                        <li>At least one number, symbol, or whitespace character</li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 </div>
+ </form>
 <!-- [ Main Content ] end -->
 {% endblock %}

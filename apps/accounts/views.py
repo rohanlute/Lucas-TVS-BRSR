@@ -5,6 +5,13 @@ from django.views import View
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .mixins import SuperAdminRequiredMixin
+from django.urls import reverse_lazy
+from django.views.generic import (ListView,CreateView,UpdateView,DetailView)
+from .forms import UserCreateForm
+from .models import User
+from apps.accounts.models import Role
+from apps.companies.models import Company
+
 
 # -----------------------------------------------
 # ============= LOGIN ===========================
@@ -69,21 +76,96 @@ class DashboardView(LoginRequiredMixin,TemplateView):
 # ============= USER LIST =======================
 # -----------------------------------------------
 
-class UserListView(LoginRequiredMixin,SuperAdminRequiredMixin,TemplateView):
+class UserListView(LoginRequiredMixin,SuperAdminRequiredMixin,ListView):
 
-    login_url = 'accounts:login'
+    model = User
 
     template_name = ('accounts/user_management/user_list.html')
 
+    context_object_name = 'users'
+
+    def get_queryset(self):
+
+        return User.objects.select_related('role','company').filter(role__role_code='SUPERADMIN').order_by('-id')
+
 # ============= USER LIST =======================
 
-class UserCreateView(LoginRequiredMixin,SuperAdminRequiredMixin,TemplateView):
+class UserCreateView(LoginRequiredMixin,SuperAdminRequiredMixin,CreateView):
 
-    login_url = 'accounts:login'
+    model = User
+
+    form_class = UserCreateForm
 
     template_name = ('accounts/user_management/user_create.html')
 
+    success_url = reverse_lazy('accounts:user_list')
 
+    
+
+    def form_valid(self, form):
+
+        user = form.save(commit=False)
+
+        if self.request.FILES.get('profile_image'):
+            user.profile_image = self.request.FILES.get('profile_image')
+
+        user.set_password(form.cleaned_data['password'])
+
+        role = Role.objects.get(role_code='SUPERADMIN')
+
+        company = Company.objects.get(company_code='PROTEGK')
+
+        user.role = role
+
+        user.company = company
+
+        user.is_company_user = False
+
+        user.save()
+
+        messages.success(
+            self.request,
+            'User created successfully.'
+        )
+
+        return redirect(
+            self.success_url
+        )
+
+    def form_invalid(self, form):
+
+        print(form.errors)
+
+        return super().form_invalid(form)
+    
+
+class UserUpdateView(LoginRequiredMixin,SuperAdminRequiredMixin,UpdateView):
+
+    model = User
+
+    form_class = UserCreateForm
+
+    template_name = ('accounts/user_management/user_create.html')
+
+    success_url = reverse_lazy('accounts:user_list')
+
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+
+        context['page_title'] = 'Edit User'
+
+        return context
+
+
+
+class UserDetailView(LoginRequiredMixin,SuperAdminRequiredMixin,DetailView):
+
+    model = User
+
+    template_name = ('accounts/user_management/user_view.html')
+
+    context_object_name = 'user_obj'
 # -----------------------------------------------
 # ============= Department =======================
 # -----------------------------------------------

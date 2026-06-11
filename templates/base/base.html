@@ -31,6 +31,9 @@
     <!-- Theme CSS -->
     <link rel="stylesheet" href="{% static 'css/theme.min.css' %}" />
 
+    <!--Custome Css -->
+    <link rel="stylesheet" href="{% static 'css/form-validation.css' %}">
+
     {% block extra_css %}
     {% endblock %}
 </head>
@@ -71,7 +74,7 @@
     </div>
 
     <!-- Global JS -->
-    <script src="{% static 'js/script.js' %}"></script>
+    <!-- <script src="{% static 'js/script.js' %}"></script> -->
     <!--! Footer Script !-->
     <!--! ================================================================ !-->
     <!--! BEGIN: Vendors JS !-->
@@ -83,8 +86,8 @@
     <!--! END: Vendors JS !-->
     <!--! BEGIN: Apps Init  !-->
     <script src="{% static 'js/common-init.min.js' %}"></script>
-    <script src="{% static 'js/projects-init.min.js' %}"></script>
-    <script src="{% static 'js/dashboard-init.min.js' %}"></script>
+    <!-- <script src="{% static 'js/projects-init.min.js' %}"></script> -->
+    <!-- <script src="{% static 'js/dashboard-init.min.js' %}"></script> -->
     <!--! END: Apps Init !-->
     <!--! BEGIN: Theme Customizer  !-->
     <script src="{% static 'js/theme-customizer-init.min.js' %}"></script>
@@ -103,10 +106,14 @@
     <script src="{% static 'vendors/js/jquery.validate.min.js' %}"></script>
     <script src="{% static 'vendors/js/quill.min.js' %}"></script>
     <script src="{% static 'vendors/js/datepicker.min.js' %}"></script>
-    <script src="{% static 'js/projects-create-init.min.js' %}"></script>
+    <!-- <script src="{% static 'js/projects-create-init.min.js' %}"></script> -->
     <!--! BEGIN: Apps Init  !-->
-    <script src="{% static 'js/customers-init.min.js' %}"></script>
+    <!-- <script src="{% static 'js/customers-init.min.js' %}"></script> -->
     <!--! END: Apps Init !-->
+
+    <!-- Custome JS-->
+    <script src="{% static 'js/form-validation.js' %}"></script>
+    <script src="{% static 'js/image-preview.js' %}"></script>
     
     {% block extra_js %}
     {% endblock %}
