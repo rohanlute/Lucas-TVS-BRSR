@@ -48,3 +48,42 @@
         padding: 10px 12px;
     }
 }
+
+
+
+.content-area{
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 80px); /* adjust header height */
+}
+
+.content-area-body{
+    flex: 1;
+    overflow-y: auto;
+}
+
+.chat-footer{
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
+    background: #fff;
+}
+
+.chat-footer{
+    width: 100%;
+}
+
+.chat-footer form{
+    flex: 1;
+    min-width: 0;
+}
+
+#message-input{
+    width: 100%;
+    min-width: 400px;
+}
+
+#chat-body{
+    height: calc(100vh - 250px);
+    overflow-y: auto;
+}

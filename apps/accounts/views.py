@@ -32,6 +32,8 @@ class LoginView(View):
         user = authenticate(request,username=username,password=password)
         if user:
             login(request,user)
+            user.is_online = True
+            user.save()
             return redirect('accounts:dashboard')
 
         messages.error(request,'Invalid Username or Password')
@@ -46,6 +48,8 @@ class LoginView(View):
 class LogoutView(View):
 
     def get(self, request):
+        request.user.is_online = False
+        request.user.save()
 
         logout(request)
 

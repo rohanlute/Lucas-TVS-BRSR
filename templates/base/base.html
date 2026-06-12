@@ -53,8 +53,8 @@
             {% include 'base/navbar.html' %}
 
             <!-- Page Content -->
-            <main class="nxl-container">
-                <div class="nxl-content">
+            <main class="{% block container_class %}nxl-container{% endblock %}">
+                <div class="{% block content_class %}nxl-content{% endblock %}">
 
                     <!-- Breadcrumb / Page Header -->
                     {% block page_header %}
@@ -65,8 +65,10 @@
                     {% endblock %}
                 </div>
                 <!-- Footer -->
-                {% include 'base/footer.html' %}
-
+                {% comment %} {% include 'base/footer.html' %} {% endcomment %}
+                {% block footer %}
+                    {% include 'base/footer.html' %}
+                {% endblock %}
             </main>
 
         </div>
@@ -110,7 +112,7 @@
     <!--! BEGIN: Apps Init  !-->
     <!-- <script src="{% static 'js/customers-init.min.js' %}"></script> -->
     <!--! END: Apps Init !-->
-
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <!-- Custome JS-->
     <script src="{% static 'js/form-validation.js' %}"></script>
     <script src="{% static 'js/image-preview.js' %}"></script>
