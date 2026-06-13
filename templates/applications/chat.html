@@ -1404,8 +1404,19 @@ window.addEventListener('load', function () {
 
     if (conversationId) {
 
-        chatSocket = new WebSocket(
+        /* chatSocket = new WebSocket(
             'ws://' +
+            window.location.host +
+            '/ws/chat/' +
+            conversationId +
+            '/'
+        ); */
+
+        const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws';
+
+        chatSocket = new WebSocket(
+            wsScheme +
+            '://' +
             window.location.host +
             '/ws/chat/' +
             conversationId +
