@@ -416,15 +416,15 @@
                             </div>
                         </div>
                         <div class="dropdown-divider"></div>
-                        <a href="javascript:void(0);" class="dropdown-item">
+                        <a href="{% url 'accounts:user_view' request.user.id %}" class="dropdown-item">
                             <i class="feather-user"></i>
                             <span>Profile Details</span>
                         </a>
-                        <a href="javascript:void(0);" class="dropdown-item">
+                        <a href="{% url 'notifications:notification_list' %}" class="dropdown-item">
                             <i class="feather-bell"></i>
                             <span>Notifications</span>
                         </a>
-                        <a href="javascript:void(0);" class="dropdown-item">
+                        <a href="{% url 'chat:chat' %}" class="dropdown-item">
                             <i class="feather-message-circle"></i>
                             <span>Chats</span>
                         </a>
