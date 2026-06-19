@@ -1,5 +1,8 @@
 from django.urls import path
+from .views import *
 
 app_name = "timesheets"
 
-urlpatterns = []
+urlpatterns = [
+    path('timesheet_list/',TimeSheetListView.as_view(),name='timesheet_list'),
+]
