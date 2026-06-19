@@ -31,9 +31,9 @@
         <div class="header-right ms-auto">
             <div class="d-flex align-items-center">
                 <div class="dropdown nxl-h-item nxl-header-search">
-                    <a href="javascript:void(0);" class="nxl-head-link me-0" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+                    <!-- <a href="javascript:void(0);" class="nxl-head-link me-0" data-bs-toggle="dropdown" data-bs-auto-close="outside">
                         <i class="feather-search"></i>
-                    </a>
+                    </a> -->
                     <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-search-dropdown">
                         <div class="input-group search-form">
                             <span class="input-group-text">
@@ -235,7 +235,7 @@
                 </div>
                 <div class="nxl-h-item d-none d-sm-flex">
                     <div class="full-screen-switcher">
-                        <a href="javascript:void(0);" class="nxl-head-link me-0" onclick="$('body').fullScreenHelper('toggle');">
+                        <a href="javascript:void(0);" class="nxl-head-link me-0" onclick="toggleFullscreen();">
                             <i class="feather-maximize maximize"></i>
                             <i class="feather-minimize minimize"></i>
                         </a>
@@ -439,6 +439,15 @@
         </div>
         <!--! [End] Header Right !-->
     </div>
+<script>
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+    } else {
+        document.exitFullscreen();
+    }
+}
+</script>
 </header>
 <!--! ================================================================ !-->
 <!--! [End] Header !-->

@@ -8,38 +8,84 @@
         flex-wrap: wrap;
         justify-content: flex-end;
     }
-
     .department-list-page .search-form {
         min-width: 280px;
     }
-
     .department-list-page .search-form .input-group {
         width: 100%;
     }
-
     .department-list-page .department-table-card {
         border-radius: 18px;
         overflow: visible;
     }
-
-    .department-list-page .department-table-card .table-responsive {
-        overflow: visible;
+    .department-table-card,
+    .department-table-card .card-body {
+        overflow: visible !important;
     }
-
-    .department-list-page .department-table-card table {
+    .department-table-card .table-responsive {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    .department-table-card table {
+        width: 100%;
         margin-bottom: 0;
+        border-collapse: collapse;
+        min-width: 900px; /* Ensures table doesn't shrink too much */
     }
-
-    .department-list-page .department-table-card thead th {
-        padding: 1rem 1.25rem;
+    .department-table-card thead th {
+        padding: 0.75rem 1rem;
         white-space: nowrap;
-    }
-
-    .department-list-page .department-table-card tbody td {
-        padding: 1rem 1.25rem;
+        background: #f8f9fc;
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #6c757d;
+        border-bottom: 1px solid #e9ecef;
         vertical-align: middle;
     }
-
+    .department-table-card tbody td {
+        padding: 0.75rem 1rem;
+        vertical-align: middle;
+    }
+    .department-table-card th:nth-child(1),
+    .department-table-card td:nth-child(1) {
+        width: 50px;
+        text-align: center;
+        min-width: 50px;
+    }
+    .department-table-card th:nth-child(2),
+    .department-table-card td:nth-child(2) {
+        min-width: 220px;
+        max-width: 300px;
+    }
+    .department-table-card th:nth-child(3),
+    .department-table-card td:nth-child(3) {
+        width: 80px;
+        min-width: 80px;
+    }
+    .department-table-card th:nth-child(4),
+    .department-table-card td:nth-child(4) {
+        min-width: 180px;
+        max-width: 300px;
+    }
+    .department-table-card th:nth-child(5),
+    .department-table-card td:nth-child(5) {
+        width: 100px;
+        min-width: 100px;
+        text-align: center;
+    }
+    .department-table-card th:nth-child(6),
+    .department-table-card td:nth-child(6) {
+        width: 120px;
+        min-width: 120px;
+        text-align: right;
+    }
+    .department-table-card th:nth-child(7),
+    .department-table-card td:nth-child(7) {
+        width: 160px;
+        min-width: 160px;
+        text-align: right;
+    }
     .department-list-page .department-avatar {
         width: 44px;
         height: 44px;
@@ -55,20 +101,123 @@
     .department-list-page .department-meta {
         line-height: 1.1;
     }
-
+    .department-table-card .hstack {
+        flex-wrap: nowrap;
+        gap: 0.75rem !important;
+    }
+    .department-table-card .avatar-text {
+        flex-shrink: 0;
+    }
+    .department-table-card .fw-semibold {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 180px;
+    }
+    .department-table-card td:nth-child(4) {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 300px;
+    }
     .department-list-page .actions-toggle {
         width: 32px;
         height: 32px;
     }
-
-    .department-table-card,
-    .department-table-card .card-body,
-    .department-table-card .table-responsive {
+    .department-table-card .dropdown-menu {
+        min-width: 180px;
+        position: absolute !important;
+        z-index: 1050;
+    }
+    .department-table-card td:last-child {
         overflow: visible !important;
     }
-
-    .department-list-page .table-responsive {
-        overflow: visible !important;
+    .department-table-card .dropdown {
+        position: relative;
+    }
+    .department-table-card tbody tr {
+        transition: all 0.2s ease;
+    }
+    .department-table-card tbody tr:hover {
+        background-color: #f8fafc;
+    }
+    @media (max-width: 1200px) {
+        .department-table-card table {
+            min-width: 900px;
+        }    
+        .department-table-card .table-responsive {
+            overflow-x: auto !important;
+        }
+    }
+    @media (max-width: 768px) {
+        .department-list-page .page-header-right-items-wrapper {
+            flex-direction: column;
+            align-items: stretch !important;
+            gap: 0.75rem;
+        }
+        .department-list-page .search-form {
+            min-width: 100%;
+        }
+        .department-list-page .page-header-right-items-wrapper .input-group {
+            width: 100% !important;
+        }
+        .department-list-page .page-header-right-items-wrapper .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        .department-table-card table {
+            min-width: 800px;
+        }
+        #departmentStatsCollapse .row {
+            flex-direction: column;
+        }
+        #departmentStatsCollapse .col-xl-6 {
+            width: 100%;
+        }
+        .department-table-card thead th,
+        .department-table-card tbody td {
+            padding: 0.5rem 0.75rem;
+            font-size: 13px;
+        }
+        .department-table-card .fw-semibold {
+            max-width: 120px;
+        }
+        .department-table-card th:nth-child(2),
+        .department-table-card td:nth-child(2) {
+            min-width: 160px;
+        }
+        .department-table-card th:nth-child(4),
+        .department-table-card td:nth-child(4) {
+            min-width: 140px;
+        }
+    }
+    @media (max-width: 576px) {
+        .department-table-card table {
+            min-width: 700px;
+        }
+        .department-table-card .fw-semibold {
+            max-width: 80px;
+            font-size: 13px;
+        }
+        .department-table-card thead th,
+        .department-table-card tbody td {
+            padding: 0.4rem 0.5rem;
+            font-size: 12px;
+        }
+        .department-table-card th:nth-child(4),
+        .department-table-card td:nth-child(4) {
+            min-width: 100px;
+            max-width: 120px;
+        }
+        .department-table-card .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 11px;
+        }
+        .department-table-card .avatar-text.avatar-md {
+            width: 32px;
+            height: 32px;
+            font-size: 12px;
+        }
     }
 </style>
 {% endblock %}

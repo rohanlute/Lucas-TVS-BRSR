@@ -24,7 +24,7 @@ class CompanyListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_superuser:
+        if user.role.role_code == 'SUPERADMIN':
             queryset = Company.objects.order_by('-created_at')
         else:
             queryset = Company.objects.filter(id=user.company_id).order_by('-created_at')
