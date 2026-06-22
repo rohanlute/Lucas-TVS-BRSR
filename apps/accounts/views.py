@@ -102,38 +102,66 @@ class DashboardView(LoginRequiredMixin,TemplateView):
 class UserListView(LoginRequiredMixin, ListView):
 
     model = User
-
-    template_name = ('accounts/user_management/user_list.html')
-
+    template_name = 'accounts/user_management/user_list.html'
     context_object_name = 'users'
+    
 
     def get_queryset(self):
         user = self.request.user
-        queryset = User.objects.select_related('role', 'company','department').order_by('-id')
+
+        queryset = User.objects.select_related(
+            'role', 'company', 'department'
+        ).order_by('-id')
+
         if not user.is_super_admin:
             queryset = queryset.filter(company=user.company)
 
         search = self.request.GET.get('search', '').strip()
+        status = self.request.GET.get('status', '').strip()
+        role = self.request.GET.get('role', '').strip()
+
+        if role:
+            queryset = queryset.filter(role_id=role)
+        else:
+            super_admin_role = Role.objects.filter(role_code='SUPERADMIN').first()
+
+            if super_admin_role:
+                queryset = queryset.filter(role=super_admin_role)
+
         if search:
             queryset = queryset.filter(
                 Q(full_name__icontains=search) |
                 Q(username__icontains=search) |
                 Q(email__icontains=search) |
-                Q(mobile_number__icontains=search) |
-                Q(employee_code__icontains=search) |
-                Q(department__name__icontains=search) |
-                Q(company__company_name__icontains=search)
+                Q(mobile_number__icontains=search)
             )
+
+        if status == 'active':
+            queryset = queryset.filter(is_active=True)
+
+        elif status == 'inactive':
+            queryset = queryset.filter(is_active=False)
 
         return queryset
 
+
     def get_context_data(self, **kwargs):
-
         context = super().get_context_data(**kwargs)
-        users = context['users']
 
-        context['total_users_count'] = users.count()
-        context['active_users_count'] = users.filter(is_active=True).count()
+        context['roles'] = Role.objects.order_by('role_name')
+        context['selected_status'] = self.request.GET.get('status', '')
+        selected_role = self.request.GET.get('role', '')
+
+        if not selected_role:
+            super_admin = Role.objects.filter(role_code='SUPERADMIN').first()
+
+            if super_admin:
+                selected_role = str(super_admin.id)
+
+        context['selected_role'] = selected_role
+
+        context['total_users_count'] = context['users'].count()
+        context['active_users_count'] = context['users'].filter(is_active=True).count()
 
         return context
 

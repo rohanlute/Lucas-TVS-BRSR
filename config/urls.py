@@ -28,6 +28,7 @@ urlpatterns = [
     path('timesheets/', include('apps.timesheets.urls')),
     path('brsr/', include('apps.brsr.urls')),
     path('gri/', include('apps.gri.urls')),
+    path('email_master/', include('apps.email_master.urls')),
 ]
 
 
