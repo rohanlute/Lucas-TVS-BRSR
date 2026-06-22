@@ -25,15 +25,16 @@ class CanAccessOrganizationMixin(UserPassesTestMixin):
     def get_allowed_plants(self):
         user = self.request.user
 
-        # Super users or admin roles can access all plants
-        if user.is_superuser or (user.role and user.role.role_code == 'COMPANYADMIN'):
+        if user.is_superuser:
             return Plant.objects.all()
 
-        # Company users should only see plants created for their company
-        if user.can_access_organization and user.company:
+        if getattr(user, 'is_super_admin', False):
+            return Plant.objects.all()
+
+        if user.role and user.role.role_code == 'COMPANYADMIN':
             return Plant.objects.filter(created_by__company=user.company).distinct()
 
-        return Plant.objects.none()
+        return user.assigned_plants.filter(is_active=True)
 
     def handle_no_permission(self):
         messages.error(self.request, 'You do not have permission to access this module.')
