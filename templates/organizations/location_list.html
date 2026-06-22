@@ -1,0 +1,236 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Locations{% endblock %}
+
+{% block extra_css %}
+<style>
+    .organization-list-page .page-header-right-items-wrapper {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+    .organization-table-card table {
+        margin-bottom: 0;
+    }
+    .organization-table-card thead th,
+    .organization-table-card tbody td {
+        padding: 1rem 1.25rem;
+        vertical-align: middle;
+    }
+    .sublocations-container {
+        display: none;
+        margin-top: 0.75rem;
+        padding: 0.9rem 1rem;
+        background: #f8f9fa;
+        border-radius: 0.75rem;
+        border-left: 3px solid #0d6efd;
+    }
+    /* Improve filter alignment on smaller screens */
+    @media (max-width: 991px) {
+        .organization-table-card form.row.g-3 > div {
+            margin-bottom: 0.5rem;
+        }
+        .organization-table-card form.row.g-3 .col-lg-2,
+        .organization-table-card form.row.g-3 .col-lg-4 {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+    }
+    .sublocations-container.show {
+        display: block;
+    }
+    .sublocation-item {
+        margin-bottom: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Locations</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="#">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'organizations:dashboard' %}">Organization</a></li>
+            <li class="breadcrumb-item active">Locations</li>
+        </ul>
+    </div>
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <a href="{% url 'organizations:location_create' %}" class="btn btn-primary">
+                <i class="feather-plus me-2"></i><span>Add Location</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="main-content organization-list-page">
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="card stretch stretch-full border-0 shadow-sm mb-4 organization-table-card">
+        <div class="card-body">
+            <form method="GET" class="row g-3 align-items-end">
+                <div class="col-lg-4">
+                    <label class="form-label">Search</label>
+                    <input type="text" name="search" class="form-control" placeholder="Search locations..." value="{{ search_query }}">
+                </div>
+                <div class="col-lg-2">
+                    <label class="form-label">Plant</label>
+                    <select name="plant" class="form-select" id="filter_plant">
+                        <option value="">All Plants</option>
+                        {% for plant in plants %}
+                        <option value="{{ plant.id }}" {% if selected_plant == plant.id|stringformat:"s" %}selected{% endif %}>{{ plant.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2">
+                    <label class="form-label">Zone</label>
+                    <select name="zone" class="form-select" id="filter_zone">
+                        <option value="">All Zones</option>
+                        {% for zone in zones %}
+                        <option value="{{ zone.id }}" data-plant="{{ zone.plant_id }}" {% if selected_zone == zone.id|stringformat:"s" %}selected{% endif %}>{{ zone.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-2">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="">All Status</option>
+                        <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+                        <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option>
+                    </select>
+                </div>
+                <div class="col-lg-2 d-grid">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card stretch stretch-full border-0 shadow-sm organization-table-card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Code</th>
+                            <th>Name</th>
+                            <th>Zone</th>
+                            <th>Plant</th>
+                            <th>Sub-Locations</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for location in locations %}
+                        <tr>
+                            <td><strong>{{ location.code }}</strong></td>
+                            <td>
+                                {{ location.name }}
+                                {% if location.description %}
+                                <br><small class="text-muted">{{ location.description|truncatewords:8 }}</small>
+                                {% endif %}
+                            </td>
+                            <td><span class="badge bg-soft-info text-info">{{ location.zone.name }}</span></td>
+                            <td><span class="badge bg-soft-primary text-primary">{{ location.zone.plant.name }}</span></td>
+                            <td>
+                                {% if location.sublocations.all %}
+                                <div>
+                                    <span class="badge bg-soft-secondary text-secondary">{{ location.sublocations.count }} Sub-location{{ location.sublocations.count|pluralize }}</span>
+                                    <a href="javascript:void(0)" class="text-primary ms-2" onclick="toggleSublocations('subloc-{{ location.id }}')">View</a>
+                                </div>
+                                <div id="subloc-{{ location.id }}" class="sublocations-container">
+                                    {% for sublocation in location.sublocations.all %}
+                                    <div class="sublocation-item">
+                                        <strong>{{ sublocation.name }}</strong>
+                                        {% if sublocation.code %}<span class="badge bg-light text-dark ms-2">{{ sublocation.code }}</span>{% endif %}
+                                        {% if sublocation.is_active %}
+                                        <span class="badge bg-soft-success text-success ms-2">Active</span>
+                                        {% else %}
+                                        <span class="badge bg-soft-danger text-danger ms-2">Inactive</span>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <span class="text-muted">None</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if location.is_active %}
+                                <span class="badge bg-soft-success text-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-soft-danger text-danger">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'organizations:location_update' location.pk %}" class="btn btn-sm btn-primary" title="Edit"><i class="feather-edit"></i></a>
+                                    <a href="{% url 'organizations:location_delete' location.pk %}" class="btn btn-sm btn-danger" title="Delete" onclick="return confirm('Are you sure you want to delete this location and all its sub-locations?');"><i class="feather-trash-2"></i></a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <div class="alert alert-info mb-0"><i class="feather-info me-2"></i>No locations found.</div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% if is_paginated %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center mt-4">
+            {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+            {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleSublocations(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.classList.toggle('show');
+}
+
+const filterPlant = document.getElementById('filter_plant');
+if (filterPlant) {
+    filterPlant.addEventListener('change', function() {
+        const plantId = this.value;
+        const zoneSelect = document.getElementById('filter_zone');
+        zoneSelect.querySelectorAll('option').forEach(function(option) {
+            option.style.display = (option.value === '' || plantId === '' || option.dataset.plant === plantId) ? 'block' : 'none';
+        });
+        if (zoneSelect.selectedOptions[0] && zoneSelect.selectedOptions[0].style.display === 'none') {
+            zoneSelect.value = '';
+        }
+    });
+}
+</script>
+{% endblock %}

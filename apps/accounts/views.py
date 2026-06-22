@@ -15,6 +15,7 @@ from .forms import UserCreateForm, RolePermissionForm, DepartmentForm
 from .models import User, Role, Department
 from apps.accounts.models.permission import Permissions
 from apps.companies.models import Company
+from apps.organizations.models import Plant, Zone, Location, SubLocation
 
 
 # -----------------------------------------------
@@ -154,6 +155,18 @@ class UserCreateView(LoginRequiredMixin, CreateView):
         form.fields['is_active'].initial = False
         return form
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        # For super admins show all; for company users show only company-created plants
+        if user.is_super_admin:
+            company_plants = Plant.objects.filter(is_active=True)
+        else:
+            company_plants = Plant.objects.filter(created_by__company=user.company, is_active=True)
+
+        context['company_plants'] = company_plants
+        return context
+
     
 
     def form_valid(self, form):
@@ -215,6 +228,14 @@ class UserUpdateView(LoginRequiredMixin, UpdateView):
         context = super().get_context_data(**kwargs)
 
         context['page_title'] = 'Edit User'
+
+        user = self.request.user
+        if user.is_super_admin:
+            company_plants = Plant.objects.filter(is_active=True)
+        else:
+            company_plants = Plant.objects.filter(created_by__company=user.company, is_active=True)
+
+        context['company_plants'] = company_plants
 
         return context
 

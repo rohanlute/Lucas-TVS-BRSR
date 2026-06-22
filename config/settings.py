@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'apps.gri',
     'apps.notifications',
     'apps.timesheets',
+    'apps.organizations',
 
     # 
     'rest_framework',

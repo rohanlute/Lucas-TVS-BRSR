@@ -1,0 +1,214 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Organization Setup{% endblock %}
+
+{% block extra_css %}
+<style>
+    .organization-dashboard .stat-card .card-body {
+        min-height: 120px;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.25rem 1.5rem;
+    }
+    .organization-dashboard .stat-card .avatar-text {
+        flex-shrink: 0;
+    }
+    .organization-dashboard .stat-card .stat-content {
+        flex: 1;
+        min-width: 0;
+    }
+    .organization-dashboard .stat-card .stat-content .text-muted {
+        font-size: 0.875rem;
+        margin-bottom: 0.1rem;
+    }
+    .organization-dashboard .stat-card .stat-content .fs-24 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+    .organization-dashboard .stat-card .stat-content .sub-meta {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    .org-hierarchy .hierarchy-step {
+        padding: 0.75rem 0.25rem;
+    }
+    .org-hierarchy .hierarchy-step .icon-wrap {
+        font-size: 2.2rem;
+        line-height: 1;
+        margin-bottom: 0.4rem;
+    }
+    .org-hierarchy .hierarchy-step strong {
+        display: block;
+        font-size: 1rem;
+        margin-bottom: 0.1rem;
+    }
+    .org-hierarchy .hierarchy-step .text-muted {
+        font-size: 0.8rem;
+    }
+    .card-action-btns .btn {
+        min-width: 70px;
+    }
+    @media (max-width: 576px) {
+        .organization-dashboard .stat-card .card-body {
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .organization-dashboard .stat-card .avatar-text {
+            margin-right: 0.25rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Plant Management</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="#">Home</a></li>
+            <li class="breadcrumb-item active">Plant Management</li>
+        </ul>
+    </div>
+</div>
+
+<div class="main-content organization-dashboard">
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm stat-card h-100">
+                <div class="card-body">
+                    <div class="avatar-text avatar-xl rounded bg-soft-primary text-primary">
+                        <i class="feather-activity"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="text-muted">Plants</div>
+                        <div class="fs-24">{{ total_plants }}</div>
+                        <div class="sub-meta">{{ active_plants }} Active</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm stat-card h-100">
+                <div class="card-body">
+                    <div class="avatar-text avatar-xl rounded bg-soft-purple text-purple">
+                        <i class="feather-layers"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="text-muted">Zones</div>
+                        <div class="fs-24">{{ total_zones }}</div>
+                        <div class="sub-meta">{{ active_zones }} Active</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm stat-card h-100">
+                <div class="card-body">
+                    <div class="avatar-text avatar-xl rounded bg-soft-danger text-danger">
+                        <i class="feather-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="text-muted">Employees</div>
+                        <div class="fs-24">{{ total_employees }}</div>
+                        <div class="sub-meta">{{ active_employees }} Active</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm stat-card h-100">
+                <div class="card-body">
+                    <div class="avatar-text avatar-xl rounded bg-soft-success text-success">
+                        <i class="feather-map-pin"></i>
+                    </div>
+                    <div class="stat-content">
+                        <div class="text-muted">Locations</div>
+                        <div class="fs-24">{{ total_locations|default:"0" }}</div>
+                        <div class="sub-meta">{{ active_locations|default:"0" }} Active</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Management Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-4 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center d-flex flex-column">
+                    <div class="display-5 text-primary"><i class="feather-activity"></i></div>
+                    <h5 class="fw-bold mt-2">Plants Management</h5>
+                    <p class="text-muted flex-grow-1">Manage manufacturing plants and units.</p>
+                    <div class="mt-3 d-flex justify-content-center gap-2 flex-wrap card-action-btns">
+                        <a href="{% url 'organizations:plant_list' %}" class="btn btn-primary btn-sm">View</a>
+                        <a href="{% url 'organizations:plant_create' %}" class="btn btn-success btn-sm">Add</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center d-flex flex-column">
+                    <div class="display-5 text-purple"><i class="feather-layers"></i></div>
+                    <h5 class="fw-bold mt-2">Zones Management</h5>
+                    <p class="text-muted flex-grow-1">Manage zones within plants.</p>
+                    <div class="mt-3 d-flex justify-content-center gap-2 flex-wrap card-action-btns">
+                        <a href="{% url 'organizations:zone_list' %}" class="btn btn-primary btn-sm">View</a>
+                        <a href="{% url 'organizations:zone_create' %}" class="btn btn-success btn-sm">Add</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center d-flex flex-column">
+                    <div class="display-5 text-warning"><i class="feather-map"></i></div>
+                    <h5 class="fw-bold mt-2">Locations & Sub-Locations</h5>
+                    <p class="text-muted flex-grow-1">Manage locations and sub-locations inside zones.</p>
+                    <div class="mt-3 d-flex justify-content-center gap-2 flex-wrap card-action-btns">
+                        <a href="{% url 'organizations:location_list' %}" class="btn btn-primary btn-sm">View</a>
+                        <a href="{% url 'organizations:location_create' %}" class="btn btn-success btn-sm">Add</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Organizational Hierarchy -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="feather-map-pin me-2"></i>Organizational Hierarchy</h5>
+        </div>
+        <div class="card-body org-hierarchy">
+            <div class="row text-center gy-3 align-items-start">
+                <div class="col-md-3 hierarchy-step">
+                    <div class="icon-wrap text-primary"><i class="feather-activity"></i></div>
+                    <strong>Plant</strong>
+                    <p class="text-muted mb-0">Manufacturing Unit</p>
+                </div>
+                <div class="col-md-3 hierarchy-step">
+                    <div class="icon-wrap text-purple"><i class="feather-layers"></i></div>
+                    <strong>Zone</strong>
+                    <p class="text-muted mb-0">Organized area inside plant</p>
+                </div>
+                <div class="col-md-3 hierarchy-step">
+                    <div class="icon-wrap text-success"><i class="feather-map-pin"></i></div>
+                    <strong>Location</strong>
+                    <p class="text-muted mb-0">Production or storage area</p>
+                </div>
+                <div class="col-md-3 hierarchy-step">
+                    <div class="icon-wrap text-warning"><i class="feather-map"></i></div>
+                    <strong>Sub-Location</strong>
+                    <p class="text-muted mb-0">Specific section inside a location</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
