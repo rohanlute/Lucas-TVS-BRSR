@@ -51,13 +51,204 @@
     .card-action-btns .btn {
         min-width: 70px;
     }
-    @media (max-width: 576px) {
-        .organization-dashboard .stat-card .card-body {
-            flex-wrap: wrap;
-            gap: 0.5rem;
+    .stat-cards-wrapper {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        border: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+        background: white;
+        height: 100%;
+    }
+    
+    .stat-card:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+    
+    .stat-card .card-body {
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        height: 130px;
+    }
+    
+    .stat-card .stat-icon {
+        flex-shrink: 0;
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+    }
+    
+    .stat-card .stat-icon.bg-soft-primary {
+        background: rgba(13, 110, 253, 0.1);
+        color: #0d6efd;
+    }
+    
+    .stat-card .stat-icon.bg-soft-purple {
+        background: rgba(102, 51, 153, 0.1);
+        color: #663399;
+    }
+    
+    .stat-card .stat-icon.bg-soft-success {
+        background: rgba(25, 135, 84, 0.1);
+        color: #198754;
+    }
+    
+    .stat-card .stat-content {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .stat-card .stat-content .stat-label {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-bottom: 0.25rem;
+        font-weight: 500;
+    }
+    
+    .stat-card .stat-content .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1.2;
+        color: #212529;
+    }
+    
+    .stat-card .stat-content .stat-active {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-top: 0.1rem;
+    }
+    
+    .stat-card .stat-content .stat-active i {
+        font-size: 0.6rem;
+        margin-right: 4px;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 992px) {
+        .stat-cards-wrapper {
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
         }
-        .organization-dashboard .stat-card .avatar-text {
-            margin-right: 0.25rem;
+    }
+    
+    @media (max-width: 768px) {
+        .stat-cards-wrapper {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        
+        .stat-card .card-body {
+            padding: 1rem;
+            height: 110px;
+        }
+        
+        .stat-card .stat-icon {
+            width: 48px;
+            height: 48px;
+            font-size: 1.25rem;
+        }
+        
+        .stat-card .stat-content .stat-number {
+            font-size: 1.5rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .stat-cards-wrapper {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+        
+        .stat-card .card-body {
+            height: auto;
+            min-height: 90px;
+            padding: 0.875rem;
+        }
+    }
+    
+    /* Management Cards - Improved spacing */
+    .management-cards-wrapper {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .management-card {
+        border: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border-radius: 0.5rem;
+        transition: all 0.3s ease;
+        background: white;
+        height: 100%;
+        padding: 1.5rem 1rem;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .management-card:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+    
+    .management-card .card-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .management-card h5 {
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+    }
+    
+    .management-card p {
+        color: #6c757d;
+        font-size: 0.9rem;
+        flex-grow: 1;
+        margin-bottom: 1rem;
+    }
+    
+    .management-card .card-action-btns {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        width: 100%;
+    }
+    
+    .management-card .card-action-btns .btn {
+        min-width: 70px;
+        padding: 0.375rem 1rem;
+        font-size: 0.875rem;
+    }
+    
+    @media (max-width: 768px) {
+        .management-cards-wrapper {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .management-cards-wrapper {
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
         }
     }
 </style>
@@ -77,105 +268,83 @@
 </div>
 
 <div class="main-content organization-dashboard">
-    <!-- Statistics Cards -->
-    <div class="row g-4 mb-4">
-        <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm stat-card h-100">
-                <div class="card-body">
-                    <div class="avatar-text avatar-xl rounded bg-soft-primary text-primary">
-                        <i class="feather-activity"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="text-muted">Plants</div>
-                        <div class="fs-24">{{ total_plants }}</div>
-                        <div class="sub-meta">{{ active_plants }} Active</div>
-                    </div>
+    <!-- Statistics Cards - Full Width Layout -->
+    <div class="stat-cards-wrapper">
+        <!-- Plant Card -->
+        <div class="stat-card">
+            <div class="card-body">
+                <div class="stat-icon bg-soft-primary">
+                    <i class="feather-activity"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-label">Plants</div>
+                    <div class="stat-number">{{ total_plants }}</div>
+                    <div class="stat-active"><i class="feather-circle text-success"></i> {{ active_plants }} Active</div>
                 </div>
             </div>
         </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm stat-card h-100">
-                <div class="card-body">
-                    <div class="avatar-text avatar-xl rounded bg-soft-purple text-purple">
-                        <i class="feather-layers"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="text-muted">Zones</div>
-                        <div class="fs-24">{{ total_zones }}</div>
-                        <div class="sub-meta">{{ active_zones }} Active</div>
-                    </div>
+        
+        <!-- Zone Card -->
+        <div class="stat-card">
+            <div class="card-body">
+                <div class="stat-icon bg-soft-purple">
+                    <i class="feather-layers"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-label">Zones</div>
+                    <div class="stat-number">{{ total_zones }}</div>
+                    <div class="stat-active"><i class="feather-circle text-success"></i> {{ active_zones }} Active</div>
                 </div>
             </div>
         </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm stat-card h-100">
-                <div class="card-body">
-                    <div class="avatar-text avatar-xl rounded bg-soft-danger text-danger">
-                        <i class="feather-users"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="text-muted">Employees</div>
-                        <div class="fs-24">{{ total_employees }}</div>
-                        <div class="sub-meta">{{ active_employees }} Active</div>
-                    </div>
+        
+        <!-- Location Card -->
+        <div class="stat-card">
+            <div class="card-body">
+                <div class="stat-icon bg-soft-success">
+                    <i class="feather-map-pin"></i>
                 </div>
-            </div>
-        </div>
-        <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm stat-card h-100">
-                <div class="card-body">
-                    <div class="avatar-text avatar-xl rounded bg-soft-success text-success">
-                        <i class="feather-map-pin"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="text-muted">Locations</div>
-                        <div class="fs-24">{{ total_locations|default:"0" }}</div>
-                        <div class="sub-meta">{{ active_locations|default:"0" }} Active</div>
-                    </div>
+                <div class="stat-content">
+                    <div class="stat-label">Locations</div>
+                    <div class="stat-number">{{ total_locations|default:"0" }}</div>
+                    <div class="stat-active"><i class="feather-circle text-success"></i> {{ active_locations|default:"0" }} Active</div>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Management Cards -->
-    <div class="row g-4 mb-4">
-        <div class="col-xl-4 col-md-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body text-center d-flex flex-column">
-                    <div class="display-5 text-primary"><i class="feather-activity"></i></div>
-                    <h5 class="fw-bold mt-2">Plants Management</h5>
-                    <p class="text-muted flex-grow-1">Manage manufacturing plants and units.</p>
-                    <div class="mt-3 d-flex justify-content-center gap-2 flex-wrap card-action-btns">
-                        <a href="{% url 'organizations:plant_list' %}" class="btn btn-primary btn-sm">View</a>
-                        <a href="{% url 'organizations:plant_create' %}" class="btn btn-success btn-sm">Add</a>
-                    </div>
-                </div>
+    <div class="management-cards-wrapper">
+        <!-- Plants Management -->
+        <div class="management-card">
+            <div class="card-icon text-primary"><i class="feather-activity"></i></div>
+            <h5>Plants Management</h5>
+            <p>Manage manufacturing plants and units.</p>
+            <div class="card-action-btns">
+                <a href="{% url 'organizations:plant_list' %}" class="btn btn-primary btn-sm">View</a>
+                <a href="{% url 'organizations:plant_create' %}" class="btn btn-success btn-sm">Add</a>
             </div>
         </div>
-        <div class="col-xl-4 col-md-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body text-center d-flex flex-column">
-                    <div class="display-5 text-purple"><i class="feather-layers"></i></div>
-                    <h5 class="fw-bold mt-2">Zones Management</h5>
-                    <p class="text-muted flex-grow-1">Manage zones within plants.</p>
-                    <div class="mt-3 d-flex justify-content-center gap-2 flex-wrap card-action-btns">
-                        <a href="{% url 'organizations:zone_list' %}" class="btn btn-primary btn-sm">View</a>
-                        <a href="{% url 'organizations:zone_create' %}" class="btn btn-success btn-sm">Add</a>
-                    </div>
-                </div>
+        
+        <!-- Zones Management -->
+        <div class="management-card">
+            <div class="card-icon text-purple"><i class="feather-layers"></i></div>
+            <h5>Zones Management</h5>
+            <p>Manage zones within plants.</p>
+            <div class="card-action-btns">
+                <a href="{% url 'organizations:zone_list' %}" class="btn btn-primary btn-sm">View</a>
+                <a href="{% url 'organizations:zone_create' %}" class="btn btn-success btn-sm">Add</a>
             </div>
         </div>
-        <div class="col-xl-4 col-md-6">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body text-center d-flex flex-column">
-                    <div class="display-5 text-warning"><i class="feather-map"></i></div>
-                    <h5 class="fw-bold mt-2">Locations & Sub-Locations</h5>
-                    <p class="text-muted flex-grow-1">Manage locations and sub-locations inside zones.</p>
-                    <div class="mt-3 d-flex justify-content-center gap-2 flex-wrap card-action-btns">
-                        <a href="{% url 'organizations:location_list' %}" class="btn btn-primary btn-sm">View</a>
-                        <a href="{% url 'organizations:location_create' %}" class="btn btn-success btn-sm">Add</a>
-                    </div>
-                </div>
+        
+        <!-- Locations Management -->
+        <div class="management-card">
+            <div class="card-icon text-warning"><i class="feather-map"></i></div>
+            <h5>Locations & Sub-Locations</h5>
+            <p>Manage locations and sub-locations inside zones.</p>
+            <div class="card-action-btns">
+                <a href="{% url 'organizations:location_list' %}" class="btn btn-primary btn-sm">View</a>
+                <a href="{% url 'organizations:location_create' %}" class="btn btn-success btn-sm">Add</a>
             </div>
         </div>
     </div>
