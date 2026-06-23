@@ -66,10 +66,6 @@ class OrganizationDashboardView(LoginRequiredMixin, CanAccessOrganizationMixin, 
         context['total_sublocations'] = sublocations.count()
         context['active_sublocations'] = sublocations.filter(is_active=True).count()
 
-        # Departments
-        context['total_departments'] = Department.objects.count()
-        context['active_departments'] = Department.objects.filter(is_active=True).count()
-
         return context
 
 # ==================== PLANT VIEWS ====================
