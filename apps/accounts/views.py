@@ -15,6 +15,7 @@ from .forms import UserCreateForm, RolePermissionForm, DepartmentForm
 from .models import User, Role, Department
 from apps.accounts.models.permission import Permissions
 from apps.organizations.models import Plant, Zone, Location, SubLocation
+from apps.email_master.services import EmailService
 
 
 # -----------------------------------------------
@@ -438,6 +439,9 @@ class UserCreateView(UserLocationAssignmentMixin, LoginRequiredMixin, CreateView
 
             user.save()
             self.sync_user_assignments(user)
+
+            login_url = self.request.build_absolute_uri(reverse_lazy('accounts:login'))
+            transaction.on_commit(lambda: EmailService.send_user_created_email(user, login_url=login_url))
 
         messages.success(
             self.request,

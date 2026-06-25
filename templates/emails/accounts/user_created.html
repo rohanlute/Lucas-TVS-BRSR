@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your account has been created</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f4f7fb;padding:32px 16px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:640px;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #e5e7eb;">
+                    <tr>
+                        <td style="padding:32px 32px 24px;background:linear-gradient(135deg,#0f172a 0%,#1d4ed8 100%);color:#ffffff;">
+                            <div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;opacity:.8;margin-bottom:8px;">Account Update</div>
+                            <h1 style="margin:0;font-size:28px;line-height:1.2;">Your account is ready</h1>
+                            <p style="margin:12px 0 0;font-size:15px;line-height:1.6;opacity:.92;">
+                                A new user account has been created for you in GRI.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:32px;">
+                            <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">
+                                Hello {{ full_name }},
+                            </p>
+                            <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#374151;">
+                                Your account has been created successfully. You can log in using the details below.
+                            </p>
+
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;margin:0 0 24px;">
+                                <tr>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;width:160px;">Username</td>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">{{ user.username|default:"N/A" }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">Email</td>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">{{ user.email|default:"N/A" }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">Company</td>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">{{ company_name|default:"N/A" }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:12px 0;color:#6b7280;">Role</td>
+                                    <td style="padding:12px 0;color:#111827;font-weight:600;">{{ role_name|default:"N/A" }}</td>
+                                </tr>
+                            </table>
+
+                            <div style="text-align:center;margin:28px 0 24px;">
+                                <a href="{{ login_url }}" style="display:inline-block;background:#1d4ed8;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 28px;border-radius:10px;">
+                                    Login to your account
+                                </a>
+                            </div>
+
+                            <p style="margin:0 0 12px;font-size:14px;line-height:1.7;color:#4b5563;">
+                                If the button does not work, copy and paste this link into your browser:
+                            </p>
+                            <p style="margin:0 0 24px;font-size:14px;line-height:1.6;word-break:break-all;">
+                                <a href="{{ login_url }}" style="color:#1d4ed8;">{{ login_url }}</a>
+                            </p>
+
+                            <p style="margin:0;font-size:14px;line-height:1.7;color:#6b7280;">
+                                If you did not expect this email, please contact your administrator.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

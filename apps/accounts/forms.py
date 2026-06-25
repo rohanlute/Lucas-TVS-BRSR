@@ -6,9 +6,25 @@ from apps.companies.models import Company
 
 class UserCreateForm(forms.ModelForm):
 
-    password = forms.CharField(widget=forms.PasswordInput())
+    password = forms.CharField(
+        widget=forms.PasswordInput(
+            attrs={
+                'class': 'form-control',
+                'placeholder': 'Password',
+                'id': 'passwordInput',
+            }
+        )
+    )
 
-    confirm_password = forms.CharField(widget=forms.PasswordInput())
+    confirm_password = forms.CharField(
+        widget=forms.PasswordInput(
+            attrs={
+                'class': 'form-control password',
+                'placeholder': 'Password Confirm',
+                'id': 'confirmPasswordInput',
+            }
+        )
+    )
 
     role = forms.ModelChoiceField(
         queryset=Role.objects.order_by('role_name'),
@@ -60,10 +76,45 @@ class UserCreateForm(forms.ModelForm):
             'is_active',
         ]
         widgets = {
+            'full_name': forms.TextInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Name',
+                    'id': 'fullnameInput',
+                }
+            ),
+            'email': forms.EmailInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Email',
+                    'id': 'mailInput',
+                }
+            ),
+            'username': forms.TextInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Username',
+                    'id': 'usernameInput',
+                }
+            ),
+            'mobile_number': forms.NumberInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Phone',
+                    'id': 'phoneInput',
+                }
+            ),
             'designation': forms.TextInput(
                 attrs={
                     'class': 'form-control',
                     'placeholder': 'Designation',
+                }
+            ),
+            'employee_code': forms.TextInput(
+                attrs={
+                    'class': 'form-control',
+                    'placeholder': 'Employee ID',
+                    'id': 'employee_codeInput',
                 }
             ),
             'is_active': forms.CheckboxInput(
