@@ -144,11 +144,26 @@ class UserLocationAssignmentMixin:
             'sublocations': set(user_obj.assigned_sublocations.values_list('id', flat=True)),
         }
 
-    def get_assignment_scope_plants(self, user_obj=None):
+    def get_selected_company_for_assignment(self):
+        """Get the company selected in the form for location assignment filtering"""
+        if self.request.method == 'POST':
+            company_id = self.request.POST.get('company')
+            if company_id and str(company_id).isdigit():
+                from apps.companies.models import Company
+                return Company.objects.filter(id=int(company_id), is_active=True).first()
+        
+        if hasattr(self, 'object') and self.object:
+            return self.object.company
+        
+        return getattr(self.request.user, 'company', None)
+
+    def get_assignment_scope_plants(self, user_obj=None, company=None):
         user = self.request.user
         queryset = Plant.objects.filter(is_active=True)
 
-        if not user.is_super_admin:
+        if company:
+            queryset = queryset.filter(created_by__company=company)
+        elif not user.is_super_admin:
             queryset = queryset.filter(created_by__company=user.company)
 
         if user_obj:
@@ -157,7 +172,7 @@ class UserLocationAssignmentMixin:
 
         return queryset.distinct()
 
-    def get_assignment_tree(self, user_obj=None):
+    def get_assignment_tree(self, user_obj=None, company=None):
         assigned_ids = self.get_selected_assignment_ids(user_obj)
 
         zone_queryset = Zone.objects.filter(is_active=True)
@@ -169,7 +184,7 @@ class UserLocationAssignmentMixin:
             location_queryset = location_queryset.filter(Q(is_active=True) | Q(id__in=assigned_ids['locations']))
             sublocation_queryset = sublocation_queryset.filter(Q(is_active=True) | Q(id__in=assigned_ids['sublocations']))
 
-        return self.get_assignment_scope_plants(user_obj).prefetch_related(
+        return self.get_assignment_scope_plants(user_obj, company).prefetch_related(
             Prefetch(
                 'zones',
                 queryset=zone_queryset.prefetch_related(
@@ -263,8 +278,9 @@ class UserLocationAssignmentMixin:
 
     def get_assignment_context(self, user_obj=None):
         selected_ids = self.get_selected_assignment_ids(user_obj)
+        company = self.get_selected_company_for_assignment()
         return {
-            'company_plants': self.get_assignment_tree(user_obj),
+            'company_plants': self.get_assignment_tree(user_obj, company),
             'selected_plant_ids': selected_ids['plants'],
             'selected_zone_ids': selected_ids['zones'],
             'selected_location_ids': selected_ids['locations'],
@@ -272,7 +288,8 @@ class UserLocationAssignmentMixin:
         }
 
     def sync_user_assignments(self, user_obj):
-        scope_plants = self.get_assignment_scope_plants()
+        company = self.get_selected_company_for_assignment()
+        scope_plants = self.get_assignment_scope_plants(company=company)
 
         selected_ids = self._expand_assignment_ids(
             self._post_id_set(self.assignment_plant_name),
