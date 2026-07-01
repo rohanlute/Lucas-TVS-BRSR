@@ -41,9 +41,7 @@ INSTALLED_APPS = [
     # Projects Apps
     'apps.accounts',
     'apps.companies',
-    'apps.chat',
     'apps.brsr',
-    'apps.gri',
     'apps.notifications',
     'apps.timesheets',
     'apps.organizations',
@@ -60,7 +58,6 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'apps.chat.middleware.LastSeenMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
