@@ -101,7 +101,7 @@ STATICFILES_STORAGE = (
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'GRI_db',
+        'NAME': 'Lucas_TVS_BRSR_db',
         'USER': 'postgres',
         'PASSWORD': 'admin',
         'HOST': 'localhost',
