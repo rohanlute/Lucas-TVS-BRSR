@@ -20,7 +20,17 @@ class CanAccessOrganizationMixin(UserPassesTestMixin):
 
     def test_func(self):
         user = self.request.user
-        return user.is_authenticated and (user.is_superuser or (user.role and user.role.role_code == 'COMPANYADMIN'))
+
+        if not user.is_authenticated:
+            return False
+
+        if user.is_superuser:
+            return True
+
+        if not user.role:
+            return False
+
+        return user.role.permissions.filter(code="ACCESS_ORGANIZATIONS_MODULE").exists()
 
     def get_allowed_plants(self):
         user = self.request.user
