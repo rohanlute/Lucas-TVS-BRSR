@@ -16,6 +16,12 @@ from .models import User, Role, Department
 from apps.accounts.models.permission import Permissions
 from apps.organizations.models import Plant, Zone, Location, SubLocation
 from apps.email_master.services import EmailService
+from django.http import HttpResponseRedirect
+from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.encoding import force_bytes, force_str
+from django.conf import settings
 
 
 # -----------------------------------------------
@@ -76,7 +82,145 @@ class LogoutView(View):
         messages.success(request,'Logged out successfully')
 
         return redirect('accounts:login')
+
+class ForgotPasswordView(View):
+    login_url = 'accounts:login'
+    template_name = 'base/Forgot_pass.html'
+    success_url = 'accounts:login'
+
+    def get(self, request):
+        return render(request, self.template_name)
+
+    def post(self, request):
+        email = (request.POST.get('email') or '').strip().lower()
+
+        if not email:
+            messages.error(request, 'Please enter your email address.')
+            return render(request, self.template_name)
+
+        try:
+            user = User.objects.get(email__iexact=email)
+        except User.DoesNotExist:
+            messages.error(request, 'No account found with this email address.')
+            return render(request, self.template_name)
+
+        # Generate secure password reset token
+        token = default_token_generator.make_token(user)
+        # Encode user ID safely for use in the reset URL
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+
+        # Password reset link
+        reset_url = request.build_absolute_uri(
+            reverse_lazy('accounts:password_reset_confirm', kwargs={
+                'uidb64': uid,
+                'token': token
+            })
+        )
+        # Send password reset email (HTML + plain text)
+        context = {
+            'user': user,
+            'reset_url': reset_url,
+            'site_name': 'BRSR',
+            'full_name': user.full_name or user.username,
+        }
+        subject = 'Password Reset Request - BRSR'
+
+        plain_message = f"""Hello {user.full_name or user.username},
+
+We received a request to reset your password for your BRSR account.
+
+Click the link below to reset your password:
+{reset_url}
+
+This link will expire in 24 hours.
+
+If you didn't request this password reset, please ignore this email.
+
+Best regards,
+BRSR Team
+"""
+
+        try:
+            EmailService.send_email(
+                recipient=user,
+                subject=subject,
+                message=plain_message,
+                html_template='emails/accounts/password_reset.html',
+                context=context,
+            )
+            messages.success(request, 'Password reset link has been sent to your email.')
+        except Exception:
+            messages.error(request, 'Failed to send email. Please try again later.')
+            return render(request, self.template_name)
+
+        return HttpResponseRedirect(reverse_lazy(self.success_url))
+
+
+class CustomPasswordResetConfirmView(View):
+    '''Validate password reset link and update user's password'''
+
+    template_name = 'base/password_reset_confirm.html'
+    success_url = 'accounts:login'
     
+    def get(self, request, uidb64, token):
+        try:
+            # Decode the encoded user ID from the URL
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+        
+        # Verify that the reset token is still valid
+        if user is not None and default_token_generator.check_token(user, token):
+            return render(request, self.template_name, {
+                'validlink': True,
+                'uidb64': uidb64,
+                'token': token,
+            })
+        else:
+            return render(request, self.template_name, {
+                'validlink': False,
+            })
+    
+    def post(self, request, uidb64, token):
+        try:
+            # Retrieve user associated with the decoded ID
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            messages.error(request, 'Invalid reset link.')
+            return HttpResponseRedirect(reverse_lazy('accounts:login'))
+        
+        # Verify that the reset token is still valid
+        if not default_token_generator.check_token(user, token):
+            messages.error(request, 'Invalid or expired reset link.')
+            return HttpResponseRedirect(reverse_lazy('accounts:login'))
+        
+        password1 = request.POST.get('new_password1')
+        password2 = request.POST.get('new_password2')
+        
+        if password1 != password2:
+            messages.error(request, 'Passwords do not match.')
+            return render(request, self.template_name, {
+                'validlink': True,
+                'uidb64': uidb64,
+                'token': token,
+            })
+        
+        if len(password1) < 8:
+            messages.error(request, 'Password must be at least 8 characters.')
+            return render(request, self.template_name, {
+                'validlink': True,
+                'uidb64': uidb64,
+                'token': token,
+            })
+        
+        user.set_password(password1)
+        user.save()
+        
+        messages.success(request, 'Your password has been reset successfully. Please login with your new password.')
+        return HttpResponseRedirect(reverse_lazy(self.success_url))
+
 # -----------------------------------------------
 # ============= DASHBOARD =======================
 # -----------------------------------------------

@@ -1,21 +1,16 @@
 from django.urls import path
-
-from .views import (
-    LoginView,LogoutView,DashboardView,UserListView,
-    UserCreateView,DepartmentListView,DepartmentCreateView,DepartmentDetailView,
-    DepartmentUpdateView, DepartmentDeleteView,UserUpdateView,
-    UserDetailView, UserDeleteView, RoleListView, RoleCreateView, RoleUpdateView,
-)
+from .views import *
 
 app_name = 'accounts'
 
 urlpatterns = [
     # -----------------------------------------------
-    # ============= Login/Logout =======================
+    # ============= Login/Logout/ForgotPassword =======================
     # -----------------------------------------------
     path('',LoginView.as_view(),name='login'),
-
     path('logout/',LogoutView.as_view(),name='logout'),
+    path('Forgot_pass/',ForgotPasswordView.as_view(),name='Forgot_pass'),
+    path('reset-password/<uidb64>/<token>/', CustomPasswordResetConfirmView.as_view(), name='password_reset_confirm'),
 
     # -----------------------------------------------
     # ============= Dashboard =======================
