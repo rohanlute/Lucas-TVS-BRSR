@@ -970,7 +970,7 @@
             </div>
         </div>
         <!-- [ Footer ] start -->
-        <footer class="footer">
+        {% comment %} <footer class="footer">
             <p class="fs-11 text-muted fw-medium text-uppercase mb-0 copyright">
                 <span>Copyright ©</span>
                 <script>
@@ -982,7 +982,7 @@
                 <a href="javascript:void(0);" class="fs-11 fw-semibold text-uppercase">Terms</a>
                 <a href="javascript:void(0);" class="fs-11 fw-semibold text-uppercase">Privacy</a>
             </div>
-        </footer>
+        </footer> {% endcomment %}
         <!-- [ Footer ] end -->
     </div>
     <!-- [ Content Area ] end -->
@@ -1015,7 +1015,6 @@
 <!--! ================================================================ !-->
 <!--! END: Downloading Toast !-->
 <!--! ================================================================ !-->
-{% block footer %}{% endblock %}
 <script src="{% static 'vendors/js/vendors.min.js' %}"></script>
 <script src="{% static 'js/common-init.min.js' %}"></script>
 <!--! BEGIN: Vendors JS !-->

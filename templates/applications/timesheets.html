@@ -10,7 +10,7 @@
 .bg-darkgray-200 {
     background-color: #6584a3 !important;
     text-align: end;
-}
+
 .wd-400 {
     width: 400px;
     max-width: 400px;
@@ -1033,7 +1033,7 @@
         </div>
         <!-- [ Footer ] start -->
         <footer class="footer">
-            <p class="fs-11 text-muted fw-medium text-uppercase mb-0 copyright">
+            {% comment %} <p class="fs-11 text-muted fw-medium text-uppercase mb-0 copyright">
                 <span>Copyright ©</span>
                 <script>
                     document.write(new Date().getFullYear());
@@ -1043,7 +1043,7 @@
                 <a href="javascript:void(0);" class="fs-11 fw-semibold text-uppercase">Help</a>
                 <a href="javascript:void(0);" class="fs-11 fw-semibold text-uppercase">Terms</a>
                 <a href="javascript:void(0);" class="fs-11 fw-semibold text-uppercase">Privacy</a>
-            </div>
+            </div> {% endcomment %}
         </footer>
         <!-- [ Footer ] end -->
     </div>
@@ -1862,7 +1862,6 @@
 <!--! ================================================================ !-->
 <!--! [End] Search Modal !-->
 <!--! ================================================================ !-->
-{% block footer %}{% endblock %}
 <!--! Footer Script !-->
 <!--! ================================================================ !-->
 <!--! BEGIN: Vendors JS !-->

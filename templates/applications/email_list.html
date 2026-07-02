@@ -308,239 +308,35 @@
     <!-- [ Main Area  ] start -->
     <div class="content-area" data-scrollbar-target="#psScrollbarInit">
         <div class="content-area-header bg-white sticky-top">
-            <div class="page-header-left d-flex align-items-center gap-2">
-                <a href="javascript:void(0);" class="app-sidebar-open-trigger me-2">
-                    <i class="feather-align-left fs-20"></i>
-                </a>
-                <div class="custom-control custom-checkbox ms-1 me-2">
-                    <input type="checkbox" class="custom-control-input" id="checkAll" data-checked-action="show-options">
-                    <label class="custom-control-label" for="checkAll"></label>
-                </div>
-                <div class="action-list-items">
-                    <div class="dropdown">
-                        <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown" data-bs-offset="0,22">
-                            <i class="feather-chevron-down"></i>
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li>
-                                <a class="dropdown-item" href="javascript:void(0)">
-                                    <i class="feather-eye me-3"></i>
-                                    <span>Read</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="javascript:void(0)">
-                                    <i class="feather-eye-off me-3"></i>
-                                    <span>Unread</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="javascript:void(0)">
-                                    <i class="feather-star me-3"></i>
-                                    <span>Starred</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="javascript:void(0)">
-                                    <i class="feather-shield-off me-3"></i>
-                                    <span>Unstarred</span>
-                                </a>
-                            </li>
-                            <li class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item" href="javascript:void(0)">
-                                    <i class="feather-clock me-3"></i>
-                                    <span>Snooze</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="javascript:void(0)">
-                                    <i class="feather-check-circle me-3"></i>
-                                    <span>Add Tasks</span>
-                                </a>
-                            </li>
-                            <li class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item" href="javascript:void(0)">
-                                    <i class="feather-archive me-3"></i>
-                                    <span>Archive</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="javascript:void(0)">
-                                    <i class="feather-alert-octagon me-3"></i>
-                                    <span>Report Spam</span>
-                                </a>
-                            </li>
-                            <li class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item" href="javascript:void(0)">
-                                    <i class="feather-trash-2 me-3"></i>
-                                    <span>Delete</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="dropdown">
-                        <a href="javascript:void(0)" class="d-flex" data-bs-toggle="dropdown" data-bs-offset="0,22" data-bs-auto-close="outside" aria-expanded="false">
-                            <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover" title="Tags">
-                                <i class="feather-tag"></i>
-                            </div>
-                        </a>
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="Office" checked="checked">
-                                    <label class="custom-control-label c-pointer" for="Office">Office</label>
-                                </div>
-                            </div>
-                            <div class="dropdown-item">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="Family">
-                                    <label class="custom-control-label c-pointer" for="Family">Family</label>
-                                </div>
-                            </div>
-                            <div class="dropdown-item">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="Friend" checked="checked">
-                                    <label class="custom-control-label c-pointer" for="Friend">Friend</label>
-                                </div>
-                            </div>
-                            <div class="dropdown-item">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="Marketplace">
-                                    <label class="custom-control-label c-pointer" for="Marketplace"> Marketplace </label>
-                                </div>
-                            </div>
-                            <div class="dropdown-item">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="Development">
-                                    <label class="custom-control-label c-pointer" for="Development"> Development </label>
-                                </div>
-                            </div>
-                            <div class="dropdown-divider"></div>
-                            <a href="javascript:void(0);" class="dropdown-item">
-                                <i class="feather-plus me-3"></i>
-                                <span>Create Tag</span>
-                            </a>
-                            <a href="javascript:void(0);" class="dropdown-item">
-                                <i class="feather-tag me-3"></i>
-                                <span>Manages Tag</span>
-                            </a>
-                        </div>
-                    </div>
-                    <div class="dropdown">
-                        <a href="javascript:void(0)" class="d-flex" data-bs-toggle="dropdown" data-bs-offset="0,22" data-bs-auto-close="outside" aria-expanded="false">
-                            <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover" title="Labels">
-                                <i class="feather-folder-plus"></i>
-                            </div>
-                        </a>
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="Updates">
-                                    <label class="custom-control-label c-pointer" for="Updates">Updates</label>
-                                </div>
-                            </div>
-                            <div class="dropdown-item">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="Socials">
-                                    <label class="custom-control-label c-pointer" for="Socials">Socials</label>
-                                </div>
-                            </div>
-                            <div class="dropdown-item">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="Primary" checked="checked">
-                                    <label class="custom-control-label c-pointer" for="Primary">Primary</label>
-                                </div>
-                            </div>
-                            <div class="dropdown-item">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="Forums">
-                                    <label class="custom-control-label c-pointer" for="Forums">Forums</label>
-                                </div>
-                            </div>
-                            <div class="dropdown-item">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="Promotions" checked="checked">
-                                    <label class="custom-control-label c-pointer" for="Promotions"> Promotions </label>
-                                </div>
-                            </div>
-                            <div class="dropdown-divider"></div>
-                            <a href="javascript:void(0);" class="dropdown-item">
-                                <i class="feather-plus me-3"></i>
-                                <span>Create Label</span>
-                            </a>
-                            <a href="javascript:void(0);" class="dropdown-item">
-                                <i class="feather-folder-plus me-3"></i>
-                                <span>Manages Label</span>
-                            </a>
-                        </div>
-                    </div>
-                    <div class="dropdown">
-                        <a href="javascript:void(0)" class="d-flex" data-bs-toggle="dropdown" data-bs-offset="0,22" data-bs-auto-close="outside" aria-expanded="false">
-                            <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover" title="More Options">
-                                <i class="feather-more-vertical"></i>
-                            </div>
-                        </a>
-                        <div class="dropdown-menu">
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather-plus me-3"></i>
-                                <span>Add to Group</span>
-                            </a>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather-user-plus me-3"></i>
-                                <span>Add to Contact</span>
-                            </a>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather-eye-off me-3"></i>
-                                <span>Make as Unread</span>
-                            </a>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather-sliders me-3"></i>
-                                <span>Filter Messages</span>
-                            </a>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather-archive me-3"></i>
-                                <span>Make as Archive</span>
-                            </a>
-                            <div class="dropdown-divider"></div>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather-slash me-3"></i>
-                                <span>Report Spam</span>
-                            </a>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather-sliders me-3"></i>
-                                <span>Report phishing</span>
-                            </a>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather-download me-3"></i>
-                                <span>Download Messages</span>
-                            </a>
-                            <div class="dropdown-divider"></div>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather-bell-off me-3"></i>
-                                <span>Mute Conversion</span>
-                            </a>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather-slash me-3"></i>
-                                <span>Block Conversion</span>
-                            </a>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather-trash-2 me-3"></i>
-                                <span>Delete Conversion</span>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <a href="javascript:void(0)" class="d-none d-sm-flex">
-                    <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover" title="Refresh">
-                        <i class="feather-refresh-cw"></i>
+            <!-- Left Action Icons -->
+            <div class="ms-4 d-none d-md-flex gap-1">
+                <a href="javascript:void(0)" class="d-flex me-1 successAlertMessage">
+                    <div class="avatar-text avatar-md" data-bs-toggle="tooltip" title="Print">
+                        <i class="feather-printer"></i>
                     </div>
                 </a>
-                <a href="javascript:void(0)" class="d-none d-sm-flex">
-                    <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover" title="Snooze">
+
+                <a href="javascript:void(0)" class="d-flex me-1 successAlertMessage">
+                    <div class="avatar-text avatar-md" data-bs-toggle="tooltip" title="Snooze">
                         <i class="feather-bell"></i>
+                    </div>
+                </a>
+
+                <a href="javascript:void(0)" class="d-flex me-1 successAlertMessage">
+                    <div class="avatar-text avatar-md" data-bs-toggle="tooltip" title="Favorite">
+                        <i class="feather-star"></i>
+                    </div>
+                </a>
+
+                <a href="javascript:void(0)" class="d-flex me-1 successAlertMessage">
+                    <div class="avatar-text avatar-md" data-bs-toggle="tooltip" title="Flag">
+                        <i class="feather-flag"></i>
+                    </div>
+                </a>
+
+                <a href="javascript:void(0)" class="d-flex me-1" data-action-target="#mailDeleteMessage">
+                    <div class="avatar-text avatar-md" data-bs-toggle="tooltip" title="Delete">
+                        <i class="feather-trash-2"></i>
                     </div>
                 </a>
             </div>
@@ -1291,11 +1087,11 @@
         </div>
         <div class="items-details" data-scrollbar-target="#psScrollbarInit">
             <div class="items-details-header bg-white sticky-top">
-                <div class="d-flex align-items-center">
+                {% comment %} <div class="d-flex align-items-center">
                     <div class="avatar-text avatar-md item-info-close" data-bs-toggle="tooltip" data-bs-trigger="hover" title="Back">
                         <i class="feather-arrow-left"></i>
-                    </div>
-                    <span class="vr mx-4"></span>
+                    </div> {% endcomment %}
+                    {% comment %} <span class="vr mx-4"></span> {% endcomment %}
                     <div class="d-flex align-items-center">
                         <h4 class="fw-bold mb-0 text-dark text-truncate-1-line">[Update] Latest news updates on your subscribed channel</h4>
                         <span class="vr mx-2 d-none d-sm-block"></span>
@@ -1306,7 +1102,7 @@
                         </span>
                     </div>
                 </div>
-                <div class="ms-4 d-none d-md-flex gap-1">
+                {% comment %} <div class="ms-4 d-none d-md-flex gap-1">
                     <a href="javascript:void(0)" class="d-flex me-1 successAlertMessage">
                         <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover" title="Print">
                             <i class="feather-printer"></i>
@@ -1333,7 +1129,7 @@
                         </div>
                     </a>
                 </div>
-            </div>
+            </div> {% endcomment %}
             <div class="items-details-body">
                 <div class="accordion">
                     <!--! BEGIN: [accordion-item] !-->
@@ -1647,7 +1443,7 @@
                 </div>
             </div>
             <div class="items-details-footer mail-action-editor m-4 border border-top-0 rounded-3">
-                <div class="p-0 ht-400 border-top position-relative editor-section" data-scrollbar-target="#psScrollbarInit">
+                <div class="p-0 ht-900 border-top position-relative editor-section" data-scrollbar-target="#psScrollbarInit">
                     <div class="position-relative border-bottom">
                         <div class="px-2 d-flex align-items-center">
                             <div class="p-0 w-100">
@@ -1664,7 +1460,7 @@
                             <input class="form-control border-0 text-dark" name="bccmailcontent" placeholder="BCC">
                         </div>
                     </div>
-                    <div class="px-3 w-100 d-flex align-items-center">
+                    <div class="px-3 w-150 d-flex align-items-center">
                         <input class="form-control border-0 my-1 w-100 shadow-none" type="email" placeholder="Subject">
                     </div>
                     <div class="ht-150 border-0" id="mailEditor"></div>
@@ -1802,12 +1598,10 @@
     <!-- [ Content Area ] end -->
 </div>
 <!-- [ Main Content ] end -->
-
-
 <!--! ================================================================ !-->
 <!--! BEGIN: Compose Mail Modal !-->
 <!--! ================================================================ !-->
-<div class="modal fade-scale" id="composeMail" tabindex="-1" aria-labelledby="composeMail" aria-hidden="true" data-bs-dismiss="ou">
+<div class="modal" id="composeMail" tabindex="-1" aria-labelledby="composeMail" aria-hidden="true" data-bs-dismiss="modal">
     <div class="modal-dialog modal-dialog-centered modal-xl" role="document">
         <div class="modal-content">
             <!--! BEGIN: [modal-header] !-->
@@ -1992,7 +1786,7 @@
 <!--! ================================================================ !-->
 <!--! [Start] Search Modal !-->
 <!--! ================================================================ !-->
-<div class="modal fade-scale" id="searchModal" aria-hidden="true" tabindex="-1">
+<div class="modal show" id="searchModal" aria-hidden="true" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-top modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header search-form py-0">
@@ -2141,7 +1935,7 @@
 <!--! ================================================================ !-->
 <!--! [End] Search Modal !-->
 <!--! ================================================================ !-->
-{% block footer %}{% endblock %}
+
 <!--! BEGIN: Vendors JS !-->
     <script src="{% static 'vendors/js/vendors.min.js' %}"></script>
     <!-- vendors.min.js {always must need to be top} -->

@@ -1,6 +1,8 @@
 from django import forms
-from .models import Plant, Zone, Location
+from .models import Plant, Zone, Location,FinancialYear
 from django.core.exceptions import ValidationError
+from .models import Plant, Zone, Location
+from django.db.models import F
 
 
 class PlantForm(forms.ModelForm):
@@ -100,4 +102,69 @@ class LocationForm(forms.ModelForm):
             if qs.exists():
                 raise ValidationError({'code' : "This code already exists in selected zone."})
 
-        return cleaned_data            
+        return cleaned_data      
+    
+class FinancialYearForm(forms.ModelForm):
+    class Meta:
+        model = FinancialYear
+        fields = ["financial_year", "start_date", "end_date"]
+        widgets = {
+            "financial_year": forms.TextInput(attrs={
+                "class": "form-control"
+            }),
+            "start_date": forms.DateInput(attrs={
+                "class": "form-control",
+                "type": "date",
+            }),
+            "end_date": forms.DateInput(attrs={
+                "class": "form-control",
+                "type": "date",
+            }),
+        }
+    def clean_financial_year(self):
+        financial_year = self.cleaned_data["financial_year"].strip()
+
+        try:
+            start_year, end_year = map(int, financial_year.split("-"))
+        except ValueError:
+            raise ValidationError(
+                "Financial year must be in the format YYYY-YYYY (e.g. 2022-2023)."
+            )
+
+        if end_year != start_year + 1:
+            raise ValidationError(
+                "Financial year must span consecutive years."
+            )
+
+        return financial_year
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        financial_year = cleaned_data.get("financial_year")
+        start_date = cleaned_data.get("start_date")
+        end_date = cleaned_data.get("end_date")
+
+        if start_date and end_date:
+            if start_date >= end_date:
+                self.add_error(
+                    "end_date",
+                    "End date must be later than start date."
+                )
+
+        if financial_year and start_date and end_date:
+            start_year, end_year = map(int, financial_year.split("-"))
+
+            if start_date.year != start_year:
+                self.add_error(
+                    "start_date",
+                    "Start date does not match the financial year."
+                )
+
+            if end_date.year != end_year:
+                self.add_error(
+                    "end_date",
+                    "End date does not match the financial year."
+                )
+
+        return cleaned_data      
