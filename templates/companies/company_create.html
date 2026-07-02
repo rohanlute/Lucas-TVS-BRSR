@@ -446,33 +446,35 @@
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4"><label class="fw-semibold">Country: </label></div>
                                     <div class="col-lg-8">
-                                        <select name="billing_country" class="form-control" data-select2-selector="country">
+                                        <!-- <select name="billing_country" class="form-control" data-select2-selector="country">
                                             <option selected>United States</option>
                                             <option>India</option>
                                             <option>United Kingdom</option>
                                             <option>Canada</option>
+                                        </select> -->
+                                        <select name="billing_country" id="billing_country" class="form-control">
+                                            <option value="">Select Country</option>
+                                            {% for country in countries %}
+                                                <option value="{{ country.id }}">
+                                                    {{ country.name }}
+                                                </option>
+                                            {% endfor %}
                                         </select>
                                     </div>
                                 </div>
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4"><label class="fw-semibold">State: </label></div>
                                     <div class="col-lg-8">
-                                        <select name="billing_state" class="form-control" data-select2-selector="state">
-                                            <option selected>Alaska</option>
-                                            <option>California</option>
-                                            <option>Texas</option>
-                                            <option>New York</option>
+                                        <select name="billing_state" id="billing_state" class="form-control">
+                                            <option value="">Select State</option>
                                         </select>
                                     </div>
                                 </div>
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4"><label class="fw-semibold">City: </label></div>
                                     <div class="col-lg-8">
-                                        <select name="billing_city" class="form-control" data-select2-selector="city">
-                                            <option selected>King Cove</option>
-                                            <option>Anchorage</option>
-                                            <option>Juneau</option>
-                                            <option>Fairbanks</option>
+                                        <select name="billing_city" id="billing_city" class="form-control">
+                                            <option value="">Select City</option>
                                         </select>
                                     </div>
                                 </div>
@@ -546,5 +548,69 @@ document.addEventListener('DOMContentLoaded', function() {
         feather.replace();
     }
 });
+</script>
+<script>
+
+$("#billing_country").change(function(){
+
+    let country_id = $(this).val();
+
+    $.get(
+        "/companies/get-states/" + country_id + "/",
+        function(data){
+
+            $("#billing_state").html(
+                '<option value="">Select State</option>'
+            );
+
+            $("#billing_city").html(
+                '<option value="">Select City</option>'
+            );
+
+            $.each(data, function(i, state){
+
+                $("#billing_state").append(
+
+                    '<option value="'+state.id+'">'+state.name+'</option>'
+
+                );
+
+            });
+
+        }
+
+    );
+
+});
+
+
+$("#billing_state").change(function(){
+
+    let state_id = $(this).val();
+
+    $.get(
+        "/companies/get-cities/" + state_id + "/",
+        function(data){
+
+            $("#billing_city").html(
+                '<option value="">Select City</option>'
+            );
+
+            $.each(data, function(i, city){
+
+                $("#billing_city").append(
+
+                    '<option value="'+city.id+'">'+city.name+'</option>'
+
+                );
+
+            });
+
+        }
+
+    );
+
+});
+
 </script>
 {% endblock %}

@@ -11,4 +11,7 @@ urlpatterns = [
     path('company_view/<int:pk>/',CompanyDetailView.as_view(),name='company_view'),
     path('company_edit/<int:pk>/',CompanyUpdateView.as_view(),name='company_edit'),
     path('company_delete/<int:pk>/',CompanyDeleteView.as_view(),name='company_delete'),
+
+    path("get-states/<int:country_id>/",get_states,name="get_states",),
+    path("get-cities/<int:state_id>/",get_cities,name="get_cities",),
 ]

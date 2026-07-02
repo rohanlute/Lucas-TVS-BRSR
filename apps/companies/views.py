@@ -11,6 +11,8 @@ from apps.accounts.models import *
 from .forms import CompanyForm
 from .models import *
 from django.db.models import Q
+from django.http import JsonResponse
+from .models import State, City
 
 
 # -----------------------------------------------
@@ -62,6 +64,11 @@ class CompanyCreateView(LoginRequiredMixin, CreateView):
     template_name = 'companies/company_create.html'
     success_url = reverse_lazy('companies:company_list')
     login_url = 'accounts:login'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["countries"] = Country.objects.filter(is_active=True).order_by("name")
+        return context
 
     def form_valid(self, form):
         password = (self.request.POST.get('password') or '').strip()
@@ -126,9 +133,9 @@ class CompanyCreateView(LoginRequiredMixin, CreateView):
             
             company.billing_address = self.request.POST.get('billing_address', '').strip() or None
             company.billing_zip_code = self.request.POST.get('billing_zip_code', '').strip() or None
-            company.billing_country = self.request.POST.get('billing_country', '').strip() or None
-            company.billing_state = self.request.POST.get('billing_state', '').strip() or None
-            company.billing_city = self.request.POST.get('billing_city', '').strip() or None
+            company.billing_country_id = self.request.POST.get("billing_country") or None
+            company.billing_state_id = self.request.POST.get("billing_state") or None
+            company.billing_city_id = self.request.POST.get("billing_city") or None
             company.module_access_brsr = self.request.POST.get('module_access_brsr') == '1'
             company.module_access_gri = self.request.POST.get('module_access_gri') == '1'
             company.save(update_fields=[
@@ -201,6 +208,7 @@ class CompanyUpdateView(LoginRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['company_admin'] = User.objects.filter(company=self.object, is_company_user=True).first()
+        context["countries"] = Country.objects.filter(is_active=True).order_by("name")
         return context
 
     def form_valid(self,form):
@@ -220,9 +228,9 @@ class CompanyUpdateView(LoginRequiredMixin, UpdateView):
 
             company.billing_address = self.request.POST.get('billing_address', '').strip() or None
             company.billing_zip_code = self.request.POST.get('billing_zip_code', '').strip() or None
-            company.billing_country = self.request.POST.get('billing_country', '').strip() or None
-            company.billing_state = self.request.POST.get('billing_state', '').strip() or None
-            company.billing_city = self.request.POST.get('billing_city', '').strip() or None
+            company.billing_country_id = self.request.POST.get("billing_country") or None
+            company.billing_state_id = self.request.POST.get("billing_state") or None
+            company.billing_city_id = self.request.POST.get("billing_city") or None
 
             company.module_access_brsr = self.request.POST.get('module_access_brsr') == '1'
             company.module_access_gri = self.request.POST.get('module_access_gri') == '1'
@@ -270,3 +278,19 @@ class CompanyDeleteView(LoginRequiredMixin, View):
         except Exception as e:
             messages.error(request,f'Unable to delete company: {str(e)}')
         return redirect('companies:company_list')
+    
+
+
+
+def get_states(request, country_id):
+    states = State.objects.filter(country_id=country_id,is_active=True).order_by("name")
+    data = list(states.values("id","name"))
+
+    return JsonResponse(data, safe=False)
+
+
+def get_cities(request, state_id):
+    cities = City.objects.filter(state_id=state_id,is_active=True).order_by("name")
+    data = list(cities.values("id","name"))
+
+    return JsonResponse(data, safe=False)

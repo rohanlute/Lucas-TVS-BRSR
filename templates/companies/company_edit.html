@@ -470,33 +470,46 @@
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4"><label class="fw-semibold">Country: </label></div>
                                     <div class="col-lg-8">
-                                        <select name="billing_country" class="form-control" data-select2-selector="country">
-                                            <option value="United States" {% if company.billing_country == 'United States' %}selected{% endif %}>United States</option>
-                                            <option value="India" {% if company.billing_country == 'India' %}selected{% endif %}>India</option>
-                                            <option value="United Kingdom" {% if company.billing_country == 'United Kingdom' %}selected{% endif %}>United Kingdom</option>
-                                            <option value="Canada" {% if company.billing_country == 'Canada' %}selected{% endif %}>Canada</option>
+                                        <select name="billing_country" id="billing_country" class="form-control">
+                                            <option value="">Select Country</option>
+                                            {% for country in countries %}
+                                                <option value="{{ country.id }}"
+                                                    {% if company.billing_country_id == country.id %}selected{% endif %}>
+                                                    {{ country.name }}
+                                                </option>
+                                            {% endfor %}
                                         </select>
                                     </div>
                                 </div>
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4"><label class="fw-semibold">State: </label></div>
                                     <div class="col-lg-8">
-                                        <select name="billing_state" class="form-control" data-select2-selector="state">
-                                            <option value="Alaska" {% if company.billing_state == 'Alaska' %}selected{% endif %}>Alaska</option>
-                                            <option value="California" {% if company.billing_state == 'California' %}selected{% endif %}>California</option>
-                                            <option value="Texas" {% if company.billing_state == 'Texas' %}selected{% endif %}>Texas</option>
-                                            <option value="New York" {% if company.billing_state == 'New York' %}selected{% endif %}>New York</option>
+                                        <select name="billing_state" id="billing_state" class="form-control">
+                                            <option value="">Select State</option>
+                                            {% if company.billing_country %}
+                                                {% for state in company.billing_country.states.all %}
+                                                    <option value="{{ state.id }}"
+                                                        {% if company.billing_state_id == state.id %}selected{% endif %}>
+                                                        {{ state.name }}
+                                                    </option>
+                                                {% endfor %}
+                                            {% endif %}
                                         </select>
                                     </div>
                                 </div>
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4"><label class="fw-semibold">City: </label></div>
                                     <div class="col-lg-8">
-                                        <select name="billing_city" class="form-control" data-select2-selector="city">
-                                            <option value="King Cove" {% if company.billing_city == 'King Cove' %}selected{% endif %}>King Cove</option>
-                                            <option value="Anchorage" {% if company.billing_city == 'Anchorage' %}selected{% endif %}>Anchorage</option>
-                                            <option value="Juneau" {% if company.billing_city == 'Juneau' %}selected{% endif %}>Juneau</option>
-                                            <option value="Fairbanks" {% if company.billing_city == 'Fairbanks' %}selected{% endif %}>Fairbanks</option>
+                                        <select name="billing_city" id="billing_city" class="form-control">
+                                            <option value="">Select City</option>
+                                            {% if company.billing_state %}
+                                                {% for city in company.billing_state.cities.all %}
+                                                    <option value="{{ city.id }}"
+                                                        {% if company.billing_city_id == city.id %}selected{% endif %}>
+                                                        {{ city.name }}
+                                                    </option>
+                                                {% endfor %}
+                                            {% endif %}
                                         </select>
                                     </div>
                                 </div>
@@ -569,6 +582,45 @@ document.addEventListener('DOMContentLoaded', function() {
     if (typeof feather !== 'undefined'){
         feather.replace();
     }
+});
+
+
+$("#billing_country").change(function () {
+
+    let country_id = $(this).val();
+
+    $.get("/companies/get-states/" + country_id + "/", function (data) {
+
+        $("#billing_state").html('<option value="">Select State</option>');
+        $("#billing_city").html('<option value="">Select City</option>');
+
+        $.each(data, function (i, state) {
+            $("#billing_state").append(
+                '<option value="' + state.id + '">' + state.name + '</option>'
+            );
+        });
+
+    });
+
+});
+
+
+$("#billing_state").change(function () {
+
+    let state_id = $(this).val();
+
+    $.get("/companies/get-cities/" + state_id + "/", function (data) {
+
+        $("#billing_city").html('<option value="">Select City</option>');
+
+        $.each(data, function (i, city) {
+            $("#billing_city").append(
+                '<option value="' + city.id + '">' + city.name + '</option>'
+            );
+        });
+
+    });
+
 });
 </script>
 {% endblock %}
