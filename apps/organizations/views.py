@@ -1,6 +1,12 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView,DetailView
 from django.urls import reverse_lazy
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse_lazy
+from django.views import View
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect
 from django.db.models import Q, Count
@@ -10,11 +16,15 @@ from django.views import View
 from .models import *
 from .forms import *
 from django.forms import ValidationError
+from .models import Plant, Zone, Location
+from django.db.models import F
 from django.db.models.functions import Cast,Substr
 from django.db.models import IntegerField
 from django.db.models.functions import Lower
 from django.db.models import Case, When, IntegerField, Value
 from django.db.models.functions import Cast, Substr
+from .models import FinancialYear
+from .forms import FinancialYearForm
 
 class CanAccessOrganizationMixin(UserPassesTestMixin):
 
@@ -741,3 +751,105 @@ class GetSublocationsByLocationsAjaxView(LoginRequiredMixin, View):
                 })
             return JsonResponse(result, safe=False)
         return JsonResponse([], safe=False)
+    
+
+
+class FinancialYearListView(LoginRequiredMixin, ListView):
+    model = FinancialYear
+    template_name = "organizations/financial_years/financial_year_list.html"
+    context_object_name = "financial_years"
+    paginate_by = 10
+
+    def get_queryset(self):
+        queryset = FinancialYear.objects.all().order_by("-start_date")
+
+        search = self.request.GET.get("search")
+
+        if search:
+            queryset = queryset.filter(
+                Q(financial_year__icontains=search)
+            )
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["search_query"] = self.request.GET.get("search", "")
+        return context
+
+from datetime import date
+
+class FinancialYearCreateView(LoginRequiredMixin, CreateView):
+    model = FinancialYear
+    form_class = FinancialYearForm
+    template_name = "organizations/financial_years/financial_year_form.html"
+    success_url = reverse_lazy("organizations:financial_year_list")
+
+    def get_initial(self):
+        initial = super().get_initial()
+
+        current_year = date.today().year
+        initial["financial_year"] = f"{current_year}-{current_year + 1}"
+
+        return initial
+class FinancialYearCreateView(LoginRequiredMixin, CreateView):
+    model = FinancialYear
+    form_class = FinancialYearForm
+    template_name = "organizations/financial_years/financial_year_form.html"
+    success_url = reverse_lazy("organizations:financial_year_list")
+    
+    def get_initial(self):
+        initial = super().get_initial()
+
+        current_year = date.today().year
+        initial["financial_year"] = f"{current_year}-{current_year + 1}"
+
+        return initial
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_title"] = "Create Financial Year"
+        return context
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            form.save()
+
+        messages.success(
+            self.request,
+            "Financial Year created successfully."
+        )
+
+        return redirect(self.success_url)
+
+    def form_invalid(self, form):
+        print(form.errors)
+        return super().form_invalid(form)
+
+
+class FinancialYearUpdateView(LoginRequiredMixin, UpdateView):
+    model = FinancialYear
+    form_class = FinancialYearForm
+    template_name = "organizations/financial_years/financial_year_form.html"
+    success_url = reverse_lazy("organizations:financial_year_list")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_title"] = "Edit Financial Year"
+        return context
+
+    def form_valid(self, form):
+        with transaction.atomic():
+            form.save()
+
+        messages.success(
+            self.request,
+            "Financial Year updated successfully."
+        )
+
+        return redirect(self.success_url)
+
+    def form_invalid(self, form):
+        print(form.errors)
+        return super().form_invalid(form)
+
+

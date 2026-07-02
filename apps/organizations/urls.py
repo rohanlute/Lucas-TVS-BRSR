@@ -1,5 +1,10 @@
 from django.urls import path
 from . import views
+from .views import (
+    FinancialYearListView,
+    FinancialYearCreateView,
+    FinancialYearUpdateView,
+)
 
 app_name = 'organizations'
 
@@ -27,4 +32,7 @@ urlpatterns = [
     path('locations/create/', views.LocationCreateView.as_view(), name='location_create'),
     path('locations/<int:pk>/edit/', views.LocationUpdateView.as_view(), name='location_update'),
     path('locations/<int:pk>/delete/', views.LocationDeleteView.as_view(), name='location_delete'),
+    path("financial-years/",FinancialYearListView.as_view(),name="financial_year_list"),
+    path("financial-years/create/",FinancialYearCreateView.as_view(),name="financial_year_create"),
+    path("financial-years/<int:pk>/edit/",FinancialYearUpdateView.as_view(),name="financial_year_update")
 ]

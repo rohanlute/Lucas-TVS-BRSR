@@ -171,3 +171,49 @@ class SubLocation(models.Model):
     def zone(self):
         """Get the zone through location"""
         return self.location.zone
+    
+class FinancialYear(models.Model):
+    financial_year = models.CharField(
+        max_length=9,
+        unique=True,
+        help_text="Example: 2022-2023"
+    )
+    start_date = models.DateField()
+    end_date = models.DateField()
+
+    class Meta:
+        ordering = ["-start_date"]
+
+    def __str__(self):
+        return self.financial_year
+
+    def clean(self):
+        # Ensure end date is after start date
+        if self.start_date >= self.end_date:
+            raise ValidationError("End date must be after start date.")
+
+        # Validate financial year format
+        try:
+            start_year, end_year = map(int, self.financial_year.split("-"))
+        except ValueError:
+            raise ValidationError(
+                "Financial year must be in the format YYYY-YYYY (e.g., 2022-2023)."
+            )
+
+        if end_year != start_year + 1:
+            raise ValidationError(
+                "Financial year must span consecutive years (e.g., 2022-2023)."
+            )
+
+        # Validate dates match the financial year
+        if (
+            self.start_date.year != start_year
+            or self.end_date.year != end_year
+        ):
+            raise ValidationError(
+                "Start and end dates must match the financial year."
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
