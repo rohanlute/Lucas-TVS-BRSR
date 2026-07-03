@@ -3,13 +3,21 @@
 <!--! ================================================================ !-->
 <!--! [Start] Navigation Manu !-->
 <!--! ================================================================ !-->
+<style>
+.nxl-navigation .b-brand img {
+    border: none;
+    border-radius: 0;
+    max-height: 40px;
+    width: auto;
+}
+</style>
 <nav class="nxl-navigation">
     <div class="navbar-wrapper">
         <div class="m-header">
             <a href="{% url 'accounts:dashboard' %}" class="b-brand">
                 <!-- ========   change your logo hear   ============ -->
-                <img src="{% static 'images/logo-abbr.png' %}" alt="" class="logo logo-lg" />
-                <img src="{% static 'images/logo-abbr.png' %}" alt="" class="logo logo-sm" />
+                <img src="{% static 'images/tvs-lucas-logo.png' %}" alt="" class="logo logo-lg" />
+                <img src="{% static 'images/tvs-lucas-logo.png' %}" alt="" class="logo logo-sm" />
             </a>
         </div>
         <div class="navbar-content">
