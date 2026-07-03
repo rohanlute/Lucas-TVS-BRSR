@@ -2,6 +2,8 @@ from django.db import models
 from django.core.exceptions import ValidationError
 from django.conf import settings
 import re
+
+from ..companies.models import Country,State,City
 # apps/organizations/models.py
 
 class Plant(models.Model):
@@ -10,8 +12,26 @@ class Plant(models.Model):
     name = models.CharField(max_length=200)
     code = models.CharField(max_length=50, unique=True)
     address = models.TextField()
-    city = models.CharField(max_length=100)
-    state = models.CharField(max_length=100)
+    country = models.ForeignKey(Country,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="plants"
+    )
+
+    state = models.ForeignKey(State,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="plants"
+    )
+
+    city = models.ForeignKey(City,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="plants"
+    )
     pincode = models.CharField(max_length=10)
     contact_person = models.CharField(max_length=100, blank=True)
     contact_email = models.EmailField(blank=True)

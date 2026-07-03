@@ -119,8 +119,9 @@ class PlantListView(LoginRequiredMixin, CanAccessOrganizationMixin, ListView):
             queryset = queryset.filter(
                 Q(name__icontains=search) |
                 Q(code__icontains=search) |
-                Q(city__icontains=search) |
-                Q(state__icontains=search)
+                Q(country__name__icontains=search) |
+                Q(state__name__icontains=search) |
+                Q(city__name__icontains=search)
             )
         
         # Filter by status
