@@ -3,6 +3,7 @@ from .models import Plant, Zone, Location,FinancialYear
 from django.core.exceptions import ValidationError
 from .models import Plant, Zone, Location
 from django.db.models import F
+from apps.companies.models import Country, State, City
 
 
 class PlantForm(forms.ModelForm):
@@ -10,20 +11,65 @@ class PlantForm(forms.ModelForm):
     
     class Meta:
         model = Plant
-        fields = ['name', 'code', 'address', 'city', 'state', 'pincode', 
+        fields = ['name', 'code', 'address','country', 'state', 'city', 'pincode', 
                   'contact_person', 'contact_email', 'contact_phone', 'is_active']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Plant Name'}),
             'code': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Plant Code (e.g., EP001)'}),
             'address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Complete Address'}),
-            'city': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'City'}),
-            'state': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'State'}),
+            'country': forms.Select(attrs={'class': 'form-control'}),
+            'state': forms.Select(attrs={'class': 'form-control'}),
+            'city': forms.Select(attrs={'class': 'form-control'}),
             'pincode': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Pincode'}),
             'contact_person': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Contact Person Name'}),
             'contact_email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Contact Email'}),
             'contact_phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Contact Phone'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['country'].queryset = Country.objects.filter(is_active=True)
+
+        self.fields['state'].queryset = State.objects.none()
+        self.fields['city'].queryset = City.objects.none()
+
+        # Edit page
+        if self.instance.pk:
+
+            if self.instance.country:
+                self.fields['state'].queryset = State.objects.filter(
+                    country=self.instance.country,
+                    is_active=True
+                )
+
+            if self.instance.state:
+                self.fields['city'].queryset = City.objects.filter(
+                    state=self.instance.state,
+                    is_active=True
+                )
+
+        # Create page
+        if 'country' in self.data:
+            try:
+                country_id = int(self.data.get('country'))
+                self.fields['state'].queryset = State.objects.filter(
+                    country_id=country_id,
+                    is_active=True
+                )
+            except (ValueError, TypeError):
+                pass
+
+        if 'state' in self.data:
+            try:
+                state_id = int(self.data.get('state'))
+                self.fields['city'].queryset = City.objects.filter(
+                    state_id=state_id,
+                    is_active=True
+                )
+            except (ValueError, TypeError):
+                pass
 
 
 class ZoneForm(forms.ModelForm):
