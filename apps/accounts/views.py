@@ -39,7 +39,12 @@ class LoginView(View):
 
         username = (request.POST.get('username') or '').strip()
         password = request.POST.get('password')
-
+        if '@' in username:
+            try:
+                user_obj = User.objects.get(email__iexact=username)
+                username = user_obj.username
+            except User.DoesNotExist:
+                pass
         user = authenticate(request,username=username,password=password)
         if user:
             if not user.is_active:
