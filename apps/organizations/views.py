@@ -3,7 +3,8 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView, T
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db import transaction
+from django.utils import timezone
+from datetime import timedelta
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views import View
@@ -853,4 +854,31 @@ class FinancialYearUpdateView(LoginRequiredMixin, UpdateView):
         print(form.errors)
         return super().form_invalid(form)
 
+class CalendarWeekView(TemplateView):
+    template_name = "organizations/calendar.html"
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["events"] = [
+            {
+                "title": "Stretch",
+                "start": "2025-06-30T08:00:00",
+                "end": "2025-06-30T09:00:00",
+                "color": "#ef4444",
+            },
+            {
+                "title": "Power Strength",
+                "start": "2025-06-30T09:00:00",
+                "end": "2025-06-30T10:00:00",
+                "color": "#16a34a",
+            },
+            {
+                "title": "Pilates Mat",
+                "start": "2025-07-01T07:30:00",
+                "end": "2025-07-01T08:40:00",
+                "color": "#3b82f6",
+            },
+        ]
+
+        return context

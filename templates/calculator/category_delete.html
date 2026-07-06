@@ -1,0 +1,65 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Delete Category{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Delete Category</h5>
+        </div>
+
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="#">Home</a></li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'calculator:unit_category_list' %}">Category</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'calculator:unit_category_list' %}">Unit Categories</a>
+            </li>
+            <li class="breadcrumb-item active">Delete Category</li>
+        </ul>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="row">
+        <div class="col-lg-6 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <i class="feather-alert-triangle" style="font-size: 4rem; color: #dc3545;"></i>
+                    </div>
+                    
+                    <h4 class="mb-3">Confirm Delete</h4>
+                    
+                    <p class="mb-3">
+                        Are you sure you want to delete the category <strong>"{{ object.category }}"</strong>?
+                    </p>
+                    
+                    {% if unit_count > 0 %}
+                    <div class="alert alert-warning">
+                        <i class="feather-alert-triangle me-2"></i>
+                        This category has <strong>{{ unit_count }}</strong> unit(s) associated with it. 
+                        Deleting this category will also remove all associated units.
+                    </div>
+                    {% endif %}
+                    
+                    <form method="POST" class="d-flex justify-content-center gap-2 mt-4">
+                        {% csrf_token %}
+                        <a href="{% url 'calculator:unit_category_list' %}" class="btn btn-secondary">
+                            <i class="feather-x me-2"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="feather-trash-2 me-2"></i> Yes, Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
