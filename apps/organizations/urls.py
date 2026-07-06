@@ -34,5 +34,6 @@ urlpatterns = [
     path('locations/<int:pk>/delete/', views.LocationDeleteView.as_view(), name='location_delete'),
     path("financial-years/",FinancialYearListView.as_view(),name="financial_year_list"),
     path("financial-years/create/",FinancialYearCreateView.as_view(),name="financial_year_create"),
-    path("financial-years/<int:pk>/edit/",FinancialYearUpdateView.as_view(),name="financial_year_update")
+    path("financial-years/<int:pk>/edit/",FinancialYearUpdateView.as_view(),name="financial_year_update"),
+    path('calendar/', views.CalendarWeekView.as_view(), name='calendar')
 ]

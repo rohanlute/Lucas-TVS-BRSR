@@ -1,0 +1,619 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Edit{% else %}Add{% endif %} Unit Category{% endblock %}
+
+{% block extra_css %}
+<style>
+    .unit-table-container {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #eef3fa;
+        border-radius: 8px;
+    }
+    
+    .unit-table-container table {
+        margin-bottom: 0;
+    }
+    
+    .unit-table-container thead {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: #f8faff;
+    }
+    
+    .unit-table-container thead th {
+        padding: 0.8rem 1rem;
+        font-weight: 600;
+        color: #1f3348;
+        border-bottom: 2px solid #eef3fa;
+        vertical-align: middle;
+    }
+    
+    .unit-table-container tbody td {
+        padding: 0.6rem 1rem;
+        vertical-align: middle;
+    }
+    
+    .add-unit-row td {
+        padding: 0.4rem 0.6rem;
+    }
+    
+    .add-unit-row input[type="text"],
+    .add-unit-row input[type="number"] {
+        width: 100%;
+        padding: 0.35rem 0.6rem;
+        border: 1px solid #e4eaf2;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        outline: none;
+        transition: border-color 0.2s;
+        background: #fafcff;
+    }
+    
+    .add-unit-row input:focus {
+        border-color: #0b5ed7;
+        box-shadow: 0 0 0 3px rgba(11, 94, 215, 0.1);
+    }
+    
+    .add-unit-row .form-check {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        padding: 0;
+        min-height: auto;
+    }
+    
+    .add-unit-row .form-check-input {
+        margin: 0;
+        cursor: pointer;
+        width: 18px;
+        height: 18px;
+    }
+    
+    .add-unit-btn {
+        padding: 0.35rem 0.8rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+    
+    .remove-unit-btn {
+        background: #dc3545;
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 0.25rem 0.6rem;
+        font-size: 0.8rem;
+        transition: all 0.2s ease;
+        border-radius: 4px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    
+    .remove-unit-btn:hover {
+        background: #c82333;
+    }
+    
+    .unit-count-badge {
+        background: #eef5ff;
+        color: #0b5ed7;
+        padding: 0.2rem 0.8rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+    
+    .existing-unit-row:hover {
+        background: #f8faff;
+    }
+    
+    .base-unit-checkbox {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: #0b5ed7;
+        margin: 0;
+    }
+    
+    .base-unit-checkbox:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    
+    .table-actions {
+        display: flex;
+        gap: 0.3rem;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .header-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+    
+    .header-actions .add-unit-btn {
+        background: #0b5ed7;
+        color: white;
+        border: none;
+        padding: 0.35rem 1rem;
+    }
+    
+    .header-actions .add-unit-btn:hover {
+        background: #0a52b8;
+    }
+    
+    .checkbox-cell {
+        text-align: center;
+        vertical-align: middle;
+    }
+    
+    .checkbox-cell .form-check {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        padding: 0;
+        min-height: auto;
+    }
+    .bold-label {
+    font-weight: bold;
+    }
+    .checkbox-cell .form-check-input {
+        margin: 0;
+    }
+    
+    .no-units-row td {
+        padding: 2rem 1rem;
+        text-align: center;
+        color: #6c7a8a;
+    }
+    
+    .no-units-row i {
+        font-size: 1.2rem;
+        margin-right: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">{% if form.instance.pk %}Edit{% else %}Add{% endif %} Unit Category</h5>
+        </div>
+
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="#">Home</a></li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'calculator:unit_category_list' %}">Category</a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'calculator:unit_category_list' %}">Unit Categories</a>
+            </li>
+            <li class="breadcrumb-item active">{% if form.instance.pk %}Edit{% else %}Add{% endif %} Category</li>
+        </ul>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="row">
+        <div class="col-lg-14 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="POST" id="categoryForm">
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Category Name -->
+                        <div class="mb-4">
+                            <label for="{{ form.category.id_for_label }}" class="form-label bold-label">
+                                Category Name <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control {% if form.category.errors %}is-invalid{% endif %}" 
+                                   id="{{ form.category.id_for_label }}" 
+                                   name="{{ form.category.name }}" 
+                                   value="{{ form.category.value|default:'' }}"
+                                   placeholder="e.g., Length, Weight, Energy"
+                                   required>
+                            {% if form.category.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.category.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    
+                        <hr>
+                        
+                        <!-- Units Table -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0">
+                                    <i class="feather-list me-2"></i> Units
+                                    <span class="unit-count-badge ms-2" id="unitCount">{{ units|length }} Units</span>
+                                </h6>
+                            </div>
+                            
+                            <div class="unit-table-container">
+                                <table class="table table-hover" id="unitTable">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 25%;">Name</th>
+                                            <th style="width: 15%;">Symbol</th>
+                                            <th style="width: 25%;">Conversion Factor</th>
+                                            <th style="width: 20%;">Base Unit</th>
+                                            <th style="width: 15%;">
+                                                <div class="header-actions">
+                                                    <button type="button" 
+                                                            class="btn btn-sm btn-primary add-unit-btn" 
+                                                            onclick="addUnit()">
+                                                        <i class="feather-plus"></i> Add
+                                                    </button>
+                                                </div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="unitTableBody">
+                                        <!-- Existing Units -->
+                                        {% if units %}
+                                            {% for unit in units %}
+                                            <tr class="existing-unit-row" data-unit-id="{{ unit.id }}">
+                                                <td><strong>{{ unit.name }}</strong></td>
+                                                <td><code>{{ unit.symbol|default:"-" }}</code></td>
+                                                <td>{{ unit.conversion_factor }}</td>
+                                                <td class="checkbox-cell">
+                                                    <input type="checkbox" 
+                                                           class="base-unit-checkbox" 
+                                                           id="base_check_{{ unit.id }}"
+                                                           {% if unit.is_base_unit %}checked{% endif %}
+                                                           onchange="toggleBaseUnit({{ unit.id }}, this.checked)">
+                                                </td>
+                                                <td>
+                                                    <div class="table-actions">
+                                                        <button type="button" 
+                                                                class="remove-unit-btn" 
+                                                                onclick="deleteUnit({{ unit.id }})"
+                                                                title="Remove Unit">
+                                                            <i class="feather-trash-2"></i> Remove
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        {% endif %}
+                                        
+                                        <!-- Add New Unit Row - Always visible -->
+                                        <tr class="add-unit-row" id="addUnitRow">
+                                            <td>
+                                                <input type="text" 
+                                                       id="unitName" 
+                                                       placeholder="Unit name..." 
+                                                       class="form-control form-control-sm">
+                                            </td>
+                                            <td>
+                                                <input type="text" 
+                                                       id="unitSymbol" 
+                                                       placeholder="Symbol" 
+                                                       class="form-control form-control-sm">
+                                            </td>
+                                            <td>
+                                                <input type="number" 
+                                                       id="unitConversionFactor" 
+                                                       value="1" 
+                                                       step="any"
+                                                       class="form-control form-control-sm">
+                                            </td>
+                                            <td class="checkbox-cell">
+                                                <div class="form-check">
+                                                    <input type="checkbox" 
+                                                           class="form-check-input base-unit-checkbox" 
+                                                           id="unitIsBase"
+                                                           onchange="handleNewBaseCheck()">
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="table-actions">
+                                                    <button type="button" 
+                                                            class="btn btn-primary btn-sm add-unit-btn" 
+                                                            onclick="addUnit()">
+                                                        <i class="feather-plus"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- No Units Message -->
+
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="form-text mt-2">
+                                <i class="feather-info me-1"></i> Add units to this category. The base unit should have conversion factor = 1. Only one unit can be the base unit.
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <!-- Hidden fields for units -->
+                        <div id="unitsData">
+                            {% for unit in units %}
+                            <input type="hidden" 
+                                   name="unit_{{ unit.id }}_name" 
+                                   value="{{ unit.name }}">
+                            <input type="hidden" 
+                                   name="unit_{{ unit.id }}_symbol" 
+                                   value="{{ unit.symbol }}">
+                            <input type="hidden" 
+                                   name="unit_{{ unit.id }}_conversion_factor" 
+                                   value="{{ unit.conversion_factor }}">
+                            <input type="hidden" 
+                                   name="unit_{{ unit.id }}_is_base_unit" 
+                                   value="{{ unit.is_base_unit|yesno:'true,false' }}">
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="d-flex gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="feather-save me-2"></i>
+                                {% if form.instance.pk %}Update{% else %}Save{% endif %} Category
+                            </button>
+                            <a href="{% url 'calculator:unit_category_list' %}" class="btn btn-secondary">
+                                <i class="feather-x me-2"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let unitIdCounter = {{ units|length|add:100 }};
+    let existingUnitIds = new Set();
+    
+    {% for unit in units %}
+    existingUnitIds.add({{ unit.id }});
+    {% endfor %}
+    
+    function updateUnitCount() {
+        const count = document.querySelectorAll('#unitTableBody .existing-unit-row').length;
+        document.getElementById('unitCount').textContent = count + ' Units';
+    }
+    
+    function handleNewBaseCheck() {
+        const newCheckbox = document.getElementById('unitIsBase');
+        
+        if (newCheckbox.checked) {
+            // Uncheck all existing base unit checkboxes
+            document.querySelectorAll('#unitTableBody .existing-unit-row .base-unit-checkbox').forEach(cb => {
+                cb.checked = false;
+                const row = cb.closest('tr');
+                if (row) {
+                    const unitId = row.dataset.unitId;
+                    if (unitId && !unitId.startsWith('new_')) {
+                        const hiddenInput = document.querySelector(`input[name="unit_${unitId}_is_base_unit"]`);
+                        if (hiddenInput) hiddenInput.value = 'false';
+                    }
+                }
+            });
+        }
+    }
+    
+    function toggleBaseUnit(unitId, isChecked) {
+        if (isChecked) {
+            // Uncheck all other base units
+            document.querySelectorAll('#unitTableBody .existing-unit-row .base-unit-checkbox').forEach(cb => {
+                const row = cb.closest('tr');
+                if (row) {
+                    const id = row.dataset.unitId;
+                    if (id && String(id) !== String(unitId)) {
+                        cb.checked = false;
+                        if (!String(id).startsWith('new_')) {
+                            const hiddenInput = document.querySelector(`input[name="unit_${id}_is_base_unit"]`);
+                            if (hiddenInput) hiddenInput.value = 'false';
+                        }
+                    }
+                }
+            });
+            
+            // Uncheck the new row checkbox too
+            const newCheckbox = document.getElementById('unitIsBase');
+            if (newCheckbox) newCheckbox.checked = false;
+            
+            // Update hidden field for this unit
+            if (!String(unitId).startsWith('new_')) {
+                const hiddenInput = document.querySelector(`input[name="unit_${unitId}_is_base_unit"]`);
+                if (hiddenInput) hiddenInput.value = 'true';
+            }
+        } else {
+            // Update hidden field for this unit
+            if (!String(unitId).startsWith('new_')) {
+                const hiddenInput = document.querySelector(`input[name="unit_${unitId}_is_base_unit"]`);
+                if (hiddenInput) hiddenInput.value = 'false';
+            }
+        }
+    }
+    
+    function addUnit() {
+        const nameInput = document.getElementById('unitName');
+        const symbolInput = document.getElementById('unitSymbol');
+        const factorInput = document.getElementById('unitConversionFactor');
+        const baseCheckbox = document.getElementById('unitIsBase');
+        
+        const name = nameInput.value.trim();
+        const symbol = symbolInput.value.trim();
+        const conversionFactor = factorInput.value;
+        const isBase = baseCheckbox.checked;
+        
+        if (!name) {
+            alert('Please enter a unit name.');
+            nameInput.focus();
+            return;
+        }
+        
+        if (!conversionFactor || parseFloat(conversionFactor) <= 0) {
+            alert('Please enter a valid conversion factor (must be greater than 0).');
+            factorInput.focus();
+            return;
+        }
+        
+        // Remove "No units" row if it exists
+        const noUnitsRow = document.getElementById('noUnitsRow');
+        if (noUnitsRow) noUnitsRow.remove();
+        
+        // If this is a base unit, uncheck other base units
+        if (isBase) {
+            document.querySelectorAll('#unitTableBody .existing-unit-row .base-unit-checkbox').forEach(cb => {
+                cb.checked = false;
+                const row = cb.closest('tr');
+                if (row) {
+                    const unitId = row.dataset.unitId;
+                    if (unitId && !unitId.startsWith('new_')) {
+                        const hiddenInput = document.querySelector(`input[name="unit_${unitId}_is_base_unit"]`);
+                        if (hiddenInput) hiddenInput.value = 'false';
+                    }
+                }
+            });
+        }
+        
+        // Create new row
+        const tbody = document.getElementById('unitTableBody');
+        const newId = 'new_' + (++unitIdCounter);
+        
+        const row = document.createElement('tr');
+        row.className = 'existing-unit-row';
+        row.dataset.unitId = newId;
+        
+        row.innerHTML = `
+            <td><strong>${escapeHtml(name)}</strong></td>
+            <td><code>${escapeHtml(symbol) || '-'}</code></td>
+            <td>${conversionFactor}</td>
+            <td class="checkbox-cell">
+                <input type="checkbox" 
+                       class="base-unit-checkbox" 
+                       id="base_check_${newId}"
+                       ${isBase ? 'checked' : ''}
+                       onchange="toggleBaseUnit('${newId}', this.checked)">
+            </td>
+            <td>
+                <div class="table-actions">
+                    <button type="button" class="remove-unit-btn" onclick="deleteUnit('${newId}')">
+                        <i class="feather-trash-2"></i> 
+                    </button>
+                </div>
+            </td>
+        `;
+        
+        // Add hidden fields
+        const hiddenDiv = document.getElementById('unitsData');
+        const hiddenFields = `
+            <input type="hidden" name="unit_${newId}_name" value="${escapeHtml(name)}">
+            <input type="hidden" name="unit_${newId}_symbol" value="${escapeHtml(symbol)}">
+            <input type="hidden" name="unit_${newId}_conversion_factor" value="${conversionFactor}">
+            <input type="hidden" name="unit_${newId}_is_base_unit" value="${isBase ? 'true' : 'false'}">
+        `;
+        hiddenDiv.insertAdjacentHTML('beforeend', hiddenFields);
+        
+        // Insert the new row before the add row
+        const addRow = document.getElementById('addUnitRow');
+        tbody.insertBefore(row, addRow);
+        
+        // Clear inputs
+        nameInput.value = '';
+        symbolInput.value = '';
+        factorInput.value = '1';
+        baseCheckbox.checked = false;
+        
+        updateUnitCount();
+        nameInput.focus();
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function deleteUnit(unitId) {
+        if (!confirm('Are you sure you want to remove this unit?')) {
+            return;
+        }
+        
+        const row = document.querySelector(`#unitTableBody .existing-unit-row[data-unit-id="${unitId}"]`);
+        if (row) {
+            row.remove();
+            
+            // Remove hidden fields
+            const hiddenDiv = document.getElementById('unitsData');
+            const hiddenInputs = hiddenDiv.querySelectorAll(`input[name^="unit_${unitId}_"]`);
+            hiddenInputs.forEach(input => input.remove());
+            
+            // Check if any rows left
+            const remainingRows = document.querySelectorAll('#unitTableBody .existing-unit-row');
+            if (remainingRows.length === 0) {
+                // Show "No units" message
+                const tbody = document.getElementById('unitTableBody');
+                const addRow = document.getElementById('addUnitRow');
+                
+                // Check if no units row already exists
+                if (!document.getElementById('noUnitsRow')) {
+                    const noRows = document.createElement('tr');
+                    noRows.id = 'noUnitsRow';
+                    noRows.className = 'no-units-row';
+                    noRows.innerHTML = `
+                        <td colspan="5">
+                            <i class="feather-info"></i> No units added yet. Use the "Add" button above to add units.
+                        </td>
+                    `;
+                    tbody.insertBefore(noRows, addRow);
+                }
+            }
+            
+            updateUnitCount();
+        }
+    }
+    
+    // Update count on load
+    document.addEventListener('DOMContentLoaded', function() {
+        updateUnitCount();
+        
+        // Add Enter key support for unit inputs
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const activeElement = document.activeElement;
+                if (activeElement.id === 'unitName' || 
+                    activeElement.id === 'unitSymbol' || 
+                    activeElement.id === 'unitConversionFactor') {
+                    e.preventDefault();
+                    addUnit();
+                }
+            }
+        });
+        
+        // Focus on first input when page loads
+        const nameInput = document.getElementById('unitName');
+        if (nameInput) {
+            setTimeout(() => nameInput.focus(), 100);
+        }
+    });
+</script>
+
+{% endblock %}

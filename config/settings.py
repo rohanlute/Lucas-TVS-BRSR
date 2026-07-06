@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'apps.notifications',
     'apps.timesheets',
     'apps.organizations',
+    'apps.calculator',
 
     # 
     'rest_framework',

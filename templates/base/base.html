@@ -77,6 +77,39 @@
         .footer {
             margin-top: auto;
         }
+        .modal-content {
+    border-radius: 18px;
+}
+
+.list-group-item {
+    border: none;
+    padding: 14px 18px;
+    border-radius: 12px;
+    margin: 6px;
+}
+
+.list-group-item.active {
+    background: #e8f8ff;
+    color: #0d6efd;
+}
+
+.card {
+    border-radius: 18px;
+    box-shadow: 0 8px 25px rgba(0,0,0,.08);
+}
+
+.form-control,
+.form-select {
+    border-radius: 12px;
+    height: 50px;
+}
+
+.alert {
+    border-radius: 14px;
+}
+.modal-backdrop {
+    display: none !important;
+}
     </style>
 
     {% block extra_css %}
@@ -131,7 +164,9 @@
     <script src="{% static 'vendors/js/circle-progress.min' %}.js"></script>
     <!--! END: Vendors JS !-->
     <!--! BEGIN: Apps Init  !-->
+    {% if '/converter/' not in request.path %}
     <script src="{% static 'js/common-init.min.js' %}"></script>
+    {% endif %}
     <!-- <script src="{% static 'js/projects-init.min.js' %}"></script> -->
     <!-- <script src="{% static 'js/dashboard-init.min.js' %}"></script> -->
     <!--! END: Apps Init !-->
