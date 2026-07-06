@@ -28,6 +28,7 @@ urlpatterns = [
     path('brsr/', include('apps.brsr.urls')),
     path('organizations/', include('apps.organizations.urls')),
     path('email_master/', include('apps.email_master.urls')),
+    path("environmental/", include("apps.environmental.urls")),
 ]
 
 
