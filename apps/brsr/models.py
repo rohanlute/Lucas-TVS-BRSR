@@ -3,9 +3,8 @@ BRSR Principle Flow — Models
 =========================================
 
 Design goals addressed:
-  1. Single source of truth for answers (no JSON-blob + row duplication).
-  2. One reusable workflow (draft -> submit -> approve/reject -> resubmit)
-     instead of five near-identical status blocks.
+  1. Single source of truth for answers.
+  2. One reusable workflow (draft -> submit -> approve/reject -> resubmit).
   3. Generic actor references (GenericForeignKey) so "who assigned / who
      answered / who reviewed" works for User, BusinessUnitStaff,
      LocationHead, PlantEmployee, etc. without new FK columns per model.
@@ -17,11 +16,6 @@ Design goals addressed:
   6. Versioned questions, so a question can change wording/options across
      financial years without corrupting historical responses.
 
-Assumes your existing User, ClientProfile, Plant, Department,
-BusinessUnitStaff, LocationHead, PlantEmployee, BranchEmployee models
-stay as-is. This file only replaces the "BRSR flow" models:
-BRSRPrinciple, BRSRQuestion, *Assignment*, *FormData/FormSubmission*,
-*QuestionResponse*, *Revision* models.
 """
 
 from django.db import models
@@ -49,8 +43,6 @@ class WorkflowMixin(models.Model):
     resubmit. Keeps status semantics identical everywhere instead of each
     model re-declaring its own status choices + reviewer fields.
 
-    NOTE: the FKs below reference 'accounts.User' — update the app label
-    to match your project (e.g. 'protegk.User').
     """
     status = models.CharField(
         max_length=20, choices=WorkflowStatus.choices, default=WorkflowStatus.DRAFT
@@ -69,7 +61,6 @@ class WorkflowMixin(models.Model):
     class Meta:
         abstract = True
 
-    # -- state transitions -------------------------------------------------
     def submit(self, user):
         self.status = (
             WorkflowStatus.RESUBMITTED if self.resubmission_count else WorkflowStatus.SUBMITTED
@@ -124,7 +115,7 @@ class ActorRefMixin(models.Model):
 
 
 # ---------------------------------------------------------------------------
-# 3. Principles & Sections (dynamic, not hardcoded)
+# 3. Principles & Sections
 # ---------------------------------------------------------------------------
 
 class BRSRSection(models.Model):
@@ -176,10 +167,29 @@ class BRSRPrinciple(models.Model):
 
 class BRSRQuestion(models.Model):
     QUESTION_TYPE_CHOICES = [
-        ('text', 'Text Input'), ('textarea', 'Long Text'), ('number', 'Number'),
-        ('email', 'Email'), ('url', 'URL'), ('date', 'Date'),
-        ('select', 'Dropdown'), ('radio', 'Radio Button'),
-        ('checkbox', 'Checkbox'), ('file', 'File Upload'), ('table', 'Table Data'),
+        ('text', 'Text Input'),
+        ('textarea', 'Long Text'),
+        ('number', 'Number'),
+        ('decimal', 'Decimal'),
+        ('currency', 'Currency'),
+        ('percentage', 'Percentage'),
+        ('year', 'Year'),
+        ('email', 'Email'),
+        ('url', 'URL'),
+        ('phone', 'Phone'),
+        ('date', 'Date'),
+        ('dropdown', 'Dropdown'),
+        ('select', 'Dropdown'),
+        ('multi_select', 'Multi Select'),
+        ('radio', 'Radio Button'),
+        ('yes_no', 'Yes / No'),
+        ('checkbox', 'Checkbox'),
+        ('file', 'File Upload'),
+        ('table', 'Table Data'),
+        ('nested_table', 'Nested Table'),
+        ('matrix', 'Matrix'),
+        ('repeating_section', 'Repeating Section'),
+        ('custom_component', 'Custom Component'),
     ]
 
     question_id = models.CharField(max_length=50, unique=True)  # 'a_q1', 'c_p1_q1'
@@ -201,10 +211,6 @@ class BRSRQuestion(models.Model):
 
     sub_section = models.CharField(max_length=100, blank=True, null=True)
     parent_question = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
-
-    # NEW: versioning so a question can change without corrupting history.
-    # Superseded questions stay in the DB (is_active=False) so old
-    # responses still resolve correctly.
     version = models.PositiveIntegerField(default=1)
     supersedes = models.ForeignKey(
         'self', on_delete=models.SET_NULL, null=True, blank=True, related_name='superseded_by'
@@ -230,7 +236,7 @@ class BRSRQuestion(models.Model):
 
 
 # ---------------------------------------------------------------------------
-# 5. Assignment — unified (replaces QuestionAssignment + HODQuestionAssignment)
+# 5. Assignment of the questions
 # ---------------------------------------------------------------------------
 
 class Assignment(models.Model):
@@ -252,7 +258,7 @@ class Assignment(models.Model):
     )
 
     plant = models.ForeignKey('organizations.Plant', on_delete=models.CASCADE, related_name='assignments')
-    principle = models.ForeignKey(BRSRPrinciple, on_delete=models.CASCADE, related_name='assignments')
+    principle = models.ForeignKey(BRSRPrinciple, on_delete=models.CASCADE, related_name='assignments', null=True, blank=True)
     section = models.ForeignKey(BRSRSection, on_delete=models.CASCADE, related_name='assignments')
     financial_year = models.CharField(max_length=20)
 
@@ -268,7 +274,7 @@ class Assignment(models.Model):
     assignee_object_id = models.PositiveIntegerField()
     assignee = GenericForeignKey('assignee_content_type', 'assignee_object_id')
 
-    # data collection cadence (kept from your original QuestionAssignment)
+    # data collection
     FREQUENCY_CHOICES = [
         ('weekly', 'Weekly'), ('monthly', 'Monthly'),
         ('quarterly', 'Quarterly'), ('annually', 'Annually'),

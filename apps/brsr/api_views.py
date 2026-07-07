@@ -12,6 +12,7 @@ from .views import (
     _assignment_context,
     _get_section_principle,
     _pdf_questions_queryset,
+    _question_metadata,
     _question_queryset,
     _question_status,
     _workflow_counts,
@@ -64,6 +65,7 @@ def _serialize_question(question):
         "placeholder_text": question.placeholder_text or "",
         "options": question.options or [],
         "validation_rules": question.validation_rules or {},
+        **_question_metadata(question),
         "response_value": response.response_value if response else "",
         "response_json": response.response_json if response else {},
         "is_editable": response.is_editable if response else True,
@@ -122,6 +124,11 @@ class BRSRWorkspaceDataAPIView(APIView):
                 {"value": fy.financial_year, "label": fy.financial_year}
                 for fy in assignment_bundle["financial_years"]
             ],
+            "frequency_choices": [
+                {"value": value, "label": label}
+                for value, label in Assignment.FREQUENCY_CHOICES
+            ],
+            # parent_assignments removed from payload — delegation not used
             "latest_assignment": (
                 {
                     "id": assignment_bundle["latest_assignment"].id,
@@ -208,7 +215,6 @@ class AssignmentCreateAPIView(APIView):
                 "full_name", "username"
             ),
             question_queryset=questions,
-            parent_queryset=Assignment.objects.filter(section=section, principle=principle).order_by("-created_at"),
             financial_year_queryset=FinancialYear.objects.all().order_by("-start_date"),
         )
         if not form.is_valid():
@@ -220,7 +226,8 @@ class AssignmentCreateAPIView(APIView):
             principle=principle,
             section=section,
             financial_year=form.cleaned_data["financial_year"],
-            parent=form.cleaned_data.get("parent_assignment"),
+            # parent assignment removed from creation flow
+            data_collection_frequency=form.cleaned_data.get("data_collection_frequency") or "",
             assigner_content_type=user_ct,
             assigner_object_id=form.cleaned_data["assigner"].pk,
             assignee_content_type=user_ct,

@@ -762,6 +762,10 @@
             <select class="workspace-select" name="financial_year" id="assignmentFinancialYear"></select>
           </div>
           <div>
+            <label class="tool-label">Submission Frequency</label>
+            <select class="workspace-select" name="data_collection_frequency" id="assignmentFrequency"></select>
+          </div>
+          <div>
             <label class="tool-label">Priority</label>
             <select class="workspace-select" name="priority" id="assignmentPriority">
               <option value="low">Low</option>
@@ -779,8 +783,6 @@
             <select class="workspace-select" name="assignee" id="assignmentAssignee"></select>
           </div>
           <div>
-            <label class="tool-label">Parent Assignment</label>
-            <select class="workspace-select" name="parent_assignment" id="assignmentParent"></select>
           </div>
           <div>
             <label class="tool-label">Due Date</label>
@@ -867,7 +869,15 @@
     return groups;
   }
 
+  function tableSchema(question) {
+    return question.table_schema || (question.validation_rules && question.validation_rules.table_schema) || {};
+  }
+
   function defaultTableColumns(question) {
+    const schema = tableSchema(question);
+    if (schema && Array.isArray(schema.columns) && schema.columns.length) {
+      return schema.columns;
+    }
     const fromSchema = question.validation_rules && Array.isArray(question.validation_rules.columns)
       ? question.validation_rules.columns
       : [];
@@ -881,6 +891,29 @@
       { key: 'current_year', label: 'Current Year', type: 'text' },
       { key: 'previous_year', label: 'Previous Year', type: 'text' },
     ];
+  }
+
+  function defaultChoiceOptions(question) {
+    const options = Array.isArray(question.options) ? question.options : [];
+    if (options.length) {
+      return options.map((option, index) => {
+        if (typeof option === 'object' && option !== null) {
+          return {
+            value: option.value ?? option.label ?? String(index),
+            label: option.label ?? option.value ?? String(index),
+            order: option.order ?? index + 1,
+          };
+        }
+        return { value: option, label: option, order: index + 1 };
+      });
+    }
+    if (question.question_type === 'yes_no') {
+      return [
+        { value: 'Yes', label: 'Yes', order: 1 },
+        { value: 'No', label: 'No', order: 2 },
+      ];
+    }
+    return [];
   }
 
   function initTableRows(question) {
@@ -897,7 +930,8 @@
 
   function renderQuestionInput(question) {
     const value = question.response_value || '';
-    const options = Array.isArray(question.options) ? question.options : [];
+    const options = defaultChoiceOptions(question);
+    const schema = tableSchema(question);
 
     if (question.question_type === 'textarea' || question.question_type === 'text') {
       return `
@@ -908,8 +942,19 @@
       `;
     }
 
-    if (question.question_type === 'number' || question.question_type === 'email' || question.question_type === 'url' || question.question_type === 'date') {
-      const type = question.question_type === 'number' ? 'text' : question.question_type;
+    if (question.question_type === 'number' || question.question_type === 'decimal' || question.question_type === 'currency' || question.question_type === 'percentage' || question.question_type === 'year' || question.question_type === 'email' || question.question_type === 'url' || question.question_type === 'date' || question.question_type === 'phone') {
+      const typeMap = {
+        number: 'number',
+        decimal: 'text',
+        currency: 'text',
+        percentage: 'text',
+        year: 'number',
+        email: 'email',
+        url: 'url',
+        date: 'date',
+        phone: 'tel',
+      };
+      const type = typeMap[question.question_type] || 'text';
       return `
         <div class="form-group">
           <label class="form-label">Response</label>
@@ -918,11 +963,11 @@
       `;
     }
 
-    if (question.question_type === 'select' || question.question_type === 'radio') {
+    if (question.question_type === 'select' || question.question_type === 'dropdown') {
       const items = ['<option value="">Select an option</option>'].concat(
         options.map((option) => {
-          const label = typeof option === 'object' ? option.label : option;
-          const optionValue = typeof option === 'object' ? (option.value ?? option.label) : option;
+          const label = option.label ?? option.value ?? option;
+          const optionValue = option.value ?? option.label ?? option;
           const selected = String(optionValue) === String(value) ? 'selected' : '';
           return `<option value="${escapeHtml(optionValue)}" ${selected}>${escapeHtml(label)}</option>`;
         })
@@ -935,15 +980,36 @@
       `;
     }
 
-    if (question.question_type === 'checkbox') {
+    if (question.question_type === 'radio' || question.question_type === 'yes_no') {
+      return `
+        <div class="form-group">
+          <label class="form-label">Response</label>
+          <div class="choice-stack">
+            ${options.map((option) => {
+              const label = option.label ?? option.value ?? option;
+              const optionValue = option.value ?? option.label ?? option;
+              const checked = String(optionValue) === String(value) ? 'checked' : '';
+              return `
+                <label class="choice-item">
+                  <input type="radio" name="responseValue-${escapeHtml(question.question_id)}" value="${escapeHtml(optionValue)}" ${checked}>
+                  <span>${escapeHtml(label)}</span>
+                </label>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    if (question.question_type === 'checkbox' || question.question_type === 'multi_select') {
       const selected = String(value || '').split(',').map((item) => item.trim()).filter(Boolean);
       return `
         <div class="form-group">
           <label class="form-label">Choose applicable options</label>
           <div class="choice-stack">
             ${options.map((option) => {
-              const label = typeof option === 'object' ? option.label : option;
-              const optionValue = typeof option === 'object' ? (option.value ?? option.label) : option;
+              const label = option.label ?? option.value ?? option;
+              const optionValue = option.value ?? option.label ?? option;
               const checked = selected.includes(String(optionValue)) ? 'checked' : '';
               return `
                 <label class="choice-item">
@@ -957,19 +1023,31 @@
       `;
     }
 
-    if (question.question_type === 'table') {
+    if (question.question_type === 'table' || question.question_type === 'nested_table' || question.question_type === 'matrix' || question.question_type === 'repeating_section') {
       const columns = defaultTableColumns(question);
       const rows = initTableRows(question);
+      const headerRows = Array.isArray(schema.header_rows) ? schema.header_rows : [];
+      const renderHeader = headerRows.length
+        ? headerRows.map((headerRow) => `
+            <tr>
+              ${headerRow.map((cell) => `<th>${escapeHtml(cell)}</th>`).join('')}
+              ${headerRow.length < columns.length ? `<th colspan="${columns.length - headerRow.length}"></th>` : ''}
+              <th style="width:48px;"></th>
+            </tr>
+          `).join('')
+        : `
+            <tr>
+              ${columns.map((column) => `<th>${escapeHtml(column.label || column.key)}</th>`).join('')}
+              <th style="width:48px;"></th>
+            </tr>
+          `;
       return `
         <div class="form-group">
           <label class="form-label">Table Response</label>
           <div class="table-container">
             <table class="data-table" data-question-id="${escapeHtml(question.question_id)}" data-column-keys="${escapeHtml(columns.map((column) => column.key || column.name).join('|'))}">
               <thead>
-                <tr>
-                  ${columns.map((column) => `<th>${escapeHtml(column.label || column.key)}</th>`).join('')}
-                  <th style="width:48px;"></th>
-                </tr>
+                ${renderHeader}
               </thead>
               <tbody>
                 ${rows.map((row, index) => `
@@ -1205,7 +1283,7 @@
     if (!container) return null;
 
     const payload = { assignment_id: question.assignment_id || '' };
-    if (question.question_type === 'table') {
+    if (question.question_type === 'table' || question.question_type === 'nested_table' || question.question_type === 'matrix' || question.question_type === 'repeating_section') {
       const table = container.querySelector('.data-table');
       const rows = [];
       if (table) {
@@ -1222,8 +1300,11 @@
         });
       }
       payload.response_json = { rows };
-    } else if (question.question_type === 'checkbox') {
+    } else if (question.question_type === 'checkbox' || question.question_type === 'multi_select') {
       payload.response_value = Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map((el) => el.value).join(',');
+    } else if (question.question_type === 'radio' || question.question_type === 'yes_no') {
+      const checked = container.querySelector('input[type="radio"]:checked');
+      payload.response_value = checked ? checked.value : '';
     } else {
       const control = container.querySelector(`#responseValue-${CSS.escape(questionId)}`);
       payload.response_value = control ? control.value : '';
@@ -1279,20 +1360,17 @@
   function fillAssignmentOptions(workspace) {
     const plantSelect = document.getElementById('assignmentPlant');
     const fySelect = document.getElementById('assignmentFinancialYear');
+    const frequencySelect = document.getElementById('assignmentFrequency');
     const assignerSelect = document.getElementById('assignmentAssigner');
     const assigneeSelect = document.getElementById('assignmentAssignee');
-    const parentSelect = document.getElementById('assignmentParent');
 
     plantSelect.innerHTML = workspace.plants.map((plant) => `<option value="${plant.id}">${escapeHtml(plant.name)} (${escapeHtml(plant.code)})</option>`).join('');
     fySelect.innerHTML = workspace.financial_years.map((fy) => `<option value="${escapeHtml(fy.value)}">${escapeHtml(fy.label)}</option>`).join('');
+    frequencySelect.innerHTML = (workspace.frequency_choices || []).map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join('');
     assignerSelect.innerHTML = workspace.users.map((user) => `<option value="${user.id}">${escapeHtml(user.name)} (${escapeHtml(user.username)})</option>`).join('');
     assigneeSelect.innerHTML = workspace.users.map((user) => `<option value="${user.id}">${escapeHtml(user.name)} (${escapeHtml(user.username)})</option>`).join('');
 
-    const parents = ['<option value="">No parent assignment</option>'];
-    if (workspace.latest_assignment) {
-      parents.push(`<option value="${workspace.latest_assignment.id}">${escapeHtml(workspace.latest_assignment.assignment_id)}</option>`);
-    }
-    parentSelect.innerHTML = parents.join('');
+    // parent assignment UI removed — not used in current workflow
   }
 
   function getSelectedQuestions() {
@@ -1335,14 +1413,13 @@
       question_ids: selected.map((item) => item.id),
       plant: document.getElementById('assignmentPlant').value,
       financial_year: document.getElementById('assignmentFinancialYear').value,
+      data_collection_frequency: document.getElementById('assignmentFrequency').value,
       priority: document.getElementById('assignmentPriority').value,
       assigner: document.getElementById('assignmentAssigner').value,
       assignee: document.getElementById('assignmentAssignee').value,
-      parent_assignment: document.getElementById('assignmentParent').value,
       due_date: document.getElementById('assignmentDueDate').value,
       notes: document.getElementById('assignmentNotes').value,
     };
-    if (!payload.parent_assignment) delete payload.parent_assignment;
 
     const response = await fetch(API_ASSIGN, {
       method: 'POST',

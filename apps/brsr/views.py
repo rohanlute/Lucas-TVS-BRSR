@@ -5,15 +5,12 @@ from django.contrib.contenttypes.models import ContentType
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.generic import TemplateView
-
 from apps.organizations.models import FinancialYear, Plant
-
 from .forms import BRSRAssignmentForm
 from .models import Assignment, BRSRPrinciple, BRSRQuestion, BRSRSection, QuestionResponse
 
 
 User = get_user_model()
-
 
 def _section_scope_queryset():
     return (
@@ -22,7 +19,6 @@ def _section_scope_queryset():
         .prefetch_related("questions")
     )
 
-
 def _principle_queryset():
     return (
         BRSRPrinciple.objects.filter(is_active=True)
@@ -30,19 +26,15 @@ def _principle_queryset():
         .prefetch_related("questions")
     )
 
-
 def _pdf_questions_queryset():
     qs = BRSRQuestion.objects.filter(is_active=True)
     return qs.exclude(section__code="section_b", question_id__regex=r"^sb_q")
 
-
 def _get_default_section():
     return BRSRSection.objects.filter(is_active=True).order_by("display_order", "code").first()
 
-
 def _get_default_principle():
     return BRSRPrinciple.objects.filter(is_active=True).order_by("principle_number").first()
-
 
 def _get_section_principle(section_code=None, principle_slug=None):
     section = None
@@ -89,6 +81,19 @@ def _question_status(question):
         return response.status
     return "draft"
 
+def _question_metadata(question):
+    rules = question.validation_rules or {}
+    return {
+        "parent_question_id": question.parent_question.question_id if question.parent_question else "",
+        "table_schema": rules.get("table_schema", {}) or {},
+        "conditional_logic": rules.get("conditional_logic", {}) or {},
+        "allowed_values": rules.get("allowed_values", []) or [],
+        "units": rules.get("units", "") or "",
+        "default_value": rules.get("default_value"),
+        "component_type": rules.get("component_type", question.question_type),
+        "source_excerpt": rules.get("source_excerpt", "") or "",
+    }
+
 
 def _workflow_counts(questions):
     question_ids = [q.id for q in questions]
@@ -118,15 +123,13 @@ def _assignment_context(section, principle, questions):
         "full_name", "username"
     )
     fy_qs = FinancialYear.objects.all().order_by("-start_date")
-    parent_qs = Assignment.objects.filter(section=section, principle=principle).order_by("-created_at")
-
+    # Parent assignment / delegation removed from workflow
     return {
         "latest_assignment": latest_assignment,
         "assignment_form": BRSRAssignmentForm(
             plant_queryset=plant_qs,
             user_queryset=user_qs,
             question_queryset=questions,
-            parent_queryset=parent_qs,
             financial_year_queryset=fy_qs,
         ),
         "plants": plant_qs,
@@ -209,6 +212,7 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
                     "is_required": question.is_required,
                     "display_order": question.display_order,
                     "sub_section": question.sub_section or "",
+                    **_question_metadata(question),
                 }
             )
 
@@ -230,6 +234,7 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
                 "placeholder_text": active_question.placeholder_text or "",
                 "options": active_question.options or [],
                 "validation_rules": active_question.validation_rules or {},
+                **_question_metadata(active_question),
                 "status": response.status if response else "draft",
                 "response_json": response.response_json if response else {},
                 "response_value": response.response_value if response else "",
@@ -306,10 +311,6 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
                 "full_name", "username"
             ),
             question_queryset=active_questions,
-            parent_queryset=Assignment.objects.filter(
-                section=context["section"],
-                principle=context["principle"],
-            ).order_by("-created_at"),
             financial_year_queryset=FinancialYear.objects.all().order_by("-start_date"),
         )
         if form.is_valid():
@@ -319,7 +320,8 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
                 principle=context["principle"],
                 section=context["section"],
                 financial_year=form.cleaned_data["financial_year"],
-                parent=form.cleaned_data.get("parent_assignment"),
+                # parent removed from creation flow
+                data_collection_frequency=form.cleaned_data.get("data_collection_frequency") or "",
                 assigner_content_type=user_ct,
                 assigner_object_id=form.cleaned_data["assigner"].pk,
                 assignee_content_type=user_ct,

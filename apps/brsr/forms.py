@@ -26,8 +26,8 @@ class BRSRAssignmentForm(forms.Form):
         queryset=User.objects.none(),
         widget=forms.Select(attrs={"class": "form-select"}),
     )
-    parent_assignment = forms.ModelChoiceField(
-        queryset=Assignment.objects.none(),
+    data_collection_frequency = forms.ChoiceField(
+        choices=Assignment.FREQUENCY_CHOICES,
         required=False,
         widget=forms.Select(attrs={"class": "form-select"}),
     )
@@ -41,6 +41,7 @@ class BRSRAssignmentForm(forms.Form):
     )
     question_ids = forms.ModelMultipleChoiceField(
         queryset=BRSRQuestion.objects.none(),
+        to_field_name='question_id',
         widget=forms.CheckboxSelectMultiple,
     )
     notes = forms.CharField(
@@ -61,7 +62,8 @@ class BRSRAssignmentForm(forms.Form):
         self.fields["plant"].queryset = plant_queryset or Plant.objects.filter(is_active=True)
         self.fields["assigner"].queryset = user_queryset or User.objects.filter(is_active=True)
         self.fields["assignee"].queryset = user_queryset or User.objects.filter(is_active=True)
-        self.fields["parent_assignment"].queryset = parent_queryset or Assignment.objects.none()
+        # parent_assignment removed from the form — parent assignment delegation
+        # is not used in the current workflow.
         self.fields["question_ids"].queryset = question_queryset or BRSRQuestion.objects.none()
 
         financial_year_qs = financial_year_queryset or FinancialYear.objects.all()
