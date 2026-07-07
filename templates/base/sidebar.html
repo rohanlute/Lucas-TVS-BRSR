@@ -57,11 +57,11 @@
                         {% if request.user.is_super_admin or request.user.is_superuser or request.user.role and request.user.role.role_code == 'ADMIN' %}<li class="nxl-item"><a class="nxl-link" href="{% url 'accounts:role_list' %}">Role &amp; Permission</a></li>{% endif %}
                         <li class="nxl-item"><a class="nxl-link" href="{% url 'accounts:department_list' %}">Departments</a></li>
                         <li class="nxl-item"><a class="nxl-link" href="{% url 'organizations:dashboard' %}">Plants Management</a></li>
-                        <li class="nxl-item">
-                            <a class="nxl-link" href="{% url 'organizations:financial_year_list' %}">
+                        <li class="nxl-item"><a class="nxl-link" href="{% url 'organizations:financial_year_list' %}">
                                 Financial Year
-                            </a>
+                        </a>
                         </li>
+                        <li class="nxl-item"><a class="nxl-link" href="{% url 'organizations:calendar' %}">Calendar</a></li>
                     </ul>
                 </li>
                 {% endif %}
@@ -82,6 +82,7 @@
                         <li class="nxl-item"><a class="nxl-link" href="{% url 'notifications:notification_list' %}">Notifications</a></li>
                         <li class="nxl-item"><a class="nxl-link" href="{% url 'timesheets:timesheet_list' %}">Time Sheets</a></li>
                         <li class="nxl-item"><a class="nxl-link" href="{% url 'email_master:email_list' %}">Email</a></li>
+                        {% if request.user.is_super_admin or request.user.is_superuser or request.user.role and request.user.role.role_code == 'ADMIN' %}<li class="nxl-item"><a class="nxl-link" href="{% url 'calculator:unit_category_list' %}">Conversion Calculator Master</a></li>{% endif %}
                     </ul>
                 </li>
             </ul>

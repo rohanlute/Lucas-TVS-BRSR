@@ -1,0 +1,232 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Unit Categories{% endblock %}
+
+{% block extra_css %}
+<style>
+    .organization-list-page .page-header-right-items-wrapper {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .organization-table-card table {
+        margin-bottom: 0;
+    }
+
+    .organization-table-card thead th,
+    .organization-table-card tbody td {
+        padding: 1rem 1.25rem;
+        vertical-align: middle;
+    }
+    
+    .action-btn {
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .unit-count-badge {
+        background: #eef5ff;
+        color: #0b5ed7;
+        padding: 0.25rem 0.8rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .unit-count-badge:hover {
+        background: #0b5ed7;
+        color: white;
+    }
+    
+    .category-icon {
+        font-size: 1.5rem;
+    }
+    
+    .category-name {
+        font-weight: 600;
+        color: #0b1a2b;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 0.3rem;
+        justify-content: center;
+    }
+    
+    .action-btn.delete-btn {
+        background: #dc3545;
+        border-color: #dc3545;
+        color: white;
+    }
+    
+    .action-btn.delete-btn:hover {
+        background: #c82333;
+        border-color: #bd2130;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Unit Categories</h5>
+        </div>
+
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="#">Home</a></li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'calculator:unit_category_list' %}">Category</a>
+            </li>
+            <li class="breadcrumb-item active">Unit Categories</li>
+        </ul>
+    </div>
+
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+
+                <form method="GET" class="d-flex">
+                    <div class="input-group" style="width:280px;">
+                        <span class="input-group-text">
+                            <i class="feather-search"></i>
+                        </span>
+                        <input type="text"
+                               class="form-control"
+                               name="search"
+                               placeholder="Search Category..."
+                               value="{{ search_query }}">
+                    </div>
+                </form>
+
+                <a href="{% url 'calculator:unit_category_create' %}"
+                   class="btn btn-primary">
+                    <i class="feather-plus me-2"></i>
+                    <span>Add Category</span>
+                </a>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-content organization-list-page">
+
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+            {{ message }}
+            <button class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="card stretch stretch-full border-0 shadow-sm organization-table-card">
+
+        <div class="card-body p-0">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle mb-0">
+
+                    <thead class="table-light">
+                        <tr>
+                            <th>Category</th>
+                            <th style="text-align: center;">Unit Count</th>
+                            <th style="text-align: center;">Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+
+                        {% for category in categories %}
+
+                        <tr>
+                            <td>
+                                <span class="category-name">{{ category.category }}</span>
+                            </td>
+                            <td style="text-align: center;">
+                                <span class="unit-count-badge">{{ category.unit_count }} Units</span>
+                            </td>
+                            <td style="text-align: center;">
+                                <div class="action-buttons">
+                                    <a href="{% url 'calculator:category_update' category.id %}"
+                                       class="btn btn-primary btn-sm action-btn"
+                                       title="Edit Category">
+                                        <i class="feather-edit"></i>
+                                    </a>
+                                    <a href="{% url 'calculator:unit_category_delete' category.id %}"
+                                       class="btn btn-danger btn-sm action-btn delete-btn"
+                                       title="Delete Category">
+                                        <i class="feather-trash-2"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+
+                        {% empty %}
+
+                        <tr>
+                            <td colspan="4" class="text-center py-4">
+                                <div class="alert alert-info mb-0">
+                                    <i class="feather-info me-2"></i>
+                                    No Unit Categories found.
+                                </div>
+                            </td>
+                        </tr>
+
+                        {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {% if is_paginated %}
+
+    <nav>
+        <ul class="pagination justify-content-center mt-4">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                    Previous
+                </a>
+            </li>
+            {% endif %}
+
+            <li class="page-item active">
+                <span class="page-link">
+                    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+                </span>
+            </li>
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">
+                    Next
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}
