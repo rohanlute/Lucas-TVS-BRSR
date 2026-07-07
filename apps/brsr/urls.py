@@ -1,6 +1,40 @@
 from django.urls import path
-from .views import brsr_list
+
+from .api_views import (
+    AssignmentCreateAPIView,
+    BRSRWorkspaceDataAPIView,
+    QuestionDetailAPIView,
+    QuestionSaveAPIView,
+    QuestionSubmitAPIView,
+)
+from .views import brsr_list, brsr_workspace
+
 
 app_name = "brsr"
 
-urlpatterns = [path('brsr-list/', brsr_list, name='brsr_list'),]
+urlpatterns = [
+    path("", brsr_list, name="brsr_list"),
+    path("brsr-list/", brsr_list, name="brsr_list_legacy"),
+    path("workspace/", brsr_workspace, name="question_workspace"),
+    path("workspace/<slug:section_code>/", brsr_workspace, name="question_workspace_section"),
+    path(
+        "workspace/<slug:section_code>/<slug:principle_slug>/",
+        brsr_workspace,
+        name="question_workspace_principle",
+    ),
+    path(
+        "workspace/<slug:section_code>/<slug:principle_slug>/<str:question_id>/",
+        brsr_workspace,
+        name="question_workspace_question",
+    ),
+    path("api/workspace/", BRSRWorkspaceDataAPIView.as_view(), name="workspace_api"),
+    path("api/questions/<str:question_id>/", QuestionDetailAPIView.as_view(), name="question_detail_api"),
+    path("api/questions/<str:question_id>/save/", QuestionSaveAPIView.as_view(), name="question_save_api"),
+    path(
+        "api/questions/<str:question_id>/submit/",
+        QuestionSubmitAPIView.as_view(),
+        name="question_submit_api",
+    ),
+    path("api/assignments/", AssignmentCreateAPIView.as_view(), name="assignment_create_api"),
+]
+
