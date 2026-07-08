@@ -2,10 +2,9 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from apps.environmental.models import (
-    EmissionScope,
-    EmissionCategory,
-)
-
+    EmissionScope,EmissionCategory,EmissionActivity,EmissionFactor)
+from apps.calculator.models import Unit
+from datetime import date
 
 class Command(BaseCommand):
     help = "Seed Environmental Master Data"
@@ -22,6 +21,8 @@ class Command(BaseCommand):
 
         self.seed_scopes()
         self.seed_categories()
+        self.seed_activities()
+        self.seed_emission_factors()
 
         self.stdout.write("")
         self.stdout.write("=" * 70)
@@ -264,3 +265,268 @@ class Command(BaseCommand):
                 f"Category Master -> Created: {created}, Updated: {updated}"
             )
         )
+
+    # ==========================================================
+    # Activity Master
+    # ==========================================================
+
+    def seed_activities(self):
+
+        self.stdout.write("")
+        self.stdout.write(
+            self.style.HTTP_INFO("Seeding Emission Activities...")
+        )
+
+        activities = [
+
+            # =====================================================
+            # Scope 1 -> Stationary Combustion
+            # =====================================================
+
+            {
+                "category": "STC",
+                "code": "DSL",
+                "name": "Diesel",
+                "description": "Diesel fuel consumption",
+                "unit": "Liter",
+                "display_order": 1,
+            },
+            {
+                "category": "STC",
+                "code": "LPG",
+                "name": "LPG",
+                "description": "Liquefied Petroleum Gas",
+                "unit": "Kilogram",
+                "display_order": 2,
+            },
+            {
+                "category": "STC",
+                "code": "FO",
+                "name": "Furnace Oil",
+                "description": "Furnace Oil",
+                "unit": "Liter",
+                "display_order": 3,
+            },
+            {
+                "category": "STC",
+                "code": "COAL",
+                "name": "Coal",
+                "description": "Coal Consumption",
+                "unit": "Kilogram",
+                "display_order": 4,
+            },
+
+            # =====================================================
+            # Scope 1 -> Mobile Combustion
+            # =====================================================
+
+            {
+                "category": "MBC",
+                "code": "PET",
+                "name": "Petrol",
+                "description": "Petrol Consumption",
+                "unit": "Liter",
+                "display_order": 1,
+            },
+            {
+                "category": "MBC",
+                "code": "DSLV",
+                "name": "Diesel Vehicle",
+                "description": "Vehicle Diesel",
+                "unit": "Liter",
+                "display_order": 2,
+            },
+            {
+                "category": "MBC",
+                "code": "CNG",
+                "name": "CNG",
+                "description": "Compressed Natural Gas",
+                "unit": "Kilogram",
+                "display_order": 3,
+            },
+
+            # =====================================================
+            # Scope 2 -> Purchased Energy
+            # =====================================================
+
+            {
+                "category": "ENG",
+                "code": "ELE",
+                "name": "Electricity",
+                "description": "Purchased Electricity",
+                "unit": "Kilowatt-hour",
+                "display_order": 1,
+            },
+            {
+                "category": "ENG",
+                "code": "STM",
+                "name": "Steam",
+                "description": "Purchased Steam",
+                "unit": "Ton (Metric)",
+                "display_order": 2,
+            },
+        ]
+
+        created = 0
+        updated = 0
+
+        for item in activities:
+
+            try:
+                category = EmissionCategory.objects.get(
+                    code=item["category"]
+                )
+
+                unit = Unit.objects.filter(name__iexact=item["unit"]).first()
+
+                if not unit:
+                    raise Unit.DoesNotExist
+
+            except (EmissionCategory.DoesNotExist, Unit.DoesNotExist):
+
+                self.stdout.write(
+                    self.style.ERROR(
+                        f"Missing Category/Unit for {item['name']}"
+                    )
+                )
+                continue
+
+            obj, is_created = EmissionActivity.objects.update_or_create(
+
+                code=item["code"],
+
+                defaults={
+                    "category": category,
+                    "name": item["name"],
+                    "description": item["description"],
+                    "base_unit": unit,
+                    "requires_emission_factor": True,
+                    "allow_manual_entry": True,
+                    "allow_excel_import": True,
+                    "display_order": item["display_order"],
+                    "is_active": True,
+                },
+            )
+
+            if is_created:
+                created += 1
+                self.stdout.write(
+                    self.style.SUCCESS(f"   Created : {obj.name}")
+                )
+            else:
+                updated += 1
+                self.stdout.write(
+                    self.style.WARNING(f"   Updated : {obj.name}")
+                )
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Activity Master -> Created: {created}, Updated: {updated}"
+            )
+        )
+
+
+    # ==========================================================
+    # Emission Factor Master
+    # ==========================================================
+
+    def seed_emission_factors(self):
+
+        self.stdout.write("")
+        self.stdout.write(
+            self.style.HTTP_INFO("Seeding Emission Factors...")
+        )
+
+        factors = [
+
+            {
+                "activity": "DSL",
+                "unit": "L",
+                "factor": 2.68,
+                "source": "IPCC",
+                "version": "2006",
+                "effective_from": date(2025, 4, 1),
+            },
+
+            {
+                "activity": "PET",
+                "unit": "L",
+                "factor": 2.31,
+                "source": "IPCC",
+                "version": "2006",
+                "effective_from": date(2025, 4, 1),
+            },
+
+            {
+                "activity": "LPG",
+                "unit": "kg",
+                "factor": 3.00,
+                "source": "IPCC",
+                "version": "2006",
+                "effective_from": date(2025, 4, 1),
+            },
+
+            {
+                "activity": "ELE",
+                "unit": "kWh",
+                "factor": 0.716,
+                "source": "CEA India",
+                "version": "2025",
+                "effective_from": date(2025, 4, 1),
+            },
+
+        ]
+
+        created = 0
+        updated = 0
+
+        for item in factors:
+
+            try:
+                activity = EmissionActivity.objects.get(code=item["activity"]                )
+                unit = Unit.objects.get(symbol=item["unit"])
+
+            except (EmissionActivity.DoesNotExist, Unit.DoesNotExist):
+
+                self.stdout.write(
+                    self.style.ERROR(
+                        f"Missing Activity/Unit : {item['activity']}"
+                    )
+                )
+                continue
+
+            obj, is_created = EmissionFactor.objects.update_or_create(
+
+                activity=activity,
+                unit=unit,
+                effective_from=item["effective_from"],
+
+                defaults={
+                    "emission_factor": item["factor"],
+                    "source": item["source"],
+                    "version": item["version"],
+                    "is_active": True,
+                }
+            )
+
+            if is_created:
+                created += 1
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f"   Created : {activity.name}"
+                    )
+                )
+            else:
+                updated += 1
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"   Updated : {activity.name}"
+                    )
+                )
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Emission Factor Master -> Created: {created}, Updated: {updated}"
+            )
+        )
+    

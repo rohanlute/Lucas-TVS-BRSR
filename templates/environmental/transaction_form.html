@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Emission Transaction{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+    <div class="card">
+
+        <div class="card-header">
+
+            <h4>Emission Transaction</h4>
+
+        </div>
+
+        <div class="card-body">
+
+            <form method="post">
+
+                {% csrf_token %}
+
+                {{ form.as_p }}
+
+                <button type="submit"
+                        class="btn btn-success">
+
+                    Save
+
+                </button>
+
+                <a href="{% url 'environmental:transaction_list' %}"
+                   class="btn btn-secondary">
+
+                    Cancel
+
+                </a>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

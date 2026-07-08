@@ -1,0 +1,359 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% load permission_tags %}
+{% block title %}User List{% endblock %}
+
+{% block extra_css %}
+<style>
+    .user-list-page .page-header-right-items-wrapper {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .user-list-page .search-form {
+        min-width: 280px;
+    }
+
+    .user-list-page .search-form .input-group {
+        width: 100%;
+    }
+
+    .user-list-page .user-table-card {
+        border-radius: 18px;
+        overflow: visible;
+    }
+
+    .user-list-page .user-table-card .table-responsive {
+        overflow: visible;
+    }
+
+    .user-list-page .user-table-card table {
+        margin-bottom: 0;
+    }
+
+    .user-list-page .user-table-card thead th {
+        padding: 1rem 1.25rem;
+        white-space: nowrap;
+    }
+
+    .user-list-page .user-table-card tbody td {
+        padding: 1rem 1.25rem;
+        vertical-align: middle;
+    }
+
+    .user-list-page .user-avatar {
+        width: 44px;
+        height: 44px;
+        flex: 0 0 44px;
+    }
+
+    .user-list-page .user-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .user-list-page .user-meta {
+        line-height: 1.1;
+    }
+
+    .user-list-page .actions-toggle {
+        width: 32px;
+        height: 32px;
+    }
+
+    .user-list-page .dropdown-menu {
+        z-index: 1060;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="user-list-page">
+<!-- [ page-header ] start -->
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Emission Transactions</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'accounts:dashboard' %}">Environmental</a></li>
+            <li class="breadcrumb-item">Emission Transactions</li>
+        </ul>
+    </div>
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                <a href="javascript:void(0);" class="btn btn-icon btn-light-brand" data-bs-toggle="collapse" data-bs-target="#userStatsCollapse">
+                    <i class="feather-bar-chart"></i>
+                </a>
+                <!-- Filter Dropdown -->
+                <div class="dropdown filter-dropdown">
+                    <a class="btn btn-icon btn-light-brand" href="javascript:void(0);" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+                        <i class="feather-filter"></i>
+                    </a>
+
+                    <div class="dropdown-menu dropdown-menu-end p-3" style="min-width: 250px;">
+                        <form id="filterForm" method="get">
+                            <!-- Preserve Search -->
+                            <input type="hidden" name="search" value="{{ request.GET.search }}">
+                            <h6 class="dropdown-header px-0">Status</h6>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input filter-change" type="radio" name="status" value="active" id="active"
+                                    {% if selected_status == 'active' %}checked{% endif %}>
+                                <label class="form-check-label" for="active">Active</label>
+                            </div>
+
+                            <div class="form-check mb-2">
+                                <input class="form-check-input filter-change" type="radio" name="status" value="inactive" id="inactive"
+                                    {% if selected_status == 'inactive' %}checked{% endif %}>
+                                <label class="form-check-label" for="inactive">
+                                    Inactive
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-2">
+                                <input class="form-check-input filter-change" type="radio" name="status" value="" id="allstatus"
+                                    {% if not selected_status %}checked{% endif %}>
+                                <label class="form-check-label" for="allstatus">
+                                    All Users
+                                </label>
+                            </div>
+
+                            <div class="dropdown-divider"></div>
+
+                            <h6 class="dropdown-header px-0">Roles</h6> 
+                            {% for role in roles %}
+                            <div class="form-check mb-2">
+                                <input class="form-check-input filter-change" type="radio" name="role" value="{{ role.id }}" id="role{{ role.id }}"
+                                    {% if selected_role == role.id|stringformat:"s" %}checked{% endif %}>
+                                <label class="form-check-label" for="role{{ role.id }}">
+                                    {{ role.role_name }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </form>
+                    </div>
+                </div>
+                <form method="get" class="d-flex search-form">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="feather-search"></i></span>
+                        <input type="text" name="search" class="form-control" placeholder="Search transaction..."
+                            value="{{ request.GET.search }}">
+                    </div>
+                </form>
+                {% if request.GET.search %}
+                <a href="{% url 'accounts:user_list' %}" class="btn btn-light-danger">
+                    <i class="feather-x me-1"></i> Clear
+                </a>
+                {% endif %}
+                {% if request.user|has_perm:'CREATE_USER' %}
+                <a href="{% url 'accounts:user_create' %}" class="btn btn-primary">
+                    <i class="feather-plus me-2"></i>
+                    <span>Add Transaction</span>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+<div id="userStatsCollapse" class="accordion-collapse collapse page-header-collapse">
+    <div class="accordion-body pb-2">
+        <div class="row g-4">
+            <div class="col-xl-6 col-md-6">
+                <div class="card stretch stretch-full">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="avatar-text avatar-xl rounded">
+                                <i class="feather-users"></i>
+                            </div>
+                            <div>
+                                <span class="text-truncate-1-line">Total Users</span>
+                                <span class="fs-24 fw-bolder d-block">
+                                    {{ total_users_count|default:"0" }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-6 col-md-6">
+                <div class="card stretch stretch-full">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="avatar-text avatar-xl rounded">
+                                <i class="feather-user-check"></i>
+                            </div>
+                            <div>
+                                <span class="text-truncate-1-line">Active Users</span>
+                                <span class="fs-24 fw-bolder d-block">
+                                    {{ active_users_count|default:0 }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- [ page-header ] end -->
+
+<div class="main-content">
+    {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="card border-0 shadow-sm user-table-card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" style="border-bottom: 1px solid #dcdee4;">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Company</th>
+                            <th>Plant</th>
+                            <th>Financial Year</th>
+                            <th>Month</th>
+                            <th>Activity</th>
+                            <th>Quantity</th>
+                            <th>Unit</th>
+                            <th>Emission Factor</th>
+                            <th>Total CO₂e</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for transaction in transactions %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ transaction.company.company_name }}</td>
+                                <td>{{ transaction.plant.name }}</td>
+                                <td>{{ transaction.financial_year }}</td>
+                                <td>{{ transaction.financial_month.month_name }}</td>
+                                <td>{{ transaction.activity.name }}</td>
+                                <td>{{ transaction.quantity }}</td>
+                                <td>{{ transaction.unit.symbol }}</td>
+                                <td>{{ transaction.emission_factor }}</td>
+                                <td>{{ transaction.total_emission }}</td>
+                                <td>
+
+                                    {% if transaction.status == "APPROVED" %}
+                                    <span class="badge bg-soft-success text-success">
+                                    Approved
+                                    </span>
+
+                                    {% elif transaction.status == "SUBMITTED" %}
+                                    <span class="badge bg-soft-warning text-warning">
+                                    Submitted
+                                    </span>
+
+                                    {% elif transaction.status == "REJECTED" %}
+                                    <span class="badge bg-soft-danger text-danger">
+                                    Rejected
+                                    </span>
+
+                                    {% else %}
+                                    <span class="badge bg-soft-secondary text-secondary">
+                                    Draft
+                                    </span>
+                                    {% endif %}
+
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center py-5">
+                                    <div class="fs-14 fw-semibold text-dark mb-2">No Emission Transactions Found</div>
+                                    <p class="text-muted mb-3">Create the first emission transactions to see it listed here.</p>
+                                    {% if request.user|has_perm:'CREATE_USER' %}
+                                    <a href="{% url 'environmental:transaction_create' %}" class="btn btn-primary">
+                                        <i class="feather-plus me-2"></i>
+                                        <span>Add Transaction</span>
+                                    </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="row common-pagination-wrapper" style="padding: 25px 25px; align-items: center;">
+                    <div class="col-sm-12 col-md-5">
+                        <div class="common-table-info" role="status" aria-live="polite" style="font-size: 11px;">
+                            Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ paginator.count }} entries
+                        </div>
+                    </div>
+
+                    <div class="col-sm-12 col-md-7">
+                        <div class="common-table-pagination">
+                            <ul class="pagination justify-content-end">
+
+                                {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}" style="color: #ced4da; font-size: 12px; box-shadow: none !important; border-color: #ecedf4;">Previous</a>
+                                </li>
+                                {% else %}
+                                <li class="page-item disabled"><span class="page-link" style="color: #ced4da; font-size: 12px; box-shadow: none !important; border-color: #ecedf4;">Previous</span></li>
+                                {% endif %}
+
+                                {% for num in paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link" style="color: #fff !important; background-color: #3454d1; border-radius: 5px;">{{ num }}</span>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ num }}" style="color: #fff !important; background-color: #3454d1; border-radius: 5px;">
+                                                {{ num }}
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}" style="color: #ced4da; font-size: 12px; box-shadow: none !important; border-color: #ecedf4;">
+                                        Next
+                                    </a>
+                                </li>
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link" style="color: #ced4da; font-size: 12px; box-shadow: none !important; border-color: #ecedf4;">Next</span>
+                                </li>
+                                {% endif %}
+
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    document.querySelectorAll('.filter-change').forEach(function (item) {
+
+        item.addEventListener('change', function () {
+            document.getElementById('filterForm').submit();
+        });
+
+    });
+
+});
+</script>
+{% endblock %}
+{% endblock %}
