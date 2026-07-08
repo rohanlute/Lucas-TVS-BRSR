@@ -1,0 +1,1471 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}BRSR Questions{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root{
+    --ink:#24304a;
+    --ink-soft:#42516f;
+    --muted:#6f7b91;
+    --surface:#ffffff;
+    --bg:#f5f7fb;
+    --border:#e3e8f0;
+    --border-strong:#cfd7e6;
+    --brand:#2563eb;
+    --brand-bg:#eaf1ff;
+    --success:#16a34a;
+    --success-bg:#e7f8ee;
+    --warn:#d97706;
+    --warn-bg:#fff5e6;
+    --danger:#dc2626;
+    --danger-bg:#fdecec;
+    --radius:12px;
+    --shadow:0 18px 40px rgba(28,44,73,.08);
+    --font-display:'Space Grotesk','Segoe UI',sans-serif;
+    --font-body:'Inter','Segoe UI',sans-serif;
+  }
+
+  .brsr-shell{
+    min-height:calc(100vh - 140px);
+    display:grid;
+    grid-template-columns:330px 1fr;
+    gap:0;
+    border:1px solid var(--border);
+    border-radius:18px;
+    overflow:hidden;
+    background:linear-gradient(180deg,#f9fbff 0%, #f4f7fc 100%);
+    box-shadow:var(--shadow);
+  }
+
+  .brsr-sidebar{
+    background:var(--surface);
+    border-right:1px solid var(--border);
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+  }
+
+  .sidebar-head{
+    padding:18px 18px 14px;
+    border-bottom:1px solid var(--border);
+    background:
+      radial-gradient(circle at top right, rgba(37,99,235,.12), transparent 38%),
+      linear-gradient(180deg,#fff 0%, #fbfcff 100%);
+  }
+
+  .brand-row{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:12px;
+  }
+
+  .brand-row h3{
+    margin:0;
+    font-family:var(--font-display);
+    font-size:18px;
+    font-weight:700;
+    color:var(--ink);
+  }
+
+  .brand-row small{
+    display:block;
+    margin-top:3px;
+    font-size:12px;
+    color:var(--muted);
+  }
+
+  .progress-label{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:7px;
+  }
+
+  .progress-track{
+    height:6px;
+    border-radius:999px;
+    background:var(--border);
+    overflow:hidden;
+  }
+
+  .progress-fill{
+    height:100%;
+    border-radius:999px;
+    background:linear-gradient(90deg,#2563eb,#60a5fa);
+    transition:width .25s ease;
+  }
+
+  .sidebar-tools{
+    padding:14px 18px 16px;
+    border-bottom:1px solid var(--border);
+    display:grid;
+    gap:12px;
+  }
+
+  .tool-label{
+    display:block;
+    margin-bottom:6px;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+
+  .workspace-select,
+  .workspace-input,
+  .workspace-textarea{
+    width:100%;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:#fff;
+    color:var(--ink);
+    font-size:13px;
+    padding:10px 12px;
+    outline:none;
+  }
+
+  .workspace-select:focus,
+  .workspace-input:focus,
+  .workspace-textarea:focus{
+    border-color:var(--brand);
+    box-shadow:0 0 0 3px rgba(37,99,235,.12);
+  }
+
+  .question-scroll{
+    flex:1;
+    overflow:auto;
+    padding:14px 10px 18px;
+  }
+
+  .question-list{
+    position:relative;
+    list-style:none;
+    margin:0;
+    padding:0 0 0 26px;
+  }
+
+  .question-list::before{
+    content:'';
+    position:absolute;
+    left:9px;
+    top:10px;
+    bottom:10px;
+    width:2px;
+    background:var(--border);
+  }
+
+  .nav-group{
+    margin-bottom:16px;
+  }
+
+  .nav-group-head{
+    font-family:var(--font-display);
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink);
+    margin:0 0 8px;
+    padding-left:6px;
+  }
+
+  .question-item{
+    position:relative;
+    padding:10px 12px 10px 14px;
+    margin-bottom:4px;
+    border-radius:10px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    font-size:13.5px;
+    line-height:1.35;
+    transition:background .15s ease,color .15s ease,transform .15s ease;
+  }
+
+  .question-item:hover{
+    background:var(--bg);
+    transform:translateX(2px);
+  }
+
+  .question-item.active{
+    background:var(--brand-bg);
+    color:var(--brand);
+    font-weight:600;
+  }
+
+  .question-dot{
+    position:absolute;
+    left:-24px;
+    top:13px;
+    width:14px;
+    height:14px;
+    border-radius:50%;
+    border:2px solid var(--border-strong);
+    background:var(--surface);
+  }
+
+  .question-dot.todo{border-color:var(--border-strong);}
+  .question-dot.in-progress{border-color:#f59e0b;background:var(--warn-bg);}
+  .question-dot.in-progress::after{
+    content:'';
+    width:6px;
+    height:6px;
+    background:#f59e0b;
+    border-radius:50%;
+    display:block;
+    margin:2px auto 0;
+  }
+  .question-dot.approved{border-color:var(--success);background:var(--success);}
+  .question-dot.approved::after{
+    content:'\2713';
+    color:#fff;
+    display:block;
+    text-align:center;
+    line-height:10px;
+    font-size:9px;
+    font-weight:700;
+  }
+  .question-dot.rejected{border-color:var(--danger);background:var(--danger-bg);}
+  .question-dot.rejected::after{
+    content:'!';
+    color:var(--danger);
+    display:block;
+    text-align:center;
+    line-height:10px;
+    font-size:10px;
+    font-weight:700;
+  }
+
+  .brsr-main{
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    background:linear-gradient(180deg,#fff 0%, #fbfcff 100%);
+  }
+
+  .workspace-top{
+    padding:18px 20px 0;
+  }
+
+  .status-banner{
+    padding:12px 14px;
+    border-radius:14px;
+    background:var(--brand-bg);
+    color:var(--brand);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    font-size:13px;
+    margin-bottom:14px;
+  }
+
+  .main-panel{
+    margin:0 20px 20px;
+    border:1px solid var(--border);
+    border-radius:16px;
+    background:var(--surface);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    box-shadow:0 10px 24px rgba(28,44,73,.05);
+  }
+
+  .panel-header{
+    padding:18px 20px;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    justify-content:space-between;
+    gap:16px;
+    align-items:flex-start;
+  }
+
+  .panel-title h2{
+    margin:0;
+    font-family:var(--font-display);
+    font-size:21px;
+    color:var(--ink);
+  }
+
+  .panel-title p{
+    margin:8px 0 0;
+    color:var(--muted);
+    font-size:13px;
+  }
+
+  .pill-row{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+  }
+
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:6px 10px;
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink-soft);
+    background:#fff;
+  }
+
+  .pill.brand{border-color:var(--brand);background:var(--brand-bg);color:var(--brand);}
+  .pill.success{border-color:var(--success);background:var(--success-bg);color:var(--success);}
+  .pill.warn{border-color:var(--warn);background:var(--warn-bg);color:var(--warn);}
+
+  .panel-body{
+    flex:1;
+    overflow:auto;
+    padding:18px 20px 24px;
+  }
+
+  .group-block{
+    margin-bottom:16px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    overflow:hidden;
+  }
+
+  .group-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    padding:12px 16px;
+    background:#f8fbff;
+    border-bottom:1px solid var(--border);
+    cursor:pointer;
+  }
+
+  .group-head h3{
+    margin:0;
+    font-family:var(--font-display);
+    font-size:14px;
+    color:var(--ink);
+  }
+
+  .group-body{
+    padding:16px;
+  }
+
+  .question-container{
+    border:1px solid var(--border);
+    border-radius:14px;
+    overflow:hidden;
+    background:#fff;
+    margin-bottom:14px;
+  }
+
+  .question-header{
+    padding:15px 16px;
+    background:#fafcff;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    cursor:pointer;
+  }
+
+  .question-header-left{
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    min-width:0;
+  }
+
+  .question-checkbox{
+    width:18px;
+    height:18px;
+    margin-top:3px;
+    flex-shrink:0;
+  }
+
+  .question-title{
+    margin:0;
+    font-size:15px;
+    font-weight:700;
+    color:var(--ink);
+    line-height:1.45;
+  }
+
+  .question-number{
+    color:var(--brand);
+    margin-right:6px;
+  }
+
+  .question-meta{
+    margin-top:6px;
+    font-size:12px;
+    color:var(--muted);
+  }
+
+  .question-content{
+    display:none;
+    padding:18px 16px 16px;
+  }
+
+  .question-container.active .question-content{
+    display:block;
+  }
+
+  .status-badge{
+    flex-shrink:0;
+    padding:5px 9px;
+    border-radius:999px;
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+  }
+  .status-badge.todo{background:#eef2f7;color:#64748b;}
+  .status-badge.in-progress{background:var(--warn-bg);color:var(--warn);}
+  .status-badge.approved{background:var(--success-bg);color:var(--success);}
+  .status-badge.rejected{background:var(--danger-bg);color:var(--danger);}
+
+  .form-group{
+    margin-bottom:16px;
+  }
+
+  .form-label{
+    display:block;
+    margin-bottom:8px;
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink-soft);
+  }
+
+  .form-textarea{
+    width:100%;
+    min-height:110px;
+    resize:vertical;
+  }
+
+  .choice-stack{
+    display:grid;
+    gap:10px;
+  }
+
+  .choice-item{
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    padding:10px 12px;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:#fff;
+  }
+
+  .choice-item input{
+    margin-top:3px;
+    flex-shrink:0;
+  }
+
+  .choice-item span{
+    font-size:13px;
+    color:var(--ink-soft);
+    line-height:1.4;
+  }
+
+  .table-container{
+    overflow-x:auto;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:#fff;
+  }
+
+  .data-table{
+    width:100%;
+    border-collapse:collapse;
+    min-width:760px;
+  }
+
+  .data-table th,
+  .data-table td{
+    border:1px solid var(--border);
+    padding:10px 12px;
+    vertical-align:top;
+    font-size:13px;
+  }
+
+  .data-table th{
+    background:#f8fafc;
+    color:var(--ink);
+    font-weight:700;
+  }
+
+  .data-table input,
+  .data-table textarea,
+  .data-table select{
+    width:100%;
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:8px 10px;
+    font-size:13px;
+    background:#fff;
+  }
+
+  .data-table textarea{
+    min-height:64px;
+    resize:vertical;
+  }
+
+  .table-actions{
+    display:flex;
+    gap:10px;
+    margin-top:12px;
+    flex-wrap:wrap;
+  }
+
+  .btn-brsr{
+    border:none;
+    border-radius:10px;
+    padding:10px 16px;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+  }
+
+  .btn-brsr.primary{
+    background:var(--ink);
+    color:#fff;
+  }
+
+  .btn-brsr.secondary{
+    background:#eef2f7;
+    color:var(--ink-soft);
+  }
+
+  .btn-brsr.success{
+    background:var(--success);
+    color:#fff;
+  }
+
+  .btn-brsr.warn{
+    background:var(--warn);
+    color:#fff;
+  }
+
+  .assignment-launcher{
+    padding:0 20px 20px;
+  }
+
+  .assignment-summary{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    align-items:center;
+    padding:14px 16px;
+    border:1px dashed var(--border-strong);
+    border-radius:14px;
+    background:#fbfcff;
+    margin-top:16px;
+  }
+
+  .assignment-summary h4{
+    margin:0 0 4px;
+    font-size:15px;
+    color:var(--ink);
+  }
+
+  .assignment-summary p{
+    margin:0;
+    font-size:13px;
+    color:var(--muted);
+  }
+
+  .modal-backdrop-brsr{
+    position:fixed;
+    inset:0;
+    background:rgba(15,23,42,.5);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:1040;
+    padding:20px;
+  }
+
+  .modal-backdrop-brsr.active{display:flex;}
+
+  .modal-card{
+    width:min(1100px,100%);
+    max-height:90vh;
+    overflow:auto;
+    background:#fff;
+    border-radius:18px;
+    border:1px solid var(--border);
+    box-shadow:0 30px 70px rgba(15,23,42,.24);
+  }
+
+  .modal-head{
+    padding:18px 20px;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+
+  .modal-head h3{
+    margin:0;
+    font-family:var(--font-display);
+    font-size:18px;
+    color:var(--ink);
+  }
+
+  .modal-body{
+    padding:18px 20px 20px;
+  }
+
+  .assignment-grid{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:12px;
+  }
+
+  .assignment-grid .full{
+    grid-column:1 / -1;
+  }
+
+  .assignment-grid .half{
+    grid-column:span 1;
+  }
+
+  .selected-list{
+    margin:0;
+    padding-left:18px;
+    color:var(--ink-soft);
+    font-size:13px;
+  }
+
+  .modal-actions{
+    display:flex;
+    gap:10px;
+    justify-content:flex-end;
+    margin-top:16px;
+    flex-wrap:wrap;
+  }
+
+  @media (max-width: 1200px){
+    .brsr-shell{grid-template-columns:1fr;}
+    .brsr-sidebar{border-right:none;border-bottom:1px solid var(--border);}
+    .assignment-grid{grid-template-columns:1fr;}
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">BRSR Questions Workspace</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'accounts:dashboard' %}">Home</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'brsr:brsr_list' %}">BRSR</a></li>
+      <li class="breadcrumb-item">Questions</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="brsr-shell">
+    <aside class="brsr-sidebar">
+      <div class="sidebar-head">
+        <div class="brand-row">
+          <div>
+            <h3>BRSR Core</h3>
+            <small>Section and principle wise questions</small>
+          </div>
+          <span class="pill brand" id="assignmentBadge">Draft</span>
+        </div>
+        <div class="progress-label">
+          <span>Progress</span>
+          <strong id="progressLabel">0 of 0</strong>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill" style="width:0%"></div>
+        </div>
+      </div>
+
+      <div class="sidebar-tools">
+        <div>
+          <label class="tool-label">Section</label>
+          <select class="workspace-select" id="sectionSelect"></select>
+        </div>
+        <div id="principleWrap">
+          <label class="tool-label">Principle</label>
+          <select class="workspace-select" id="principleSelect"></select>
+        </div>
+      </div>
+
+      <div class="question-scroll">
+        <div id="sidebarGroups"></div>
+      </div>
+    </aside>
+
+    <main class="brsr-main">
+      <div class="workspace-top">
+        <div class="status-banner">
+          <div id="workspaceStatus">Loading workspace...</div>
+          <div id="workspaceStats">-</div>
+        </div>
+      </div>
+
+      <div class="main-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <h2 id="workspaceTitle">Select a question</h2>
+            <p id="workspaceSubtitle">The questions will load here once the workspace is ready.</p>
+          </div>
+          <div class="pill-row" id="contextPills"></div>
+        </div>
+
+        <div class="panel-body" id="questionDeck"></div>
+
+        <div class="assignment-launcher">
+          <div class="assignment-summary">
+            <div>
+              <h4>Assign Questions</h4>
+              <p>Assign selected questions to a plant user, then let the plant admin and employee continue the workflow.</p>
+            </div>
+            <button type="button" class="btn-brsr primary" id="openAssignModalBtn">Assign Selected</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="modal-backdrop-brsr" id="assignModal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3>Create Assignment</h3>
+      <button type="button" class="btn-brsr secondary" id="closeAssignModalBtn">Close</button>
+    </div>
+    <div class="modal-body">
+      <form id="assignmentForm">
+        <div class="assignment-grid">
+          <div>
+            <label class="tool-label">Plant</label>
+            <select class="workspace-select" name="plant" id="assignmentPlant"></select>
+          </div>
+          <div>
+            <label class="tool-label">Financial Year</label>
+            <select class="workspace-select" name="financial_year" id="assignmentFinancialYear"></select>
+          </div>
+          <div>
+            <label class="tool-label">Submission Frequency</label>
+            <select class="workspace-select" name="data_collection_frequency" id="assignmentFrequency"></select>
+          </div>
+          <div>
+            <label class="tool-label">Priority</label>
+            <select class="workspace-select" name="priority" id="assignmentPriority">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </div>
+          <div>
+            <label class="tool-label">Assigner</label>
+            <select class="workspace-select" name="assigner" id="assignmentAssigner"></select>
+          </div>
+          <div>
+            <label class="tool-label">Assignee</label>
+            <select class="workspace-select" name="assignee" id="assignmentAssignee"></select>
+          </div>
+          <div>
+          </div>
+          <div>
+            <label class="tool-label">Due Date</label>
+            <input class="workspace-input" type="date" name="due_date" id="assignmentDueDate">
+          </div>
+          <div class="full">
+            <label class="tool-label">Notes</label>
+            <textarea class="workspace-textarea" rows="3" name="notes" id="assignmentNotes" placeholder="Assignment notes"></textarea>
+          </div>
+          <div class="full">
+            <label class="tool-label">Selected Questions</label>
+            <ul class="selected-list" id="selectedQuestionList"></ul>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-brsr secondary" id="cancelAssignmentBtn">Cancel</button>
+          <button type="submit" class="btn-brsr primary">Create Assignment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const API_WORKSPACE = "{{ workspace_api_url|escapejs }}";
+  const API_SAVE = "{{ question_save_api_url|escapejs }}";
+  const API_SUBMIT = "{{ question_submit_api_url|escapejs }}";
+  const API_ASSIGN = "{{ assignment_create_api_url|escapejs }}";
+  const INITIAL_SECTION = "{{ current_section_code|default:''|escapejs }}";
+  const INITIAL_PRINCIPLE = "{{ current_principle_slug|default:''|escapejs }}";
+  const INITIAL_QUESTION = "{{ active_question_id|default:''|escapejs }}";
+
+  const state = {
+    sectionCode: INITIAL_SECTION,
+    principleSlug: INITIAL_PRINCIPLE,
+    questionId: INITIAL_QUESTION,
+    workspace: null,
+    activeQuestion: null,
+  };
+
+  function getCookie(name) {
+    const match = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+    return match ? match.pop() : '';
+  }
+
+  function escapeHtml(value) {
+    return (value ?? '')
+      .toString()
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
+  function statusClass(status) {
+    return {
+      draft: 'todo',
+      submitted: 'in-progress',
+      resubmitted: 'in-progress',
+      approved: 'approved',
+      rejected: 'rejected',
+    }[status] || 'todo';
+  }
+
+  function apiUrl(template, questionId) {
+    return template.replace('__question__', encodeURIComponent(questionId));
+  }
+
+  function groupQuestions(topics) {
+    const groups = [];
+    const map = new Map();
+    topics.forEach((question) => {
+      const key = question.sub_section || (question.section_code === 'section_a' ? 'General Disclosures' : 'Questions');
+      if (!map.has(key)) {
+        const group = { key, items: [] };
+        map.set(key, group);
+        groups.push(group);
+      }
+      map.get(key).items.push(question);
+    });
+    return groups;
+  }
+
+  function tableSchema(question) {
+    return question.table_schema || (question.validation_rules && question.validation_rules.table_schema) || {};
+  }
+
+  function defaultTableColumns(question) {
+    const schema = tableSchema(question);
+    if (schema && Array.isArray(schema.columns) && schema.columns.length) {
+      return schema.columns;
+    }
+    const fromSchema = question.validation_rules && Array.isArray(question.validation_rules.columns)
+      ? question.validation_rules.columns
+      : [];
+    if (fromSchema.length) return fromSchema;
+    const options = Array.isArray(question.options) ? question.options : [];
+    if (options.length && typeof options[0] === 'object' && options[0] !== null && options[0].label) {
+      return options;
+    }
+    return [
+      { key: 'particulars', label: 'Particulars', type: 'text' },
+      { key: 'current_year', label: 'Current Year', type: 'text' },
+      { key: 'previous_year', label: 'Previous Year', type: 'text' },
+    ];
+  }
+
+  function defaultChoiceOptions(question) {
+    const options = Array.isArray(question.options) ? question.options : [];
+    if (options.length) {
+      return options.map((option, index) => {
+        if (typeof option === 'object' && option !== null) {
+          return {
+            value: option.value ?? option.label ?? String(index),
+            label: option.label ?? option.value ?? String(index),
+            order: option.order ?? index + 1,
+          };
+        }
+        return { value: option, label: option, order: index + 1 };
+      });
+    }
+    if (question.question_type === 'yes_no') {
+      return [
+        { value: 'Yes', label: 'Yes', order: 1 },
+        { value: 'No', label: 'No', order: 2 },
+      ];
+    }
+    return [];
+  }
+
+  function initTableRows(question) {
+    const existing = question.response_json && Array.isArray(question.response_json.rows)
+      ? question.response_json.rows
+      : null;
+    if (existing && existing.length) return existing;
+    return [{
+      particulars: '',
+      current_year: '',
+      previous_year: '',
+    }];
+  }
+
+  function renderQuestionInput(question) {
+    const value = question.response_value || '';
+    const options = defaultChoiceOptions(question);
+    const schema = tableSchema(question);
+
+    if (question.question_type === 'textarea' || question.question_type === 'text') {
+      return `
+        <div class="form-group">
+          <label class="form-label">Response</label>
+          <textarea class="workspace-textarea form-textarea" id="responseValue-${escapeHtml(question.question_id)}" placeholder="${escapeHtml(question.placeholder_text || 'Type your response here')}">${escapeHtml(value)}</textarea>
+        </div>
+      `;
+    }
+
+    if (question.question_type === 'number' || question.question_type === 'decimal' || question.question_type === 'currency' || question.question_type === 'percentage' || question.question_type === 'year' || question.question_type === 'email' || question.question_type === 'url' || question.question_type === 'date' || question.question_type === 'phone') {
+      const typeMap = {
+        number: 'number',
+        decimal: 'text',
+        currency: 'text',
+        percentage: 'text',
+        year: 'number',
+        email: 'email',
+        url: 'url',
+        date: 'date',
+        phone: 'tel',
+      };
+      const type = typeMap[question.question_type] || 'text';
+      return `
+        <div class="form-group">
+          <label class="form-label">Response</label>
+          <input class="workspace-input" id="responseValue-${escapeHtml(question.question_id)}" type="${type}" value="${escapeHtml(value)}" placeholder="${escapeHtml(question.placeholder_text || '')}">
+        </div>
+      `;
+    }
+
+    if (question.question_type === 'select' || question.question_type === 'dropdown') {
+      const items = ['<option value="">Select an option</option>'].concat(
+        options.map((option) => {
+          const label = option.label ?? option.value ?? option;
+          const optionValue = option.value ?? option.label ?? option;
+          const selected = String(optionValue) === String(value) ? 'selected' : '';
+          return `<option value="${escapeHtml(optionValue)}" ${selected}>${escapeHtml(label)}</option>`;
+        })
+      );
+      return `
+        <div class="form-group">
+          <label class="form-label">Response</label>
+          <select class="workspace-select" id="responseValue-${escapeHtml(question.question_id)}">${items.join('')}</select>
+        </div>
+      `;
+    }
+
+    if (question.question_type === 'radio' || question.question_type === 'yes_no') {
+      return `
+        <div class="form-group">
+          <label class="form-label">Response</label>
+          <div class="choice-stack">
+            ${options.map((option) => {
+              const label = option.label ?? option.value ?? option;
+              const optionValue = option.value ?? option.label ?? option;
+              const checked = String(optionValue) === String(value) ? 'checked' : '';
+              return `
+                <label class="choice-item">
+                  <input type="radio" name="responseValue-${escapeHtml(question.question_id)}" value="${escapeHtml(optionValue)}" ${checked}>
+                  <span>${escapeHtml(label)}</span>
+                </label>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    if (question.question_type === 'checkbox' || question.question_type === 'multi_select') {
+      const selected = String(value || '').split(',').map((item) => item.trim()).filter(Boolean);
+      return `
+        <div class="form-group">
+          <label class="form-label">Choose applicable options</label>
+          <div class="choice-stack">
+            ${options.map((option) => {
+              const label = option.label ?? option.value ?? option;
+              const optionValue = option.value ?? option.label ?? option;
+              const checked = selected.includes(String(optionValue)) ? 'checked' : '';
+              return `
+                <label class="choice-item">
+                  <input type="checkbox" value="${escapeHtml(optionValue)}" ${checked}>
+                  <span>${escapeHtml(label)}</span>
+                </label>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    if (question.question_type === 'table' || question.question_type === 'nested_table' || question.question_type === 'matrix' || question.question_type === 'repeating_section') {
+      const columns = defaultTableColumns(question);
+      const rows = initTableRows(question);
+      const headerRows = Array.isArray(schema.header_rows) ? schema.header_rows : [];
+      const renderHeader = headerRows.length
+        ? headerRows.map((headerRow) => `
+            <tr>
+              ${headerRow.map((cell) => `<th>${escapeHtml(cell)}</th>`).join('')}
+              ${headerRow.length < columns.length ? `<th colspan="${columns.length - headerRow.length}"></th>` : ''}
+              <th style="width:48px;"></th>
+            </tr>
+          `).join('')
+        : `
+            <tr>
+              ${columns.map((column) => `<th>${escapeHtml(column.label || column.key)}</th>`).join('')}
+              <th style="width:48px;"></th>
+            </tr>
+          `;
+      return `
+        <div class="form-group">
+          <label class="form-label">Table Response</label>
+          <div class="table-container">
+            <table class="data-table" data-question-id="${escapeHtml(question.question_id)}" data-column-keys="${escapeHtml(columns.map((column) => column.key || column.name).join('|'))}">
+              <thead>
+                ${renderHeader}
+              </thead>
+              <tbody>
+                ${rows.map((row, index) => `
+                  <tr>
+                    ${columns.map((column) => {
+                      const key = column.key || column.name;
+                      const cell = row?.[key] ?? '';
+                      const inputType = column.type || 'text';
+                      if (inputType === 'textarea') {
+                        return `<td><textarea data-key="${escapeHtml(key)}" placeholder="${escapeHtml(column.placeholder || '')}">${escapeHtml(cell)}</textarea></td>`;
+                      }
+                      if (inputType === 'select') {
+                        const choices = Array.isArray(column.options) ? column.options : [];
+                        return `<td><select data-key="${escapeHtml(key)}">${choices.map((choice) => `<option value="${escapeHtml(choice)}" ${String(choice) === String(cell) ? 'selected' : ''}>${escapeHtml(choice)}</option>`).join('')}</select></td>`;
+                      }
+                      return `<td><input data-key="${escapeHtml(key)}" type="text" value="${escapeHtml(cell)}" placeholder="${escapeHtml(column.placeholder || '')}"></td>`;
+                    }).join('')}
+                    <td><button type="button" class="btn-brsr secondary js-remove-row">-</button></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+          <div class="table-actions">
+            <button type="button" class="btn-brsr secondary js-add-row">Add Row</button>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="form-group">
+        <label class="form-label">Response</label>
+        <textarea class="workspace-textarea form-textarea" id="responseValue-${escapeHtml(question.question_id)}">${escapeHtml(value)}</textarea>
+      </div>
+    `;
+  }
+
+  function renderSidebar(workspace) {
+    const sectionSelect = document.getElementById('sectionSelect');
+    sectionSelect.innerHTML = workspace.sections.map((section) => {
+      const selected = section.code === workspace.section.code ? 'selected' : '';
+      return `<option value="${section.code}" ${selected}>${escapeHtml(section.name)}</option>`;
+    }).join('');
+
+    const principleWrap = document.getElementById('principleWrap');
+    const principleSelect = document.getElementById('principleSelect');
+    if (workspace.section.code === 'section_c') {
+      principleWrap.style.display = '';
+      principleSelect.innerHTML = workspace.principles.map((principle) => {
+        const selected = workspace.principle && principle.slug === workspace.principle.slug ? 'selected' : '';
+        return `<option value="${principle.slug}" ${selected}>P${principle.number} · ${escapeHtml(principle.name)}</option>`;
+      }).join('');
+    } else {
+      principleWrap.style.display = 'none';
+      principleSelect.innerHTML = '';
+    }
+
+    sectionSelect.onchange = async (event) => {
+      const sectionCode = event.target.value;
+      const nextPrinciple = sectionCode === 'section_c' && workspace.principles.length ? workspace.principles[0].slug : '';
+      await loadWorkspace(sectionCode, nextPrinciple, '');
+    };
+
+    principleSelect.onchange = async (event) => {
+      await loadWorkspace(workspace.section.code, event.target.value, '');
+    };
+
+    const grouped = groupQuestions(workspace.topics);
+    const sidebarGroups = document.getElementById('sidebarGroups');
+    sidebarGroups.innerHTML = grouped.map((group) => `
+      <div class="nav-group">
+        <div class="nav-group-head">${escapeHtml(group.key)}</div>
+        ${group.items.map((question) => `
+          <div class="question-item ${question.question_id === workspace.active_question_id ? 'active' : ''}" data-question-id="${escapeHtml(question.question_id)}">
+            <span class="question-dot ${statusClass(question.status)}"></span>
+            ${escapeHtml(question.question_number)}. ${escapeHtml(question.title)}
+          </div>
+        `).join('')}
+      </div>
+    `).join('');
+
+    sidebarGroups.querySelectorAll('.question-item').forEach((item) => {
+      item.addEventListener('click', () => {
+        const questionId = item.getAttribute('data-question-id');
+        state.questionId = questionId;
+        renderQuestionDeck(workspace, questionId);
+        item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      });
+    });
+  }
+
+  function renderQuestionCard(question, isActive) {
+    const selected = isActive ? 'active' : '';
+    const choiceMarker = question.is_required ? '<span class="pill warn">Required</span>' : '';
+    return `
+      <div class="question-container ${selected}" id="question-${escapeHtml(question.question_id)}" data-question-id="${escapeHtml(question.question_id)}">
+        <div class="question-header">
+          <div class="question-header-left">
+            <input type="checkbox" class="question-checkbox js-question-select" data-question-id="${escapeHtml(question.question_id)}">
+            <div>
+              <h3 class="question-title"><span class="question-number">${escapeHtml(question.question_number)}.</span>${escapeHtml(question.title)}</h3>
+              <!-- <div class="question-meta">${escapeHtml(question.sub_section || 'Question')} · ${escapeHtml(question.question_type)} ${choiceMarker ? '· Required' : ''}</div> -->
+            </div>
+          </div>
+          <span class="status-badge ${statusClass(question.status)}">${escapeHtml(question.status)}</span>
+        </div>
+        <div class="question-content">
+          ${renderQuestionInput(question)}
+          <div class="table-actions">
+            <button type="button" class="btn-brsr secondary js-save-question">Save Draft</button>
+            <button type="button" class="btn-brsr success js-submit-question">Submit</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderQuestionDeck(workspace, focusQuestionId) {
+    const deck = document.getElementById('questionDeck');
+    const activeQuestion = workspace.topics.find((question) => question.question_id === (focusQuestionId || workspace.active_question_id)) || workspace.active_question || workspace.topics[0] || null;
+    state.activeQuestion = activeQuestion;
+    state.questionId = activeQuestion ? activeQuestion.question_id : '';
+
+    if (!activeQuestion) {
+      deck.innerHTML = '<div class="text-muted">No questions found for this section.</div>';
+      return;
+    }
+
+    const grouped = groupQuestions(workspace.topics);
+    deck.innerHTML = grouped.map((group) => `
+      <div class="group-block">
+        <div class="group-head">
+          <h3>${escapeHtml(group.key)}</h3>
+          <span class="pill">${group.items.length} questions</span>
+        </div>
+        <div class="group-body">
+          ${group.items.map((question) => renderQuestionCard(question, question.question_id === activeQuestion.question_id)).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    deck.querySelectorAll('.question-container').forEach((card) => {
+      const questionId = card.getAttribute('data-question-id');
+      const question = workspace.topics.find((item) => item.question_id === questionId);
+      const header = card.querySelector('.question-header');
+      header.addEventListener('click', (event) => {
+        if (event.target.closest('input, button, textarea, select')) return;
+        card.classList.toggle('active');
+      });
+
+      const checkbox = card.querySelector('.js-question-select');
+      const sidebarItem = document.querySelector(`.question-item[data-question-id="${CSS.escape(questionId)}"]`);
+      if (checkbox) {
+        checkbox.checked = questionId === activeQuestion.question_id || workspace.selected_question_ids?.includes?.(questionId);
+        checkbox.addEventListener('change', () => syncSelectionState(questionId, checkbox.checked));
+      }
+
+      if (sidebarItem) {
+        sidebarItem.classList.toggle('active', questionId === activeQuestion.question_id);
+      }
+
+      card.classList.toggle('active', questionId === activeQuestion.question_id);
+
+      const saveBtn = card.querySelector('.js-save-question');
+      const submitBtn = card.querySelector('.js-submit-question');
+      if (saveBtn) saveBtn.addEventListener('click', () => saveQuestion(questionId));
+      if (submitBtn) submitBtn.addEventListener('click', () => submitQuestion(questionId));
+
+      const table = card.querySelector('.data-table');
+      if (table) {
+        const addRowBtn = card.querySelector('.js-add-row');
+        if (addRowBtn) addRowBtn.addEventListener('click', () => addTableRow(table));
+        card.querySelectorAll('.js-remove-row').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const row = btn.closest('tr');
+            if (row) row.remove();
+          });
+        });
+      }
+    });
+
+    updateQuestionHeader(workspace, activeQuestion);
+  }
+
+  function updateQuestionHeader(workspace, question) {
+    document.getElementById('progressLabel').textContent = `${workspace.counts.completed} of ${workspace.counts.total}`;
+    document.getElementById('progressFill').style.width = workspace.counts.total ? `${Math.round((workspace.counts.completed / workspace.counts.total) * 100)}%` : '0%';
+    document.getElementById('workspaceStatus').textContent = `${workspace.section.name}${workspace.principle ? ` · ${workspace.principle.name}` : ''}`;
+    document.getElementById('workspaceStats').textContent = `${workspace.counts.completed} approved · ${workspace.counts.submitted} pending review · ${workspace.counts.rejected} rejected`;
+    document.getElementById('workspaceTitle').textContent = `${question.question_number}. ${question.title}`;
+    document.getElementById('workspaceSubtitle').textContent = `${workspace.section.name}${workspace.principle ? ` · ${workspace.principle.title}` : ''}${question.sub_section ? ` · ${question.sub_section}` : ''}`;
+
+    const pills = [
+      `<span class="pill brand">${escapeHtml(workspace.section.name)}</span>`,
+      workspace.principle ? `<span class="pill success">${escapeHtml(workspace.principle.principle_name)}</span>` : '',
+      question.is_required ? `<span class="pill warn">Required</span>` : '',
+      question.assignment_id ? `<span class="pill">${escapeHtml(question.assignment_id)}</span>` : '',
+    ].filter(Boolean);
+    const contextPillsEl = document.getElementById('contextPills');
+    if (contextPillsEl) contextPillsEl.innerHTML = pills.join('');
+
+    document.getElementById('assignmentBadge').textContent = workspace.latest_assignment ? workspace.latest_assignment.assignment_id : 'Draft';
+
+    fillAssignmentOptions(workspace);
+  }
+
+  function addTableRow(table) {
+    const tbody = table.querySelector('tbody');
+    const columnKeys = (table.getAttribute('data-column-keys') || '').split('|').filter(Boolean);
+    const row = document.createElement('tr');
+    let cells = '';
+    columnKeys.forEach((key) => {
+      cells += `<td><input type="text" data-key="${escapeHtml(key)}"></td>`;
+    });
+    row.innerHTML = `${cells}<td><button type="button" class="btn-brsr secondary js-remove-row">-</button></td>`;
+    tbody.appendChild(row);
+    row.querySelector('.js-remove-row').addEventListener('click', () => row.remove());
+  }
+
+  function syncSelectionState(questionId, checked) {
+    const sidebarItem = document.querySelector(`.question-item[data-question-id="${CSS.escape(questionId)}"]`);
+    const card = document.querySelector(`.question-container[data-question-id="${CSS.escape(questionId)}"]`);
+    if (sidebarItem) sidebarItem.classList.toggle('active', checked);
+    if (card) card.classList.toggle('question-selected', checked);
+  }
+
+  function collectQuestionPayload(questionId) {
+    const question = state.workspace.topics.find((item) => item.question_id === questionId);
+    if (!question) return null;
+
+    const container = document.querySelector(`.question-container[data-question-id="${CSS.escape(questionId)}"]`);
+    if (!container) return null;
+
+    const payload = { assignment_id: question.assignment_id || '' };
+    if (question.question_type === 'table' || question.question_type === 'nested_table' || question.question_type === 'matrix' || question.question_type === 'repeating_section') {
+      const table = container.querySelector('.data-table');
+      const rows = [];
+      if (table) {
+        table.querySelectorAll('tbody tr').forEach((tr) => {
+          const row = {};
+          tr.querySelectorAll('td').forEach((td, index) => {
+            if (index === tr.children.length - 1) return;
+            const field = td.querySelector('input, textarea, select');
+            if (!field) return;
+            const key = field.getAttribute('data-key') || `column_${index + 1}`;
+            row[key] = field.value;
+          });
+          rows.push(row);
+        });
+      }
+      payload.response_json = { rows };
+    } else if (question.question_type === 'checkbox' || question.question_type === 'multi_select') {
+      payload.response_value = Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map((el) => el.value).join(',');
+    } else if (question.question_type === 'radio' || question.question_type === 'yes_no') {
+      const checked = container.querySelector('input[type="radio"]:checked');
+      payload.response_value = checked ? checked.value : '';
+    } else {
+      const control = container.querySelector(`#responseValue-${CSS.escape(questionId)}`);
+      payload.response_value = control ? control.value : '';
+    }
+    return payload;
+  }
+
+  async function saveQuestion(questionId) {
+    const payload = collectQuestionPayload(questionId);
+    if (!payload || !payload.assignment_id) {
+      alert('Create an assignment before saving this question.');
+      return;
+    }
+    const response = await fetch(apiUrl(API_SAVE, questionId), {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+      },
+      body: JSON.stringify(payload),
+    });
+    if (response.ok) {
+      await loadWorkspace(state.sectionCode, state.principleSlug, questionId);
+    } else {
+      const data = await response.json().catch(() => ({}));
+      alert(data.detail || 'Unable to save the question.');
+    }
+  }
+
+  async function submitQuestion(questionId) {
+    const payload = collectQuestionPayload(questionId);
+    if (!payload || !payload.assignment_id) {
+      alert('Create an assignment before submitting this question.');
+      return;
+    }
+    await saveQuestion(questionId);
+    const response = await fetch(apiUrl(API_SUBMIT, questionId), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+      },
+      body: JSON.stringify({ assignment_id: payload.assignment_id }),
+    });
+    if (response.ok) {
+      await loadWorkspace(state.sectionCode, state.principleSlug, questionId);
+    } else {
+      const data = await response.json().catch(() => ({}));
+      alert(data.detail || 'Unable to submit the question.');
+    }
+  }
+
+  function fillAssignmentOptions(workspace) {
+    const plantSelect = document.getElementById('assignmentPlant');
+    const fySelect = document.getElementById('assignmentFinancialYear');
+    const frequencySelect = document.getElementById('assignmentFrequency');
+    const assignerSelect = document.getElementById('assignmentAssigner');
+    const assigneeSelect = document.getElementById('assignmentAssignee');
+
+    plantSelect.innerHTML = workspace.plants.map((plant) => `<option value="${plant.id}">${escapeHtml(plant.name)} (${escapeHtml(plant.code)})</option>`).join('');
+    fySelect.innerHTML = workspace.financial_years.map((fy) => `<option value="${escapeHtml(fy.value)}">${escapeHtml(fy.label)}</option>`).join('');
+    frequencySelect.innerHTML = (workspace.frequency_choices || []).map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join('');
+    assignerSelect.innerHTML = workspace.users.map((user) => `<option value="${user.id}">${escapeHtml(user.name)} (${escapeHtml(user.username)})</option>`).join('');
+    assigneeSelect.innerHTML = workspace.users.map((user) => `<option value="${user.id}">${escapeHtml(user.name)} (${escapeHtml(user.username)})</option>`).join('');
+
+    // parent assignment UI removed — not used in current workflow
+  }
+
+  function getSelectedQuestions() {
+    return Array.from(document.querySelectorAll('.question-checkbox:checked')).map((checkbox) => {
+      const card = checkbox.closest('.question-container');
+      const questionId = card ? card.getAttribute('data-question-id') : null;
+      const title = card ? card.querySelector('.question-title')?.textContent?.trim() : '';
+      return questionId ? { id: questionId, title } : null;
+    }).filter(Boolean);
+  }
+
+  function refreshSelectedList() {
+    const selected = getSelectedQuestions();
+    document.getElementById('selectedQuestionList').innerHTML = selected.length
+      ? selected.map((item) => `<li>${escapeHtml(item.title)} <small>(${escapeHtml(item.id)})</small></li>`).join('')
+      : '<li>No questions selected yet.</li>';
+    return selected;
+  }
+
+  function openModal() {
+    refreshSelectedList();
+    document.getElementById('assignModal').classList.add('active');
+  }
+
+  function closeModal() {
+    document.getElementById('assignModal').classList.remove('active');
+  }
+
+  async function submitAssignment(event) {
+    event.preventDefault();
+    const selected = refreshSelectedList();
+    if (!selected.length) {
+      alert('Please select at least one question.');
+      return;
+    }
+
+    const payload = {
+      section_code: state.sectionCode,
+      principle_slug: state.principleSlug,
+      question_ids: selected.map((item) => item.id),
+      plant: document.getElementById('assignmentPlant').value,
+      financial_year: document.getElementById('assignmentFinancialYear').value,
+      data_collection_frequency: document.getElementById('assignmentFrequency').value,
+      priority: document.getElementById('assignmentPriority').value,
+      assigner: document.getElementById('assignmentAssigner').value,
+      assignee: document.getElementById('assignmentAssignee').value,
+      due_date: document.getElementById('assignmentDueDate').value,
+      notes: document.getElementById('assignmentNotes').value,
+    };
+
+    const response = await fetch(API_ASSIGN, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+      },
+      body: JSON.stringify(payload),
+    });
+    if (response.ok) {
+      closeModal();
+      await loadWorkspace(state.sectionCode, state.principleSlug, state.questionId);
+    } else {
+      const data = await response.json().catch(() => ({}));
+      alert(data.detail || 'Unable to create assignment.');
+    }
+  }
+
+  async function loadWorkspace(sectionCode, principleSlug, questionId) {
+    const params = new URLSearchParams();
+    if (sectionCode) params.set('section_code', sectionCode);
+    if (principleSlug) params.set('principle_slug', principleSlug);
+    if (questionId) params.set('question_id', questionId);
+
+    const response = await fetch(`${API_WORKSPACE}?${params.toString()}`, {
+      headers: { 'Accept': 'application/json' },
+    });
+    const workspace = await response.json();
+    state.workspace = workspace;
+    state.sectionCode = workspace.section.code;
+    state.principleSlug = workspace.principle ? workspace.principle.slug : '';
+    state.questionId = workspace.active_question_id;
+
+    renderSidebar(workspace);
+    renderQuestionDeck(workspace, workspace.active_question_id);
+    refreshSelectedList();
+  }
+
+  document.getElementById('openAssignModalBtn').addEventListener('click', openModal);
+  document.getElementById('closeAssignModalBtn').addEventListener('click', closeModal);
+  document.getElementById('cancelAssignmentBtn').addEventListener('click', closeModal);
+  document.getElementById('assignModal').addEventListener('click', (event) => {
+    if (event.target.id === 'assignModal') closeModal();
+  });
+  document.getElementById('assignmentForm').addEventListener('submit', submitAssignment);
+
+  loadWorkspace(state.sectionCode, state.principleSlug, state.questionId);
+</script>
+{% endblock %}
