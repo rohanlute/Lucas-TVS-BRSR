@@ -911,11 +911,8 @@ document.addEventListener('DOMContentLoaded', function() {
     };
     
     // ====== API BASE URL ======
-    // Try to determine the correct API base URL
-    // ====== API BASE URL ======
-    // Use only the working path
-    const API_BASE = window.location.origin + '/calculator/api/';
-
+    const API_BASE = window.location.origin + '/calculator/';
+    
     // ====== API FUNCTIONS ======
     async function fetchCategories() {
         try {
@@ -924,7 +921,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             if (response.ok) {
                 const data = await response.json();
-                console.log('✅ Categories loaded');
                 return data;
             }
             return null;
@@ -933,7 +929,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return null;
         }
     }
-
+    
     async function fetchCategoryData(categoryId) {
         try {
             const response = await fetch(`${API_BASE}get-category-data/?category=${categoryId}`, {
@@ -949,7 +945,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return { success: false, error: error.message };
         }
     }
-
+    
     async function fetchConversion(category, amount, from, to, prec) {
         try {
             const params = `category=${category}&amount=${amount}&from_unit=${encodeURIComponent(from)}&to_unit=${encodeURIComponent(to)}&precision=${prec}`;
@@ -966,7 +962,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return { success: false, error: error.message };
         }
     }
-    
     // ====== RENDER FUNCTIONS ======
     function renderSidebar(categories) {
         if (!categories || !categories.success) {

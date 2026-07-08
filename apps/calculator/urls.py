@@ -13,12 +13,11 @@ urlpatterns = [
     # ====== CRUD URLs ======
     path('categories/', views.UnitCategoryListView.as_view(), name='unit_category_list'),
     path('categories/create/', views.UnitCategoryCreateView.as_view(), name='unit_category_create'),
-    path('categories/<int:pk>/edit/', views.UnitCategoryUpdateView.as_view(), name='category_update'),
+    path('categories/<int:pk>/edit/', views.UnitCategoryUpdateView.as_view(), name='unit_category_update'),
     path('categories/<int:pk>/delete/', views.UnitCategoryDeleteView.as_view(), name='unit_category_delete'),
     
     # ====== API URLs for Converter Modal ======
-    # These will be accessible at /calculator/api/get-categories/
-    path('api/get-categories/', views.GetCategoriesView.as_view(), name='get_categories'),
-    path('api/get-category-data/', views.GetCategoryDataView.as_view(), name='get_category_data'),
-    path('api/get-conversion/', views.GetConversionView.as_view(), name='get_conversion'),
+    path('get-categories/', views.GetCategoriesView.as_view(), name='get_categories'),
+    path('get-category-data/', views.GetCategoryDataView.as_view(), name='get_category_data'),
+    path('get-conversion/', views.GetConversionView.as_view(), name='get_conversion'),
 ]

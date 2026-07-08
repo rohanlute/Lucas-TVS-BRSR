@@ -28,8 +28,7 @@ urlpatterns = [
     path('brsr/', include('apps.brsr.urls')),
     path('organizations/', include('apps.organizations.urls')),
     path('email_master/', include('apps.email_master.urls')),
-    path('api/', include('apps.calculator.urls')),  # For /api/get-conversion/
-    path('calculator/', include('apps.calculator.urls')),  # For /calculator/api/get-conversion/
+    path('calculator/', include('apps.calculator.urls', namespace='calculator')),
     path("environmental/", include("apps.environmental.urls")),
 ]
 
