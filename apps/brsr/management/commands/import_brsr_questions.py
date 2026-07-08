@@ -101,6 +101,53 @@ class Command(BaseCommand):
         if normalized == "text" and any(token in text for token in ("provide details", "describe", "briefly describe")):
             return "textarea"
         return normalized
+    
+    def generate_placeholder_text(self, question_type, question_text):
+        text = (question_text or "").lower()
+
+        if question_type == "email":
+            return "Enter the official company email address."
+
+        elif question_type == "phone":
+            return "Enter the official contact number."
+
+        elif question_type == "url":
+            return "Enter a valid website URL."
+
+        elif question_type == "date":
+            return "Select the applicable date."
+
+        elif question_type == "year":
+            return "Enter the reporting financial year."
+
+        elif question_type == "number":
+            return "Enter a numeric value."
+
+        elif question_type == "decimal":
+            return "Enter a decimal value."
+
+        elif question_type == "currency":
+            return "Enter the amount in INR."
+
+        elif question_type == "percentage":
+            return "Enter the percentage without the % symbol."
+
+        elif question_type == "yes_no":
+            return "Select either Yes or No."
+
+        elif question_type == "dropdown":
+            return "Choose one option from the list."
+
+        elif question_type == "multi_select":
+            return "Select one or more applicable options."
+
+        elif question_type == "textarea":
+            return "Provide detailed information."
+
+        elif question_type in ("table", "nested_table", "matrix"):
+            return "Complete all applicable rows and columns."
+
+        return ""
 
     def _looks_like_yes_no(self, text):
         return any(marker in text for marker in ("(yes/no)", "(y/n)", " yes/no", " yes / no", "yes or no"))
@@ -408,8 +455,17 @@ class Command(BaseCommand):
         raw_question_type = (row.get("question_type") or "").strip()
         question_type = self.normalize_question_type(raw_question_type, question_text)
         excerpt_text, match_index = self._find_excerpt_for_row(pdf_lines, row, fallback_index)
-        options = self._extract_option_labels(question_type, question_text, excerpt_text)
-        option_objects = self._option_objects(options)
+        csv_options = (row.get("options") or "").strip()
+        if csv_options:
+            option_labels = [opt.strip() for opt in csv_options.split("|") if opt.strip()]
+        else:
+            option_labels = self._extract_option_labels(
+                question_type,
+                question_text,
+                excerpt_text,
+            )
+
+        option_objects = self._option_objects(option_labels)
         units = self._extract_units(question_text, excerpt_text)
         validation_rules = self._build_validation_rules(
             row=row,
@@ -436,18 +492,22 @@ class Command(BaseCommand):
             "yes_no": "",
         }.get(question_type, "")
 
-        help_text = ""
-        if excerpt_text:
+        placeholder_text = (row.get("placeholder_text") or "").strip()
+        if not placeholder_text and excerpt_text:
             lines = [line.strip() for line in excerpt_text.splitlines() if line.strip()]
-            if len(lines) > 1 and not lines[1].startswith(("S. No", "S. no", "Particulars", "Location", "Data privacy")):
-                help_text = lines[1]
+            if len(lines) > 1 and not lines[1].startswith(
+                ("S. No", "S. no", "Particulars", "Location", "Data privacy")
+            ):
+                        placeholder_text = lines[1]
+
+        if not placeholder_text:
+            placeholder_text = self.generate_placeholder_text(question_type, question_text)
 
         return {
             "question_number": qnum,
             "sub_section": sub_section,
             "question_text": question_text,
             "question_type": question_type,
-            "help_text": help_text or None,
             "placeholder_text": placeholder_text or None,
             "options": option_objects,
             "validation_rules": validation_rules,
@@ -473,7 +533,6 @@ class Command(BaseCommand):
                 question_type=payload["question_type"],
                 is_required=payload["validation_rules"].get("required", False),
                 display_order=order,
-                help_text=payload["help_text"],
                 placeholder_text=payload["placeholder_text"],
                 options=payload["options"],
                 validation_rules=payload["validation_rules"],
