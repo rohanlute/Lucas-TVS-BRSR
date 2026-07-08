@@ -20,5 +20,5 @@ class Unit(models.Model):
     )
     is_base_unit = models.BooleanField(default=False)
 
-    def _str_(self):
+    def __str__(self):
         return self.name

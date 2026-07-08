@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import *
+from .models import FinancialMonth
 
 
 class SubLocationInline(admin.TabularInline):
@@ -58,3 +59,32 @@ class SubLocationAdmin(admin.ModelAdmin):
         return obj.location.zone.plant.name
     get_plant.short_description = 'Plant'
     get_plant.admin_order_field = 'location__zone__plant__name'
+
+
+
+@admin.register(FinancialMonth)
+class FinancialMonthAdmin(admin.ModelAdmin):
+
+    list_display = (
+        "month_number",
+        "month_code",
+        "month_name",
+        "quarter",
+        "half_year",
+        "display_order",
+        "is_active",
+    )
+
+    list_editable = (
+        "display_order",
+        "is_active",
+    )
+
+    ordering = (
+        "display_order",
+    )
+
+    search_fields = (
+        "month_name",
+        "month_code",
+    )

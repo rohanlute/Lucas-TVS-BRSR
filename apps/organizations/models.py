@@ -237,3 +237,60 @@ class FinancialYear(models.Model):
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+
+class FinancialMonth(models.Model):
+
+    MONTH_CHOICES = [
+        (1, "April"),
+        (2, "May"),
+        (3, "June"),
+        (4, "July"),
+        (5, "August"),
+        (6, "September"),
+        (7, "October"),
+        (8, "November"),
+        (9, "December"),
+        (10, "January"),
+        (11, "February"),
+        (12, "March"),
+    ]
+
+    month_number = models.PositiveSmallIntegerField(
+        unique=True
+    )
+
+    month_code = models.CharField(
+        max_length=5,
+        unique=True
+    )
+
+    month_name = models.CharField(
+        max_length=20
+    )
+
+    quarter = models.CharField(
+        max_length=2
+    )
+
+    half_year = models.CharField(
+        max_length=2
+    )
+
+    display_order = models.PositiveSmallIntegerField(
+        default=1
+    )
+
+    is_active = models.BooleanField(
+        default=True
+    )
+
+    class Meta:
+        db_table = "org_financial_month"
+        ordering = ["display_order"]
+        verbose_name = "Financial Month"
+        verbose_name_plural = "Financial Months"
+
+    def __str__(self):
+        return self.month_name

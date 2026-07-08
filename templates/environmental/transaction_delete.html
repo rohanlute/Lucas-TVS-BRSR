@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Transaction{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+    <div class="card">
+
+        <div class="card-body">
+
+            <h4>
+
+                Are you sure you want to delete this transaction?
+
+            </h4>
+
+            <br>
+
+            <form method="post">
+
+                {% csrf_token %}
+
+                <button class="btn btn-danger">
+
+                    Yes, Delete
+
+                </button>
+
+                <a href="{% url 'environmental:transaction_list' %}"
+                   class="btn btn-secondary">
+
+                    Cancel
+
+                </a>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
