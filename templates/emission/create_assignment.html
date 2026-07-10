@@ -1,0 +1,572 @@
+<!-- templates/emission/create_assignment.html -->
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Create Assignment{% endblock %}
+
+{% block extra_css %}
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  .create-assignment-page {
+    padding: 24px 32px;
+    background: #f5f7fb;
+    min-height: 100vh;
+  }
+
+  /* ===== PAGE HEADER ===== */
+  .page-header-custom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #eef2f6;
+  }
+
+  .page-header-custom .title-section h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a2332;
+    margin: 0;
+  }
+
+  .page-header-custom .title-section h1 i {
+    color: #2563eb;
+    margin-right: 12px;
+  }
+
+  .page-header-custom .title-section .subtitle {
+    font-size: 13px;
+    color: #6b7280;
+    margin-top: 2px;
+  }
+
+  /* ===== FORM ===== */
+  .form-container {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #eef2f6;
+    padding: 32px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  }
+
+  .form-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a2332;
+    margin-bottom: 24px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+  }
+
+  .form-row.two-col {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a2332;
+    letter-spacing: 0.02em;
+  }
+
+  .form-group label .required {
+    color: #ef4444;
+    margin-left: 2px;
+  }
+
+  .form-group select,
+  .form-group input {
+    padding: 10px 14px;
+    border: 2px solid #eef2f6;
+    border-radius: 10px;
+    font-size: 13px;
+    color: #1a2332;
+    background: white;
+    transition: all 0.2s ease;
+    outline: none;
+    width: 100%;
+    appearance: auto;
+  }
+
+  .form-group select:focus,
+  .form-group input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+  }
+
+  .form-group select:disabled,
+  .form-group input:disabled {
+    background: #f3f4f6;
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  .form-group .help-text {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 2px;
+  }
+
+  /* ===== FORM ACTIONS ===== */
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    padding-top: 20px;
+    border-top: 1px solid #eef2f6;
+  }
+
+  .btn-primary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 28px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-secondary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #f3f4f6;
+    color: #1a2332;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 28px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-secondary:hover {
+    background: #e5e7eb;
+  }
+
+  /* ===== TOAST ===== */
+  .custom-toast {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    z-index: 99999;
+    max-width: 420px;
+    min-width: 300px;
+    animation: slideInRight 0.4s ease;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+  }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(80px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 992px) {
+    .form-row {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+
+    .form-row.two-col {
+      grid-template-columns: 1fr;
+    }
+
+    .create-assignment-page {
+      padding: 16px;
+    }
+
+    .form-container {
+      padding: 20px;
+    }
+
+    .form-actions {
+      flex-direction: column;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+      justify-content: center;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="create-assignment-page">
+  <!-- PAGE HEADER -->
+  <div class="page-header-custom">
+    <div class="title-section">
+      <h1>
+        Create Assignment
+      </h1>
+    </div>
+  </div>
+
+  <!-- FORM -->
+  <div class="form-container">
+    <div class="form-title">Assignment Details</div>
+    
+    <form id="assignmentForm" onsubmit="return false;">
+      {% csrf_token %}
+      
+      <!-- Row 1: Plant, Department, Scope -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="plant">Plant / Location <span class="required">*</span></label>
+          <select id="plant" name="plant" onchange="getDepartments()" required>
+            <option value="">Select Plant</option>
+            {% for plant in plants %}
+            <option value="{{ plant.id }}">{{ plant.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="department">Department <span class="required">*</span></label>
+          <select id="department" name="department" required>
+            <option value="">Select Department</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="scope">Scope <span class="required">*</span></label>
+          <select id="scope" name="scope" onchange="updateActivities()" required>
+            <option value="">Select Scope</option>
+            <option value="Scope 1">Scope 1</option>
+            <option value="Scope 2">Scope 2</option>
+            <option value="Scope 3">Scope 3</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Row 2: Activity, Frequency -->
+      <div class="form-row two-col">
+        <div class="form-group">
+          <label for="activity">Activity <span class="required">*</span></label>
+          <select id="activity" name="activity" required>
+            <option value="">Select Activity</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="frequency">Frequency <span class="required">*</span></label>
+          <select id="frequency" name="frequency" required>
+            <option value="">Select Frequency</option>
+            {% for freq in frequencies %}
+            <option value="{{ freq }}">{{ freq }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- Row 3: Assignee, Reviewer, Due Day -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="assignee">Assignee <span class="required">*</span></label>
+          <select id="assignee" name="assignee" required>
+            <option value="">Select Assignee</option>
+            {% for person in people %}
+            <option value="{{ person }}">{{ person }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="reviewer">Reviewer <span class="required">*</span></label>
+          <select id="reviewer" name="reviewer" required>
+            <option value="">Select Reviewer</option>
+            {% for person in people %}
+            <option value="{{ person }}">{{ person }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="due_day">Due Day of Month <span class="required">*</span></label>
+          <input type="number" id="due_day" name="due_day" min="1" max="31" required>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button type="button" class="btn-primary" onclick="submitAssignment()">
+          <i class="fas fa-plus"></i> Create &amp; Generate Tasks
+        </button>
+        <button type="button" class="btn-secondary" onclick="cancelAssignment()">
+          <i class="fas fa-times"></i> Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+// ===== CSRF TOKEN =====
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+
+// ===== SCOPE ACTIVITIES =====
+const scopeActivities = {
+  'Scope 1': [
+    'Diesel Consumption',
+    'Petrol Consumption',
+    'LPG Consumption',
+    'Natural Gas',
+    'DG Set Diesel',
+    'Refrigerant Leakage',
+    'Company Vehicles'
+  ],
+  'Scope 2': [
+    'Purchased Electricity',
+    'Purchased Steam',
+    'Purchased Cooling',
+    'Renewable Electricity'
+  ],
+  'Scope 3': [
+    'Business Travel',
+    'Employee Commuting',
+    'Waste Disposal',
+    'Purchased Goods',
+    'Transportation',
+    'Water Consumption',
+    'Capital Goods',
+    'Investments'
+  ]
+};
+
+// ===== GET DEPARTMENTS BY PLANT =====
+function getDepartments() {
+  const plantId = document.getElementById('plant').value;
+  const departmentSelect = document.getElementById('department');
+  
+  departmentSelect.innerHTML = '<option value="">Loading...</option>';
+  departmentSelect.disabled = true;
+  
+  if (!plantId) {
+    departmentSelect.innerHTML = '<option value="">Select Department</option>';
+    departmentSelect.disabled = false;
+    return;
+  }
+  
+  fetch(`{% url 'emission:get-departments' %}?plant_id=${plantId}`)
+    .then(response => response.json())
+    .then(data => {
+      departmentSelect.innerHTML = '<option value="">Select Department</option>';
+      data.departments.forEach(function(dept) {
+        const option = document.createElement('option');
+        option.value = dept.id;
+        option.textContent = dept.name;
+        departmentSelect.appendChild(option);
+      });
+      departmentSelect.disabled = false;
+    })
+    .catch(error => {
+      console.error('Error fetching departments:', error);
+      departmentSelect.innerHTML = '<option value="">Error loading departments</option>';
+      departmentSelect.disabled = false;
+    });
+}
+
+// ===== UPDATE ACTIVITIES BASED ON SCOPE =====
+function updateActivities() {
+  const scope = document.getElementById('scope').value;
+  const activitySelect = document.getElementById('activity');
+  
+  activitySelect.innerHTML = '<option value="">Select Activity</option>';
+  
+  if (scope && scopeActivities[scope]) {
+    scopeActivities[scope].forEach(function(activity) {
+      const option = document.createElement('option');
+      option.value = activity;
+      option.textContent = activity;
+      activitySelect.appendChild(option);
+    });
+  }
+}
+
+// ===== SUBMIT ASSIGNMENT =====
+function submitAssignment() {
+  const form = document.getElementById('assignmentForm');
+  const formData = {
+    plant: document.getElementById('plant').value,
+    plant_name: document.getElementById('plant').options[document.getElementById('plant').selectedIndex]?.text || '',
+    department: document.getElementById('department').value,
+    department_name: document.getElementById('department').options[document.getElementById('department').selectedIndex]?.text || '',
+    scope: document.getElementById('scope').value,
+    activity: document.getElementById('activity').value,
+    frequency: document.getElementById('frequency').value,
+    assignee: document.getElementById('assignee').value,
+    reviewer: document.getElementById('reviewer').value,
+    due_day: document.getElementById('due_day').value,
+  };
+  
+  // Validate required fields
+  const requiredFields = ['plant', 'department', 'scope', 'activity', 'frequency', 'assignee', 'reviewer', 'due_day'];
+  let isValid = true;
+  
+  requiredFields.forEach(function(field) {
+    const element = document.getElementById(field);
+    if (!element.value) {
+      element.style.borderColor = '#ef4444';
+      isValid = false;
+    } else {
+      element.style.borderColor = '#eef2f6';
+    }
+  });
+  
+  if (!isValid) {
+    showToast('Please fill in all required fields', 'error');
+    return;
+  }
+  
+  // Show loading state
+  const submitBtn = document.querySelector('.btn-primary');
+  const originalText = submitBtn.innerHTML;
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+  submitBtn.disabled = true;
+  
+  // Submit to server
+  fetch(`{% url 'emission:create-assignment-submit' %}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrftoken,
+    },
+    body: JSON.stringify(formData)
+  })
+  .then(response => response.json())
+  .then(data => {
+    submitBtn.innerHTML = originalText;
+    submitBtn.disabled = false;
+    
+    if (data.success) {
+      showToast('Assignment created successfully!', 'success');
+      // Redirect to assignments list after 1.5 seconds
+      setTimeout(function() {
+        window.location.href = `{% url 'emission:administrator-assignments' %}`;
+      }, 1500);
+    } else {
+      showToast(data.message || 'Failed to create assignment', 'error');
+    }
+  })
+  .catch(error => {
+    submitBtn.innerHTML = originalText;
+    submitBtn.disabled = false;
+    showToast('Error creating assignment', 'error');
+    console.error('Error:', error);
+  });
+}
+
+// ===== CANCEL =====
+function cancelAssignment() {
+  if (confirm('Are you sure you want to cancel? Any unsaved data will be lost.')) {
+    window.location.href = `{% url 'emission:administrator-assignments' %}`;
+  }
+}
+
+// ===== TOAST NOTIFICATION =====
+function showToast(message, type) {
+  const existingToasts = document.querySelectorAll('.custom-toast');
+  existingToasts.forEach(function(toast) { toast.remove(); });
+
+  const toastContainer = document.createElement('div');
+  toastContainer.className = 'custom-toast';
+
+  let bgColor = '#22c07a';
+  let icon = 'fa-check-circle';
+  if (type === 'error') {
+    bgColor = '#ef4444';
+    icon = 'fa-exclamation-circle';
+  } else if (type === 'warning') {
+    bgColor = '#d97706';
+    icon = 'fa-exclamation-triangle';
+  } else if (type === 'info') {
+    bgColor = '#2563eb';
+    icon = 'fa-info-circle';
+  }
+
+  toastContainer.innerHTML = `
+    <div class="d-flex align-items-center p-3 rounded" style="background: ${bgColor}; color: white;">
+      <i class="fas ${icon} me-3" style="font-size: 18px;"></i>
+      <div class="flex-grow-1" style="font-size: 14px; font-weight: 500;">${message}</div>
+      <button type="button" class="btn-close btn-close-white" onclick="this.closest('.custom-toast').remove()" aria-label="Close"></button>
+    </div>
+  `;
+
+  document.body.appendChild(toastContainer);
+
+  setTimeout(function() {
+    if (toastContainer.parentNode) {
+      toastContainer.style.transition = 'all 0.3s ease';
+      toastContainer.style.opacity = '0';
+      toastContainer.style.transform = 'translateX(50px)';
+      setTimeout(function() { toastContainer.remove(); }, 300);
+    }
+  }, 3000);
+}
+
+console.log('✅ Create Assignment form loaded');
+</script>
+{% endblock %}

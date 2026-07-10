@@ -1,0 +1,844 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Workflow Management - Task List{% endblock %}
+
+{% block extra_css %}
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  .task-page {
+    padding: 24px 32px;
+    background: #f5f7fb;
+    min-height: 100vh;
+  }
+
+  /* ===== PAGE HEADER ===== */
+  .page-header-custom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #eef2f6;
+  }
+
+  .page-header-custom .title-section h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a2332;
+    margin: 0;
+  }
+
+  .page-header-custom .title-section h1 i {
+    color: #2563eb;
+    margin-right: 12px;
+  }
+
+  .page-header-custom .title-section .subtitle {
+    font-size: 13px;
+    color: #6b7280;
+    margin-top: 2px;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .btn-export {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #1a2332;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-export:hover {
+    background: #2d3a4f;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(26, 35, 50, 0.2);
+  }
+
+  .btn-add {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .btn-add:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  }
+
+  /* ===== TOGGLE BUTTONS ===== */
+  .toggle-section {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    padding: 4px 0;
+  }
+
+  .toggle-btn {
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 2px solid #eef2f6;
+    background: white;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .toggle-btn:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+  }
+
+  .toggle-btn .count {
+    background: #f3f4f6;
+    padding: 0 6px;
+    border-radius: 10px;
+    font-size: 10px;
+    color: #6b7280;
+    margin-left: 4px;
+  }
+
+  .toggle-btn.active {
+    border-color: #2563eb;
+    background: #2563eb;
+    color: white;
+  }
+
+  .toggle-btn.active .count {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+  }
+
+  .toggle-btn.active-overdue {
+    border-color: #ef4444;
+    background: #ef4444;
+    color: white;
+  }
+
+  .toggle-btn.active-overdue .count {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+  }
+
+  .toggle-btn.active-submitted {
+    border-color: #d97706;
+    background: #d97706;
+    color: white;
+  }
+
+  .toggle-btn.active-submitted .count {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+  }
+
+  .toggle-btn.active-pending {
+    border-color: #8b5cf6;
+    background: #8b5cf6;
+    color: white;
+  }
+
+  .toggle-btn.active-pending .count {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+  }
+
+  .toggle-btn.active-approved {
+    border-color: #22c07a;
+    background: #22c07a;
+    color: white;
+  }
+
+  .toggle-btn.active-approved .count {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+  }
+
+  .toggle-btn.active-rejected {
+    border-color: #ef4444;
+    background: #ef4444;
+    color: white;
+  }
+
+  .toggle-btn.active-rejected .count {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+  }
+
+  /* ===== TASK TABLE ===== */
+  .task-table-container {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #eef2f6;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  }
+
+  .task-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .task-table thead {
+    background: #1a2332;
+    border-bottom: 2px solid #1a2332;
+  }
+
+  .task-table thead th {
+    padding: 14px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-align: left;
+    color: #ffffff !important;
+  }
+
+  .task-table thead th:last-child {
+    text-align: center;
+  }
+
+  .task-table tbody td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+  }
+
+  .task-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .task-table tbody tr:hover {
+    background: #fafbfc;
+  }
+
+  .task-table tbody tr.hidden {
+    display: none;
+  }
+
+  /* Column Widths */
+  .col-srno {
+    width: 70px;
+    text-align: center;
+  }
+
+  .col-id {
+    width: 85px;
+  }
+
+  .col-activity {
+    width: auto;
+  }
+
+  .col-period {
+    width: 100px;
+  }
+
+  .col-scope {
+    width: 90px;
+  }
+
+  .col-emissions {
+    width: 110px;
+  }
+
+  .col-status {
+    width: 120px;
+    text-align: center;
+  }
+
+  /* ===== SR NO ===== */
+  .sr-no {
+    font-weight: 600;
+    color: #1a2332;
+    font-size: 13px;
+    text-align: center;
+    display: inline-block;
+    min-width: 30px;
+  }
+
+  /* ===== TASK ID ===== */
+  .task-id {
+    font-weight: 600;
+    color: #1a2332;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  /* ===== TASK CONTENT ===== */
+  .task-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .task-title {
+    font-weight: 600;
+    color: #1a2332;
+    font-size: 14px;
+  }
+
+  .task-assignee {
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  .task-assignee .arrow {
+    color: #9ca3af;
+    margin: 0 4px;
+  }
+
+  /* ===== PERIOD ===== */
+  .task-period {
+    font-size: 13px;
+    color: #1a2332;
+    font-weight: 500;
+  }
+
+  /* ===== SCOPE ===== */
+  .task-scope {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: 12px;
+    display: inline-block;
+    text-align: center;
+    min-width: 60px;
+  }
+
+  .task-scope.scope1 {
+    background: #fef3e8;
+    color: #f97316;
+  }
+
+  .task-scope.scope2 {
+    background: #e8edf9;
+    color: #2563eb;
+  }
+
+  .task-scope.scope3 {
+    background: #f0ebff;
+    color: #8b5cf6;
+  }
+
+  /* ===== EMISSIONS ===== */
+  .task-emissions {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a2332;
+  }
+
+  /* ===== STATUS ===== */
+  .task-status-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .status-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 12px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    display: inline-block;
+    white-space: nowrap;
+  }
+
+  .status-badge.overdue {
+    background: #fef2f2;
+    color: #ef4444;
+    border: 1px solid #fecaca;
+  }
+
+  .status-badge.submitted {
+    background: #fffbeb;
+    color: #d97706;
+    border: 1px solid #fde68a;
+  }
+
+  .status-badge.pending {
+    background: #f0ebff;
+    color: #8b5cf6;
+    border: 1px solid #ddd6fe;
+  }
+
+  .status-badge.rejected {
+    background: #fef2f2;
+    color: #ef4444;
+    border: 1px solid #fecaca;
+  }
+
+  .status-badge.approved {
+    background: #ecfdf5;
+    color: #22c07a;
+    border: 1px solid #86efac;
+  }
+
+  .task-checkbox {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 2px solid #d1d5db;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    flex-shrink: 0;
+  }
+
+  .task-checkbox:hover {
+    border-color: #2563eb;
+  }
+
+  .task-checkbox.checked {
+    background: #2563eb;
+    border-color: #2563eb;
+  }
+
+  .task-checkbox.checked::after {
+    content: '✓';
+    font-size: 11px;
+    color: white;
+  }
+
+  /* ===== NO TASKS ===== */
+  .no-tasks {
+    padding: 60px 20px;
+    text-align: center;
+    color: #6b7280;
+    display: none;
+  }
+
+  .no-tasks i {
+    font-size: 48px;
+    color: #d1d5db;
+    margin-bottom: 16px;
+  }
+
+  .no-tasks.visible {
+    display: block;
+  }
+
+  /* ===== TOAST ===== */
+  .custom-toast {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    z-index: 99999;
+    max-width: 420px;
+    min-width: 300px;
+    animation: slideInRight 0.4s ease;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+  }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(80px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 992px) {
+    .task-table thead {
+      display: none;
+    }
+
+    .task-table tbody tr {
+      display: block;
+      padding: 16px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .task-table tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    .task-table tbody td {
+      display: block;
+      padding: 4px 0;
+      border: none;
+      width: 100% !important;
+      text-align: left !important;
+    }
+
+    .task-table tbody td:first-child {
+      padding-top: 0;
+    }
+
+    .task-table tbody td:last-child {
+      padding-bottom: 0;
+    }
+
+    .task-status-section {
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 12px;
+      padding-top: 8px;
+      margin-top: 6px;
+      border-top: 1px solid #f3f4f6;
+    }
+
+    .task-page {
+      padding: 16px;
+    }
+
+    .sr-no {
+      background: transparent;
+      color: #6b7280;
+      padding: 0;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .page-header-custom {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .header-actions {
+      width: 100%;
+    }
+
+    .btn-export,
+    .btn-add {
+      flex: 1;
+      justify-content: center;
+    }
+
+    .toggle-section {
+      gap: 6px;
+    }
+
+    .toggle-btn {
+      padding: 4px 12px;
+      font-size: 11px;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="task-page">
+  <!-- PAGE HEADER -->
+  <div class="page-header-custom">
+    <div class="title-section">
+      <h1>
+        Workflow Management
+      </h1>
+    </div>
+    <div class="header-actions">
+      <button class="btn-export">
+        <i class="fas fa-download"></i> Export
+      </button>
+    </div>
+  </div>
+
+  <!-- TOGGLE BUTTONS -->
+  <div class="toggle-section">
+    <button class="toggle-btn active" data-filter="all" onclick="filterTasks('all')">
+      All Tasks <span class="count">{{ task_counts.all }}</span>
+    </button>
+    <button class="toggle-btn" data-filter="overdue" onclick="filterTasks('overdue')">
+      <i class="fas fa-exclamation-circle" style="font-size: 11px; color: #ef4444;"></i> Overdue <span class="count">{{ task_counts.overdue }}</span>
+    </button>
+    <button class="toggle-btn" data-filter="submitted" onclick="filterTasks('submitted')">
+      <i class="fas fa-clock" style="font-size: 11px; color: #d97706;"></i> Submitted <span class="count">{{ task_counts.submitted }}</span>
+    </button>
+    <button class="toggle-btn" data-filter="pending" onclick="filterTasks('pending')">
+      <i class="fas fa-hourglass-half" style="font-size: 11px; color: #8b5cf6;"></i> Pending <span class="count">0</span>
+    </button>
+    <button class="toggle-btn" data-filter="approved" onclick="filterTasks('approved')">
+      <i class="fas fa-check-circle" style="font-size: 11px; color: #22c07a;"></i> Approved <span class="count">{{ task_counts.approved }}</span>
+    </button>
+    <button class="toggle-btn" data-filter="rejected" onclick="filterTasks('rejected')">
+      <i class="fas fa-times-circle" style="font-size: 11px; color: #ef4444;"></i> Rejected <span class="count">{{ task_counts.rejected }}</span>
+    </button>
+  </div>
+
+  <!-- TASK TABLE -->
+  <div class="task-table-container">
+    <table class="task-table">
+      <thead>
+        <tr>
+          <th class="col-srno" style="color: #ffffff !important; font-weight: 700 !important;">SR. NO</th>
+          <th class="col-id" style="color: #ffffff !important; font-weight: 700 !important;">TASK ID</th>
+          <th class="col-activity" style="color: #ffffff !important; font-weight: 700 !important;">ACTIVITY / ASSIGNEE</th>
+          <th class="col-period" style="color: #ffffff !important; font-weight: 700 !important;">PERIOD</th>
+          <th class="col-scope" style="color: #ffffff !important; font-weight: 700 !important;">SCOPE</th>
+          <th class="col-emissions" style="color: #ffffff !important; font-weight: 700 !important;">EMISSIONS</th>
+          <th class="col-status" style="color: #ffffff !important; font-weight: 700 !important;">STATUS</th>
+        </tr>
+      </thead>
+      <tbody id="taskListContainer">
+        {% for task in tasks %}
+        <tr class="task-row" data-status="{{ task.status.lower }}" data-task-id="{{ task.id }}">
+          <td class="col-srno text-center">
+            <span class="sr-no">{{ forloop.counter }}</span>
+          </td>
+          <td class="col-id">
+            <div class="task-id">{{ task.task_id }}</div>
+          </td>
+          <td class="col-activity text-start align-top">
+            <div class="task-content">
+              <div class="task-title">{{ task.title }}</div>
+              <div class="task-assignee">
+                {{ task.from_assignee }}
+                <span class="arrow">→</span>
+                {{ task.to_assignee }}
+              </div>
+            </div>
+          </td>
+          <td class="col-period">
+            <span class="task-period">{{ task.date }}</span>
+          </td>
+          <td class="col-scope">
+            <span class="task-scope {{ task.scope_color }}">{{ task.scope }}</span>
+          </td>
+          <td class="col-emissions">
+            <span class="task-emissions">{{ task.emissions }} {{ task.emissions_unit }}</span>
+          </td>
+          <td class="col-status">
+            <div class="task-status-section">
+              <span class="status-badge {{ task.status_color }}">{{ task.status }}</span>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7">
+            <div class="no-tasks visible">
+              <i class="fas fa-inbox"></i>
+              <p>No tasks found</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// ===== CSRF TOKEN =====
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+const csrftoken = getCookie('csrftoken');
+
+// ===== FILTER TASKS =====
+function filterTasks(status) {
+  // Update button states
+  const buttons = document.querySelectorAll('.toggle-btn');
+  buttons.forEach(function(btn) {
+    btn.classList.remove('active', 'active-overdue', 'active-submitted', 'active-pending', 'active-approved', 'active-rejected');
+    if (btn.dataset.filter === status) {
+      if (status === 'overdue') btn.classList.add('active-overdue');
+      else if (status === 'submitted') btn.classList.add('active-submitted');
+      else if (status === 'pending') btn.classList.add('active-pending');
+      else if (status === 'approved') btn.classList.add('active-approved');
+      else if (status === 'rejected') btn.classList.add('active-rejected');
+      else btn.classList.add('active');
+    }
+  });
+
+  // Filter rows
+  const rows = document.querySelectorAll('.task-row');
+  let visibleCount = 0;
+
+  rows.forEach(function(row) {
+    const rowStatus = row.dataset.status;
+    const matchesStatus = status === 'all' || rowStatus === status;
+
+    if (matchesStatus) {
+      row.classList.remove('hidden');
+      visibleCount++;
+    } else {
+      row.classList.add('hidden');
+    }
+  });
+
+  // Show/hide no tasks message
+  const noTasks = document.querySelector('.no-tasks');
+  if (noTasks) {
+    if (visibleCount === 0) {
+      noTasks.classList.add('visible');
+    } else {
+      noTasks.classList.remove('visible');
+    }
+  }
+
+  // Update counts in toggle buttons
+  updateCounts();
+}
+
+// ===== UPDATE COUNTS =====
+function updateCounts() {
+  const rows = document.querySelectorAll('.task-row:not(.hidden)');
+  const totalVisible = rows.length;
+  
+  // Update all count
+  document.querySelectorAll('.toggle-btn .count').forEach(function(countEl) {
+    const filter = countEl.closest('.toggle-btn').dataset.filter;
+    if (filter === 'all') {
+      countEl.textContent = totalVisible;
+    }
+  });
+}
+
+// ===== TOGGLE CHECKBOX =====
+function toggleCheckbox(element, taskId) {
+  const isChecked = element.classList.contains('checked');
+  element.classList.toggle('checked');
+
+  fetch(`{% url 'emission:task-toggle' %}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrftoken,
+    },
+    body: JSON.stringify({
+      task_id: taskId,
+      is_completed: !isChecked,
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showToast(data.message, 'success');
+    } else {
+      element.classList.toggle('checked');
+      showToast('Failed to update task', 'error');
+    }
+  })
+  .catch(error => {
+    element.classList.toggle('checked');
+    showToast('Error updating task', 'error');
+    console.error('Error:', error);
+  });
+}
+
+// ===== TOAST NOTIFICATION =====
+function showToast(message, type) {
+  const existingToasts = document.querySelectorAll('.custom-toast');
+  existingToasts.forEach(function(toast) { toast.remove(); });
+
+  const toastContainer = document.createElement('div');
+  toastContainer.className = 'custom-toast';
+
+  let bgColor = '#22c07a';
+  let icon = 'fa-check-circle';
+  if (type === 'error') {
+    bgColor = '#ef4444';
+    icon = 'fa-exclamation-circle';
+  } else if (type === 'warning') {
+    bgColor = '#d97706';
+    icon = 'fa-exclamation-triangle';
+  } else if (type === 'info') {
+    bgColor = '#2563eb';
+    icon = 'fa-info-circle';
+  }
+
+  toastContainer.innerHTML = `
+    <div class="d-flex align-items-center p-3 rounded" style="background: ${bgColor}; color: white;">
+      <i class="fas ${icon} me-3" style="font-size: 18px;"></i>
+      <div class="flex-grow-1" style="font-size: 14px; font-weight: 500;">${message}</div>
+      <button type="button" class="btn-close btn-close-white" onclick="this.closest('.custom-toast').remove()" aria-label="Close"></button>
+    </div>
+  `;
+
+  document.body.appendChild(toastContainer);
+
+  setTimeout(function() {
+    if (toastContainer.parentNode) {
+      toastContainer.style.transition = 'all 0.3s ease';
+      toastContainer.style.opacity = '0';
+      toastContainer.style.transform = 'translateX(50px)';
+      setTimeout(function() { toastContainer.remove(); }, 300);
+    }
+  }, 3000);
+}
+
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    filterTasks('all');
+  }
+
+  const keyMap = {
+    '1': 'all',
+    '2': 'overdue',
+    '3': 'submitted',
+    '4': 'pending',
+    '5': 'approved',
+    '6': 'rejected'
+  };
+  if (e.key in keyMap) {
+    filterTasks(keyMap[e.key]);
+    // Highlight the corresponding button
+    const buttons = document.querySelectorAll('.toggle-btn');
+    buttons.forEach(function(btn) {
+      if (btn.dataset.filter === keyMap[e.key]) {
+        btn.focus();
+      }
+    });
+  }
+});
+
+console.log('✅ Workflow Management - Task List loaded');
+console.log('💡 Keyboard: 1=All, 2=Overdue, 3=Submitted, 4=Pending, 5=Approved, 6=Rejected');
+</script>
+{% endblock %}

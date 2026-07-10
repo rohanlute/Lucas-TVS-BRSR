@@ -6,6 +6,16 @@ from django.db.models import Count, Q
 from django.shortcuts import redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .models import Unit
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, View
+from django.urls import reverse_lazy
+from django.contrib import messages
+from django.db.models import Count, Q
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import JsonResponse
+from decimal import Decimal
+from .models import Unit
+from .forms import UnitCategoryForm
 from .forms import UnitCategoryForm
 
 class UnitCategoryListView(LoginRequiredMixin, ListView):
@@ -204,16 +214,6 @@ class UnitCategoryDeleteView(LoginRequiredMixin, DeleteView):
             messages.success(request, f'Category "{category_name}" deleted successfully!')
         
         return redirect(self.success_url)
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, View
-from django.urls import reverse_lazy
-from django.contrib import messages
-from django.db.models import Count, Q
-from django.shortcuts import redirect, get_object_or_404
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import JsonResponse
-from decimal import Decimal
-from .models import Unit
-from .forms import UnitCategoryForm
 
 # ================================================================
 # CRUD Views for Unit Categories
