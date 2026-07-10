@@ -30,6 +30,10 @@
         padding: 1rem 1.25rem;
         white-space: nowrap;
     }
+    .role-list-page .table thead th {
+        text-align: center;
+        vertical-align: middle;
+    }
 
     .role-list-page .role-table-card tbody td {
         padding: 1rem 1.25rem;
@@ -41,8 +45,13 @@
         height: 32px;
     }
 
-    .role-list-page .role-desc {
-        max-width: 320px;
+    .role-description {
+        width: 260px;           
+        max-width: 260px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        display: block;
     }
 </style>
 {% endblock %}
@@ -89,7 +98,7 @@
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th class="wd-30">#</th>
+                            <th class="wd-30">Sr.no</th>
                             <th>Role Code</th>
                             <th>Role Name</th>
                             <th>Description</th>
@@ -104,7 +113,15 @@
                                 <td>{{ forloop.counter }}</td>
                                 <td class="fw-semibold">{{ role.role_code }}</td>
                                 <td>{{ role.role_name }}</td>
-                                <td class="role-desc">{{ role.description|default:"-" }}</td>
+                                <td>
+                                    {% if role.description %}
+                                        <div class="role-description" title="{{ role.description }}">
+                                            {{ role.description }}
+                                        </div>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
                                 <td>
                                     <span class="badge bg-soft-primary text-primary">
                                         {{ role.permissions.count }} assigned

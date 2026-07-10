@@ -511,11 +511,9 @@ class UserListView(LoginRequiredMixin, ListView):
 
         if role:
             queryset = queryset.filter(role_id=role)
-        else:
-            super_admin_role = Role.objects.filter(role_code='SUPERADMIN').first()
 
-            if super_admin_role:
-                queryset = queryset.filter(role=super_admin_role)
+        if not user.is_super_admin:
+            queryset = queryset.exclude(role__role_code='SUPERADMIN')
 
         if search:
             queryset = queryset.filter(
@@ -537,17 +535,15 @@ class UserListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context['roles'] = Role.objects.order_by('role_name')
+        if self.request.user.is_super_admin:
+            context['roles'] = Role.objects.order_by('role_name')
+        else:
+            context['roles'] = Role.objects.exclude(
+                role_code='SUPERADMIN'
+            ).order_by('role_name')
+
         context['selected_status'] = self.request.GET.get('status', '')
-        selected_role = self.request.GET.get('role', '')
-
-        if not selected_role:
-            super_admin = Role.objects.filter(role_code='SUPERADMIN').first()
-
-            if super_admin:
-                selected_role = str(super_admin.id)
-
-        context['selected_role'] = selected_role
+        context['selected_role'] = self.request.GET.get('role', '')
 
         context['total_users_count'] = context['users'].count()
         context['active_users_count'] = context['users'].filter(is_active=True).count()
@@ -569,6 +565,11 @@ class UserCreateView(UserLocationAssignmentMixin, LoginRequiredMixin, CreateView
         form = super().get_form(form_class)
         form.fields['is_active'].initial = False
         self.configure_company_field(form)
+        if self.request.user.is_super_admin:
+            form.fields['role'].queryset = Role.objects.order_by('role_name')
+        else:
+            form.fields['role'].queryset = Role.objects.exclude(role_code='SUPERADMIN').order_by('role_name')
+
         return form
 
     def get_context_data(self, **kwargs):
@@ -646,9 +647,14 @@ class UserUpdateView(UserLocationAssignmentMixin, LoginRequiredMixin, UpdateView
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        form.fields['password'].required = False
-        form.fields['confirm_password'].required = False
+        form.fields['is_active'].initial = False
         self.configure_company_field(form)
+
+        if self.request.user.is_super_admin:
+            form.fields['role'].queryset = Role.objects.order_by('role_name')
+        else:
+            form.fields['role'].queryset = Role.objects.exclude(role_code='SUPERADMIN').order_by('role_name')
+
         return form
 
     def form_valid(self, form):
@@ -742,7 +748,10 @@ class RoleListView(LoginRequiredMixin, ListView):
     context_object_name = 'roles'
 
     def get_queryset(self):
-        return Role.objects.prefetch_related('permissions').order_by('role_name')
+        queryset = Role.objects.prefetch_related('permissions').order_by('role_name')
+        if not self.request.user.is_super_admin:
+            queryset = queryset.exclude(role_code='SUPERADMIN')
+        return queryset
 
 
 class RoleCreateView(RolePermissionContextMixin, LoginRequiredMixin, CreateView):
