@@ -46,7 +46,8 @@ INSTALLED_APPS = [
     'apps.timesheets',
     'apps.organizations',
     'apps.calculator',
-
+    'apps.environmental',
+    'apps.emission',
     # 
     'rest_framework',
     'channels',

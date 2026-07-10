@@ -61,7 +61,7 @@
                                 Financial Year
                         </a>
                         </li>
-                        <li class="nxl-item"><a class="nxl-link" href="{% url 'organizations:calendar' %}">Calendar</a></li>
+                        
                     </ul>
                 </li>
                 {% endif %}
@@ -73,16 +73,80 @@
                         <span class="nxl-mtext">BRSR</span>
                     </a>
                 </li>
+               <li class="nxl-item nxl-hasmenu">
+                    <a href="javascript:void(0);" class="nxl-link">
+                        <span class="nxl-micon">
+                            <i class="feather-send"></i>
+                        </span>
+                        <span class="nxl-mtext">Emissions</span>
+                        <span class="nxl-arrow">
+                            <i class="feather-chevron-right"></i>
+                        </span>
+                    </a>
+
+                    <ul class="nxl-submenu">
+                        <li class="nxl-item">
+                            <a class="nxl-link" href="{% url 'emission:dashboard' %}">
+                                Dashboard
+                            </a>
+                        </li>
+
+                        <li class="nxl-item">
+                            <a class="nxl-link" href="{% url 'emission:task-list' %}">
+                                <span class="nxl-text">Task List</span>
+                            </a>
+                        </li>
+                       <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'emission:administrator-assignments' %}">
+                            <span class="nxl-text">Assignment</span>
+                        </a>
+                    </li>
+                    <li class="nxl-item">
+                        <a class="nxl-link" href="{% url 'emission:esg-disclosure' %}">
+                            <span class="nxl-text">Report</span>
+                        </a>
+                    </li>
+                    </ul>
+                </li>
+
                 <li class="nxl-item nxl-hasmenu">
                     <a href="javascript:void(0);" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-send"></i></span>
-                        <span class="nxl-mtext">Applications</span><span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                        <span class="nxl-micon">
+                            <i class="feather-send"></i>
+                        </span>
+                        <span class="nxl-mtext">Applications</span>
+                        <span class="nxl-arrow">
+                            <i class="feather-chevron-right"></i>
+                        </span>
                     </a>
+
                     <ul class="nxl-submenu">
-                        <li class="nxl-item"><a class="nxl-link" href="{% url 'notifications:notification_list' %}">Notifications</a></li>
-                        <li class="nxl-item"><a class="nxl-link" href="{% url 'timesheets:timesheet_list' %}">Time Sheets</a></li>
-                        <li class="nxl-item"><a class="nxl-link" href="{% url 'email_master:email_list' %}">Email</a></li>
-                        {% if request.user.is_super_admin or request.user.is_superuser or request.user.role and request.user.role.role_code == 'ADMIN' %}<li class="nxl-item"><a class="nxl-link" href="{% url 'calculator:unit_category_list' %}">Conversion Calculator Master</a></li>{% endif %}
+                        <li class="nxl-item">
+                            <a class="nxl-link" href="{% url 'notifications:notification_list' %}">
+                                Notifications
+                            </a>
+                        </li>
+
+                        <li class="nxl-item">
+                            <a class="nxl-link" href="{% url 'timesheets:timesheet_list' %}">
+                                Time Sheets
+                            </a>
+                        </li>
+
+                        <li class="nxl-item">
+                            <a class="nxl-link" href="{% url 'email_master:email_list' %}">
+                                Email
+                            </a>
+                        </li>
+
+                        {% if request.user.is_super_admin or request.user.is_superuser or request.user.role and request.user.role.role_code == 'ADMIN' %}
+                        <li class="nxl-item">
+                            <a class="nxl-link" href="{% url 'calculator:unit_category_list' %}">
+                                Conversion Calculator Master
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li class="nxl-item"><a class="nxl-link" href="{% url 'organizations:calendar' %}">Calendar</a></li>
                     </ul>
                 </li>
             </ul>
