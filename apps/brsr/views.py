@@ -27,8 +27,7 @@ def _principle_queryset():
     )
 
 def _pdf_questions_queryset():
-    qs = BRSRQuestion.objects.filter(is_active=True)
-    return qs.exclude(section__code="section_b", question_id__regex=r"^sb_q")
+    return BRSRQuestion.objects.filter(is_active=True)
 
 def _get_default_section():
     return BRSRSection.objects.filter(is_active=True).order_by("display_order", "code").first()

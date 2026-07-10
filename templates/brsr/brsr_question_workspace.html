@@ -411,6 +411,8 @@
   .question-content{
     display:none;
     padding:18px 16px 16px;
+    min-width:0;
+    overflow-x:auto;
   }
 
   .question-container.active .question-content{
@@ -476,36 +478,54 @@
   }
 
   .table-container{
+    width:100%;
+    max-width:100%;
+    min-width:0;
     overflow-x:auto;
+    overflow-y:hidden;
+    display:block;
     border:1px solid var(--border);
     border-radius:12px;
     background:#fff;
+    -webkit-overflow-scrolling:touch;
   }
 
+  .table-container > table,
   .data-table{
-    width:100%;
+    width:max-content;
+    max-width:none;
+    table-layout:auto;
     border-collapse:collapse;
     min-width:760px;
   }
 
+  .table-container > table th,
+  .table-container > table td,
   .data-table th,
   .data-table td{
     border:1px solid var(--border);
     padding:10px 12px;
     vertical-align:top;
     font-size:13px;
+    white-space:nowrap;
   }
 
+  .table-container > table th,
   .data-table th{
     background:#f8fafc;
     color:var(--ink);
     font-weight:700;
   }
 
+  .table-container > table input,
+  .table-container > table textarea,
+  .table-container > table select,
   .data-table input,
   .data-table textarea,
   .data-table select{
     width:100%;
+    min-width:140px;
+    box-sizing:border-box;
     border:1px solid var(--border);
     border-radius:8px;
     padding:8px 10px;
@@ -513,7 +533,9 @@
     background:#fff;
   }
 
+  .table-container > table textarea,
   .data-table textarea{
+    min-width:220px;
     min-height:64px;
     resize:vertical;
   }
@@ -840,6 +862,11 @@
       .replaceAll("'", '&#39;');
   }
 
+  // CRITICAL: Helper function to get the question ID from either question_id or local_id
+  function getQuestionId(question) {
+    return question.question_id || question.local_id || null;
+  }
+
   function statusClass(status) {
     return {
       draft: 'todo',
@@ -928,16 +955,148 @@
     }];
   }
 
+  function getStoredFieldValue(question, fieldName, fallback = '') {
+    const responseJson = question.response_json && typeof question.response_json === 'object' ? question.response_json : {};
+    if (Object.prototype.hasOwnProperty.call(responseJson, fieldName)) {
+      return responseJson[fieldName];
+    }
+    return fallback;
+  }
+
+  function renderFieldControl(question, field, index) {
+    const fieldName = field.name || `field_${index + 1}`;
+    const fieldLabel = field.label || field.name || `Field ${index + 1}`;
+    const fieldValue = getStoredFieldValue(question, fieldName, '');
+
+    if (field.kind === 'radio') {
+      const options = Array.isArray(field.options) ? field.options : [];
+      return `
+        <div class="form-group">
+          <label class="form-label">${escapeHtml(fieldLabel)}</label>
+          <div class="choice-stack">
+            ${options.map((option) => {
+              const label = option.label ?? option.value ?? option;
+              const optionValue = option.value ?? option.label ?? option;
+              const checked = String(optionValue) === String(fieldValue) ? 'checked' : '';
+              return `
+                <label class="choice-item">
+                  <input type="radio" name="responseValue-${escapeHtml(fieldName)}" value="${escapeHtml(optionValue)}" data-field-name="${escapeHtml(fieldName)}" ${checked}>
+                  <span>${escapeHtml(label)}</span>
+                </label>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    if (field.kind === 'checkbox_group') {
+      const selected = Array.isArray(fieldValue) ? fieldValue : String(fieldValue || '').split(',').map((item) => item.trim()).filter(Boolean);
+      const items = Array.isArray(field.items) ? field.items : [];
+      return `
+        <div class="form-group">
+          <label class="form-label">${escapeHtml(fieldLabel)}</label>
+          <div class="choice-stack">
+            ${items.map((item) => {
+              const label = item.label ?? item.value ?? item.name ?? '';
+              const optionValue = item.value ?? item.label ?? item.name ?? '';
+              const checked = selected.includes(String(optionValue)) ? 'checked' : '';
+              return `
+                <label class="choice-item">
+                  <input type="checkbox" value="${escapeHtml(optionValue)}" data-field-name="${escapeHtml(fieldName)}" ${checked}>
+                  <span>${escapeHtml(label)}</span>
+                </label>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    if (field.kind === 'textarea') {
+      return `
+        <div class="form-group">
+          <label class="form-label">${escapeHtml(fieldLabel)}</label>
+          <textarea class="workspace-textarea form-textarea" data-field-name="${escapeHtml(fieldName)}" placeholder="${escapeHtml(field.placeholder || 'Type your response here')}">${escapeHtml(typeof fieldValue === 'string' ? fieldValue : '')}</textarea>
+        </div>
+      `;
+    }
+
+    if (field.kind === 'input') {
+      const inputType = field.type || 'text';
+      return `
+        <div class="form-group">
+          <label class="form-label">${escapeHtml(fieldLabel)}</label>
+          <input class="workspace-input" data-field-name="${escapeHtml(fieldName)}" type="${escapeHtml(inputType)}" value="${escapeHtml(typeof fieldValue === 'string' ? fieldValue : '')}" placeholder="${escapeHtml(field.placeholder || '')}">
+        </div>
+      `;
+    }
+
+    if (field.kind === 'table') {
+      const columns = Array.isArray(field.columns) ? field.columns : [];
+      const storedRows = Array.isArray(fieldValue) && fieldValue.length ? fieldValue : [];
+      const rows = storedRows.length ? storedRows : (Array.isArray(field.rows) && field.rows.length ? field.rows.map(() => ({})) : [{}]);
+      return `
+        <div class="form-group">
+          <label class="form-label">${escapeHtml(fieldLabel)}</label>
+          <div class="table-container">
+            <table class="data-table" data-field-name="${escapeHtml(fieldName)}">
+              <thead>
+                <tr>
+                  ${columns.map((column) => `<th>${escapeHtml(column)}</th>`).join('')}
+                  <th style="width:48px;"></th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows.map((row, rowIndex) => `
+                  <tr>
+                    ${columns.map((column) => {
+                      const cellValue = row?.[column] ?? row?.[column.toLowerCase()] ?? '';
+                      return `<td><input type="text" data-field-name="${escapeHtml(fieldName)}" data-row-index="${rowIndex}" data-column-name="${escapeHtml(column)}" value="${escapeHtml(cellValue)}" placeholder="${escapeHtml(column)}"></td>`;
+                    }).join('')}
+                    <td><button type="button" class="btn-brsr secondary js-remove-row">-</button></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+          <div class="table-actions">
+            <button type="button" class="btn-brsr secondary js-add-row">Add Row</button>
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="form-group">
+        <label class="form-label">${escapeHtml(fieldLabel)}</label>
+        <textarea class="workspace-textarea form-textarea" data-field-name="${escapeHtml(fieldName)}">${escapeHtml(typeof fieldValue === 'string' ? fieldValue : '')}</textarea>
+      </div>
+    `;
+  }
+
   function renderQuestionInput(question) {
     const value = question.response_value || '';
     const options = defaultChoiceOptions(question);
     const schema = tableSchema(question);
+    const fields = Array.isArray(question.validation_rules && question.validation_rules.fields) ? question.validation_rules.fields : [];
+    const qId = getQuestionId(question);
+
+    if (fields.length) {
+      return `
+        <div class="form-group">
+          <div class="choice-stack">
+            ${fields.map((field, index) => renderFieldControl(question, field, index)).join('')}
+          </div>
+        </div>
+      `;
+    }
 
     if (question.question_type === 'textarea' || question.question_type === 'text') {
       return `
         <div class="form-group">
           <label class="form-label">Response</label>
-          <textarea class="workspace-textarea form-textarea" id="responseValue-${escapeHtml(question.question_id)}" placeholder="${escapeHtml(question.placeholder_text || 'Type your response here')}">${escapeHtml(value)}</textarea>
+          <textarea class="workspace-textarea form-textarea" id="responseValue-${escapeHtml(qId)}" placeholder="${escapeHtml(question.placeholder_text || 'Type your response here')}">${escapeHtml(value)}</textarea>
         </div>
       `;
     }
@@ -958,7 +1117,7 @@
       return `
         <div class="form-group">
           <label class="form-label">Response</label>
-          <input class="workspace-input" id="responseValue-${escapeHtml(question.question_id)}" type="${type}" value="${escapeHtml(value)}" placeholder="${escapeHtml(question.placeholder_text || '')}">
+          <input class="workspace-input" id="responseValue-${escapeHtml(qId)}" type="${type}" value="${escapeHtml(value)}" placeholder="${escapeHtml(question.placeholder_text || '')}">
         </div>
       `;
     }
@@ -975,7 +1134,7 @@
       return `
         <div class="form-group">
           <label class="form-label">Response</label>
-          <select class="workspace-select" id="responseValue-${escapeHtml(question.question_id)}">${items.join('')}</select>
+          <select class="workspace-select" id="responseValue-${escapeHtml(qId)}">${items.join('')}</select>
         </div>
       `;
     }
@@ -991,7 +1150,7 @@
               const checked = String(optionValue) === String(value) ? 'checked' : '';
               return `
                 <label class="choice-item">
-                  <input type="radio" name="responseValue-${escapeHtml(question.question_id)}" value="${escapeHtml(optionValue)}" ${checked}>
+                  <input type="radio" name="responseValue-${escapeHtml(qId)}" value="${escapeHtml(optionValue)}" ${checked}>
                   <span>${escapeHtml(label)}</span>
                 </label>
               `;
@@ -1045,7 +1204,7 @@
         <div class="form-group">
           <label class="form-label">Table Response</label>
           <div class="table-container">
-            <table class="data-table" data-question-id="${escapeHtml(question.question_id)}" data-column-keys="${escapeHtml(columns.map((column) => column.key || column.name).join('|'))}">
+            <table class="data-table" data-question-id="${escapeHtml(qId)}" data-column-keys="${escapeHtml(columns.map((column) => column.key || column.name).join('|'))}">
               <thead>
                 ${renderHeader}
               </thead>
@@ -1081,7 +1240,7 @@
     return `
       <div class="form-group">
         <label class="form-label">Response</label>
-        <textarea class="workspace-textarea form-textarea" id="responseValue-${escapeHtml(question.question_id)}">${escapeHtml(value)}</textarea>
+        <textarea class="workspace-textarea form-textarea" id="responseValue-${escapeHtml(qId)}">${escapeHtml(value)}</textarea>
       </div>
     `;
   }
@@ -1121,12 +1280,15 @@
     sidebarGroups.innerHTML = grouped.map((group) => `
       <div class="nav-group">
         <div class="nav-group-head">${escapeHtml(group.key)}</div>
-        ${group.items.map((question) => `
-          <div class="question-item ${question.question_id === workspace.active_question_id ? 'active' : ''}" data-question-id="${escapeHtml(question.question_id)}">
-            <span class="question-dot ${statusClass(question.status)}"></span>
-            ${escapeHtml(question.question_number)}. ${escapeHtml(question.title)}
-          </div>
-        `).join('')}
+        ${group.items.map((question) => {
+          const qId = getQuestionId(question);
+          return `
+            <div class="question-item ${qId === workspace.active_question_id ? 'active' : ''}" data-question-id="${escapeHtml(qId)}">
+              <span class="question-dot ${statusClass(question.status)}"></span>
+              ${escapeHtml(question.question_number)}. ${escapeHtml(question.title)}
+            </div>
+          `;
+        }).join('')}
       </div>
     `).join('');
 
@@ -1142,18 +1304,18 @@
 
   function renderQuestionCard(question, isActive) {
     const selected = isActive ? 'active' : '';
+    const qId = getQuestionId(question);
     const choiceMarker = question.is_required ? '<span class="pill warn">Required</span>' : '';
     return `
-      <div class="question-container ${selected}" id="question-${escapeHtml(question.question_id)}" data-question-id="${escapeHtml(question.question_id)}">
+      <div class="question-container ${selected}" id="question-${escapeHtml(qId)}" data-question-id="${escapeHtml(qId)}">
         <div class="question-header">
           <div class="question-header-left">
-            <input type="checkbox" class="question-checkbox js-question-select" data-question-id="${escapeHtml(question.question_id)}">
+            <input type="checkbox" class="question-checkbox js-question-select" data-question-id="${escapeHtml(qId)}">
             <div>
               <h3 class="question-title"><span class="question-number">${escapeHtml(question.question_number)}.</span>${escapeHtml(question.title)}</h3>
-              <!-- <div class="question-meta">${escapeHtml(question.sub_section || 'Question')} · ${escapeHtml(question.question_type)} ${choiceMarker ? '· Required' : ''}</div> -->
             </div>
           </div>
-          <span class="status-badge ${statusClass(question.status)}">${escapeHtml(question.status)}</span>
+          <span class="status-badge ${statusClass(question.status)}">${escapeHtml(question.status || 'draft')}</span>
         </div>
         <div class="question-content">
           ${renderQuestionInput(question)}
@@ -1168,9 +1330,12 @@
 
   function renderQuestionDeck(workspace, focusQuestionId) {
     const deck = document.getElementById('questionDeck');
-    const activeQuestion = workspace.topics.find((question) => question.question_id === (focusQuestionId || workspace.active_question_id)) || workspace.active_question || workspace.topics[0] || null;
+    const activeQuestion = workspace.topics.find((question) => {
+      const qId = getQuestionId(question);
+      return qId === (focusQuestionId || workspace.active_question_id);
+    }) || workspace.active_question || workspace.topics[0] || null;
     state.activeQuestion = activeQuestion;
-    state.questionId = activeQuestion ? activeQuestion.question_id : '';
+    state.questionId = activeQuestion ? getQuestionId(activeQuestion) : '';
 
     if (!activeQuestion) {
       deck.innerHTML = '<div class="text-muted">No questions found for this section.</div>';
@@ -1185,14 +1350,21 @@
           <span class="pill">${group.items.length} questions</span>
         </div>
         <div class="group-body">
-          ${group.items.map((question) => renderQuestionCard(question, question.question_id === activeQuestion.question_id)).join('')}
+          ${group.items.map((question) => {
+            const qId = getQuestionId(question);
+            const activeQId = getQuestionId(activeQuestion);
+            return renderQuestionCard(question, qId === activeQId);
+          }).join('')}
         </div>
       </div>
     `).join('');
 
     deck.querySelectorAll('.question-container').forEach((card) => {
       const questionId = card.getAttribute('data-question-id');
-      const question = workspace.topics.find((item) => item.question_id === questionId);
+      const question = workspace.topics.find((item) => {
+        const qId = getQuestionId(item);
+        return qId === questionId;
+      });
       const header = card.querySelector('.question-header');
       header.addEventListener('click', (event) => {
         if (event.target.closest('input, button, textarea, select')) return;
@@ -1202,15 +1374,18 @@
       const checkbox = card.querySelector('.js-question-select');
       const sidebarItem = document.querySelector(`.question-item[data-question-id="${CSS.escape(questionId)}"]`);
       if (checkbox) {
-        checkbox.checked = questionId === activeQuestion.question_id || workspace.selected_question_ids?.includes?.(questionId);
+        const activeQId = getQuestionId(activeQuestion);
+        checkbox.checked = questionId === activeQId || workspace.selected_question_ids?.includes?.(questionId);
         checkbox.addEventListener('change', () => syncSelectionState(questionId, checkbox.checked));
       }
 
       if (sidebarItem) {
-        sidebarItem.classList.toggle('active', questionId === activeQuestion.question_id);
+        const activeQId = getQuestionId(activeQuestion);
+        sidebarItem.classList.toggle('active', questionId === activeQId);
       }
 
-      card.classList.toggle('active', questionId === activeQuestion.question_id);
+      const activeQId = getQuestionId(activeQuestion);
+      card.classList.toggle('active', questionId === activeQId);
 
       const saveBtn = card.querySelector('.js-save-question');
       const submitBtn = card.querySelector('.js-submit-question');
@@ -1257,11 +1432,14 @@
 
   function addTableRow(table) {
     const tbody = table.querySelector('tbody');
+    const headerCells = Array.from(table.querySelectorAll('thead th')).slice(0, -1).map((cell) => cell.textContent.trim());
     const columnKeys = (table.getAttribute('data-column-keys') || '').split('|').filter(Boolean);
+    const keys = columnKeys.length ? columnKeys : headerCells;
+    const fieldName = table.getAttribute('data-field-name') || '';
     const row = document.createElement('tr');
     let cells = '';
-    columnKeys.forEach((key) => {
-      cells += `<td><input type="text" data-key="${escapeHtml(key)}"></td>`;
+    keys.forEach((key) => {
+      cells += `<td><input type="text" data-field-name="${escapeHtml(fieldName)}" data-column-name="${escapeHtml(key)}"></td>`;
     });
     row.innerHTML = `${cells}<td><button type="button" class="btn-brsr secondary js-remove-row">-</button></td>`;
     tbody.appendChild(row);
@@ -1276,13 +1454,52 @@
   }
 
   function collectQuestionPayload(questionId) {
-    const question = state.workspace.topics.find((item) => item.question_id === questionId);
+    const question = state.workspace.topics.find((item) => {
+      const qId = getQuestionId(item);
+      return qId === questionId;
+    });
     if (!question) return null;
 
     const container = document.querySelector(`.question-container[data-question-id="${CSS.escape(questionId)}"]`);
     if (!container) return null;
 
     const payload = { assignment_id: question.assignment_id || '' };
+    const fields = Array.isArray(question.validation_rules && question.validation_rules.fields) ? question.validation_rules.fields : [];
+
+    if (fields.length) {
+      const responseJson = {};
+      fields.forEach((field) => {
+        const fieldName = field.name;
+        if (!fieldName) return;
+
+        if (field.kind === 'radio') {
+          const checked = container.querySelector(`input[type="radio"][data-field-name="${CSS.escape(fieldName)}"]:checked`);
+          responseJson[fieldName] = checked ? checked.value : '';
+        } else if (field.kind === 'checkbox_group') {
+          responseJson[fieldName] = Array.from(container.querySelectorAll(`input[type="checkbox"][data-field-name="${CSS.escape(fieldName)}"]:checked`)).map((el) => el.value);
+        } else if (field.kind === 'table') {
+          const table = container.querySelector(`table[data-field-name="${CSS.escape(fieldName)}"]`);
+          const rows = [];
+          if (table) {
+            table.querySelectorAll('tbody tr').forEach((tr) => {
+              const row = {};
+              tr.querySelectorAll('input, textarea, select').forEach((control) => {
+                const key = control.getAttribute('data-column-name') || control.getAttribute('data-key') || '';
+                if (key) row[key] = control.value;
+              });
+              if (Object.keys(row).length) rows.push(row);
+            });
+          }
+          responseJson[fieldName] = rows;
+        } else {
+          const control = container.querySelector(`${field.kind === 'textarea' ? 'textarea' : 'input'}[data-field-name="${CSS.escape(fieldName)}"]`);
+          responseJson[fieldName] = control ? control.value : '';
+        }
+      });
+      payload.response_json = responseJson;
+      return payload;
+    }
+
     if (question.question_type === 'table' || question.question_type === 'nested_table' || question.question_type === 'matrix' || question.question_type === 'repeating_section') {
       const table = container.querySelector('.data-table');
       const rows = [];
@@ -1369,8 +1586,6 @@
     frequencySelect.innerHTML = (workspace.frequency_choices || []).map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join('');
     assignerSelect.innerHTML = workspace.users.map((user) => `<option value="${user.id}">${escapeHtml(user.name)} (${escapeHtml(user.username)})</option>`).join('');
     assigneeSelect.innerHTML = workspace.users.map((user) => `<option value="${user.id}">${escapeHtml(user.name)} (${escapeHtml(user.username)})</option>`).join('');
-
-    // parent assignment UI removed — not used in current workflow
   }
 
   function getSelectedQuestions() {
@@ -1458,6 +1673,7 @@
     refreshSelectedList();
   }
 
+  // Event Listeners
   document.getElementById('openAssignModalBtn').addEventListener('click', openModal);
   document.getElementById('closeAssignModalBtn').addEventListener('click', closeModal);
   document.getElementById('cancelAssignmentBtn').addEventListener('click', closeModal);
@@ -1466,6 +1682,7 @@
   });
   document.getElementById('assignmentForm').addEventListener('submit', submitAssignment);
 
+  // Load workspace
   loadWorkspace(state.sectionCode, state.principleSlug, state.questionId);
 </script>
 {% endblock %}
