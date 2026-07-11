@@ -5,9 +5,6 @@
 
 {% block extra_css %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<!-- Add your static JS files here -->
-<script src="{% static 'assets/js/card-actions.js' %}"></script>
-<script src="{% static 'assets/js/dropdown.js' %}"></script>
 <style>
   * {
     box-sizing: border-box;
@@ -166,6 +163,15 @@
     display: flex;
     align-items: center;
     gap: 4px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+  }
+
+  /* Show buttons only on the 4-Year panel hover */
+  #panelTrend:hover .card-header-btn {
+    opacity: 1;
+    visibility: visible;
   }
 
   .avatar-text {
@@ -199,35 +205,80 @@
     background: #f3f4f6;
   }
 
-  .avatar-text.bg-danger {
-    background: #ef4444;
+  /* ===== ORANGE DOT FOR REFRESH ===== */
+  .avatar-text.bg-orange {
+    background: #f97316;
   }
 
-  .avatar-text.bg-danger:hover {
-    background: #dc2626;
+  .avatar-text.bg-orange:hover {
+    background: #ea580c;
     transform: scale(1.1);
   }
 
-  .avatar-text.bg-warning {
-    background: #f59e0b;
-  }
-
-  .avatar-text.bg-warning:hover {
-    background: #d97706;
-    transform: scale(1.1);
-  }
-
-  .avatar-text.bg-success {
+  /* ===== GREEN DOT FOR EXPAND ===== */
+  .avatar-text.bg-green {
     background: #22c07a;
   }
 
-  .avatar-text.bg-success:hover {
+  .avatar-text.bg-green:hover {
     background: #16a34a;
     transform: scale(1.1);
   }
 
   .avatar-text i {
     font-size: 11px;
+  }
+
+  /* ===== DOT INDICATORS ===== */
+  .dot-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+  }
+
+  .dot-indicator.dot-orange {
+    background: #f97316;
+    border: 2px solid #ea580c;
+    box-shadow: 0 0 8px rgba(249, 115, 22, 0.5);
+    animation: pulse-orange 2s infinite;
+  }
+
+  .dot-indicator.dot-green {
+    background: #22c07a;
+    border: 2px solid #16a34a;
+    box-shadow: 0 0 8px rgba(34, 192, 122, 0.5);
+    animation: pulse-green 2s infinite;
+  }
+
+  .avatar-text:hover .dot-indicator.dot-orange {
+    box-shadow: 0 0 16px rgba(249, 115, 22, 0.9);
+    transform: scale(1.2);
+  }
+
+  .avatar-text:hover .dot-indicator.dot-green {
+    box-shadow: 0 0 16px rgba(34, 192, 122, 0.9);
+    transform: scale(1.2);
+  }
+
+  @keyframes pulse-orange {
+    0%, 100% { 
+      box-shadow: 0 0 8px rgba(249, 115, 22, 0.5); 
+    }
+    50% { 
+      box-shadow: 0 0 16px rgba(249, 115, 22, 0.9); 
+    }
+  }
+
+  @keyframes pulse-green {
+    0%, 100% { 
+      box-shadow: 0 0 8px rgba(34, 192, 122, 0.5); 
+    }
+    50% { 
+      box-shadow: 0 0 16px rgba(34, 192, 122, 0.9); 
+    }
   }
 
   /* ===== DROPDOWN ===== */
@@ -756,632 +807,591 @@
 {% endblock %}
 
 {% block content %}
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Report</h5>
+        </div>
+
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="#">Home</a></li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'emission:dashboard' %}">Emission</a>
+            </li>
+            <li class="breadcrumb-item active">Report</li>
+        </ul>
+    </div>
+
+    {% comment %} <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                <a class="btn btn-primary">
+                    <i class="feather-plus me-2"></i>
+                    <span>Emission Report</span>
+                </a>
+            </div>
+        </div>
+    </div> {% endcomment %}
+</div>
+
+<!-- SUMMARY STRIP - BLUE BACKGROUND -->
 <div class="esg-page">
-  <!-- PAGE HEADER -->
-  <div class="page-header-custom">
-    <div class="title-section">
-      <h1>
-        <i class="fas fa-leaf"></i>
-        Emission Reports
-      </h1>
-      <div class="subtitle">ESG / BRSR Disclosure · FY 2025-26</div>
-    </div>
-    <div class="header-actions">
-      <button class="btn-export" onclick="exportReport()">
-        <i class="fas fa-download"></i> Export Report
-      </button>
-    </div>
-  </div>
-
-  <!-- SUMMARY STRIP - BLUE BACKGROUND -->
-  <div class="summary-strip">
-    <div class="kpi-item">
-      <div class="kpi-label">Total GHG Emissions</div>
-      <div class="kpi-value">50,276 <span class="unit">tCO₂e</span></div>
-      <div class="kpi-subtitle">Scope 1 + 2 + 3</div>
-    </div>
-    <div class="kpi-item">
-      <div class="kpi-label">Scope 1 Direct</div>
-      <div class="kpi-value">14,470 <span class="unit">tCO₂e</span></div>
-      <div class="kpi-subtitle">28.8% of total</div>
-    </div>
-    <div class="kpi-item">
-      <div class="kpi-label">Scope 2 Market-Based</div>
-      <div class="kpi-value">10,266 <span class="unit">tCO₂e</span></div>
-      <div class="kpi-subtitle">20.4% of total</div>
-    </div>
-    <div class="kpi-item">
-      <div class="kpi-label">GHG Intensity</div>
-      <div class="kpi-value">2.18 <span class="unit">tCO₂e / MW</span></div>
-      <div class="kpi-subtitle green">
-        <span class="down-arrow">↓</span> -10.3% vs FY24
-      </div>
-    </div>
-  </div>
-
-  <!-- CHARTS -->
-  <div class="charts-grid">
-    <!-- 4-Year Emission Trend -->
-    <div class="chart-panel" id="panelTrend">
-      <div class="panel-header">
-        <h5 class="chart-title">4-Year Emission Trend by Scope</h5>
-        <div class="card-header-action d-flex align-items-center gap-2">
-          <div class="card-header-btn d-flex align-items-center gap-2">
-            <div data-bs-toggle="tooltip" title="Refresh">
-              <a href="javascript:void(0);" class="avatar-text avatar-xs bg-warning" data-bs-toggle="refresh" onclick="handleRefresh(event, 'panelTrend')">
-              </a>
+    <div class="summary-strip">
+        <div class="kpi-item">
+            <div class="kpi-label">Total GHG Emissions</div>
+            <div class="kpi-value">50,276 <span class="unit">tCO₂e</span></div>
+            <div class="kpi-subtitle">Scope 1 + 2 + 3</div>
+        </div>
+        <div class="kpi-item">
+            <div class="kpi-label">Scope 1 Direct</div>
+            <div class="kpi-value">14,470 <span class="unit">tCO₂e</span></div>
+            <div class="kpi-subtitle">28.8% of total</div>
+        </div>
+        <div class="kpi-item">
+            <div class="kpi-label">Scope 2 Market-Based</div>
+            <div class="kpi-value">10,266 <span class="unit">tCO₂e</span></div>
+            <div class="kpi-subtitle">20.4% of total</div>
+        </div>
+        <div class="kpi-item">
+            <div class="kpi-label">GHG Intensity</div>
+            <div class="kpi-value">2.18 <span class="unit">tCO₂e / MW</span></div>
+            <div class="kpi-subtitle green">
+                <span class="down-arrow">↓</span> -10.3% vs FY24
             </div>
-            <div data-bs-toggle="tooltip" title="Maximize">
-              <a href="javascript:void(0);" class="avatar-text avatar-xs bg-success" data-bs-toggle="expand" onclick="handleMaximize(event, 'panelTrend')">
-              </a>
+        </div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="charts-grid">
+        <!-- 4-Year Emission Trend - WITH DOTS AND OPTIONS -->
+        <div class="chart-panel" id="panelTrend">
+            <div class="panel-header">
+                <h5 class="chart-title">4-Year Emission Trend by Scope</h5>
+                <div class="card-header-action d-flex align-items-center gap-2">
+                    <div class="card-header-btn d-flex align-items-center gap-2">
+                        <!-- Refresh Button with Orange Dot -->
+                        <div data-bs-toggle="tooltip" title="Refresh">
+                            <a href="javascript:void(0);" class="avatar-text avatar-xs bg-orange" onclick="handleRefresh(event, 'panelTrend')">
+                                <span class="dot-indicator dot-orange"></span>
+                            </a>
+                        </div>
+                        <!-- Maximize Button with Green Dot -->
+                        <div data-bs-toggle="tooltip" title="Maximize">
+                            <a href="javascript:void(0);" class="avatar-text avatar-xs bg-green" onclick="handleMaximize(event, 'panelTrend')">
+                                <span class="dot-indicator dot-green"></span>
+                            </a>
+                        </div>
+                    </div>
+                    <!-- Options Dropdown - Always Visible -->
+                    <div class="dropdown">
+                        <a href="javascript:void(0);" class="avatar-text avatar-sm" data-bs-toggle="dropdown" data-bs-offset="25,25" onclick="toggleDropdown(event)">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            <a class="dropdown-item" href="#"><i class="fas fa-file-image me-2"></i>Export PNG</a>
+                            <a class="dropdown-item" href="#"><i class="fas fa-file-pdf me-2"></i>Export PDF</a>
+                            <a class="dropdown-item" href="#"><i class="fas fa-print me-2"></i>Print Chart</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Edit Chart</a>
+                            <a class="dropdown-item" href="#"><i class="fas fa-sync-alt me-2"></i>Refresh Data</a>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-          <div class="dropdown">
-            <a href="javascript:void(0);" class="avatar-text avatar-sm" data-bs-toggle="dropdown" data-bs-offset="25,25" onclick="toggleDropdown(event)">
-              <i class="fas fa-ellipsis-v"></i>
-            </a>
-            <div class="dropdown-menu dropdown-menu-end">
-              <a class="dropdown-item" href="#"><i class="fas fa-file-image me-2"></i>Export PNG</a>
-              <a class="dropdown-item" href="#"><i class="fas fa-file-pdf me-2"></i>Export PDF</a>
-              <a class="dropdown-item" href="#"><i class="fas fa-print me-2"></i>Print Chart</a>
-              <div class="dropdown-divider"></div>
-              <a class="dropdown-item" href="#"><i class="fas fa-edit me-2"></i>Edit Chart</a>
-              <a class="dropdown-item" href="#"><i class="fas fa-sync-alt me-2"></i>Refresh Data</a>
+            <div class="chart-container" id="chartContainer">
+                <canvas id="trendChart"></canvas>
             </div>
-          </div>
+            <div class="chart-legend">
+                <span class="legend-item">
+                    <span class="legend-dot scope1"></span> Scope 1
+                </span>
+                <span class="legend-item">
+                    <span class="legend-dot scope2"></span> Scope 2
+                </span>
+                <span class="legend-item">
+                    <span class="legend-dot scope3"></span> Scope 3
+                </span>
+            </div>
         </div>
-      </div>
-      <div class="chart-container" id="chartContainer">
-        <canvas id="trendChart"></canvas>
-      </div>
-      <div class="chart-legend">
-        <span class="legend-item">
-          <span class="legend-dot scope1"></span> Scope 1
-        </span>
-        <span class="legend-item">
-          <span class="legend-dot scope2"></span> Scope 2
-        </span>
-        <span class="legend-item">
-          <span class="legend-dot scope3"></span> Scope 3
-        </span>
-      </div>
+
+        <!-- GHG Intensity Reduction - WITHOUT DOTS (Only title) -->
+        <div class="chart-panel" id="panelIntensity">
+            <div class="panel-header">
+                <h5 class="chart-title">GHG Intensity Reduction</h5>
+                <!-- No card-header-action here -->
+            </div>
+            <div class="chart-container">
+                <canvas id="intensityChart"></canvas>
+            </div>
+            <div class="annotation-box">
+                <i class="fas fa-info-circle"></i>
+                <div class="text">
+                    Intensity reduced by <strong>23.2%</strong> over 4 years — on track for 2030 SBTi target.
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- GHG Intensity Reduction -->
-    <div class="chart-panel" id="panelIntensity">
-      <div class="panel-header">
-        <h5 class="chart-title">GHG Intensity Reduction</h5>
-      </div>
-      <div class="chart-container">
-        <canvas id="intensityChart"></canvas>
-      </div>
-      <div class="annotation-box">
-        <i class="fas fa-info-circle"></i>
-        <div class="text">
-          Intensity reduced by <strong>23.2%</strong> over 4 years — on track for 2030 SBTi target.
+    <!-- SCOPE BREAKDOWN + AVAILABLE REPORTS -->
+    <div class="scroll-panel">
+        <!-- Scope 1 -->
+        <div class="scope-card">
+            <div class="scope-card-header">
+                <div class="scope-title-group">
+                    <span class="scope-dot scope1"></span>
+                    <h3>Scope 1 — Direct Emissions</h3>
+                </div>
+                <div class="scope-total">14,470 tCO₂e</div>
+            </div>
+
+            <div class="scope-item">
+                <span class="item-label">Natural Gas Combustion</span>
+                <div class="item-bar-row">
+                    <div class="item-bar-track"><div class="item-bar-fill scope1" style="width:43.1%"></div></div>
+                    <span class="item-pct">43.1%</span>
+                    <span class="item-value">6,240</span>
+                </div>
+            </div>
+            <div class="scope-item">
+                <span class="item-label">Diesel — DG Sets</span>
+                <div class="item-bar-row">
+                    <div class="item-bar-track"><div class="item-bar-fill scope1" style="width:28.5%"></div></div>
+                    <span class="item-pct">28.5%</span>
+                    <span class="item-value">4,130</span>
+                </div>
+            </div>
+            <div class="scope-item">
+                <span class="item-label">Refrigerants (HFCs)</span>
+                <div class="item-bar-row">
+                    <div class="item-bar-track"><div class="item-bar-fill scope1" style="width:16.4%"></div></div>
+                    <span class="item-pct">16.4%</span>
+                    <span class="item-value">2,380</span>
+                </div>
+            </div>
+            <div class="scope-item">
+                <span class="item-label">Coal Combustion</span>
+                <div class="item-bar-row">
+                    <div class="item-bar-track"><div class="item-bar-fill scope1" style="width:11.9%"></div></div>
+                    <span class="item-pct">11.9%</span>
+                    <span class="item-value">1,720</span>
+                </div>
+            </div>
         </div>
-      </div>
+
+        <!-- Scope 2 -->
+        <div class="scope-card">
+            <div class="scope-card-header">
+                <div class="scope-title-group">
+                    <span class="scope-dot scope2"></span>
+                    <h3>Scope 2 — Indirect Energy Emissions</h3>
+                </div>
+                <div class="scope-total">10,266 tCO₂e</div>
+            </div>
+
+            <div class="scope-item">
+                <span class="item-label">Grid Electricity</span>
+                <div class="item-bar-row">
+                    <div class="item-bar-track"><div class="item-bar-fill scope2" style="width:87.1%"></div></div>
+                    <span class="item-pct">87.1%</span>
+                    <span class="item-value">8,940</span>
+                </div>
+            </div>
+            <div class="scope-item">
+                <span class="item-label">Purchased Steam</span>
+                <div class="item-bar-row">
+                    <div class="item-bar-track"><div class="item-bar-fill scope2" style="width:12.9%"></div></div>
+                    <span class="item-pct">12.9%</span>
+                    <span class="item-value">1,326</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scope 3 -->
+        <div class="scope-card">
+            <div class="scope-card-header">
+                <div class="scope-title-group">
+                    <span class="scope-dot scope3"></span>
+                    <h3>Scope 3 — Value Chain Emissions</h3>
+                </div>
+                <div class="scope-total">25,540 tCO₂e</div>
+            </div>
+
+            <div class="scope-item">
+                <span class="item-label">Purchased Goods</span>
+                <div class="item-bar-row">
+                    <div class="item-bar-track"><div class="item-bar-fill scope3" style="width:38.4%"></div></div>
+                    <span class="item-pct">38.4%</span>
+                    <span class="item-value">9,800</span>
+                </div>
+            </div>
+            <div class="scope-item">
+                <span class="item-label">Employee Commute</span>
+                <div class="item-bar-row">
+                    <div class="item-bar-track"><div class="item-bar-fill scope3" style="width:22.1%"></div></div>
+                    <span class="item-pct">22.1%</span>
+                    <span class="item-value">5,640</span>
+                </div>
+            </div>
+            <div class="scope-item">
+                <span class="item-label">Business Travel</span>
+                <div class="item-bar-row">
+                    <div class="item-bar-track"><div class="item-bar-fill scope3" style="width:16.4%"></div></div>
+                    <span class="item-pct">16.4%</span>
+                    <span class="item-value">4,200</span>
+                </div>
+            </div>
+            <div class="scope-item">
+                <span class="item-label">Waste Disposal</span>
+                <div class="item-bar-row">
+                    <div class="item-bar-track"><div class="item-bar-fill scope3" style="width:12.1%"></div></div>
+                    <span class="item-pct">12.1%</span>
+                    <span class="item-value">3,100</span>
+                </div>
+            </div>
+            <div class="scope-item">
+                <span class="item-label">Water Withdrawal</span>
+                <div class="item-bar-row">
+                    <div class="item-bar-track"><div class="item-bar-fill scope3" style="width:11%"></div></div>
+                    <span class="item-pct">11%</span>
+                    <span class="item-value">2,800</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Available Reports -->
+        <div class="reports-heading">Available Reports</div>
+        <div class="reports-grid">
+            <div class="report-card">
+                <div class="report-icon ready"><i class="fas fa-file-lines"></i></div>
+                <div class="report-title">BRSR Core Report</div>
+                <div class="report-subtitle">FY 2024–25 · Regulatory Filing</div>
+                <div class="report-footer">
+                    <span class="report-status ready"><i class="fas fa-circle-check"></i> Ready</span>
+                    <button class="btn-report-download" onclick="downloadReport('BRSR Core Report')">
+                        <i class="fas fa-download"></i> PDF + XBRL
+                    </button>
+                </div>
+            </div>
+
+            <div class="report-card">
+                <div class="report-icon ready"><i class="fas fa-file-lines"></i></div>
+                <div class="report-title">GHG Protocol Report</div>
+                <div class="report-subtitle">FY 2024–25 · All Scopes</div>
+                <div class="report-footer">
+                    <span class="report-status ready"><i class="fas fa-circle-check"></i> Ready</span>
+                    <button class="btn-report-download" onclick="downloadReport('GHG Protocol Report')">
+                        <i class="fas fa-download"></i> Excel
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
-
-  <!-- SCOPE BREAKDOWN + AVAILABLE REPORTS -->
-  <div class="scroll-panel">
-    <!-- Scope 1 -->
-    <div class="scope-card">
-      <div class="scope-card-header">
-        <div class="scope-title-group">
-          <span class="scope-dot scope1"></span>
-          <h3>Scope 1 — Direct Emissions</h3>
-        </div>
-        <div class="scope-total">14,470 tCO₂e</div>
-      </div>
-
-      <div class="scope-item">
-        <span class="item-label">Natural Gas Combustion</span>
-        <div class="item-bar-row">
-          <div class="item-bar-track"><div class="item-bar-fill scope1" style="width:43.1%"></div></div>
-          <span class="item-pct">43.1%</span>
-          <span class="item-value">6,240</span>
-        </div>
-      </div>
-      <div class="scope-item">
-        <span class="item-label">Diesel — DG Sets</span>
-        <div class="item-bar-row">
-          <div class="item-bar-track"><div class="item-bar-fill scope1" style="width:28.5%"></div></div>
-          <span class="item-pct">28.5%</span>
-          <span class="item-value">4,130</span>
-        </div>
-      </div>
-      <div class="scope-item">
-        <span class="item-label">Refrigerants (HFCs)</span>
-        <div class="item-bar-row">
-          <div class="item-bar-track"><div class="item-bar-fill scope1" style="width:16.4%"></div></div>
-          <span class="item-pct">16.4%</span>
-          <span class="item-value">2,380</span>
-        </div>
-      </div>
-      <div class="scope-item">
-        <span class="item-label">Coal Combustion</span>
-        <div class="item-bar-row">
-          <div class="item-bar-track"><div class="item-bar-fill scope1" style="width:11.9%"></div></div>
-          <span class="item-pct">11.9%</span>
-          <span class="item-value">1,720</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Scope 2 -->
-    <div class="scope-card">
-      <div class="scope-card-header">
-        <div class="scope-title-group">
-          <span class="scope-dot scope2"></span>
-          <h3>Scope 2 — Indirect Energy Emissions</h3>
-        </div>
-        <div class="scope-total">10,266 tCO₂e</div>
-      </div>
-
-      <div class="scope-item">
-        <span class="item-label">Grid Electricity</span>
-        <div class="item-bar-row">
-          <div class="item-bar-track"><div class="item-bar-fill scope2" style="width:87.1%"></div></div>
-          <span class="item-pct">87.1%</span>
-          <span class="item-value">8,940</span>
-        </div>
-      </div>
-      <div class="scope-item">
-        <span class="item-label">Purchased Steam</span>
-        <div class="item-bar-row">
-          <div class="item-bar-track"><div class="item-bar-fill scope2" style="width:12.9%"></div></div>
-          <span class="item-pct">12.9%</span>
-          <span class="item-value">1,326</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Scope 3 -->
-    <div class="scope-card">
-      <div class="scope-card-header">
-        <div class="scope-title-group">
-          <span class="scope-dot scope3"></span>
-          <h3>Scope 3 — Value Chain Emissions</h3>
-        </div>
-        <div class="scope-total">25,540 tCO₂e</div>
-      </div>
-
-      <div class="scope-item">
-        <span class="item-label">Purchased Goods</span>
-        <div class="item-bar-row">
-          <div class="item-bar-track"><div class="item-bar-fill scope3" style="width:38.4%"></div></div>
-          <span class="item-pct">38.4%</span>
-          <span class="item-value">9,800</span>
-        </div>
-      </div>
-      <div class="scope-item">
-        <span class="item-label">Employee Commute</span>
-        <div class="item-bar-row">
-          <div class="item-bar-track"><div class="item-bar-fill scope3" style="width:22.1%"></div></div>
-          <span class="item-pct">22.1%</span>
-          <span class="item-value">5,640</span>
-        </div>
-      </div>
-      <div class="scope-item">
-        <span class="item-label">Business Travel</span>
-        <div class="item-bar-row">
-          <div class="item-bar-track"><div class="item-bar-fill scope3" style="width:16.4%"></div></div>
-          <span class="item-pct">16.4%</span>
-          <span class="item-value">4,200</span>
-        </div>
-      </div>
-      <div class="scope-item">
-        <span class="item-label">Waste Disposal</span>
-        <div class="item-bar-row">
-          <div class="item-bar-track"><div class="item-bar-fill scope3" style="width:12.1%"></div></div>
-          <span class="item-pct">12.1%</span>
-          <span class="item-value">3,100</span>
-        </div>
-      </div>
-      <div class="scope-item">
-        <span class="item-label">Water Withdrawal</span>
-        <div class="item-bar-row">
-          <div class="item-bar-track"><div class="item-bar-fill scope3" style="width:11%"></div></div>
-          <span class="item-pct">11%</span>
-          <span class="item-value">2,800</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Available Reports -->
-    <div class="reports-heading">Available Reports</div>
-    <div class="reports-grid">
-      <div class="report-card">
-        <div class="report-icon ready"><i class="fas fa-file-lines"></i></div>
-        <div class="report-title">BRSR Core Report</div>
-        <div class="report-subtitle">FY 2024–25 · Regulatory Filing</div>
-        <div class="report-footer">
-          <span class="report-status ready"><i class="fas fa-circle-check"></i> Ready</span>
-          <button class="btn-report-download" onclick="downloadReport('BRSR Core Report')">
-            <i class="fas fa-download"></i> PDF + XBRL
-          </button>
-        </div>
-      </div>
-
-      <div class="report-card">
-        <div class="report-icon ready"><i class="fas fa-file-lines"></i></div>
-        <div class="report-title">GHG Protocol Report</div>
-        <div class="report-subtitle">FY 2024–25 · All Scopes</div>
-        <div class="report-footer">
-          <span class="report-status ready"><i class="fas fa-circle-check"></i> Ready</span>
-          <button class="btn-report-download" onclick="downloadReport('GHG Protocol Report')">
-            <i class="fas fa-download"></i> Excel
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
 
 <script>
 // ===== REFRESH BUTTON HANDLER =====
 function handleRefresh(event, panelId) {
-  event.preventDefault();
-  const btn = event.currentTarget;
-  const icon = btn.querySelector('i');
-  const panel = document.getElementById(panelId);
-  
-  if (!panel) return;
-  
-  // Add spinning animation to icon
-  if (icon) {
-    icon.classList.add('fa-spin');
-  }
-  
-  // Find the chart container
-  const chartContainer = panel.querySelector('.chart-container');
-  if (!chartContainer) return;
-  
-  // Create loading overlay
-  const overlay = document.createElement('div');
-  overlay.className = 'refresh-overlay';
-  overlay.innerHTML = `
-    <div class="spinner-container">
-      <div class="spinner"></div>
-      <div class="refresh-text"></div>
-    </div>
-  `;
-  chartContainer.style.position = 'relative';
-  chartContainer.appendChild(overlay);
-  
-  // Simulate refresh
-  setTimeout(() => {
-    // Remove overlay
-    if (overlay.parentNode) {
-      overlay.remove();
-    }
-    // Remove spin from icon
-    if (icon) {
-      icon.classList.remove('fa-spin');
-    }
-    showToast('Chart refreshed successfully!', 'success');
-  }, 2000);
+    event.preventDefault();
+    const panel = document.getElementById(panelId);
+    
+    if (!panel) return;
+    
+    // Find the chart container
+    const chartContainer = panel.querySelector('.chart-container');
+    if (!chartContainer) return;
+    
+    // Create loading overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'refresh-overlay';
+    overlay.innerHTML = `
+        <div class="spinner-container">
+            <div class="spinner"></div>
+            <div class="refresh-text">Refreshing data...</div>
+        </div>
+    `;
+    chartContainer.style.position = 'relative';
+    chartContainer.appendChild(overlay);
+    
+    // Simulate refresh
+    setTimeout(() => {
+        // Remove overlay
+        if (overlay.parentNode) {
+            overlay.remove();
+        }
+        showToast('Chart refreshed successfully!', 'success');
+    }, 2000);
 }
 
 // ===== MAXIMIZE BUTTON HANDLER =====
 function handleMaximize(event, panelId) {
-  event.preventDefault();
-  const panel = document.getElementById(panelId);
-  const icon = event.currentTarget.querySelector('i');
-  
-  if (!panel) return;
-  
-  if (panel.classList.contains('panel-expanded')) {
-    // Restore
-    panel.classList.remove('panel-expanded');
-    if (icon) {
-      icon.classList.remove('fa-compress');
-      icon.classList.add('fa-expand');
-    }
-    document.body.style.overflow = '';
-  } else {
-    // Maximize
-    panel.classList.add('panel-expanded');
-    if (icon) {
-      icon.classList.remove('fa-expand');
-      icon.classList.add('fa-compress');
-    }
-    document.body.style.overflow = 'hidden';
+    event.preventDefault();
+    const panel = document.getElementById(panelId);
     
-    // Force chart resize after expansion
-    setTimeout(() => {
-      const chartCanvas = panel.querySelector('#trendChart');
-      if (chartCanvas && chartCanvas.chart) {
-        chartCanvas.chart.resize();
-      }
-    }, 100);
-  }
+    if (!panel) return;
+    
+    if (panel.classList.contains('panel-expanded')) {
+        // Restore
+        panel.classList.remove('panel-expanded');
+        document.body.style.overflow = '';
+    } else {
+        // Maximize
+        panel.classList.add('panel-expanded');
+        document.body.style.overflow = 'hidden';
+        
+        // Force chart resize after expansion
+        setTimeout(() => {
+            const chartCanvas = panel.querySelector('#trendChart');
+            if (chartCanvas && chartCanvas.chart) {
+                chartCanvas.chart.resize();
+            }
+        }, 100);
+    }
 }
 
 // ===== TOGGLE DROPDOWN =====
 function toggleDropdown(event) {
-  event.stopPropagation();
-  const dropdown = event.currentTarget.nextElementSibling;
-  if (dropdown) {
-    dropdown.classList.toggle('show');
-  }
+    event.stopPropagation();
+    const dropdown = event.currentTarget.nextElementSibling;
+    if (dropdown) {
+        dropdown.classList.toggle('show');
+    }
 }
 
 // Close dropdowns when clicking outside
 document.addEventListener('click', function() {
-  document.querySelectorAll('.dropdown-menu').forEach(function(dropdown) {
-    dropdown.classList.remove('show');
-  });
+    document.querySelectorAll('.dropdown-menu').forEach(function(dropdown) {
+        dropdown.classList.remove('show');
+    });
 });
 
 // Prevent dropdown from closing when clicking inside
 document.querySelectorAll('.dropdown-menu').forEach(function(dropdown) {
-  dropdown.addEventListener('click', function(event) {
-    event.stopPropagation();
-  });
+    dropdown.addEventListener('click', function(event) {
+        event.stopPropagation();
+    });
 });
 
 // ===== ESC KEY TO CLOSE EXPANDED CARD =====
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') {
-    const expandedCard = document.querySelector('.panel-expanded');
-    if (expandedCard) {
-      const expandBtn = expandedCard.querySelector('.bg-success');
-      if (expandBtn) {
-        expandBtn.click();
-      }
+    if (e.key === 'Escape') {
+        const expandedCard = document.querySelector('.panel-expanded');
+        if (expandedCard) {
+            const expandBtn = expandedCard.querySelector('.bg-green');
+            if (expandBtn) {
+                expandBtn.click();
+            }
+        }
     }
-  }
 });
 
 // ===== TOAST NOTIFICATION =====
 function showToast(message, type) {
-  const existingToasts = document.querySelectorAll('.custom-toast');
-  existingToasts.forEach(function(toast) { toast.remove(); });
+    const existingToasts = document.querySelectorAll('.custom-toast');
+    existingToasts.forEach(function(toast) { toast.remove(); });
 
-  const toastContainer = document.createElement('div');
-  toastContainer.className = 'custom-toast';
-  toastContainer.style.cssText = `
-    position: fixed;
-    top: 30px;
-    right: 30px;
-    z-index: 99999;
-    max-width: 420px;
-    min-width: 300px;
-    animation: slideInRight 0.4s ease;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-    border-radius: 12px;
-  `;
+    const toastContainer = document.createElement('div');
+    toastContainer.className = 'custom-toast';
 
-  let bgColor = '#22c07a';
-  let icon = 'fa-check-circle';
-  if (type === 'error') {
-    bgColor = '#ef4444';
-    icon = 'fa-exclamation-circle';
-  } else if (type === 'warning') {
-    bgColor = '#d97706';
-    icon = 'fa-exclamation-triangle';
-  } else if (type === 'info') {
-    bgColor = '#2563eb';
-    icon = 'fa-info-circle';
-  }
-
-  toastContainer.innerHTML = `
-    <div class="d-flex align-items-center p-3 rounded" style="background: ${bgColor}; color: white;">
-      <i class="fas ${icon} me-3" style="font-size: 18px;"></i>
-      <div class="flex-grow-1" style="font-size: 14px; font-weight: 500;">${message}</div>
-      <button type="button" class="btn-close btn-close-white" onclick="this.closest('.custom-toast').remove()" aria-label="Close"></button>
-    </div>
-  `;
-
-  document.body.appendChild(toastContainer);
-
-  setTimeout(function() {
-    if (toastContainer.parentNode) {
-      toastContainer.style.transition = 'all 0.3s ease';
-      toastContainer.style.opacity = '0';
-      toastContainer.style.transform = 'translateX(50px)';
-      setTimeout(function() { toastContainer.remove(); }, 300);
+    let bgColor = '#22c07a';
+    let icon = 'fa-check-circle';
+    if (type === 'error') {
+        bgColor = '#ef4444';
+        icon = 'fa-exclamation-circle';
+    } else if (type === 'warning') {
+        bgColor = '#d97706';
+        icon = 'fa-exclamation-triangle';
+    } else if (type === 'info') {
+        bgColor = '#2563eb';
+        icon = 'fa-info-circle';
     }
-  }, 3000);
-}
 
-// ===== ADD CSS ANIMATIONS =====
-const styleSheet = document.createElement('style');
-styleSheet.textContent = `
-  @keyframes slideInRight {
-    from { opacity: 0; transform: translateX(80px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-  
-  .fa-spin {
-    animation: fa-spin 1s linear infinite;
-  }
-  
-  @keyframes fa-spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-`;
-document.head.appendChild(styleSheet);
+    toastContainer.innerHTML = `
+        <div class="d-flex align-items-center p-3 rounded" style="background: ${bgColor}; color: white;">
+            <i class="fas ${icon} me-3" style="font-size: 18px;"></i>
+            <div class="flex-grow-1" style="font-size: 14px; font-weight: 500;">${message}</div>
+            <button type="button" class="btn-close btn-close-white" onclick="this.closest('.custom-toast').remove()" aria-label="Close"></button>
+        </div>
+    `;
 
-document.addEventListener('DOMContentLoaded', function() {
-  // ===== 4-YEAR EMISSION TREND — GROUPED BAR CHART =====
-  const trendCtx = document.getElementById('trendChart').getContext('2d');
+    document.body.appendChild(toastContainer);
 
-  const chart = new Chart(trendCtx, {
-    type: 'bar',
-    data: {
-      labels: ['FY22', 'FY23', 'FY24', 'FY25'],
-      datasets: [
-        {
-          label: 'Scope 1',
-          data: [17500, 13000, 16000, 14500],
-          backgroundColor: '#3bcf6b',
-          borderRadius: 4,
-          maxBarThickness: 22,
-        },
-        {
-          label: 'Scope 2',
-          data: [28000, 22000, 24000, 23000],
-          backgroundColor: '#16b8a0',
-          borderRadius: 4,
-          maxBarThickness: 22,
-        },
-        {
-          label: 'Scope 3',
-          data: [16500, 12500, 14000, 11000],
-          backgroundColor: '#4a7cf6',
-          borderRadius: 4,
-          maxBarThickness: 22,
+    setTimeout(function() {
+        if (toastContainer.parentNode) {
+            toastContainer.style.transition = 'all 0.3s ease';
+            toastContainer.style.opacity = '0';
+            toastContainer.style.transform = 'translateX(50px)';
+            setTimeout(function() { toastContainer.remove(); }, 300);
         }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: 'rgba(255,255,255,0.97)',
-          titleColor: '#1a2332',
-          bodyColor: '#1a2332',
-          borderColor: '#eef2f6',
-          borderWidth: 1,
-          cornerRadius: 10,
-          padding: 12,
-          callbacks: {
-            label: function(context) {
-              return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' tCO₂e';
-            }
-          }
-        }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          max: 30000,
-          ticks: {
-            stepSize: 7500,
-            color: '#8a8f86',
-            font: { size: 11 }
-          },
-          grid: {
-            color: '#eee9db',
-            drawBorder: false
-          }
-        },
-        x: {
-          ticks: {
-            color: '#8a8f86',
-            font: { size: 12 }
-          },
-          grid: { display: false }
-        }
-      },
-      interaction: {
-        mode: 'index',
-        intersect: false
-      }
-    }
-  });
-
-  // Store chart reference for resize
-  document.getElementById('trendChart').chart = chart;
-
-  // ===== GHG INTENSITY REDUCTION — SINGLE LINE CHART =====
-  const intensityCtx = document.getElementById('intensityChart').getContext('2d');
-
-  new Chart(intensityCtx, {
-    type: 'line',
-    data: {
-      labels: ['FY22', 'FY23', 'FY24', 'FY25'],
-      datasets: [
-        {
-          label: 'GHG Intensity',
-          data: [2.84, 2.61, 2.43, 2.18],
-          borderColor: '#22b562',
-          backgroundColor: '#22b562',
-          fill: false,
-          tension: 0.3,
-          pointRadius: 5,
-          pointHoverRadius: 6,
-          pointBackgroundColor: '#22b562',
-          pointBorderColor: '#fff',
-          pointBorderWidth: 2,
-          borderWidth: 2.5,
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: 'rgba(255,255,255,0.97)',
-          titleColor: '#1a2332',
-          bodyColor: '#1a2332',
-          borderColor: '#eef2f6',
-          borderWidth: 1,
-          cornerRadius: 10,
-          padding: 12,
-          callbacks: {
-            label: function(context) {
-              return 'Intensity: ' + context.parsed.y.toFixed(2) + ' tCO₂e / MW';
-            }
-          }
-        }
-      },
-      scales: {
-        y: {
-          min: 1.5,
-          max: 3.5,
-          ticks: {
-            stepSize: 0.5,
-            color: '#8a8f86',
-            font: { size: 11 },
-            callback: function(value) { return value.toFixed(1); }
-          },
-          grid: {
-            color: '#eee9db',
-            drawBorder: false
-          }
-        },
-        x: {
-          ticks: {
-            color: '#8a8f86',
-            font: { size: 12 }
-          },
-          grid: { display: false }
-        }
-      },
-      interaction: {
-        mode: 'index',
-        intersect: false
-      }
-    }
-  });
-});
-
-// ===== EXPORT FUNCTION =====
-function exportReport() {
-  showToast('Exporting report...', 'info');
-  setTimeout(function() {
-    showToast('Report exported successfully!', 'success');
-  }, 1500);
+    }, 3000);
 }
 
 // ===== REPORT DOWNLOAD FUNCTION =====
 function downloadReport(name) {
-  showToast('Downloading ' + name + '...', 'info');
-  setTimeout(function() {
-    showToast(name + ' downloaded successfully!', 'success');
-  }, 1200);
+    showToast('Downloading ' + name + '...', 'info');
+    setTimeout(function() {
+        showToast(name + ' downloaded successfully!', 'success');
+    }, 1200);
 }
 
-console.log('✅ ESG / BRSR Disclosure loaded');
+document.addEventListener('DOMContentLoaded', function() {
+    // ===== 4-YEAR EMISSION TREND — GROUPED BAR CHART =====
+    const trendCtx = document.getElementById('trendChart').getContext('2d');
+
+    const chart = new Chart(trendCtx, {
+        type: 'bar',
+        data: {
+            labels: ['FY22', 'FY23', 'FY24', 'FY25'],
+            datasets: [
+                {
+                    label: 'Scope 1',
+                    data: [17500, 13000, 16000, 14500],
+                    backgroundColor: '#3bcf6b',
+                    borderRadius: 4,
+                    maxBarThickness: 22,
+                },
+                {
+                    label: 'Scope 2',
+                    data: [28000, 22000, 24000, 23000],
+                    backgroundColor: '#16b8a0',
+                    borderRadius: 4,
+                    maxBarThickness: 22,
+                },
+                {
+                    label: 'Scope 3',
+                    data: [16500, 12500, 14000, 11000],
+                    backgroundColor: '#4a7cf6',
+                    borderRadius: 4,
+                    maxBarThickness: 22,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(255,255,255,0.97)',
+                    titleColor: '#1a2332',
+                    bodyColor: '#1a2332',
+                    borderColor: '#eef2f6',
+                    borderWidth: 1,
+                    cornerRadius: 10,
+                    padding: 12,
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' tCO₂e';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 30000,
+                    ticks: {
+                        stepSize: 7500,
+                        color: '#8a8f86',
+                        font: { size: 11 }
+                    },
+                    grid: {
+                        color: '#eee9db',
+                        drawBorder: false
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#8a8f86',
+                        font: { size: 12 }
+                    },
+                    grid: { display: false }
+                }
+            },
+            interaction: {
+                mode: 'index',
+                intersect: false
+            }
+        }
+    });
+
+    // Store chart reference for resize
+    document.getElementById('trendChart').chart = chart;
+
+    // ===== GHG INTENSITY REDUCTION — SINGLE LINE CHART =====
+    const intensityCtx = document.getElementById('intensityChart').getContext('2d');
+
+    new Chart(intensityCtx, {
+        type: 'line',
+        data: {
+            labels: ['FY22', 'FY23', 'FY24', 'FY25'],
+            datasets: [
+                {
+                    label: 'GHG Intensity',
+                    data: [2.84, 2.61, 2.43, 2.18],
+                    borderColor: '#22b562',
+                    backgroundColor: '#22b562',
+                    fill: false,
+                    tension: 0.3,
+                    pointRadius: 5,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#22b562',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    borderWidth: 2.5,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(255,255,255,0.97)',
+                    titleColor: '#1a2332',
+                    bodyColor: '#1a2332',
+                    borderColor: '#eef2f6',
+                    borderWidth: 1,
+                    cornerRadius: 10,
+                    padding: 12,
+                    callbacks: {
+                        label: function(context) {
+                            return 'Intensity: ' + context.parsed.y.toFixed(2) + ' tCO₂e / MW';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    min: 1.5,
+                    max: 3.5,
+                    ticks: {
+                        stepSize: 0.5,
+                        color: '#8a8f86',
+                        font: { size: 11 },
+                        callback: function(value) { return value.toFixed(1); }
+                    },
+                    grid: {
+                        color: '#eee9db',
+                        drawBorder: false
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#8a8f86',
+                        font: { size: 12 }
+                    },
+                    grid: { display: false }
+                }
+            },
+            interaction: {
+                mode: 'index',
+                intersect: false
+            }
+        }
+    });
+});
 </script>
 {% endblock %}

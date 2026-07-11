@@ -90,7 +90,7 @@
   }
 
   .assignments-table thead {
-    background: #1a2332;
+    text-align: left;
     border-bottom: 2px solid #1a2332;
   }
 
@@ -98,10 +98,12 @@
     padding: 14px 16px;
     font-size: 11px;
     font-weight: 700;
+    background: #ffffff;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    border-bottom: 2px solid #eef2f6;
     text-align: left;
-    color: #ffffff !important;
+    color: #1a2332 !important;
   }
 
   .assignments-table thead th:last-child {
@@ -367,33 +369,45 @@
 {% endblock %}
 
 {% block content %}
-<div class="assignments-page">
-  <!-- PAGE HEADER -->
-  <div class="page-header-custom">
-    <div class="title-section">
-      <h1>
-        Assignment
-      </h1>
+
+    <!-- PAGE HEADER - KEPT UNCHANGED -->
+  <div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+      <div class="page-header-title">
+        <h5 class="m-b-10">Assignment</h5>
+      </div>
+
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a href="#">Home</a></li>
+        <li class="breadcrumb-item">
+          <a href="{% url 'emission:dashboard' %}">Emission</a>
+        </li>
+        <li class="breadcrumb-item active">Assignment</li>
+      </ul>
     </div>
-    <div class="header-actions">
-      <button class="btn-add" onclick="addAssignment()">
+     <div class="page-header-right ms-auto">
+      <div class="page-header-right-items">
+        <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+         <button class="btn-add" onclick="addAssignment()">
         <i class="fas fa-plus"></i> New Assignment
       </button>
-    </div>
+        </div>
+      </div>
+    </div> 
   </div>
-
+<div class="assignments-page">
   <!-- ASSIGNMENTS TABLE -->
   <div class="table-container">
     <table class="assignments-table">
       <thead>
         <tr>
-          <th class="col-srno" style="color: #ffffff !important; font-weight: 700 !important; text-align: center;">SR. NO</th>
-          <th class="col-id" style="color: #ffffff !important; font-weight: 700 !important;">ID</th>
-          <th class="col-activity" style="color: #ffffff !important; font-weight: 700 !important;">ACTIVITY &amp; LOCATION</th>
-          <th class="col-assignee" style="color: #ffffff !important; font-weight: 700 !important;">ASSIGNEE</th>
-          <th class="col-scope" style="color: #ffffff !important; font-weight: 700 !important;">SCOPE</th>
-          <th class="col-frequency" style="color: #ffffff !important; font-weight: 700 !important;">FREQUENCY</th>
-          <th class="col-due" style="color: #ffffff !important; font-weight: 700 !important; text-align: center;">DUE DAY</th>
+          <th class="col-srno" style="color: ##1a2332 !important; font-weight: 700 !important; text-align: center;">SR. NO</th>
+          <th class="col-id" style="color: ##1a2332 !important; font-weight: 700 !important;">ID</th>
+          <th class="col-activity" style="color: ##1a2332 !important; font-weight: 700 !important;">ACTIVITY &amp; LOCATION</th>
+          <th class="col-assignee" style="color: ##1a2332 !important; font-weight: 700 !important;">ASSIGNEE</th>
+          <th class="col-scope" style="color: ##1a2332 !important; font-weight: 700 !important;">SCOPE</th>
+          <th class="col-frequency" style="color: ##1a2332 !important; font-weight: 700 !important;">FREQUENCY</th>
+          <th class="col-due" style="color: ##1a2332 !important; font-weight: 700 !important; text-align: center;">DUE DAY</th>
         </tr>
       </thead>
       <tbody id="assignmentsContainer">

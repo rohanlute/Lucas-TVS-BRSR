@@ -240,16 +240,32 @@
 {% endblock %}
 
 {% block content %}
-<div class="create-assignment-page">
   <!-- PAGE HEADER -->
-  <div class="page-header-custom">
-    <div class="title-section">
-      <h1>
-        Create Assignment
-      </h1>
-    </div>
-  </div>
+ <div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+      <div class="page-header-title">
+        <h5 class="m-b-10">Assignment</h5>
+      </div>
 
+      <ul class="breadcrumb">
+        <li class="breadcrumb-item"><a href="#">Home</a></li>
+        <li class="breadcrumb-item">
+          <a href="{% url 'emission:dashboard' %}">Emission</a>
+        </li>
+        <li class="breadcrumb-item active">Assignment</li>
+      </ul>
+    </div>
+     <div class="page-header-right ms-auto">
+      <div class="page-header-right-items">
+        <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+         {% comment %} <button class="btn-add" onclick="addAssignment()">
+        <i class="fas fa-plus"></i> New Assignment
+      </button> {% endcomment %}
+        </div>
+      </div>
+    </div> 
+  </div>
+<div class="create-assignment-page">
   <!-- FORM -->
   <div class="form-container">
     <div class="form-title">Assignment Details</div>

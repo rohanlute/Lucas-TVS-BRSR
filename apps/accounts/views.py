@@ -487,33 +487,31 @@ class UserLocationAssignmentMixin:
 # -----------------------------------------------
 # ============= USER LIST =======================
 # -----------------------------------------------
-
 class UserListView(LoginRequiredMixin, ListView):
-
     model = User
     template_name = 'accounts/user_management/user_list.html'
     context_object_name = 'users'
-    
+    paginate_by = 10  # Add pagination
 
     def get_queryset(self):
         user = self.request.user
-
         queryset = User.objects.select_related(
             'role', 'company', 'department'
         ).order_by('-id')
 
+        # Filter by company for non-super admins
         if not user.is_super_admin:
             queryset = queryset.filter(company=user.company)
 
+        # Apply filters
         search = self.request.GET.get('search', '').strip()
         status = self.request.GET.get('status', '').strip()
         role = self.request.GET.get('role', '').strip()
 
+        # Apply role filter only if specified
         if role:
             queryset = queryset.filter(role_id=role)
-
-        if not user.is_super_admin:
-            queryset = queryset.exclude(role__role_code='SUPERADMIN')
+        # Remove the else block that filters by SUPERADMIN
 
         if search:
             queryset = queryset.filter(
@@ -525,29 +523,24 @@ class UserListView(LoginRequiredMixin, ListView):
 
         if status == 'active':
             queryset = queryset.filter(is_active=True)
-
         elif status == 'inactive':
             queryset = queryset.filter(is_active=False)
 
         return queryset
 
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
-        if self.request.user.is_super_admin:
-            context['roles'] = Role.objects.order_by('role_name')
-        else:
-            context['roles'] = Role.objects.exclude(
-                role_code='SUPERADMIN'
-            ).order_by('role_name')
-
+        
+        # Get all roles for filter dropdown
+        context['roles'] = Role.objects.order_by('role_name')
         context['selected_status'] = self.request.GET.get('status', '')
         context['selected_role'] = self.request.GET.get('role', '')
-
-        context['total_users_count'] = context['users'].count()
-        context['active_users_count'] = context['users'].filter(is_active=True).count()
-
+        
+        # Get the filtered queryset for counts
+        users = self.get_queryset()
+        context['total_users_count'] = users.count()
+        context['active_users_count'] = users.filter(is_active=True).count()
+        
         return context
 
 
