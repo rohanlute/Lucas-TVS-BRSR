@@ -798,13 +798,12 @@
           </div>
           <div>
             <label class="tool-label">Assigner</label>
-            <select class="workspace-select" name="assigner" id="assignmentAssigner"></select>
+            <input class="workspace-input" type="text" id="assignmentAssignerDisplay" readonly>
+            <input type="hidden" name="assigner" id="assignmentAssigner">
           </div>
           <div>
-            <label class="tool-label">Assignee</label>
+            <label class="tool-label">Assign To</label>
             <select class="workspace-select" name="assignee" id="assignmentAssignee"></select>
-          </div>
-          <div>
           </div>
           <div>
             <label class="tool-label">Due Date</label>
@@ -835,6 +834,7 @@
   const API_SAVE = "{{ question_save_api_url|escapejs }}";
   const API_SUBMIT = "{{ question_submit_api_url|escapejs }}";
   const API_ASSIGN = "{{ assignment_create_api_url|escapejs }}";
+  const API_ASSIGN_OPTIONS = "{{ assignment_options_api_url|escapejs }}";
   const INITIAL_SECTION = "{{ current_section_code|default:''|escapejs }}";
   const INITIAL_PRINCIPLE = "{{ current_principle_slug|default:''|escapejs }}";
   const INITIAL_QUESTION = "{{ active_question_id|default:''|escapejs }}";
@@ -1578,14 +1578,59 @@
     const plantSelect = document.getElementById('assignmentPlant');
     const fySelect = document.getElementById('assignmentFinancialYear');
     const frequencySelect = document.getElementById('assignmentFrequency');
-    const assignerSelect = document.getElementById('assignmentAssigner');
+    const assignerDisplay = document.getElementById('assignmentAssignerDisplay');
+    const assignerHidden = document.getElementById('assignmentAssigner');
     const assigneeSelect = document.getElementById('assignmentAssignee');
 
     plantSelect.innerHTML = workspace.plants.map((plant) => `<option value="${plant.id}">${escapeHtml(plant.name)} (${escapeHtml(plant.code)})</option>`).join('');
     fySelect.innerHTML = workspace.financial_years.map((fy) => `<option value="${escapeHtml(fy.value)}">${escapeHtml(fy.label)}</option>`).join('');
     frequencySelect.innerHTML = (workspace.frequency_choices || []).map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join('');
-    assignerSelect.innerHTML = workspace.users.map((user) => `<option value="${user.id}">${escapeHtml(user.name)} (${escapeHtml(user.username)})</option>`).join('');
-    assigneeSelect.innerHTML = workspace.users.map((user) => `<option value="${user.id}">${escapeHtml(user.name)} (${escapeHtml(user.username)})</option>`).join('');
+
+    if (workspace.current_user_id) {
+      assignerHidden.value = workspace.current_user_id.toString();
+      assignerDisplay.value = workspace.current_user_name || '';
+    }
+
+    assigneeSelect.innerHTML = '<option value="">Loading assignees...</option>';
+
+    if (workspace.plants.length) {
+      plantSelect.value = workspace.plants[0].id.toString();
+    }
+
+    plantSelect.onchange = () => loadAssignmentTargets();
+
+    loadAssignmentTargets();
+  }
+
+  async function loadAssignmentTargets() {
+    const plantSelect = document.getElementById('assignmentPlant');
+    const assigneeSelect = document.getElementById('assignmentAssignee');
+    const plantId = plantSelect.value;
+
+    if (!plantId) {
+      assigneeSelect.innerHTML = '<option value="">Select Plant First</option>';
+      return;
+    }
+
+    const params = new URLSearchParams({ plant_id: plantId });
+    const response = await fetch(`${API_ASSIGN_OPTIONS}?${params.toString()}`, {
+      headers: { 'Accept': 'application/json' },
+    });
+    const payload = await response.json();
+
+    const assignees = payload.assignees || [];
+    const defaultAssignee = payload.default_assignee || null;
+
+    assigneeSelect.innerHTML = assignees.length
+      ? ['<option value="">Select Assign To</option>']
+          .concat(assignees.map((item) => `<option value="${item.id}">${escapeHtml(item.name)}${item.department_name ? ` (${escapeHtml(item.department_name)})` : ''}</option>`))
+          .join('')
+      : '<option value="">No eligible assignee found</option>';
+
+    const matchedAssignee = defaultAssignee || assignees[0] || null;
+    if (matchedAssignee) {
+      assigneeSelect.value = matchedAssignee.id.toString();
+    }
   }
 
   function getSelectedQuestions() {
@@ -1621,6 +1666,14 @@
       alert('Please select at least one question.');
       return;
     }
+    if (!document.getElementById('assignmentAssigner').value) {
+      alert('No assigner could be resolved for your login.');
+      return;
+    }
+    if (!document.getElementById('assignmentAssignee').value) {
+      alert('No assignee could be resolved for the selected plant.');
+      return;
+    }
 
     const payload = {
       section_code: state.sectionCode,
@@ -1646,7 +1699,7 @@
     });
     if (response.ok) {
       closeModal();
-      await loadWorkspace(state.sectionCode, state.principleSlug, state.questionId);
+      window.location.href = "{{ assignment_dashboard_url|escapejs }}";
     } else {
       const data = await response.json().catch(() => ({}));
       alert(data.detail || 'Unable to create assignment.');
