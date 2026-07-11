@@ -141,6 +141,88 @@
         margin-bottom: 14px;
         font-size: 13px;
     }
+
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+        font-weight: bold;
+    }
+
+    .form-control.is-invalid {
+        border-color: #dc3545;
+        padding-right: calc(1.5em + 0.75rem);
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    }
+
+    .form-control.is-valid {
+        border-color: #198754;
+        padding-right: calc(1.5em + 0.75rem);
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23198754' d='M2.3 6.73L.6 4.53c-.4-1.04.46-1.4 1.1-.8l1.1 1.4 3.4-3.8c.6-.63 1.6-.27 1.2.7l-4 4.6c-.43.5-.8.4-1.1.1z'/%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right calc(0.375em + 0.1875rem) center;
+        background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    }
+
+    .error-message {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+        display: none;
+    }
+
+    .error-message.show {
+        display: block;
+    }
+
+    .password-strength {
+        height: 4px;
+        margin-top: 8px;
+        border-radius: 2px;
+        background: #e9ecef;
+        overflow: hidden;
+        display: flex;
+        gap: 4px;
+    }
+
+    .password-strength-bar {
+        flex: 1;
+        height: 100%;
+        border-radius: 2px;
+        transition: all 0.3s ease;
+    }
+
+    .password-strength-bar.weak {
+        background: #dc3545;
+    }
+
+    .password-strength-bar.medium {
+        background: #ffc107;
+    }
+
+    .password-strength-bar.strong {
+        background: #198754;
+    }
+
+    .password-strength-bar.empty {
+        background: #e9ecef;
+    }
+
+    .password-hint {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 4px;
+    }
+
+    .password-hint .valid {
+        color: #198754;
+    }
+
+    .password-hint .invalid {
+        color: #dc3545;
+    }
 </style>
 {% endblock %}
 
@@ -151,29 +233,27 @@
 {% if form.errors %}
 <div class="alert alert-danger">
     <strong>Please correct the following errors:</strong>
-
     {% for field in form %}
         {% for error in field.errors %}
             <div>{{ field.label }} : {{ error }}</div>
         {% endfor %}
     {% endfor %}
-
     {% for error in form.non_field_errors %}
         <div>{{ error }}</div>
     {% endfor %}
 </div>
 {% endif %}
 <div class="page-header">
-        <div class="page-header-left d-flex align-items-center">
-            <div class="page-header-title">
-                <h5 class="m-b-10">{{ page_title|default:"Create User" }}</h5>
-            </div>
-            <ul class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{% url 'accounts:dashboard' %}">Home</a></li>
-                {% if object %}
-                    <li class="breadcrumb-item">Edit</li>
-                {% else %}
-                    <li class="breadcrumb-item">Create</li>
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">{{ page_title|default:"Create User" }}</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'accounts:dashboard' %}">Home</a></li>
+            {% if object %}
+                <li class="breadcrumb-item">Edit</li>
+            {% else %}
+                <li class="breadcrumb-item">Create</li>
             {% endif %}
         </ul>
     </div>
@@ -206,300 +286,337 @@
 <!-- [ page-header ] end -->
 <!-- [ Main Content ] start -->
 <div class="main-content">
-        <div class="row">
-            <div class="col-lg-12">
-                <div class="card border-top-0">
-                    <div class="card-header p-0">
-                        <!-- Nav tabs -->
-                        <ul class="nav nav-tabs flex-wrap w-100 text-center customers-nav-tabs" id="myTab" role="tablist">
-                            <li class="nav-item flex-fill border-top" role="presentation">
-                                <a href="javascript:void(0);" class="nav-link active" data-bs-toggle="tab" data-bs-target="#INprofileTab" role="tab">Profile</a>
-                            </li>
-                            <li class="nav-item flex-fill border-top" role="presentation">
-                                <a href="javascript:void(0);" class="nav-link" data-bs-toggle="tab" data-bs-target="#INlocationTab" role="tab">Location Assignment</a>
-                            </li>
-                            <li class="nav-item flex-fill border-top" role="presentation">
-                                <a href="javascript:void(0);" class="nav-link" data-bs-toggle="tab" data-bs-target="#INpasswordTab" role="tab">Password</a>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="tab-content">
-                        <div class="tab-pane fade show active" id="INprofileTab" role="tabpanel">
-                            <div class="card-body personal-info">
-                                <div class="mb-4 d-flex align-items-center justify-content-between">
-                                    <h5 class="fw-bold mb-0 me-4">
-                                        <span class="d-block mb-2">Personal Information:</span>
-                                        <span class="fs-12 fw-normal text-muted text-truncate-1-line">Following information is are for In-House employees only! </span>
-                                    </h5>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card border-top-0">
+                <div class="card-header p-0">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs flex-wrap w-100 text-center customers-nav-tabs" id="myTab" role="tablist">
+                        <li class="nav-item flex-fill border-top" role="presentation">
+                            <a href="javascript:void(0);" class="nav-link active" data-bs-toggle="tab" data-bs-target="#INprofileTab" role="tab">Profile</a>
+                        </li>
+                        <li class="nav-item flex-fill border-top" role="presentation">
+                            <a href="javascript:void(0);" class="nav-link" data-bs-toggle="tab" data-bs-target="#INlocationTab" role="tab">Location Assignment</a>
+                        </li>
+                        <li class="nav-item flex-fill border-top" role="presentation">
+                            <a href="javascript:void(0);" class="nav-link" data-bs-toggle="tab" data-bs-target="#INpasswordTab" role="tab">Password</a>
+                        </li>
+                    </ul>
+                </div>
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="INprofileTab" role="tabpanel">
+                        <div class="card-body personal-info">
+                            <div class="mb-4 d-flex align-items-center justify-content-between">
+                                <h5 class="fw-bold mb-0 me-4">
+                                    <span class="d-block mb-2">Personal Information:</span>
+                                    <span class="fs-12 fw-normal text-muted text-truncate-1-line">Following information is for In-House employees only!</span>
+                                </h5>
+                            </div>
+                            <div class="row mb-4 align-items-center">
+                                <div class="col-lg-4">
+                                    <label class="fw-semibold">Avatar: </label>
                                 </div>
-                                <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4">
-                                        <label class="fw-semibold">Avatar: </label>
-                                    </div>
-                                    <div class="col-lg-8">
-                                        <div class="mb-4 mb-md-0 d-flex gap-4 your-brand">
-                                            <div class="wd-100 ht-100 position-relative overflow-hidden border border-gray-2 rounded">
-                                                {% if object and object.profile_image %}
-                                                    <img src="{{ object.profile_image.url }}" class="upload-pic img-fluid rounded h-100 w-100" alt="Profile Image">
-                                                {% else %}
-                                                    <img src="{% static 'images/company-logo-placeholder.svg' %}" class="upload-pic img-fluid rounded h-100 w-100" alt="Default profile image">
-                                                {% endif %}
-                                                <input name="profile_image" class="file-upload" type="file" accept="image/*">
-                                            </div>
-                                            <div class="d-flex flex-column gap-1">
-                                                <div class="fs-11 text-gray-500 mt-2"># Upload your profile image</div>
-                                                <div class="fs-11 text-gray-500"># Avatar size 150x150</div>
-                                                <div class="fs-11 text-gray-500"># Max upload size 2mb</div>
-                                                <div class="fs-11 text-gray-500"># Allowed file types: png, jpg, jpeg</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4">
-                                        <label for="fullnameInput" class="fw-semibold">Name: <span class="text-danger">*</span></label>
-                                    </div>
-                                    <div class="col-lg-8">
-                                        <div class="input-group">
-                                            <div class="input-group-text"><i class="feather-user"></i></div>
-                                            {{ form.full_name }}
-                                        </div>
-                                        {% if form.full_name.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.full_name.errors|striptags }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4">
-                                        <label for="mailInput" class="fw-semibold">Email: </label>
-                                    </div>
-                                    <div class="col-lg-8">
-                                        <div class="input-group">
-                                            <div class="input-group-text"><i class="feather-mail"></i></div>
-                                            {{ form.email }}
-                                        </div>
-                                        {% if form.email.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.email.errors|striptags }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4">
-                                        <label for="usernameInput" class="fw-semibold">Username: </label>
-                                    </div>
-                                    <div class="col-lg-8">
-                                        <div class="input-group">
-                                            <div class="input-group-text"><i class="feather-link-2"></i></div>
-                                            {{ form.username }}
-                                        </div>
-                                        {% if form.username.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.username.errors|striptags }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4">
-                                        <label for="phoneInput" class="fw-semibold">Phone: </label>
-                                    </div>
-                                    <div class="col-lg-8">
-                                        <div class="input-group">
-                                            <div class="input-group-text"><i class="feather-phone"></i></div>
-                                            {{ form.mobile_number }}
-                                        </div>
-                                        {% if form.mobile_number.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.mobile_number.errors|striptags }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4">
-                                        <label for="companyInput" class="fw-semibold">Company: </label>
-                                    </div>
-                                    <div class="col-lg-8">
-                                        <div class="input-group">
-                                            <div class="input-group-text"><i class="feather-compass"></i></div>
-                                            {{ form.company }}
-                                        </div>
-                                        <div class="fs-12 text-muted mt-1">
-                                            {% if form.company.field.disabled %}
-                                                Your company is fixed from your user account.
+                                <div class="col-lg-8">
+                                    <div class="mb-4 mb-md-0 d-flex gap-4 your-brand">
+                                        <div class="wd-100 ht-100 position-relative overflow-hidden border border-gray-2 rounded">
+                                            {% if object and object.profile_image %}
+                                                <img src="{{ object.profile_image.url }}" class="upload-pic img-fluid rounded h-100 w-100" alt="Profile Image">
                                             {% else %}
-                                                Select the company for this user.
+                                                <img src="{% static 'images/company-logo-placeholder.svg' %}" class="upload-pic img-fluid rounded h-100 w-100" alt="Default profile image">
                                             {% endif %}
+                                            <input name="profile_image" class="file-upload" type="file" accept="image/*">
                                         </div>
-                                        {% if form.company.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.company.errors|striptags }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4">
-                                        <label for="{{ form.role.id_for_label }}" class="fw-semibold">Role: <span class="text-danger">*</span></label>
-                                    </div>
-                                    <div class="col-lg-8">
-                                        <div class="input-group">
-                                            <div class="input-group-text"><i class="feather-shield"></i></div>
-                                            {{ form.role }}
-                                        </div>
-                                        {% if form.role.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.role.errors|striptags }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4">
-                                        <label for="{{ form.designation.id_for_label }}" class="fw-semibold">Designation: </label>
-                                    </div>
-                                    <div class="col-lg-8">
-                                        <div class="input-group">
-                                            <div class="input-group-text"><i class="feather-briefcase"></i></div>
-                                            {{ form.designation }}
-                                        </div>
-                                        {% if form.designation.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.designation.errors|striptags }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4">
-                                        <label for="{{ form.is_active.id_for_label }}" class="fw-semibold">Account Status: </label>
-                                    </div>
-                                    <div class="col-lg-8">
-                                        <div class="form-check form-switch d-flex align-items-center gap-2">
-                                            {{ form.is_active }}
-                                            <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
-                                                {% if form.is_active.value %}Active{% else %}Inactive{% endif %}
-                                            </label>
-                                        </div>
-                                        <div class="fs-12 text-muted mt-1">
-                                            Active users can log in. Inactive users are blocked from logging in.
-                                        </div>
-                                        {% if form.is_active.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.is_active.errors|striptags }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4">
-                                        <label for="departmentInput" class="fw-semibold">Department: </label>
-                                    </div>
-                                    <div class="col-lg-8">
-                                        <div class="input-group">
-                                            <div class="input-group-text"><i class="feather-briefcase"></i></div>
-                                            <!-- <input name="department" type="text" class="form-control" id="DepartmentInput" placeholder="Department" value="{{ object.department|default:'' }}"> -->
-                                            {{ form.department }}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4">
-                                        <label for="employee_codeInput" class="fw-semibold">Employee ID: </label>
-                                    </div>
-                                    <div class="col-lg-8">
-                                        <div class="input-group">
-                                            <div class="input-group-text"><i class="feather-briefcase"></i></div>
-                                            {{ form.employee_code }}
-                                        </div>
-                                        {% if form.employee_code.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.employee_code.errors|striptags }}</div>
-                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="tab-pane fade" id="INlocationTab" role="tabpanel">
-                            <div class="card-body personal-info">
-                                <div class="mb-4 d-flex align-items-center justify-content-between">
-                                    <h5 class="fw-bold mb-0 me-4">
-                                        <span class="d-block mb-2">Location Assignment:</span>
-                                        <span class="fs-12 fw-normal text-muted text-truncate-1-line">Select plants first, then zones, locations, and sub-locations.</span>
-                                    </h5>
+                            <div class="row mb-4 align-items-center">
+                                <div class="col-lg-4">
+                                    <label for="fullnameInput" class="fw-semibold required-field">Name</label>
                                 </div>
-                                <div class="location-assignment-section">
-                                    <div class="assignment-group-title">Assigned Plants *</div>
-                                    <div class="assignment-group-note">Select multiple plants</div>
-                                    <div class="assignment-toolbar">
-                                        <button type="button" class="btn btn-outline-primary btn-sm" data-select-all="assigned_plants">
-                                            <i class="feather-check-square me-1"></i>Select All
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-deselect-all="assigned_plants">
-                                            <i class="feather-square me-1"></i>Deselect All
-                                        </button>
+                                <div class="col-lg-8">
+                                    <div class="input-group">
+                                        <div class="input-group-text"><i class="feather-user"></i></div>
+                                        <input type="text" name="full_name" class="form-control" id="fullnameInput" placeholder="Full Name" value="{{ form.full_name.value|default:'' }}" required minlength="2" maxlength="100" pattern="[A-Za-z\s]+" title="Name should contain only letters and spaces">
                                     </div>
-                                    <div class="assignment-panel mb-4">
-                                        {% if company_plants %}
-                                            <div class="assignment-grid">
-                                                {% for plant in company_plants %}
-                                                    <label class="assignment-node {% if plant.id in selected_plant_ids %}is-selected{% endif %}" data-node-type="plant">
-                                                        <input class="assignment-input" type="checkbox" name="assigned_plants" value="{{ plant.id }}" {% if plant.id in selected_plant_ids %}checked{% endif %}>
-                                                        <span class="assignment-node-label">
-                                                            {{ plant.name }}
-                                                            <small>{{ plant.code }}</small>
-                                                        </span>
-                                                    </label>
-                                                {% endfor %}
-                                            </div>
+                                    <div class="error-message" id="fullnameError">Please enter a valid name (minimum 2 characters, letters only).</div>
+                                    {% if form.full_name.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.full_name.errors|striptags }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-4 align-items-center">
+                                <div class="col-lg-4">
+                                    <label for="mailInput" class="fw-semibold required-field">Email</label>
+                                </div>
+                                <div class="col-lg-8">
+                                    <div class="input-group">
+                                        <div class="input-group-text"><i class="feather-mail"></i></div>
+                                        <input type="email" name="email" class="form-control" id="mailInput" placeholder="Enter valid email address" value="{{ form.email.value|default:'' }}" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" title="Please enter a valid email address">
+                                    </div>
+                                    <div class="error-message" id="emailError">Please enter a valid email address (e.g., user@gmail.com).</div>
+                                    {% if form.email.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.email.errors|striptags }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-4 align-items-center">
+                                <div class="col-lg-4">
+                                    <label for="usernameInput" class="fw-semibold required-field">Username</label>
+                                </div>
+                                <div class="col-lg-8">
+                                    <div class="input-group">
+                                        <div class="input-group-text"><i class="feather-link-2"></i></div>
+                                        <input type="text" name="username" class="form-control" id="usernameInput" placeholder="Username (letters, numbers, underscore)" value="{{ form.username.value|default:'' }}" required minlength="3" maxlength="30" pattern="[A-Za-z0-9_]+" title="Username can only contain letters, numbers, and underscores">
+                                    </div>
+                                    <div class="error-message" id="usernameError">Username must be 3-30 characters and can only contain letters, numbers, and underscores.</div>
+                                    {% if form.username.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.username.errors|striptags }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-4 align-items-center">
+                                <div class="col-lg-4">
+                                    <label for="phoneInput" class="fw-semibold required-field">Phone</label>
+                                </div>
+                                <div class="col-lg-8">
+                                    <div class="input-group">
+                                        <div class="input-group-text"><i class="feather-phone"></i></div>
+                                        <input type="number" name="mobile_number" class="form-control" id="phoneInput" placeholder="Phone Number (e.g., 9876543210)" value="{{ form.mobile_number.value|default:'' }}" required pattern="[0-9]{10}" maxlength="10" title="Please enter a valid 10-digit phone number">
+                                    </div>
+                                    <div class="error-message" id="phoneError">Please enter a valid 10-digit phone number (e.g., 9876543210).</div>
+                                    {% if form.mobile_number.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.mobile_number.errors|striptags }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-4 align-items-center">
+                                <div class="col-lg-4">
+                                    <label for="companyInput" class="fw-semibold required-field">Company</label>
+                                </div>
+                                <div class="col-lg-8">
+                                    <div class="input-group">
+                                        <div class="input-group-text"><i class="feather-compass"></i></div>
+                                        {{ form.company }}
+                                    </div>
+                                    <div class="fs-12 text-muted mt-1">
+                                        {% if form.company.field.disabled %}
+                                            Your company is fixed from your user account.
                                         {% else %}
-                                            <div class="text-muted">No active plants available for assignment.</div>
+                                            Select the company for this user.
                                         {% endif %}
                                     </div>
-
-                                    <div class="assignment-group-title">Assigned Zones *</div>
-                                    <div class="assignment-group-note">Please select plant first</div>
-                                    <div class="assignment-toolbar">
-                                        <button type="button" class="btn btn-outline-primary btn-sm" data-select-all="assigned_zones">
-                                            <i class="feather-check-square me-1"></i>Select All
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-deselect-all="assigned_zones">
-                                            <i class="feather-square me-1"></i>Deselect All
-                                        </button>
+                                    {% if form.company.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.company.errors|striptags }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-4 align-items-center">
+                                <div class="col-lg-4">
+                                    <label for="{{ form.role.id_for_label }}" class="fw-semibold required-field">Role</label>
+                                </div>
+                                <div class="col-lg-8">
+                                    <div class="input-group">
+                                        <div class="input-group-text"><i class="feather-shield"></i></div>
+                                        {{ form.role }}
                                     </div>
-                                    <div class="assignment-panel mb-4">
-                                        <div class="assignment-empty-state" data-empty-for="zones">Please select plant first.</div>
-                                        {% if company_plants %}
+                                    {% if form.role.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.role.errors|striptags }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-4 align-items-center">
+                                <div class="col-lg-4">
+                                    <label for="{{ form.designation.id_for_label }}" class="fw-semibold required-field">Designation</label>
+                                </div>
+                                <div class="col-lg-8">
+                                    <div class="input-group">
+                                        <div class="input-group-text"><i class="feather-briefcase"></i></div>
+                                        {{ form.designation }}
+                                    </div>
+                                    {% if form.designation.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.designation.errors|striptags }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-4 align-items-center">
+                                <div class="col-lg-4">
+                                    <label for="{{ form.is_active.id_for_label }}" class="fw-semibold required-field">Account Status</label>
+                                </div>
+                                <div class="col-lg-8">
+                                    <div class="form-check form-switch d-flex align-items-center gap-2">
+                                    <input type="checkbox" name="is_active" class="form-check-input" id="{{ form.is_active.id_for_label }}" {% if form.is_active.value or not object %}checked{% endif %}>
+                                    <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                        {% if form.is_active.value or not object %}Active{% else %}Inactive{% endif %}
+                                    </label>
+                                </div>
+                                    <div class="fs-12 text-muted mt-1">
+                                        Active users can log in. Inactive users are blocked from logging in.
+                                    </div>
+                                    {% if form.is_active.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.is_active.errors|striptags }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-4 align-items-center">
+                                <div class="col-lg-4">
+                                    <label for="departmentInput" class="fw-semibold required-field">Department</label>
+                                </div>
+                                <div class="col-lg-8">
+                                    <div class="input-group">
+                                        <div class="input-group-text"><i class="feather-briefcase"></i></div>
+                                        {{ form.department }}
+                                    </div>
+                                    {% if form.department.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.department.errors|striptags }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="row mb-4 align-items-center">
+                                <div class="col-lg-4">
+                                    <label for="employee_codeInput" class="fw-semibold required-field">Employee ID</label>
+                                </div>
+                                <div class="col-lg-8">
+                                    <div class="input-group">
+                                        <div class="input-group-text"><i class="feather-briefcase"></i></div>
+                                        <input type="text" name="employee_code" class="form-control" id="employee_codeInput" placeholder="Employee ID (e.g., EMP001)" value="{{ form.employee_code.value|default:'' }}" required minlength="3" maxlength="20" pattern="[A-Za-z0-9\-_]+" title="Employee ID can contain letters, numbers, hyphens, and underscores">
+                                    </div>
+                                    <div class="error-message" id="employeeCodeError">Please enter a valid Employee ID (3-20 characters, alphanumeric with - and _ allowed).</div>
+                                    {% if form.employee_code.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.employee_code.errors|striptags }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="INlocationTab" role="tabpanel">
+                        <div class="card-body personal-info">
+                            <div class="mb-4 d-flex align-items-center justify-content-between">
+                                <h5 class="fw-bold mb-0 me-4">
+                                    <span class="d-block mb-2">Location Assignment:</span>
+                                    <span class="fs-12 fw-normal text-muted text-truncate-1-line">Select plants first, then zones, locations, and sub-locations.</span>
+                                </h5>
+                            </div>
+                            <div class="location-assignment-section">
+                                <div class="assignment-group-title required-field">Assigned Plants</div>
+                                <div class="assignment-group-note">Select multiple plants</div>
+                                <div class="assignment-toolbar">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" data-select-all="assigned_plants">
+                                        <i class="feather-check-square me-1"></i>Select All
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-deselect-all="assigned_plants">
+                                        <i class="feather-square me-1"></i>Deselect All
+                                    </button>
+                                </div>
+                                <div class="assignment-panel mb-4" id="plantPanel">
+                                    {% if company_plants %}
+                                        <div class="assignment-grid">
                                             {% for plant in company_plants %}
-                                                <div class="assignment-child-block" data-plant-block="{{ plant.id }}">
-                                                    <div class="assignment-parent-header">{{ plant.name }}</div>
+                                                <label class="assignment-node {% if plant.id in selected_plant_ids %}is-selected{% endif %}" data-node-type="plant">
+                                                    <input class="assignment-input" type="checkbox" name="assigned_plants" value="{{ plant.id }}" {% if plant.id in selected_plant_ids %}checked{% endif %}>
+                                                    <span class="assignment-node-label">
+                                                        {{ plant.name }}
+                                                        <small>{{ plant.code }}</small>
+                                                    </span>
+                                                </label>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <div class="text-muted">No active plants available for assignment.</div>
+                                    {% endif %}
+                                </div>
+                                <div class="error-message" id="plantError">Please select at least one plant.</div>
+
+                                <div class="assignment-group-title required-field">Assigned Zones</div>
+                                <div class="assignment-group-note">Please select plant first</div>
+                                <div class="assignment-toolbar">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" data-select-all="assigned_zones">
+                                        <i class="feather-check-square me-1"></i>Select All
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-deselect-all="assigned_zones">
+                                        <i class="feather-square me-1"></i>Deselect All
+                                    </button>
+                                </div>
+                                <div class="assignment-panel mb-4">
+                                    <div class="assignment-empty-state" data-empty-for="zones">Please select plant first.</div>
+                                    {% if company_plants %}
+                                        {% for plant in company_plants %}
+                                            <div class="assignment-child-block" data-plant-block="{{ plant.id }}">
+                                                <div class="assignment-parent-header">{{ plant.name }}</div>
+                                                <div class="assignment-grid">
+                                                    {% for zone in plant.zones.all %}
+                                                        <label class="assignment-node {% if zone.id in selected_zone_ids %}is-selected{% endif %} {% if plant.id not in selected_plant_ids %}is-disabled{% endif %}" data-node-type="zone" data-parent-plant-id="{{ plant.id }}">
+                                                            <input class="assignment-input" type="checkbox" name="assigned_zones" value="{{ zone.id }}" {% if zone.id in selected_zone_ids %}checked{% endif %} {% if plant.id not in selected_plant_ids %}disabled{% endif %}>
+                                                            <span class="assignment-node-label">
+                                                                {{ zone.name }}
+                                                                <small>{{ zone.code }}</small>
+                                                            </span>
+                                                        </label>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+
+                                <div class="assignment-group-title required-field">Assigned Locations</div>
+                                <div class="assignment-group-note">Please select zone first</div>
+                                <div class="assignment-toolbar">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" data-select-all="assigned_locations">
+                                        <i class="feather-check-square me-1"></i>Select All
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-deselect-all="assigned_locations">
+                                        <i class="feather-square me-1"></i>Deselect All
+                                    </button>
+                                </div>
+                                <div class="assignment-panel mb-4">
+                                    <div class="assignment-empty-state" data-empty-for="locations">Please select zone first.</div>
+                                    {% if company_plants %}
+                                        {% for plant in company_plants %}
+                                            {% for zone in plant.zones.all %}
+                                                <div class="assignment-child-block" data-zone-block="{{ zone.id }}" data-parent-plant-id="{{ plant.id }}">
+                                                    <div class="assignment-parent-header">{{ plant.name }} - {{ zone.name }}</div>
                                                     <div class="assignment-grid">
-                                                        {% for zone in plant.zones.all %}
-                                                            <label class="assignment-node {% if zone.id in selected_zone_ids %}is-selected{% endif %} {% if plant.id not in selected_plant_ids %}is-disabled{% endif %}" data-node-type="zone" data-parent-plant-id="{{ plant.id }}">
-                                                                <input class="assignment-input" type="checkbox" name="assigned_zones" value="{{ zone.id }}" {% if zone.id in selected_zone_ids %}checked{% endif %} {% if plant.id not in selected_plant_ids %}disabled{% endif %}>
+                                                        {% for location in zone.locations.all %}
+                                                            <label class="assignment-node {% if location.id in selected_location_ids %}is-selected{% endif %} {% if zone.id not in selected_zone_ids %}is-disabled{% endif %}" data-node-type="location" data-parent-zone-id="{{ zone.id }}">
+                                                                <input class="assignment-input" type="checkbox" name="assigned_locations" value="{{ location.id }}" {% if location.id in selected_location_ids %}checked{% endif %} {% if zone.id not in selected_zone_ids %}disabled{% endif %}>
                                                                 <span class="assignment-node-label">
-                                                                    {{ zone.name }}
-                                                                    <small>{{ zone.code }}</small>
+                                                                    {{ location.name }}
+                                                                    <small>{{ location.code }}</small>
                                                                 </span>
                                                             </label>
                                                         {% endfor %}
                                                     </div>
                                                 </div>
                                             {% endfor %}
-                                        {% endif %}
-                                    </div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
 
-                                    <div class="assignment-group-title">Assigned Locations *</div>
-                                    <div class="assignment-group-note">Please select zone first</div>
-                                    <div class="assignment-toolbar">
-                                        <button type="button" class="btn btn-outline-primary btn-sm" data-select-all="assigned_locations">
-                                            <i class="feather-check-square me-1"></i>Select All
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-deselect-all="assigned_locations">
-                                            <i class="feather-square me-1"></i>Deselect All
-                                        </button>
-                                    </div>
-                                    <div class="assignment-panel mb-4">
-                                        <div class="assignment-empty-state" data-empty-for="locations">Please select zone first.</div>
-                                        {% if company_plants %}
-                                            {% for plant in company_plants %}
-                                                {% for zone in plant.zones.all %}
-                                                    <div class="assignment-child-block" data-zone-block="{{ zone.id }}" data-parent-plant-id="{{ plant.id }}">
-                                                        <div class="assignment-parent-header">{{ plant.name }} - {{ zone.name }}</div>
+                                <div class="assignment-group-title required-field">Assigned Sub-Locations</div>
+                                <div class="assignment-group-note">Please select location first</div>
+                                <div class="assignment-toolbar">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" data-select-all="assigned_sublocations">
+                                        <i class="feather-check-square me-1"></i>Select All
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-deselect-all="assigned_sublocations">
+                                        <i class="feather-square me-1"></i>Deselect All
+                                    </button>
+                                </div>
+                                <div class="assignment-panel">
+                                    <div class="assignment-empty-state" data-empty-for="sublocations">Please select location first.</div>
+                                    {% if company_plants %}
+                                        {% for plant in company_plants %}
+                                            {% for zone in plant.zones.all %}
+                                                {% for location in zone.locations.all %}
+                                                    <div class="assignment-child-block" data-location-block="{{ location.id }}" data-parent-zone-id="{{ zone.id }}">
+                                                        <div class="assignment-parent-header">{{ plant.name }} - {{ zone.name }} - {{ location.name }}</div>
                                                         <div class="assignment-grid">
-                                                            {% for location in zone.locations.all %}
-                                                                <label class="assignment-node {% if location.id in selected_location_ids %}is-selected{% endif %} {% if zone.id not in selected_zone_ids %}is-disabled{% endif %}" data-node-type="location" data-parent-zone-id="{{ zone.id }}">
-                                                                    <input class="assignment-input" type="checkbox" name="assigned_locations" value="{{ location.id }}" {% if location.id in selected_location_ids %}checked{% endif %} {% if zone.id not in selected_zone_ids %}disabled{% endif %}>
+                                                            {% for sublocation in location.sublocations.all %}
+                                                                <label class="assignment-node {% if sublocation.id in selected_sublocation_ids %}is-selected{% endif %} {% if location.id not in selected_location_ids %}is-disabled{% endif %}" data-node-type="sublocation" data-parent-location-id="{{ location.id }}">
+                                                                    <input class="assignment-input" type="checkbox" name="assigned_sublocations" value="{{ sublocation.id }}" {% if sublocation.id in selected_sublocation_ids %}checked{% endif %} {% if location.id not in selected_location_ids %}disabled{% endif %}>
                                                                     <span class="assignment-node-label">
-                                                                        {{ location.name }}
-                                                                        <small>{{ location.code }}</small>
+                                                                        {{ sublocation.name }}
+                                                                        {% if sublocation.code %}<small>{{ sublocation.code }}</small>{% endif %}
                                                                     </span>
                                                                 </label>
                                                             {% endfor %}
@@ -507,145 +624,136 @@
                                                     </div>
                                                 {% endfor %}
                                             {% endfor %}
-                                        {% endif %}
-                                    </div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
 
-                                    <div class="assignment-group-title">Assigned Sub-Locations *</div>
-                                    <div class="assignment-group-note">Please select location first</div>
-                                    <div class="assignment-toolbar">
-                                        <button type="button" class="btn btn-outline-primary btn-sm" data-select-all="assigned_sublocations">
-                                            <i class="feather-check-square me-1"></i>Select All
-                                        </button>
-                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-deselect-all="assigned_sublocations">
-                                            <i class="feather-square me-1"></i>Deselect All
-                                        </button>
-                                    </div>
-                                    <div class="assignment-panel">
-                                        <div class="assignment-empty-state" data-empty-for="sublocations">Please select location first.</div>
-                                        {% if company_plants %}
-                                            {% for plant in company_plants %}
-                                                {% for zone in plant.zones.all %}
-                                                    {% for location in zone.locations.all %}
-                                                        <div class="assignment-child-block" data-location-block="{{ location.id }}" data-parent-zone-id="{{ zone.id }}">
-                                                            <div class="assignment-parent-header">{{ plant.name }} - {{ zone.name }} - {{ location.name }}</div>
-                                                            <div class="assignment-grid">
-                                                                {% for sublocation in location.sublocations.all %}
-                                                                    <label class="assignment-node {% if sublocation.id in selected_sublocation_ids %}is-selected{% endif %} {% if location.id not in selected_location_ids %}is-disabled{% endif %}" data-node-type="sublocation" data-parent-location-id="{{ location.id }}">
-                                                                        <input class="assignment-input" type="checkbox" name="assigned_sublocations" value="{{ sublocation.id }}" {% if sublocation.id in selected_sublocation_ids %}checked{% endif %} {% if location.id not in selected_location_ids %}disabled{% endif %}>
-                                                                        <span class="assignment-node-label">
-                                                                            {{ sublocation.name }}
-                                                                            {% if sublocation.code %}<small>{{ sublocation.code }}</small>{% endif %}
-                                                                        </span>
-                                                                    </label>
-                                                                {% endfor %}
-                                                            </div>
-                                                        </div>
-                                                    {% endfor %}
-                                                {% endfor %}
-                                            {% endfor %}
+                                {% if form.non_field_errors %}
+                                    <div class="invalid-feedback d-block mt-2">{{ form.non_field_errors|striptags }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="INpasswordTab" role="tabpanel">
+                        <div class="card-body pass-info">
+                            <div class="mb-4 d-flex align-items-center justify-content-between">
+                                <h5 class="fw-bold mb-0 me-4">
+                                    <span class="d-block mb-2">Password Information{% if object %} (Optional){% endif %}:</span>
+                                    <span class="fs-12 fw-normal text-muted text-truncate-1-line">
+                                        {% if object %}
+                                            Leave blank to keep the current password.
+                                        {% else %}
+                                            You can only change your password twice within 24 hours!
                                         {% endif %}
+                                    </span>
+                                </h5>
+                            </div>
+                            <div class="row mb-4 align-items-center">
+                                <div class="col-lg-4">
+                                    <label for="passwordInput" class="fw-semibold required-field">Password</label>
+                                </div>
+                                <div class="col-lg-8">
+                                    <div class="input-group">
+                                        <div class="input-group-text"><i class="feather-key"></i></div>
+                                        <input type="password" name="password" class="form-control" id="passwordInput" placeholder="Password (min 8 characters)" {% if not object %}required{% endif %} minlength="8">
+                                        <div class="input-group-text border-start bg-gray-2 c-pointer show-pass" data-target="passwordInput"> <i class="feather-eye"></i> </div>
                                     </div>
-
-                                    {% if form.non_field_errors %}
-                                        <div class="invalid-feedback d-block mt-2">{{ form.non_field_errors|striptags }}</div>
+                                    <div class="password-strength" id="passwordStrength">
+                                        <div class="password-strength-bar empty"></div>
+                                        <div class="password-strength-bar empty"></div>
+                                        <div class="password-strength-bar empty"></div>
+                                        <div class="password-strength-bar empty"></div>
+                                    </div>
+                                    <div class="password-hint" id="passwordHint">
+                                        <span class="invalid" id="lengthHint">✗ Minimum 8 characters</span>
+                                        <span class="invalid" id="lowercaseHint">✗ At least one lowercase letter</span>
+                                        <span class="invalid" id="uppercaseHint">✗ At least one uppercase letter</span>
+                                        <span class="invalid" id="numberHint">✗ At least one number</span>
+                                    </div>
+                                    <div class="error-message" id="passwordError">Password must be at least 8 characters and contain uppercase, lowercase, and number.</div>
+                                    {% if form.password.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.password.errors|striptags }}</div>
                                     {% endif %}
                                 </div>
                             </div>
-                        </div>
-                        <div class="tab-pane fade" id="INpasswordTab" role="tabpanel">
-                            <div class="card-body pass-info">
-                                <div class="mb-4 d-flex align-items-center justify-content-between">
-                                    <h5 class="fw-bold mb-0 me-4">
-                                        <span class="d-block mb-2">Password Information{% if object %} (Optional){% endif %}:</span>
-                                        <span class="fs-12 fw-normal text-muted text-truncate-1-line">
-                                            {% if object %}
-                                                Leave blank to keep the current password.
-                                            {% else %}
-                                                You can only change your password twice within 24 hours!
-                                            {% endif %}
-                                        </span>
-                                    </h5>
-                                    <!-- <a href="javascript:void(0);" class="btn btn-sm btn-light-brand">Reset</a> -->
+                            <div class="row mb-4 align-items-center">
+                                <div class="col-lg-4">
+                                    <label for="confirmPasswordInput" class="fw-semibold required-field">Password Confirm</label>
                                 </div>
-                                <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4">
-                                        <label for="passwordInput" class="fw-semibold">Password: </label>
+                                <div class="col-lg-8 generate-pass">
+                                    <div class="input-group field">
+                                        <div class="input-group-text"><i class="feather-key"></i></div>
+                                        <input type="password" name="confirm_password" class="form-control" id="confirmPasswordInput" placeholder="Confirm Password" {% if not object %}required{% endif %}>
+                                        <div class="input-group-text border-start bg-gray-2 c-pointer show-pass" data-target="confirmPasswordInput"> <i class="feather-eye"></i> </div>
                                     </div>
-                                    <div class="col-lg-8">
-                                        <div class="input-group">
-                                            <div class="input-group-text"><i class="feather-key"></i></div>
-                                            {{ form.password }}
-                                            <div class="input-group-text border-start bg-gray-2 c-pointer show-pass" data-target="passwordInput"> <i class="feather-eye"></i> </div>
-                                        </div>
-                                        {% if form.password.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.password.errors|striptags }}</div>
-                                        {% endif %}
-                                    </div>
+                                    <div class="error-message" id="confirmPasswordError">Passwords do not match.</div>
+                                    {% if form.confirm_password.errors %}
+                                        <div class="invalid-feedback d-block">{{ form.confirm_password.errors|striptags }}</div>
+                                    {% endif %}
                                 </div>
-                                <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4">
-                                        <label for="confirmPasswordInput" class="fw-semibold">Password Confirm: </label>
-                                    </div>
-                                    <div class="col-lg-8 generate-pass">
-                                        <div class="input-group field">
-                                            <div class="input-group-text"><i class="feather-key"></i></div>
-                                            {{ form.confirm_password }}
-                                            <div class="input-group-text border-start bg-gray-2 c-pointer show-pass" data-target="confirmPasswordInput"> <i class="feather-eye"></i> </div>
-                                        </div>
-                                        {% if form.confirm_password.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.confirm_password.errors|striptags }}</div>
-                                        {% endif %}
-                                        <div class="progress-bar mt-2">
-                                            <div></div>
-                                            <div></div>
-                                            <div></div>
-                                            <div></div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="pass-hint">
-                                    <p class="fw-bold">Password Requirements:</p>
-                                    <ul class="fs-12 ps-1 ms-2 text-muted">
-                                        <li class="mb-1">At least one lowercase character</li>
-                                        <li class="mb-1">Minimum 8 characters long - the more, the better</li>
-                                        <li>At least one number, symbol, or whitespace character</li>
-                                    </ul>
-                                </div>
+                            </div>
+                            <div class="pass-hint">
+                                <p class="fw-bold">Password Requirements:</p>
+                                <ul class="fs-12 ps-1 ms-2 text-muted">
+                                    <li class="mb-1">At least one lowercase character</li>
+                                    <li class="mb-1">Minimum 8 characters long - the more, the better</li>
+                                    <li>At least one number, symbol, or whitespace character</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 </div>
- </form>
+</form>
 <!-- [ Main Content ] end -->
- <script>
+
+<script>
 document.addEventListener('DOMContentLoaded', function () {
+    // File upload preview
     const fileInput = document.querySelector('.file-upload');
     const previewImg = document.querySelector('.upload-pic');
 
     if (fileInput && previewImg) {
         fileInput.addEventListener('change', function (e) {
             const file = e.target.files[0];
-
             if (file) {
+                // Validate file size (2MB max)
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('File size exceeds 2MB. Please choose a smaller image.');
+                    this.value = '';
+                    return;
+                }
+                
+                // Validate file type
+                const validTypes = ['image/png', 'image/jpg', 'image/jpeg'];
+                if (!validTypes.includes(file.type)) {
+                    alert('Please upload a valid image file (PNG, JPG, JPEG).');
+                    this.value = '';
+                    return;
+                }
+                
                 const reader = new FileReader();
-
                 reader.onload = function (event) {
                     previewImg.src = event.target.result;
                 };
-
                 reader.readAsDataURL(file);
             }
         });
     }
-});
-document.addEventListener('DOMContentLoaded', function () {
+
+    // Account status toggle - default to active
     const activeToggle = document.querySelector('input[name="is_active"]');
     const activeLabel = activeToggle ? activeToggle.closest('.form-check')?.querySelector('.form-check-label') : null;
 
     if (activeToggle && activeLabel) {
+        // Set default to active if creating new user
+        if (!activeToggle.value && !document.querySelector('input[name="is_active"][value]')) {
+            activeToggle.checked = true;
+        }
+        
         const syncActiveLabel = function () {
             activeLabel.textContent = activeToggle.checked ? 'Active' : 'Inactive';
         };
@@ -653,16 +761,11 @@ document.addEventListener('DOMContentLoaded', function () {
         syncActiveLabel();
         activeToggle.addEventListener('change', syncActiveLabel);
     }
-});
-document.addEventListener('DOMContentLoaded', function () {
 
+    // Password show/hide toggle
     document.querySelectorAll('.show-pass').forEach(function(btn) {
-
         btn.addEventListener('click', function() {
-
-            const field = this.closest('.input-group')
-                              .querySelector('input');
-
+            const field = this.closest('.input-group').querySelector('input');
             if (field.type === 'password') {
                 field.type = 'text';
                 this.innerHTML = '<i class="feather-eye-off"></i>';
@@ -671,12 +774,164 @@ document.addEventListener('DOMContentLoaded', function () {
                 this.innerHTML = '<i class="feather-eye"></i>';
             }
         });
-
     });
 
-});
+    // Password strength indicator
+    const passwordInput = document.getElementById('passwordInput');
+    const confirmPasswordInput = document.getElementById('confirmPasswordInput');
+    const strengthBars = document.querySelectorAll('.password-strength-bar');
+    const lengthHint = document.getElementById('lengthHint');
+    const lowercaseHint = document.getElementById('lowercaseHint');
+    const uppercaseHint = document.getElementById('uppercaseHint');
+    const numberHint = document.getElementById('numberHint');
 
-document.addEventListener('DOMContentLoaded', function () {
+    if (passwordInput) {
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+            let strength = 0;
+            let hints = {
+                length: password.length >= 8,
+                lowercase: /[a-z]/.test(password),
+                uppercase: /[A-Z]/.test(password),
+                number: /[0-9]/.test(password)
+            };
+
+            // Update hints
+            updateHint(lengthHint, hints.length);
+            updateHint(lowercaseHint, hints.lowercase);
+            updateHint(uppercaseHint, hints.uppercase);
+            updateHint(numberHint, hints.number);
+
+            // Calculate strength
+            if (hints.length) strength++;
+            if (hints.lowercase) strength++;
+            if (hints.uppercase) strength++;
+            if (hints.number) strength++;
+
+            // Update strength bars
+            strengthBars.forEach((bar, index) => {
+                if (index < strength) {
+                    bar.className = 'password-strength-bar';
+                    if (strength <= 2) {
+                        bar.classList.add('weak');
+                    } else if (strength === 3) {
+                        bar.classList.add('medium');
+                    } else {
+                        bar.classList.add('strong');
+                    }
+                } else {
+                    bar.className = 'password-strength-bar empty';
+                }
+            });
+
+            // Validate password
+            const isValid = strength === 4;
+            this.classList.toggle('is-valid', isValid && this.value.length > 0);
+            this.classList.toggle('is-invalid', this.value.length > 0 && !isValid);
+            
+            // Check confirm password match
+            if (confirmPasswordInput && confirmPasswordInput.value) {
+                checkPasswordMatch();
+            }
+        });
+    }
+
+    function updateHint(element, isValid) {
+        if (element) {
+            element.className = isValid ? 'valid' : 'invalid';
+            element.textContent = (isValid ? '✓' : '✗') + element.textContent.substring(1);
+        }
+    }
+
+    // Password match validation
+    if (confirmPasswordInput) {
+        confirmPasswordInput.addEventListener('input', checkPasswordMatch);
+        passwordInput.addEventListener('input', checkPasswordMatch);
+    }
+
+    function checkPasswordMatch() {
+        if (!confirmPasswordInput) return;
+        const password = passwordInput ? passwordInput.value : '';
+        const confirm = confirmPasswordInput.value;
+        
+        if (confirm.length === 0) {
+            confirmPasswordInput.classList.remove('is-valid', 'is-invalid');
+            document.getElementById('confirmPasswordError').classList.remove('show');
+            return;
+        }
+        
+        const match = password === confirm;
+        confirmPasswordInput.classList.toggle('is-valid', match);
+        confirmPasswordInput.classList.toggle('is-invalid', !match);
+        document.getElementById('confirmPasswordError').classList.toggle('show', !match);
+    }
+
+    // Real-time validation for form fields
+    function validateField(input, errorId, validationFn) {
+        if (!input) return;
+        
+        input.addEventListener('input', function() {
+            const isValid = validationFn(this.value);
+            this.classList.toggle('is-valid', isValid && this.value.length > 0);
+            this.classList.toggle('is-invalid', this.value.length > 0 && !isValid);
+            const errorElement = document.getElementById(errorId);
+            if (errorElement) {
+                errorElement.classList.toggle('show', this.value.length > 0 && !isValid);
+            }
+        });
+
+        input.addEventListener('blur', function() {
+            if (this.value.length === 0) {
+                this.classList.remove('is-valid', 'is-invalid');
+                const errorElement = document.getElementById(errorId);
+                if (errorElement) {
+                    errorElement.classList.remove('show');
+                }
+            }
+        });
+    }
+
+    // Validate name
+    const nameInput = document.getElementById('fullnameInput');
+    if (nameInput) {
+        validateField(nameInput, 'fullnameError', function(value) {
+            return /^[A-Za-z\s]{2,100}$/.test(value);
+        });
+    }
+
+    // Validate email
+    const emailInput = document.getElementById('mailInput');
+    if (emailInput) {
+        validateField(emailInput, 'emailError', function(value) {
+            return /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i.test(value);
+        });
+    }
+
+    // Validate username
+    const usernameInput = document.getElementById('usernameInput');
+    if (usernameInput) {
+        validateField(usernameInput, 'usernameError', function(value) {
+            return /^[A-Za-z0-9_]{3,30}$/.test(value);
+        });
+    }
+
+    // Validate phone
+    const phoneInput = document.getElementById('phoneInput');
+    if (phoneInput) {
+        validateField(phoneInput, 'phoneError', function(value) {
+            return /^\+?[0-9]{7,15}$/.test(value);
+        });
+    }
+
+    // Validate employee code
+    const employeeCodeInput = document.getElementById('employee_codeInput');
+    if (employeeCodeInput) {
+        validateField(employeeCodeInput, 'employeeCodeError', function(value) {
+            return /^[A-Za-z0-9\-_]{3,20}$/.test(value);
+        });
+    }
+
+    // Location assignment sync with validation
     function syncAssignmentCards() {
         const plantCheckboxes = Array.from(document.querySelectorAll('input[name="assigned_plants"]'));
         const zoneCheckboxes = Array.from(document.querySelectorAll('input[name="assigned_zones"]'));
@@ -687,13 +942,17 @@ document.addEventListener('DOMContentLoaded', function () {
         const selectedZoneIds = new Set();
         const selectedLocationIds = new Set();
 
+        // Update plant validation
+        const hasPlantSelected = selectedPlantIds.size > 0;
+        document.getElementById('plantError').classList.toggle('show', !hasPlantSelected);
+        document.getElementById('plantPanel').classList.toggle('border-danger', !hasPlantSelected);
+
         zoneCheckboxes.forEach((checkbox) => {
             const card = checkbox.closest('.assignment-node');
             const block = checkbox.closest('.assignment-child-block');
             const enabled = selectedPlantIds.has(card.dataset.parentPlantId);
 
             checkbox.disabled = !enabled;
-
             if (!enabled) {
                 checkbox.checked = false;
             }
@@ -711,7 +970,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         const hasVisibleZones = zoneCheckboxes.some((checkbox) => !checkbox.closest('.assignment-node').hidden);
-
         document.querySelectorAll('[data-empty-for="zones"]').forEach(function (emptyState) {
             emptyState.hidden = hasVisibleZones;
         });
@@ -722,7 +980,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const enabled = selectedZoneIds.has(card.dataset.parentZoneId);
 
             checkbox.disabled = !enabled;
-
             if (!enabled) {
                 checkbox.checked = false;
             }
@@ -740,7 +997,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         const hasVisibleLocations = locationCheckboxes.some((checkbox) => !checkbox.closest('.assignment-node').hidden);
-
         document.querySelectorAll('[data-empty-for="locations"]').forEach(function (emptyState) {
             emptyState.hidden = hasVisibleLocations;
         });
@@ -751,7 +1007,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const enabled = selectedLocationIds.has(card.dataset.parentLocationId);
 
             checkbox.disabled = !enabled;
-
             if (!enabled) {
                 checkbox.checked = false;
             }
@@ -765,7 +1020,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         const hasVisibleSublocations = sublocationCheckboxes.some((checkbox) => !checkbox.closest('.assignment-node').hidden);
-
         document.querySelectorAll('[data-empty-for="sublocations"]').forEach(function (emptyState) {
             emptyState.hidden = hasVisibleSublocations;
         });
@@ -803,17 +1057,95 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     syncAssignmentCards();
-});
 
-document.addEventListener('DOMContentLoaded', function () {
+    // Form submission validation
     const userForm = document.getElementById('userForm');
     const submitButton = document.getElementById('userFormSubmit');
 
     if (userForm && submitButton) {
-        userForm.addEventListener('submit', function () {
-            if (submitButton.disabled) {
+        userForm.addEventListener('submit', function (event) {
+            let isValid = true;
+            let errorMessages = [];
+
+            // Validate all required fields
+            const requiredFields = userForm.querySelectorAll('[required]');
+            requiredFields.forEach(function (field) {
+                if (!field.value.trim()) {
+                    isValid = false;
+                    field.classList.add('is-invalid');
+                    const errorId = field.id.replace('Input', 'Error');
+                    const errorElement = document.getElementById(errorId);
+                    if (errorElement) {
+                        errorElement.classList.add('show');
+                    }
+                    errorMessages.push(`${field.previousElementSibling?.textContent || field.placeholder || 'Field'} is required`);
+                } else {
+                    field.classList.remove('is-invalid');
+                    // Trigger validation
+                    field.dispatchEvent(new Event('input'));
+                }
+            });
+
+            // Validate plant selection
+            const plantCheckboxes = document.querySelectorAll('input[name="assigned_plants"]');
+            const isPlantSelected = Array.from(plantCheckboxes).some(cb => cb.checked);
+            if (!isPlantSelected) {
+                isValid = false;
+                document.getElementById('plantError').classList.add('show');
+                document.getElementById('plantPanel').classList.add('border-danger');
+                errorMessages.push('Please select at least one plant.');
+            }
+
+            // Validate password for new users
+            if (!document.querySelector('input[name="is_active"][value]')) { // New user
+                const password = document.getElementById('passwordInput');
+                if (password && password.value.length < 8) {
+                    isValid = false;
+                    password.classList.add('is-invalid');
+                    document.getElementById('passwordError').classList.add('show');
+                    errorMessages.push('Password must be at least 8 characters long.');
+                }
+            }
+
+            // Validate password match
+            const password = document.getElementById('passwordInput');
+            const confirmPassword = document.getElementById('confirmPasswordInput');
+            if (password && confirmPassword && password.value) {
+                if (password.value !== confirmPassword.value) {
+                    isValid = false;
+                    confirmPassword.classList.add('is-invalid');
+                    document.getElementById('confirmPasswordError').classList.add('show');
+                    errorMessages.push('Passwords do not match.');
+                }
+            }
+
+            if (!isValid) {
+                event.preventDefault();
+                // Show error summary
+                const errorSummary = document.createElement('div');
+                errorSummary.className = 'alert alert-danger';
+                errorSummary.innerHTML = '<strong>Please correct the following errors:</strong><ul>' + 
+                    errorMessages.map(msg => `<li>${msg}</li>`).join('') + 
+                    '</ul>';
+                
+                // Remove existing error summary
+                const existingError = userForm.querySelector('.alert-danger');
+                if (existingError) {
+                    existingError.remove();
+                }
+                
+                userForm.insertBefore(errorSummary, userForm.firstChild);
+                
+                // Scroll to first error
+                const firstInvalid = userForm.querySelector('.is-invalid');
+                if (firstInvalid) {
+                    firstInvalid.focus();
+                    firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
                 return;
             }
+
+            // Disable submit button to prevent double submission
             submitButton.disabled = true;
             submitButton.classList.add('disabled');
             const labelSpan = submitButton.querySelector('span');
@@ -822,6 +1154,18 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
+
+    // Remove error summary when user starts typing
+    document.querySelectorAll('input, select, textarea').forEach(function (element) {
+        element.addEventListener('input', function() {
+            const errorSummary = document.querySelector('.alert-danger');
+            if (errorSummary) {
+                errorSummary.remove();
+            }
+            // Remove border danger from plant panel
+            document.getElementById('plantPanel')?.classList.remove('border-danger');
+        });
+    });
 });
 </script>
 {% endblock %}

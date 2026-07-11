@@ -34,11 +34,13 @@
     .user-list-page .user-table-card thead th {
         padding: 1rem 1.25rem;
         white-space: nowrap;
+        text-align: center; 
     }
 
     .user-list-page .user-table-card tbody td {
         padding: 1rem 1.25rem;
         vertical-align: middle;
+        text-align: center; 
     }
 
     .user-list-page .user-avatar {
@@ -242,7 +244,6 @@
                                         </div>
                                         <div class="user-meta">
                                             <div class="fw-semibold text-dark">{{ user.full_name|default:user.username }}</div>
-                                            <div class="fs-12 text-muted">{{ user.employee_code|default:"-" }}</div>
                                         </div>
                                     </div>
                                 </td>

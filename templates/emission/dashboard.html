@@ -24,65 +24,11 @@
   
   * { box-sizing: border-box; }
   
-  /* ===== MAIN CONTAINER WITH MARGINS ===== */
-  .dashboard-wrap {
-    max-width: 1440px;
-    margin: 0 auto;
+  /* ===== MAIN CONTAINER - FULL WIDTH ===== */
+  .dashboard{
+    width: 100%;
     padding: 24px 32px 32px 32px;
     background: transparent;
-  }
-
-  /* ===== PAGE HEADER ===== */
-  .page-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 28px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--border);
-  }
-  
-  .page-head-left h1 {
-    font-size: 24px;
-    font-weight: 700;
-    color: var(--text);
-    margin: 0;
-    letter-spacing: -0.02em;
-  }
-  
-  .page-head-left h1 span {
-    font-weight: 400;
-    color: var(--muted);
-    font-size: 16px;
-    margin-left: 12px;
-  }
-  
-  .page-head .subtitle {
-    font-size: 13px;
-    color: var(--muted);
-    margin-top: 4px;
-  }
-  
-  .export-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: #1a2332;
-    color: #fff;
-    border: none;
-    border-radius: 12px;
-    padding: 10px 20px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-  }
-  
-  .export-btn:hover {
-    background: #2d3a4f;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(26, 35, 50, 0.2);
   }
 
   /* ===== KPI CARDS ===== */
@@ -96,7 +42,7 @@
   .kpi {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 20px;
+    border-radius: 12px;
     padding: 20px 22px 22px;
     transition: all 0.2s ease;
   }
@@ -167,7 +113,7 @@
   .panel {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 20px;
+    border-radius: 12px;
     transition: all 0.2s ease;
     overflow: hidden;
     display: flex;
@@ -200,68 +146,27 @@
     gap: 8px;
   }
   
-  .panel-header-btn {
+  /* Hide refresh and expand buttons by default, show on panel hover */
+  .panel-header-action .action-buttons {
     display: flex;
     align-items: center;
     gap: 6px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
   }
   
-  .avatar-text {
-    display: inline-flex;
+  .panel:hover .panel-header-action .action-buttons {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  /* Options icon always visible */
+  .panel-header-action .options-icon {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    text-decoration: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    width: 24px;
-    height: 24px;
-    color: #fff;
-  }
-  
-  .avatar-text.avatar-xs {
-    width: 24px;
-    height: 24px;
-    font-size: 10px;
-  }
-  
-  .avatar-text.avatar-sm {
-    width: 28px;
-    height: 28px;
-    font-size: 14px;
-    color: #6b7280;
-    background: transparent;
-  }
-  
-  .avatar-text.avatar-sm:hover {
-    background: #f3f4f6;
-  }
-  
-  .avatar-text.bg-danger {
-    background: var(--red);
-  }
-  
-  .avatar-text.bg-danger:hover {
-    background: #dc2626;
-    transform: scale(1.1);
-  }
-  
-  .avatar-text.bg-warning {
-    background: var(--yellow);
-  }
-  
-  .avatar-text.bg-warning:hover {
-    background: #d97706;
-    transform: scale(1.1);
-  }
-  
-  .avatar-text.bg-success {
-    background: var(--green);
-  }
-  
-  .avatar-text.bg-success:hover {
-    background: #16a34a;
-    transform: scale(1.1);
+    opacity: 1;
+    visibility: visible;
   }
   
   .panel-body {
@@ -279,62 +184,7 @@
     flex-shrink: 0;
   }
 
-  /* ===== DROPDOWN ===== */
-  .dropdown {
-    position: relative;
-  }
-  
-  .dropdown-menu {
-    display: none;
-    position: absolute;
-    right: 0;
-    top: 100%;
-    background: white;
-    min-width: 200px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    border-radius: 12px;
-    padding: 6px 0;
-    border: 1px solid var(--border);
-    z-index: 100;
-    margin-top: 4px;
-  }
-  
-  .dropdown-menu.show {
-    display: block;
-  }
-  
-  .dropdown-menu .dropdown-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 16px;
-    color: var(--text);
-    text-decoration: none;
-    font-size: 13px;
-    transition: all 0.2s;
-    cursor: pointer;
-    border: none;
-    background: none;
-    width: 100%;
-  }
-  
-  .dropdown-menu .dropdown-item:hover {
-    background: #f3f4f6;
-  }
-  
-  .dropdown-menu .dropdown-item i {
-    width: 16px;
-    font-size: 14px;
-    color: var(--muted);
-  }
-  
-  .dropdown-divider {
-    height: 1px;
-    background: var(--border);
-    margin: 4px 0;
-  }
-
-  /* ===== VISITORS OVERVIEW STYLE CHART ===== */
+  /* ===== CHART SHELL ===== */
   .chart-shell {
     position: relative;
     height: 320px;
@@ -521,16 +371,6 @@
     min-width: 48px;
     text-align: right;
   }
-  
-  .bar-axis {
-    display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: 12px;
-    padding-left: 72px;
-    flex-shrink: 0;
-  }
 
   /* ===== TASK STATUS ===== */
   .task-item {
@@ -658,7 +498,7 @@
     text-transform: uppercase;
   }
 
-  /* ===== EXPANDED CARD STYLES ===== */
+  /* ===== EXPANDED PANEL ===== */
   .panel-expanded {
     position: fixed !important;
     top: 0 !important;
@@ -687,53 +527,6 @@
     height: calc(100vh - 200px) !important;
     min-height: 400px !important;
     flex: 1 !important;
-  }
-
-  .panel-expanded .chart-legend {
-    margin-top: 16px !important;
-    padding-bottom: 10px !important;
-  }
-
-  /* ===== REFRESH LOADING OVERLAY ===== */
-  .refresh-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.85);
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 16px;
-    backdrop-filter: blur(2px);
-  }
-
-  .refresh-overlay .spinner-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .refresh-overlay .spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #eef2f6;
-    border-top-color: #2563eb;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-
-  .refresh-overlay .refresh-text {
-    font-size: 14px;
-    color: #1a2332;
-    font-weight: 500;
-  }
-
-  @keyframes spin {
-    to { transform: rotate(360deg); }
   }
 
   /* ===== RESPONSIVE ===== */
@@ -779,16 +572,6 @@
       grid-template-columns: 1fr;
     }
     
-    .page-head {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 16px;
-    }
-    
-    .page-head-left h1 {
-      font-size: 20px;
-    }
-    
     .kpi .value {
       font-size: 24px;
     }
@@ -805,20 +588,6 @@
     .panel-body {
       padding: 4px 16px 16px 16px;
     }
-
-    .panel-expanded .panel-header {
-      padding: 16px 20px 0 20px !important;
-    }
-
-    .panel-expanded .panel-body {
-      padding: 4px 20px 20px 20px !important;
-      height: calc(100vh - 60px) !important;
-    }
-
-    .panel-expanded .chart-shell {
-      height: calc(100vh - 160px) !important;
-      min-height: 250px !important;
-    }
   }
   
   @media (max-width: 400px) {
@@ -826,24 +595,248 @@
       padding: 8px 10px 16px 10px;
     }
   }
+
+  /* ===== TOAST NOTIFICATION ===== */
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(80px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  
+  .custom-toast {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    z-index: 99999;
+    max-width: 420px;
+    min-width: 300px;
+    animation: slideInRight 0.4s ease;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    border-radius: 12px;
+  }
+
+  .fa-spin {
+    animation: fa-spin 1s linear infinite;
+  }
+  
+  @keyframes fa-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .refresh-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.85);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 16px;
+    backdrop-filter: blur(2px);
+  }
+
+  /* ===== BRSR STYLE DOTS ===== */
+  .avatar-text {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+  }
+
+  .avatar-text.avatar-xs {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+  }
+
+  .avatar-text.avatar-sm {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .avatar-text.bg-orange {
+    background: #f97316;
+    color: white;
+  }
+
+  .avatar-text.bg-orange:hover {
+    background: #ea580c;
+    transform: scale(1.1);
+  }
+
+  .avatar-text.bg-green {
+    background: #22c07a;
+    color: white;
+  }
+
+  .avatar-text.bg-green:hover {
+    background: #16a34a;
+    transform: scale(1.1);
+  }
+
+  /* ===== DOT INDICATORS ===== */
+  .dot-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+  }
+
+  .dot-indicator.dot-orange {
+    background: #f97316;
+    border: 2px solid #ea580c;
+    box-shadow: 0 0 8px rgba(249, 115, 22, 0.5);
+    animation: pulse-orange 2s infinite;
+  }
+
+  .dot-indicator.dot-green {
+    background: #22c07a;
+    border: 2px solid #16a34a;
+    box-shadow: 0 0 8px rgba(34, 192, 122, 0.5);
+    animation: pulse-green 2s infinite;
+  }
+
+  .avatar-text:hover .dot-indicator.dot-orange {
+    box-shadow: 0 0 16px rgba(249, 115, 22, 0.9);
+    transform: scale(1.2);
+  }
+
+  .avatar-text:hover .dot-indicator.dot-green {
+    box-shadow: 0 0 16px rgba(34, 192, 122, 0.9);
+    transform: scale(1.2);
+  }
+
+  @keyframes pulse-orange {
+    0%, 100% { 
+      box-shadow: 0 0 8px rgba(249, 115, 22, 0.5); 
+    }
+    50% { 
+      box-shadow: 0 0 16px rgba(249, 115, 22, 0.9); 
+    }
+  }
+
+  @keyframes pulse-green {
+    0%, 100% { 
+      box-shadow: 0 0 8px rgba(34, 192, 122, 0.5); 
+    }
+    50% { 
+      box-shadow: 0 0 16px rgba(34, 192, 122, 0.9); 
+    }
+  }
+
+  /* ===== DROPDOWN OPTIONS ===== */
+  .panel-header-action .dropdown {
+    display: inline-block;
+  }
+
+  .panel-header-action .dropdown .avatar-text {
+    background: #eef2f6;
+    color: #6b7280;
+    transition: all 0.3s ease;
+  }
+
+  .panel-header-action .dropdown .avatar-text:hover {
+    background: #d1d5db;
+    color: #1a2332;
+    transform: scale(1.1);
+  }
+
+  /* ===== DROPDOWN MENU ===== */
+  .dropdown-menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background: white;
+    min-width: 200px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    padding: 6px 0;
+    border: 1px solid var(--border);
+    z-index: 100;
+    margin-top: 4px;
+  }
+
+  .dropdown-menu.show {
+    display: block;
+  }
+
+  .dropdown-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+    background: none;
+    width: 100%;
+  }
+
+  .dropdown-menu .dropdown-item:hover {
+    background: #f3f4f6;
+  }
+
+  .dropdown-menu .dropdown-item i {
+    width: 16px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  .dropdown-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0;
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-wrap">
-  <!-- PAGE HEADER -->
-  <div class="page-head">
-    <div class="page-head-left">
-      <h1>
-        <i class="fas fa-leaf" style="color: #2563eb; margin-right: 12px;"></i>
-        Carbon Emissions Dashboard
-      </h1>
-    </div>
-    <button class="export-btn" type="button" onclick="exportReport()">
-      <i class="fas fa-download"></i> Export Report
-    </button>
-  </div>
 
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Emission</h5>
+        </div>
+
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="#">Home</a></li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'emission:dashboard' %}">Emission</a>
+            </li>
+            <li class="breadcrumb-item active">Carbon Emission</li>
+        </ul>
+    </div>
+
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                <a class="btn btn-primary">
+                    <i class="feather-plus me-2"></i>
+                    <span>Export</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+<br>
+
+<div class="dashboard">
   <!-- KPI CARDS -->
   <div class="kpi-row">
     <div class="kpi">
@@ -868,36 +861,55 @@
     </div>
   </div>
 
-  <!-- ROW 2: VISITORS OVERVIEW STYLE CHART + DONUT -->
+  <!-- ROW 2: TREND CHART + DONUT -->
   <div class="row-2">
     <!-- Monthly Trend -->
     <div class="panel" id="panelTrend">
       <div class="panel-header">
         <h5 class="panel-title">Monthly Emission Trend</h5>
-        <div class="card-header-action d-flex align-items-center gap-2">
-          <div class="card-header-btn d-flex align-items-center gap-2">
+        <div class="panel-header-action">
+          <!-- Action Buttons (Hidden by default, show on panel hover) -->
+          <div class="action-buttons">
+            <!-- Refresh Button with Orange Dot -->
             <div data-bs-toggle="tooltip" title="Refresh">
-              <a href="javascript:void(0);" class="avatar-text avatar-xs bg-warning" onclick="handleRefresh(event, 'panelTrend')">
-                
+              <a href="javascript:void(0);" class="avatar-text avatar-xs bg-orange" onclick="handleRefresh(event, 'panelTrend')">
+                <span class="dot-indicator dot-orange"></span>
               </a>
             </div>
-            <div data-bs-toggle="tooltip" title="Maximize/Minimize">
-              <a href="javascript:void(0);" class="avatar-text avatar-xs bg-success" onclick="handleMaximize(event, 'panelTrend')">
-                
+            <!-- Expand Button with Green Dot -->
+            <div data-bs-toggle="tooltip" title="Expand">
+              <a href="javascript:void(0);" class="avatar-text avatar-xs bg-green" onclick="handleMaximize(event, 'panelTrend')">
+                <span class="dot-indicator dot-green"></span>
               </a>
             </div>
           </div>
-          <div class="dropdown">
-            <a href="javascript:void(0);" class="avatar-text avatar-sm" onclick="toggleDropdown(event)">
-              <i class="fas fa-ellipsis-v"></i>
-            </a>
-            <div class="dropdown-menu dropdown-menu-end">
-              <a href="javascript:void(0);" class="dropdown-item"><i class="fas fa-file-image me-2"></i>Export PNG</a>
-              <a href="javascript:void(0);" class="dropdown-item"><i class="fas fa-file-pdf me-2"></i>Export PDF</a>
-              <a href="javascript:void(0);" class="dropdown-item"><i class="fas fa-print me-2"></i>Print</a>
-              <div class="dropdown-divider"></div>
-              <a href="javascript:void(0);" class="dropdown-item"><i class="fas fa-edit me-2"></i>Edit Chart</a>
-              <a href="javascript:void(0);" class="dropdown-item"><i class="fas fa-sync-alt me-2"></i>Refresh Data</a>
+          <!-- Options Icon (Always Visible) -->
+          <div class="options-icon">
+            <div class="dropdown">
+              <a href="javascript:void(0);" class="avatar-text avatar-sm" data-bs-toggle="dropdown" data-bs-offset="25, 25" title="Options">
+                <div data-bs-toggle="tooltip" title="Options">
+                  <i class="feather-more-vertical"></i>
+                </div>
+              </a>
+              <div class="dropdown-menu dropdown-menu-end" id="trendOptions">
+                <a href="#" class="dropdown-item" onclick="showToast('Exporting chart as PNG...', 'info')">
+                  <i class="feather-image me-2"></i> Export as PNG
+                </a>
+                <a href="#" class="dropdown-item" onclick="showToast('Exporting chart as PDF...', 'info')">
+                  <i class="feather-file-pdf me-2"></i> Export as PDF
+                </a>
+                <div class="dropdown-divider"></div>
+                <a href="#" class="dropdown-item" onclick="showToast('Printing chart...', 'info')">
+                  <i class="feather-printer me-2"></i> Print
+                </a>
+                <a href="#" class="dropdown-item" onclick="showToast('Full screen mode...', 'info')">
+                  <i class="feather-maximize me-2"></i> Full Screen
+                </a>
+                <div class="dropdown-divider"></div>
+                <a href="#" class="dropdown-item text-danger" onclick="showToast('Chart reset successfully!', 'success')">
+                  <i class="feather-rotate-ccw me-2"></i> Reset Chart
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -925,9 +937,6 @@
     <div class="panel donut-wrap" id="panelDonut">
       <div class="panel-header">
         <h5 class="panel-title">Scope Breakdown</h5>
-        <div class="panel-header-action">
-          <!-- No buttons here -->
-        </div>
       </div>
       <div class="panel-body">
         <div class="subtitle">YTD distribution</div>
@@ -961,20 +970,10 @@
     <div class="panel" id="panelPlant">
       <div class="panel-header">
         <h5 class="panel-title">By Plant</h5>
-        <div class="panel-header-action">
-          <!-- No buttons here -->
-        </div>
       </div>
       <div class="panel-body">
         <div class="subtitle">tCO₂e YTD</div>
         <div class="plant-section" id="plantBars"></div>
-        {% comment %} <div class="bar-axis">
-          <span>0</span>
-          <span>2,500</span>
-          <span>5,000</span>
-          <span>7,500</span>
-          <span>10,000</span>
-        </div> {% endcomment %}
       </div>
     </div>
 
@@ -982,9 +981,6 @@
     <div class="panel" id="panelTask">
       <div class="panel-header">
         <h5 class="panel-title">Task Status</h5>
-        <div class="panel-header-action">
-          <!-- No buttons here -->
-        </div>
       </div>
       <div class="panel-body">
         <div class="subtitle">FY 2024–25</div>
@@ -1035,9 +1031,6 @@
     <div class="panel" id="panelActivity">
       <div class="panel-header">
         <h5 class="panel-title">Recent Activity</h5>
-        <div class="panel-header-action">
-          <!-- No buttons here -->
-        </div>
       </div>
       <div class="panel-body">
         <div class="activity-list" id="activityList"></div>
@@ -1047,68 +1040,68 @@
 </div>
 
 <script>
-// ===== REFRESH BUTTON HANDLER =====
+// ===== TOGGLE DROPDOWN =====
+function toggleDropdown(event, dropdownId) {
+  event.stopPropagation();
+  const dropdown = document.getElementById(dropdownId);
+  if (dropdown) {
+    dropdown.classList.toggle('show');
+  }
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function() {
+  const dropdowns = document.querySelectorAll('.dropdown-menu');
+  dropdowns.forEach(function(dropdown) {
+    dropdown.classList.remove('show');
+  });
+});
+
+// ===== REFRESH HANDLER =====
 function handleRefresh(event, panelId) {
   event.preventDefault();
-  const btn = event.currentTarget;
-  const icon = btn.querySelector('i');
+  event.stopPropagation();
   const panel = document.getElementById(panelId);
   
   if (!panel) return;
   
-  // Add spinning animation to icon
-  icon.classList.add('fa-spin');
-  
-  // Find the chart shell
   const chartShell = panel.querySelector('.chart-shell');
   if (!chartShell) return;
   
-  // Create loading overlay
   const overlay = document.createElement('div');
   overlay.className = 'refresh-overlay';
   overlay.innerHTML = `
-    <div class="spinner-container">
-      <div class="spinner"></div>
-  
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+      <div style="width:40px;height:40px;border:4px solid #eef2f6;border-top-color:#2563eb;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+      <div style="font-size:14px;color:#1a2332;font-weight:500;"></div>
     </div>
   `;
   chartShell.style.position = 'relative';
   chartShell.appendChild(overlay);
   
-  // Simulate refresh
   setTimeout(() => {
-    // Remove overlay
     if (overlay.parentNode) {
       overlay.remove();
     }
-    // Remove spin from icon
-    icon.classList.remove('fa-spin');
     showToast('Chart refreshed successfully!', 'success');
   }, 2000);
 }
 
-// ===== MAXIMIZE BUTTON HANDLER =====
+// ===== MAXIMIZE HANDLER =====
 function handleMaximize(event, panelId) {
   event.preventDefault();
+  event.stopPropagation();
   const panel = document.getElementById(panelId);
-  const icon = event.currentTarget.querySelector('i');
   
   if (!panel) return;
   
   if (panel.classList.contains('panel-expanded')) {
-    // Restore
     panel.classList.remove('panel-expanded');
-    icon.classList.remove('fa-compress');
-    icon.classList.add('fa-expand');
     document.body.style.overflow = '';
   } else {
-    // Maximize
     panel.classList.add('panel-expanded');
-    icon.classList.remove('fa-expand');
-    icon.classList.add('fa-compress');
     document.body.style.overflow = 'hidden';
     
-    // Force chart resize after expansion
     setTimeout(() => {
       const chartCanvas = panel.querySelector('#trendChart');
       if (chartCanvas && chartCanvas.chart) {
@@ -1118,35 +1111,12 @@ function handleMaximize(event, panelId) {
   }
 }
 
-// ===== TOGGLE DROPDOWN =====
-function toggleDropdown(event) {
-  event.stopPropagation();
-  const dropdown = event.currentTarget.nextElementSibling;
-  if (dropdown) {
-    dropdown.classList.toggle('show');
-  }
-}
-
-// Close dropdowns when clicking outside
-document.addEventListener('click', function() {
-  document.querySelectorAll('.dropdown-menu').forEach(function(dropdown) {
-    dropdown.classList.remove('show');
-  });
-});
-
-// Prevent dropdown from closing when clicking inside
-document.querySelectorAll('.dropdown-menu').forEach(function(dropdown) {
-  dropdown.addEventListener('click', function(event) {
-    event.stopPropagation();
-  });
-});
-
 // ===== ESC KEY TO CLOSE EXPANDED CARD =====
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     const expandedCard = document.querySelector('.panel-expanded');
     if (expandedCard) {
-      const expandBtn = expandedCard.querySelector('.bg-success');
+      const expandBtn = expandedCard.querySelector('.avatar-text.bg-green');
       if (expandBtn) {
         expandBtn.click();
       }
@@ -1161,17 +1131,6 @@ function showToast(message, type) {
   
   const toastContainer = document.createElement('div');
   toastContainer.className = 'custom-toast';
-  toastContainer.style.cssText = `
-    position: fixed;
-    top: 30px;
-    right: 30px;
-    z-index: 99999;
-    max-width: 420px;
-    min-width: 300px;
-    animation: slideInRight 0.4s ease;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-    border-radius: 12px;
-  `;
   
   let bgColor = '#22c07a';
   let icon = 'fa-check-circle';
@@ -1206,15 +1165,7 @@ function showToast(message, type) {
   }, 3000);
 }
 
-// ===== EXPORT REPORT =====
-function exportReport() {
-  showToast('Exporting report...', 'info');
-  setTimeout(function() {
-    showToast('Report exported successfully!', 'success');
-  }, 1500);
-}
-
-// ===== MONTHLY EMISSION TREND - VISITORS OVERVIEW STYLE =====
+// ===== MONTHLY EMISSION TREND CHART =====
 const months = ["JAN/22", "FEB/22", "MAR/22", "APR/22", "MAY/22", "JUN/22", "JUL/22"];
 const scope1 = [1420, 1390, 1350, 1300, 1480, 1550, 1500];
 const scope2 = [980, 950, 900, 870, 1000, 1050, 1000];
@@ -1280,7 +1231,6 @@ const chart = new Chart(ctx, {
         borderWidth: 1,
         cornerRadius: 12,
         padding: 12,
-        boxShadow: '0 8px 24px rgba(0,0,0,0.10)',
         callbacks: {
           title: function(items) {
             return items[0].label;
@@ -1405,25 +1355,6 @@ document.getElementById('activityList').innerHTML = activity.map(function(a) {
     </div>
   `;
 }).join('');
-
-// ===== ADD CSS ANIMATIONS =====
-const styleSheet = document.createElement('style');
-styleSheet.textContent = `
-  @keyframes slideInRight {
-    from { opacity: 0; transform: translateX(80px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-  
-  .fa-spin {
-    animation: fa-spin 1s linear infinite;
-  }
-  
-  @keyframes fa-spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-`;
-document.head.appendChild(styleSheet);
 
 </script>
 {% endblock %}

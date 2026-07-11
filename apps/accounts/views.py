@@ -487,35 +487,31 @@ class UserLocationAssignmentMixin:
 # -----------------------------------------------
 # ============= USER LIST =======================
 # -----------------------------------------------
-
 class UserListView(LoginRequiredMixin, ListView):
-
     model = User
     template_name = 'accounts/user_management/user_list.html'
     context_object_name = 'users'
-    
+    paginate_by = 10  # Add pagination
 
     def get_queryset(self):
         user = self.request.user
-
         queryset = User.objects.select_related(
             'role', 'company', 'department'
         ).order_by('-id')
 
+        # Filter by company for non-super admins
         if not user.is_super_admin:
             queryset = queryset.filter(company=user.company)
 
+        # Apply filters
         search = self.request.GET.get('search', '').strip()
         status = self.request.GET.get('status', '').strip()
         role = self.request.GET.get('role', '').strip()
 
+        # Apply role filter only if specified
         if role:
             queryset = queryset.filter(role_id=role)
-        else:
-            super_admin_role = Role.objects.filter(role_code='SUPERADMIN').first()
-
-            if super_admin_role:
-                queryset = queryset.filter(role=super_admin_role)
+        # Remove the else block that filters by SUPERADMIN
 
         if search:
             queryset = queryset.filter(
@@ -527,31 +523,24 @@ class UserListView(LoginRequiredMixin, ListView):
 
         if status == 'active':
             queryset = queryset.filter(is_active=True)
-
         elif status == 'inactive':
             queryset = queryset.filter(is_active=False)
 
         return queryset
 
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
+        
+        # Get all roles for filter dropdown
         context['roles'] = Role.objects.order_by('role_name')
         context['selected_status'] = self.request.GET.get('status', '')
-        selected_role = self.request.GET.get('role', '')
-
-        if not selected_role:
-            super_admin = Role.objects.filter(role_code='SUPERADMIN').first()
-
-            if super_admin:
-                selected_role = str(super_admin.id)
-
-        context['selected_role'] = selected_role
-
-        context['total_users_count'] = context['users'].count()
-        context['active_users_count'] = context['users'].filter(is_active=True).count()
-
+        context['selected_role'] = self.request.GET.get('role', '')
+        
+        # Get the filtered queryset for counts
+        users = self.get_queryset()
+        context['total_users_count'] = users.count()
+        context['active_users_count'] = users.filter(is_active=True).count()
+        
         return context
 
 
