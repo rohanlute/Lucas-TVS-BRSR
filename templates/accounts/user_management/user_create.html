@@ -94,11 +94,6 @@
         box-shadow: inset 0 0 0 1px rgba(13, 110, 253, 0.08);
     }
 
-    .assignment-node.is-disabled {
-        background: #f8fafc;
-        opacity: 0.55;
-    }
-
     .assignment-node input {
         margin-top: 4px;
         flex: 0 0 auto;
@@ -114,32 +109,6 @@
         display: block;
         font-weight: 400;
         color: #6b7280;
-    }
-
-    .assignment-parent-header {
-        background: #d8eef5;
-        border-left: 4px solid #0f8aa4;
-        border-radius: 10px;
-        padding: 10px 12px;
-        margin-bottom: 10px;
-        font-weight: 700;
-        color: #0f4f63;
-    }
-
-    .assignment-child-block {
-        margin-bottom: 18px;
-        padding-left: 12px;
-        border-left: 3px solid #e5eef5;
-    }
-
-    .assignment-empty-state {
-        border: 1px dashed #cfd8e3;
-        border-radius: 12px;
-        background: #f8fbff;
-        color: #607084;
-        padding: 14px 16px;
-        margin-bottom: 14px;
-        font-size: 13px;
     }
 
     .required-field::after {
@@ -223,12 +192,32 @@
     .password-hint .invalid {
         color: #dc3545;
     }
+
+    /* Remove number input spinners */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    input[type=number] {
+        -moz-appearance: textfield;
+    }
+
+    /* Prevent browser autofill */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 30px white inset !important;
+        box-shadow: 0 0 0 30px white inset !important;
+        -webkit-text-fill-color: #000 !important;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <!-- [ page-header ] start -->
-<form id="userForm" method="POST" enctype="multipart/form-data" novalidate class="user-create-form">
+<form id="userForm" method="POST" enctype="multipart/form-data" novalidate class="user-create-form" autocomplete="off">
 {% csrf_token %}
 {% if form.errors %}
 <div class="alert alert-danger">
@@ -336,7 +325,7 @@
                                 <div class="col-lg-8">
                                     <div class="input-group">
                                         <div class="input-group-text"><i class="feather-user"></i></div>
-                                        <input type="text" name="full_name" class="form-control" id="fullnameInput" placeholder="Full Name" value="{{ form.full_name.value|default:'' }}" required minlength="2" maxlength="100" pattern="[A-Za-z\s]+" title="Name should contain only letters and spaces">
+                                        <input type="text" name="full_name" class="form-control" id="fullnameInput" placeholder="Full Name" value="{{ form.full_name.value|default:'' }}" required minlength="2" maxlength="100" pattern="[A-Za-z\s]+" title="Name should contain only letters and spaces" autocomplete="off">
                                     </div>
                                     <div class="error-message" id="fullnameError">Please enter a valid name (minimum 2 characters, letters only).</div>
                                     {% if form.full_name.errors %}
@@ -351,7 +340,7 @@
                                 <div class="col-lg-8">
                                     <div class="input-group">
                                         <div class="input-group-text"><i class="feather-mail"></i></div>
-                                        <input type="email" name="email" class="form-control" id="mailInput" placeholder="Enter valid email address" value="{{ form.email.value|default:'' }}" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" title="Please enter a valid email address">
+                                        <input type="email" name="email" class="form-control" id="mailInput" placeholder="Enter valid email address" value="{{ form.email.value|default:'' }}" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" title="Please enter a valid email address" autocomplete="off">
                                     </div>
                                     <div class="error-message" id="emailError">Please enter a valid email address (e.g., user@gmail.com).</div>
                                     {% if form.email.errors %}
@@ -366,7 +355,7 @@
                                 <div class="col-lg-8">
                                     <div class="input-group">
                                         <div class="input-group-text"><i class="feather-link-2"></i></div>
-                                        <input type="text" name="username" class="form-control" id="usernameInput" placeholder="Username (letters, numbers, underscore)" value="{{ form.username.value|default:'' }}" required minlength="3" maxlength="30" pattern="[A-Za-z0-9_]+" title="Username can only contain letters, numbers, and underscores">
+                                        <input type="text" name="username" class="form-control" id="usernameInput" placeholder="Username (letters, numbers, underscore)" value="{{ form.username.value|default:'' }}" required minlength="3" maxlength="30" pattern="[A-Za-z0-9_]+" title="Username can only contain letters, numbers, and underscores" autocomplete="off">
                                     </div>
                                     <div class="error-message" id="usernameError">Username must be 3-30 characters and can only contain letters, numbers, and underscores.</div>
                                     {% if form.username.errors %}
@@ -381,7 +370,7 @@
                                 <div class="col-lg-8">
                                     <div class="input-group">
                                         <div class="input-group-text"><i class="feather-phone"></i></div>
-                                        <input type="number" name="mobile_number" class="form-control" id="phoneInput" placeholder="Phone Number (e.g., 9876543210)" value="{{ form.mobile_number.value|default:'' }}" required pattern="[0-9]{10}" maxlength="10" title="Please enter a valid 10-digit phone number">
+                                        <input type="text" name="mobile_number" class="form-control" id="phoneInput" placeholder="Phone Number (e.g., 9876543210)" value="{{ form.mobile_number.value|default:'' }}" required pattern="[0-9]{10}" maxlength="10" title="Please enter a valid 10-digit phone number" inputmode="numeric" autocomplete="off">
                                     </div>
                                     <div class="error-message" id="phoneError">Please enter a valid 10-digit phone number (e.g., 9876543210).</div>
                                     {% if form.mobile_number.errors %}
@@ -426,7 +415,7 @@
                             </div>
                             <div class="row mb-4 align-items-center">
                                 <div class="col-lg-4">
-                                    <label for="{{ form.designation.id_for_label }}" class="fw-semibold required-field">Designation</label>
+                                    <label for="{{ form.designation.id_for_label }}" class="fw-semibold">Designation</label>
                                 </div>
                                 <div class="col-lg-8">
                                     <div class="input-group">
@@ -440,15 +429,15 @@
                             </div>
                             <div class="row mb-4 align-items-center">
                                 <div class="col-lg-4">
-                                    <label for="{{ form.is_active.id_for_label }}" class="fw-semibold required-field">Account Status</label>
+                                    <label for="{{ form.is_active.id_for_label }}" class="fw-semibold">Account Status</label>
                                 </div>
                                 <div class="col-lg-8">
                                     <div class="form-check form-switch d-flex align-items-center gap-2">
-                                    <input type="checkbox" name="is_active" class="form-check-input" id="{{ form.is_active.id_for_label }}" {% if form.is_active.value or not object %}checked{% endif %}>
-                                    <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
-                                        {% if form.is_active.value or not object %}Active{% else %}Inactive{% endif %}
-                                    </label>
-                                </div>
+                                        <input type="checkbox" name="is_active" class="form-check-input" id="{{ form.is_active.id_for_label }}" {% if form.is_active.value or not object %}checked{% endif %}>
+                                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                            {% if form.is_active.value or not object %}Active{% else %}Inactive{% endif %}
+                                        </label>
+                                    </div>
                                     <div class="fs-12 text-muted mt-1">
                                         Active users can log in. Inactive users are blocked from logging in.
                                     </div>
@@ -459,7 +448,7 @@
                             </div>
                             <div class="row mb-4 align-items-center">
                                 <div class="col-lg-4">
-                                    <label for="departmentInput" class="fw-semibold required-field">Department</label>
+                                    <label for="departmentInput" class="fw-semibold">Department</label>
                                 </div>
                                 <div class="col-lg-8">
                                     <div class="input-group">
@@ -473,12 +462,12 @@
                             </div>
                             <div class="row mb-4 align-items-center">
                                 <div class="col-lg-4">
-                                    <label for="employee_codeInput" class="fw-semibold required-field">Employee ID</label>
+                                    <label for="employee_codeInput" class="fw-semibold">Employee ID</label>
                                 </div>
                                 <div class="col-lg-8">
                                     <div class="input-group">
                                         <div class="input-group-text"><i class="feather-briefcase"></i></div>
-                                        <input type="text" name="employee_code" class="form-control" id="employee_codeInput" placeholder="Employee ID (e.g., EMP001)" value="{{ form.employee_code.value|default:'' }}" required minlength="3" maxlength="20" pattern="[A-Za-z0-9\-_]+" title="Employee ID can contain letters, numbers, hyphens, and underscores">
+                                        <input type="text" name="employee_code" class="form-control" id="employee_codeInput" placeholder="Employee ID (e.g., EMP001)" value="{{ form.employee_code.value|default:'' }}" minlength="3" maxlength="20" pattern="[A-Za-z0-9\-_]+" title="Employee ID can contain letters, numbers, hyphens, and underscores" autocomplete="off">
                                     </div>
                                     <div class="error-message" id="employeeCodeError">Please enter a valid Employee ID (3-20 characters, alphanumeric with - and _ allowed).</div>
                                     {% if form.employee_code.errors %}
@@ -493,7 +482,7 @@
                             <div class="mb-4 d-flex align-items-center justify-content-between">
                                 <h5 class="fw-bold mb-0 me-4">
                                     <span class="d-block mb-2">Location Assignment:</span>
-                                    <span class="fs-12 fw-normal text-muted text-truncate-1-line">Select plants first, then zones, locations, and sub-locations.</span>
+                                    <span class="fs-12 fw-normal text-muted text-truncate-1-line">Select plants for this user.</span>
                                 </h5>
                             </div>
                             <div class="location-assignment-section">
@@ -526,108 +515,6 @@
                                 </div>
                                 <div class="error-message" id="plantError">Please select at least one plant.</div>
 
-                                <div class="assignment-group-title required-field">Assigned Zones</div>
-                                <div class="assignment-group-note">Please select plant first</div>
-                                <div class="assignment-toolbar">
-                                    <button type="button" class="btn btn-outline-primary btn-sm" data-select-all="assigned_zones">
-                                        <i class="feather-check-square me-1"></i>Select All
-                                    </button>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-deselect-all="assigned_zones">
-                                        <i class="feather-square me-1"></i>Deselect All
-                                    </button>
-                                </div>
-                                <div class="assignment-panel mb-4">
-                                    <div class="assignment-empty-state" data-empty-for="zones">Please select plant first.</div>
-                                    {% if company_plants %}
-                                        {% for plant in company_plants %}
-                                            <div class="assignment-child-block" data-plant-block="{{ plant.id }}">
-                                                <div class="assignment-parent-header">{{ plant.name }}</div>
-                                                <div class="assignment-grid">
-                                                    {% for zone in plant.zones.all %}
-                                                        <label class="assignment-node {% if zone.id in selected_zone_ids %}is-selected{% endif %} {% if plant.id not in selected_plant_ids %}is-disabled{% endif %}" data-node-type="zone" data-parent-plant-id="{{ plant.id }}">
-                                                            <input class="assignment-input" type="checkbox" name="assigned_zones" value="{{ zone.id }}" {% if zone.id in selected_zone_ids %}checked{% endif %} {% if plant.id not in selected_plant_ids %}disabled{% endif %}>
-                                                            <span class="assignment-node-label">
-                                                                {{ zone.name }}
-                                                                <small>{{ zone.code }}</small>
-                                                            </span>
-                                                        </label>
-                                                    {% endfor %}
-                                                </div>
-                                            </div>
-                                        {% endfor %}
-                                    {% endif %}
-                                </div>
-
-                                <div class="assignment-group-title required-field">Assigned Locations</div>
-                                <div class="assignment-group-note">Please select zone first</div>
-                                <div class="assignment-toolbar">
-                                    <button type="button" class="btn btn-outline-primary btn-sm" data-select-all="assigned_locations">
-                                        <i class="feather-check-square me-1"></i>Select All
-                                    </button>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-deselect-all="assigned_locations">
-                                        <i class="feather-square me-1"></i>Deselect All
-                                    </button>
-                                </div>
-                                <div class="assignment-panel mb-4">
-                                    <div class="assignment-empty-state" data-empty-for="locations">Please select zone first.</div>
-                                    {% if company_plants %}
-                                        {% for plant in company_plants %}
-                                            {% for zone in plant.zones.all %}
-                                                <div class="assignment-child-block" data-zone-block="{{ zone.id }}" data-parent-plant-id="{{ plant.id }}">
-                                                    <div class="assignment-parent-header">{{ plant.name }} - {{ zone.name }}</div>
-                                                    <div class="assignment-grid">
-                                                        {% for location in zone.locations.all %}
-                                                            <label class="assignment-node {% if location.id in selected_location_ids %}is-selected{% endif %} {% if zone.id not in selected_zone_ids %}is-disabled{% endif %}" data-node-type="location" data-parent-zone-id="{{ zone.id }}">
-                                                                <input class="assignment-input" type="checkbox" name="assigned_locations" value="{{ location.id }}" {% if location.id in selected_location_ids %}checked{% endif %} {% if zone.id not in selected_zone_ids %}disabled{% endif %}>
-                                                                <span class="assignment-node-label">
-                                                                    {{ location.name }}
-                                                                    <small>{{ location.code }}</small>
-                                                                </span>
-                                                            </label>
-                                                        {% endfor %}
-                                                    </div>
-                                                </div>
-                                            {% endfor %}
-                                        {% endfor %}
-                                    {% endif %}
-                                </div>
-
-                                <div class="assignment-group-title required-field">Assigned Sub-Locations</div>
-                                <div class="assignment-group-note">Please select location first</div>
-                                <div class="assignment-toolbar">
-                                    <button type="button" class="btn btn-outline-primary btn-sm" data-select-all="assigned_sublocations">
-                                        <i class="feather-check-square me-1"></i>Select All
-                                    </button>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm" data-deselect-all="assigned_sublocations">
-                                        <i class="feather-square me-1"></i>Deselect All
-                                    </button>
-                                </div>
-                                <div class="assignment-panel">
-                                    <div class="assignment-empty-state" data-empty-for="sublocations">Please select location first.</div>
-                                    {% if company_plants %}
-                                        {% for plant in company_plants %}
-                                            {% for zone in plant.zones.all %}
-                                                {% for location in zone.locations.all %}
-                                                    <div class="assignment-child-block" data-location-block="{{ location.id }}" data-parent-zone-id="{{ zone.id }}">
-                                                        <div class="assignment-parent-header">{{ plant.name }} - {{ zone.name }} - {{ location.name }}</div>
-                                                        <div class="assignment-grid">
-                                                            {% for sublocation in location.sublocations.all %}
-                                                                <label class="assignment-node {% if sublocation.id in selected_sublocation_ids %}is-selected{% endif %} {% if location.id not in selected_location_ids %}is-disabled{% endif %}" data-node-type="sublocation" data-parent-location-id="{{ location.id }}">
-                                                                    <input class="assignment-input" type="checkbox" name="assigned_sublocations" value="{{ sublocation.id }}" {% if sublocation.id in selected_sublocation_ids %}checked{% endif %} {% if location.id not in selected_location_ids %}disabled{% endif %}>
-                                                                    <span class="assignment-node-label">
-                                                                        {{ sublocation.name }}
-                                                                        {% if sublocation.code %}<small>{{ sublocation.code }}</small>{% endif %}
-                                                                    </span>
-                                                                </label>
-                                                            {% endfor %}
-                                                        </div>
-                                                    </div>
-                                                {% endfor %}
-                                            {% endfor %}
-                                        {% endfor %}
-                                    {% endif %}
-                                </div>
-
                                 {% if form.non_field_errors %}
                                     <div class="invalid-feedback d-block mt-2">{{ form.non_field_errors|striptags }}</div>
                                 {% endif %}
@@ -643,19 +530,19 @@
                                         {% if object %}
                                             Leave blank to keep the current password.
                                         {% else %}
-                                            You can only change your password twice within 24 hours!
+                                            Password is required for new users.
                                         {% endif %}
                                     </span>
                                 </h5>
                             </div>
                             <div class="row mb-4 align-items-center">
                                 <div class="col-lg-4">
-                                    <label for="passwordInput" class="fw-semibold required-field">Password</label>
+                                    <label for="passwordInput" class="fw-semibold {% if not object %}required-field{% endif %}">Password</label>
                                 </div>
                                 <div class="col-lg-8">
                                     <div class="input-group">
                                         <div class="input-group-text"><i class="feather-key"></i></div>
-                                        <input type="password" name="password" class="form-control" id="passwordInput" placeholder="Password (min 8 characters)" {% if not object %}required{% endif %} minlength="8">
+                                        <input type="password" name="password" class="form-control" id="passwordInput" placeholder="{% if object %}Leave blank to keep current password{% else %}Password (min 8 characters){% endif %}" value="" {% if not object %}required{% endif %} autocomplete="new-password">
                                         <div class="input-group-text border-start bg-gray-2 c-pointer show-pass" data-target="passwordInput"> <i class="feather-eye"></i> </div>
                                     </div>
                                     <div class="password-strength" id="passwordStrength">
@@ -678,12 +565,12 @@
                             </div>
                             <div class="row mb-4 align-items-center">
                                 <div class="col-lg-4">
-                                    <label for="confirmPasswordInput" class="fw-semibold required-field">Password Confirm</label>
+                                    <label for="confirmPasswordInput" class="fw-semibold {% if not object %}required-field{% endif %}">Password Confirm</label>
                                 </div>
                                 <div class="col-lg-8 generate-pass">
                                     <div class="input-group field">
                                         <div class="input-group-text"><i class="feather-key"></i></div>
-                                        <input type="password" name="confirm_password" class="form-control" id="confirmPasswordInput" placeholder="Confirm Password" {% if not object %}required{% endif %}>
+                                        <input type="password" name="confirm_password" class="form-control" id="confirmPasswordInput" placeholder="{% if object %}Leave blank to keep current password{% else %}Confirm Password{% endif %}" value="" {% if not object %}required{% endif %} autocomplete="new-password">
                                         <div class="input-group-text border-start bg-gray-2 c-pointer show-pass" data-target="confirmPasswordInput"> <i class="feather-eye"></i> </div>
                                     </div>
                                     <div class="error-message" id="confirmPasswordError">Passwords do not match.</div>
@@ -720,14 +607,12 @@ document.addEventListener('DOMContentLoaded', function () {
         fileInput.addEventListener('change', function (e) {
             const file = e.target.files[0];
             if (file) {
-                // Validate file size (2MB max)
                 if (file.size > 2 * 1024 * 1024) {
                     alert('File size exceeds 2MB. Please choose a smaller image.');
                     this.value = '';
                     return;
                 }
                 
-                // Validate file type
                 const validTypes = ['image/png', 'image/jpg', 'image/jpeg'];
                 if (!validTypes.includes(file.type)) {
                     alert('Please upload a valid image file (PNG, JPG, JPEG).');
@@ -744,16 +629,11 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Account status toggle - default to active
+    // Account status toggle
     const activeToggle = document.querySelector('input[name="is_active"]');
     const activeLabel = activeToggle ? activeToggle.closest('.form-check')?.querySelector('.form-check-label') : null;
 
     if (activeToggle && activeLabel) {
-        // Set default to active if creating new user
-        if (!activeToggle.value && !document.querySelector('input[name="is_active"][value]')) {
-            activeToggle.checked = true;
-        }
-        
         const syncActiveLabel = function () {
             activeLabel.textContent = activeToggle.checked ? 'Active' : 'Inactive';
         };
@@ -796,19 +676,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 number: /[0-9]/.test(password)
             };
 
-            // Update hints
             updateHint(lengthHint, hints.length);
             updateHint(lowercaseHint, hints.lowercase);
             updateHint(uppercaseHint, hints.uppercase);
             updateHint(numberHint, hints.number);
 
-            // Calculate strength
             if (hints.length) strength++;
             if (hints.lowercase) strength++;
             if (hints.uppercase) strength++;
             if (hints.number) strength++;
 
-            // Update strength bars
             strengthBars.forEach((bar, index) => {
                 if (index < strength) {
                     bar.className = 'password-strength-bar';
@@ -824,12 +701,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
 
-            // Validate password
             const isValid = strength === 4;
             this.classList.toggle('is-valid', isValid && this.value.length > 0);
             this.classList.toggle('is-invalid', this.value.length > 0 && !isValid);
             
-            // Check confirm password match
             if (confirmPasswordInput && confirmPasswordInput.value) {
                 checkPasswordMatch();
             }
@@ -843,7 +718,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Password match validation
     if (confirmPasswordInput) {
         confirmPasswordInput.addEventListener('input', checkPasswordMatch);
         passwordInput.addEventListener('input', checkPasswordMatch);
@@ -918,8 +792,14 @@ document.addEventListener('DOMContentLoaded', function () {
     // Validate phone
     const phoneInput = document.getElementById('phoneInput');
     if (phoneInput) {
+        phoneInput.addEventListener('keypress', function(e) {
+            if (!/^[0-9]$/.test(e.key)) {
+                e.preventDefault();
+            }
+        });
+        
         validateField(phoneInput, 'phoneError', function(value) {
-            return /^\+?[0-9]{7,15}$/.test(value);
+            return /^[0-9]{10}$/.test(value);
         });
     }
 
@@ -927,122 +807,20 @@ document.addEventListener('DOMContentLoaded', function () {
     const employeeCodeInput = document.getElementById('employee_codeInput');
     if (employeeCodeInput) {
         validateField(employeeCodeInput, 'employeeCodeError', function(value) {
+            if (value.length === 0) return true;
             return /^[A-Za-z0-9\-_]{3,20}$/.test(value);
         });
     }
 
-    // Location assignment sync with validation
-    function syncAssignmentCards() {
-        const plantCheckboxes = Array.from(document.querySelectorAll('input[name="assigned_plants"]'));
-        const zoneCheckboxes = Array.from(document.querySelectorAll('input[name="assigned_zones"]'));
-        const locationCheckboxes = Array.from(document.querySelectorAll('input[name="assigned_locations"]'));
-        const sublocationCheckboxes = Array.from(document.querySelectorAll('input[name="assigned_sublocations"]'));
-
-        const selectedPlantIds = new Set(plantCheckboxes.filter((checkbox) => checkbox.checked).map((checkbox) => checkbox.value));
-        const selectedZoneIds = new Set();
-        const selectedLocationIds = new Set();
-
-        // Update plant validation
-        const hasPlantSelected = selectedPlantIds.size > 0;
-        document.getElementById('plantError').classList.toggle('show', !hasPlantSelected);
-        document.getElementById('plantPanel').classList.toggle('border-danger', !hasPlantSelected);
-
-        zoneCheckboxes.forEach((checkbox) => {
-            const card = checkbox.closest('.assignment-node');
-            const block = checkbox.closest('.assignment-child-block');
-            const enabled = selectedPlantIds.has(card.dataset.parentPlantId);
-
-            checkbox.disabled = !enabled;
-            if (!enabled) {
-                checkbox.checked = false;
-            }
-
-            card.classList.toggle('is-disabled', !enabled);
-            card.classList.toggle('is-selected', checkbox.checked);
-            card.hidden = !enabled;
-            if (block) {
-                block.hidden = !enabled;
-            }
-
-            if (checkbox.checked) {
-                selectedZoneIds.add(checkbox.value);
-            }
-        });
-
-        const hasVisibleZones = zoneCheckboxes.some((checkbox) => !checkbox.closest('.assignment-node').hidden);
-        document.querySelectorAll('[data-empty-for="zones"]').forEach(function (emptyState) {
-            emptyState.hidden = hasVisibleZones;
-        });
-
-        locationCheckboxes.forEach((checkbox) => {
-            const card = checkbox.closest('.assignment-node');
-            const block = checkbox.closest('.assignment-child-block');
-            const enabled = selectedZoneIds.has(card.dataset.parentZoneId);
-
-            checkbox.disabled = !enabled;
-            if (!enabled) {
-                checkbox.checked = false;
-            }
-
-            card.classList.toggle('is-disabled', !enabled);
-            card.classList.toggle('is-selected', checkbox.checked);
-            card.hidden = !enabled;
-            if (block) {
-                block.hidden = !enabled;
-            }
-
-            if (checkbox.checked) {
-                selectedLocationIds.add(checkbox.value);
-            }
-        });
-
-        const hasVisibleLocations = locationCheckboxes.some((checkbox) => !checkbox.closest('.assignment-node').hidden);
-        document.querySelectorAll('[data-empty-for="locations"]').forEach(function (emptyState) {
-            emptyState.hidden = hasVisibleLocations;
-        });
-
-        sublocationCheckboxes.forEach((checkbox) => {
-            const card = checkbox.closest('.assignment-node');
-            const block = checkbox.closest('.assignment-child-block');
-            const enabled = selectedLocationIds.has(card.dataset.parentLocationId);
-
-            checkbox.disabled = !enabled;
-            if (!enabled) {
-                checkbox.checked = false;
-            }
-
-            card.classList.toggle('is-disabled', !enabled);
-            card.classList.toggle('is-selected', checkbox.checked);
-            card.hidden = !enabled;
-            if (block) {
-                block.hidden = !enabled;
-            }
-        });
-
-        const hasVisibleSublocations = sublocationCheckboxes.some((checkbox) => !checkbox.closest('.assignment-node').hidden);
-        document.querySelectorAll('[data-empty-for="sublocations"]').forEach(function (emptyState) {
-            emptyState.hidden = hasVisibleSublocations;
-        });
-
-        plantCheckboxes.forEach((checkbox) => {
-            const card = checkbox.closest('.assignment-node');
-            card.classList.toggle('is-selected', checkbox.checked);
-        });
-    }
-
-    document.querySelectorAll('.assignment-input').forEach(function (checkbox) {
-        checkbox.addEventListener('change', syncAssignmentCards);
-    });
-
+    // Plants selection
     document.querySelectorAll('[data-select-all]').forEach(function (button) {
         button.addEventListener('click', function () {
             const fieldName = this.dataset.selectAll;
             document.querySelectorAll(`input[name="${fieldName}"]`).forEach(function (checkbox) {
-                if (!checkbox.disabled) {
-                    checkbox.checked = true;
-                }
+                checkbox.checked = true;
+                checkbox.closest('.assignment-node').classList.add('is-selected');
             });
-            syncAssignmentCards();
+            validatePlants();
         });
     });
 
@@ -1051,12 +829,27 @@ document.addEventListener('DOMContentLoaded', function () {
             const fieldName = this.dataset.deselectAll;
             document.querySelectorAll(`input[name="${fieldName}"]`).forEach(function (checkbox) {
                 checkbox.checked = false;
+                checkbox.closest('.assignment-node').classList.remove('is-selected');
             });
-            syncAssignmentCards();
+            validatePlants();
         });
     });
 
-    syncAssignmentCards();
+    document.querySelectorAll('input[name="assigned_plants"]').forEach(function (checkbox) {
+        checkbox.addEventListener('change', function () {
+            this.closest('.assignment-node').classList.toggle('is-selected', this.checked);
+            validatePlants();
+        });
+    });
+
+    function validatePlants() {
+        const plantCheckboxes = document.querySelectorAll('input[name="assigned_plants"]');
+        const isPlantSelected = Array.from(plantCheckboxes).some(cb => cb.checked);
+        document.getElementById('plantError').classList.toggle('show', !isPlantSelected);
+        document.getElementById('plantPanel').classList.toggle('border-danger', !isPlantSelected);
+    }
+
+    validatePlants();
 
     // Form submission validation
     const userForm = document.getElementById('userForm');
@@ -1067,7 +860,6 @@ document.addEventListener('DOMContentLoaded', function () {
             let isValid = true;
             let errorMessages = [];
 
-            // Validate all required fields
             const requiredFields = userForm.querySelectorAll('[required]');
             requiredFields.forEach(function (field) {
                 if (!field.value.trim()) {
@@ -1078,15 +870,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (errorElement) {
                         errorElement.classList.add('show');
                     }
-                    errorMessages.push(`${field.previousElementSibling?.textContent || field.placeholder || 'Field'} is required`);
+                    const label = field.closest('.row')?.querySelector('label');
+                    errorMessages.push(`${label?.textContent?.replace('*', '').trim() || field.placeholder || 'Field'} is required`);
                 } else {
                     field.classList.remove('is-invalid');
-                    // Trigger validation
                     field.dispatchEvent(new Event('input'));
                 }
             });
 
-            // Validate plant selection
             const plantCheckboxes = document.querySelectorAll('input[name="assigned_plants"]');
             const isPlantSelected = Array.from(plantCheckboxes).some(cb => cb.checked);
             if (!isPlantSelected) {
@@ -1096,39 +887,34 @@ document.addEventListener('DOMContentLoaded', function () {
                 errorMessages.push('Please select at least one plant.');
             }
 
-            // Validate password for new users
-            if (!document.querySelector('input[name="is_active"][value]')) { // New user
-                const password = document.getElementById('passwordInput');
-                if (password && password.value.length < 8) {
-                    isValid = false;
-                    password.classList.add('is-invalid');
-                    document.getElementById('passwordError').classList.add('show');
-                    errorMessages.push('Password must be at least 8 characters long.');
-                }
+            // ✅ CORRECTED: Only validate password if it has a value
+            const isEditMode = document.querySelector('input[name="is_active"][value]');
+            const password = document.getElementById('passwordInput');
+            
+            if (password && password.value.length > 0 && password.value.length < 8) {
+                isValid = false;
+                password.classList.add('is-invalid');
+                document.getElementById('passwordError').classList.add('show');
+                errorMessages.push('Password must be at least 8 characters long.');
             }
 
-            // Validate password match
-            const password = document.getElementById('passwordInput');
+            // ✅ Check password match only if password is entered
             const confirmPassword = document.getElementById('confirmPasswordInput');
-            if (password && confirmPassword && password.value) {
-                if (password.value !== confirmPassword.value) {
-                    isValid = false;
-                    confirmPassword.classList.add('is-invalid');
-                    document.getElementById('confirmPasswordError').classList.add('show');
-                    errorMessages.push('Passwords do not match.');
-                }
+            if (password && confirmPassword && password.value && password.value !== confirmPassword.value) {
+                isValid = false;
+                confirmPassword.classList.add('is-invalid');
+                document.getElementById('confirmPasswordError').classList.add('show');
+                errorMessages.push('Passwords do not match.');
             }
 
             if (!isValid) {
                 event.preventDefault();
-                // Show error summary
                 const errorSummary = document.createElement('div');
                 errorSummary.className = 'alert alert-danger';
                 errorSummary.innerHTML = '<strong>Please correct the following errors:</strong><ul>' + 
                     errorMessages.map(msg => `<li>${msg}</li>`).join('') + 
                     '</ul>';
                 
-                // Remove existing error summary
                 const existingError = userForm.querySelector('.alert-danger');
                 if (existingError) {
                     existingError.remove();
@@ -1136,7 +922,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 
                 userForm.insertBefore(errorSummary, userForm.firstChild);
                 
-                // Scroll to first error
                 const firstInvalid = userForm.querySelector('.is-invalid');
                 if (firstInvalid) {
                     firstInvalid.focus();
@@ -1145,7 +930,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            // Disable submit button to prevent double submission
             submitButton.disabled = true;
             submitButton.classList.add('disabled');
             const labelSpan = submitButton.querySelector('span');
@@ -1155,14 +939,12 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Remove error summary when user starts typing
     document.querySelectorAll('input, select, textarea').forEach(function (element) {
         element.addEventListener('input', function() {
             const errorSummary = document.querySelector('.alert-danger');
             if (errorSummary) {
                 errorSummary.remove();
             }
-            // Remove border danger from plant panel
             document.getElementById('plantPanel')?.classList.remove('border-danger');
         });
     });

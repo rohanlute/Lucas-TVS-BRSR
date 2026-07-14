@@ -28,24 +28,35 @@ from django.conf import settings
 # ============= LOGIN ===========================
 # -----------------------------------------------
 
-class LoginView(View):
+# accounts/views.py
+from django.contrib.auth import authenticate, login
+from django.utils import timezone
+from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.views import View
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
+
+class LoginView(View):
     template_name = 'base/login.html'
 
     def get(self, request):
-        return render(request,self.template_name)
+        return render(request, self.template_name)
 
     def post(self, request):
-
         username = (request.POST.get('username') or '').strip()
         password = request.POST.get('password')
+        
         if '@' in username:
             try:
                 user_obj = User.objects.get(email__iexact=username)
                 username = user_obj.username
             except User.DoesNotExist:
                 pass
-        user = authenticate(request,username=username,password=password)
+        
+        user = authenticate(request, username=username, password=password)
+        
         if user:
             if not user.is_active:
                 messages.error(
@@ -54,9 +65,20 @@ class LoginView(View):
                 )
                 return render(request, self.template_name)
 
-            login(request,user)
+            # Login the user
+            login(request, user)
+            
+            # ✅ Update user's last_login
+            user.last_login = timezone.now()
             user.is_online = True
-            user.save()
+            user.save(update_fields=['last_login', 'is_online'])
+            
+            # ✅ Update company's last_login (if user is a company admin)
+            if user.is_company_user and user.company:
+                user.company.last_login = user.last_login
+                user.company.save(update_fields=['last_login'])
+            
+            messages.success(request, f'Welcome back, {user.get_full_name() or user.username}!')
             return redirect('accounts:dashboard')
 
         inactive_user = User.objects.filter(username=username).only('is_active').first()
@@ -67,10 +89,8 @@ class LoginView(View):
             )
             return render(request, self.template_name)
 
-        messages.error(request,'Invalid Username or Password')
-
-        return render(request,self.template_name)
-
+        messages.error(request, 'Invalid Username or Password')
+        return render(request, self.template_name)
 
 # -----------------------------------------------
 # ============= LOGOUT ==========================
@@ -487,11 +507,12 @@ class UserLocationAssignmentMixin:
 # -----------------------------------------------
 # ============= USER LIST =======================
 # -----------------------------------------------
+
 class UserListView(LoginRequiredMixin, ListView):
     model = User
     template_name = 'accounts/user_management/user_list.html'
     context_object_name = 'users'
-    paginate_by = 10  # Add pagination
+    paginate_by = 10
 
     def get_queryset(self):
         user = self.request.user
@@ -499,19 +520,17 @@ class UserListView(LoginRequiredMixin, ListView):
             'role', 'company', 'department'
         ).order_by('-id')
 
-        # Filter by company for non-super admins
+        # ✅ Show only users from the same company (if not superadmin)
         if not user.is_super_admin:
             queryset = queryset.filter(company=user.company)
 
-        # Apply filters
         search = self.request.GET.get('search', '').strip()
         status = self.request.GET.get('status', '').strip()
         role = self.request.GET.get('role', '').strip()
 
-        # Apply role filter only if specified
+        # Apply role filter if specified
         if role:
             queryset = queryset.filter(role_id=role)
-        # Remove the else block that filters by SUPERADMIN
 
         if search:
             queryset = queryset.filter(
@@ -531,32 +550,34 @@ class UserListView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         
-        # Get all roles for filter dropdown
-        context['roles'] = Role.objects.order_by('role_name')
+        # ✅ Exclude SUPERADMIN from filter dropdown
+        context['roles'] = Role.objects.exclude(role_code='SUPERADMIN').order_by('role_name')
+        
         context['selected_status'] = self.request.GET.get('status', '')
         context['selected_role'] = self.request.GET.get('role', '')
         
-        # Get the filtered queryset for counts
+        # Get counts from the queryset
         users = self.get_queryset()
         context['total_users_count'] = users.count()
         context['active_users_count'] = users.filter(is_active=True).count()
         
         return context
-
-
+# accounts/views.py
 class UserCreateView(UserLocationAssignmentMixin, LoginRequiredMixin, CreateView):
-
     model = User
-
     form_class = UserCreateForm
-
     template_name = ('accounts/user_management/user_create.html')
-
     success_url = reverse_lazy('accounts:user_list')
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         form.fields['is_active'].initial = False
+        
+        # ✅ Remove SUPERADMIN from role choices
+        if 'role' in form.fields:
+            form.fields['role'].queryset = Role.objects.exclude(role_code='SUPERADMIN')
+        
+        # ✅ Configure company field
         self.configure_company_field(form)
         if self.request.user.is_super_admin:
             form.fields['role'].queryset = Role.objects.order_by('role_name')
@@ -565,22 +586,36 @@ class UserCreateView(UserLocationAssignmentMixin, LoginRequiredMixin, CreateView
 
         return form
 
+    def get_initial(self):
+        initial = super().get_initial()
+        # ✅ For new users, set all fields to empty
+        if not self.object:
+            initial['username'] = ''
+            initial['password'] = ''
+            initial['confirm_password'] = ''
+            initial['full_name'] = ''
+            initial['email'] = ''
+            initial['mobile_number'] = ''
+            initial['designation'] = ''
+            initial['employee_code'] = ''
+        return initial
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context.update(self.get_assignment_context())
         return context
 
-    
-
     def form_valid(self, form):
-
         with transaction.atomic():
             user = form.save(commit=False)
 
             if self.request.FILES.get('profile_image'):
                 user.profile_image = self.request.FILES.get('profile_image')
 
-            user.set_password(form.cleaned_data['password'])
+            # ✅ Set password only if provided
+            password = form.cleaned_data.get('password')
+            if password:
+                user.set_password(password)
 
             if self.can_choose_company():
                 company = form.cleaned_data.get('company')
@@ -596,71 +631,96 @@ class UserCreateView(UserLocationAssignmentMixin, LoginRequiredMixin, CreateView
                 user.company = company
 
             user.is_company_user = False
-
             user.save()
             self.sync_user_assignments(user)
 
             login_url = self.request.build_absolute_uri(reverse_lazy('accounts:login'))
             transaction.on_commit(lambda: EmailService.send_user_created_email(user, login_url=login_url))
 
-        messages.success(
-            self.request,
-            'User created successfully.'
-        )
-
-        return redirect(
-            self.success_url
-        )
+        messages.success(self.request, 'User created successfully.')
+        return redirect(self.success_url)
 
     def form_invalid(self, form):
-
         print(form.errors)
-
         return super().form_invalid(form)
-    
 
 class UserUpdateView(UserLocationAssignmentMixin, LoginRequiredMixin, UpdateView):
-
     model = User
-
     form_class = UserCreateForm
-
     template_name = ('accounts/user_management/user_create.html')
-
     success_url = reverse_lazy('accounts:user_list')
 
     def get_context_data(self, **kwargs):
-
         context = super().get_context_data(**kwargs)
-
         context['page_title'] = 'Edit User'
         context.update(self.get_assignment_context(self.object))
-
         return context
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
-        form.fields['is_active'].initial = False
+        
+        # ✅ Password is optional for updates
+        form.fields['password'].required = False
+        form.fields['confirm_password'].required = False
+        form.fields['password'].help_text = "Leave blank to keep current password"
+        form.fields['confirm_password'].help_text = "Leave blank to keep current password"
+        
+        # ✅ Configure company field
         self.configure_company_field(form)
-
-        if self.request.user.is_super_admin:
-            form.fields['role'].queryset = Role.objects.order_by('role_name')
-        else:
-            form.fields['role'].queryset = Role.objects.exclude(role_code='SUPERADMIN').order_by('role_name')
-
+        
+        # ✅ Ensure all fields are populated with existing data
+        if self.object:
+            form.fields['username'].initial = self.object.username
+            form.fields['full_name'].initial = self.object.full_name
+            form.fields['email'].initial = self.object.email
+            form.fields['mobile_number'].initial = self.object.mobile_number
+            form.fields['designation'].initial = self.object.designation
+            form.fields['employee_code'].initial = self.object.employee_code
+            form.fields['is_active'].initial = self.object.is_active
+            form.fields['role'].initial = self.object.role_id
+            form.fields['department'].initial = self.object.department_id
+            form.fields['company'].initial = self.object.company_id
+            
+            # ✅ Set profile image if exists
+            if self.object.profile_image:
+                form.fields['profile_image'].initial = self.object.profile_image
+        
         return form
+
+    def get_initial(self):
+        initial = super().get_initial()
+        
+        # ✅ Populate initial data from the user instance
+        if self.object:
+            initial['username'] = self.object.username
+            initial['full_name'] = self.object.full_name
+            initial['email'] = self.object.email
+            initial['mobile_number'] = self.object.mobile_number
+            initial['designation'] = self.object.designation
+            initial['employee_code'] = self.object.employee_code
+            initial['is_active'] = self.object.is_active
+            initial['role'] = self.object.role_id
+            initial['department'] = self.object.department_id
+            initial['company'] = self.object.company_id
+            initial['password'] = ''
+            initial['confirm_password'] = ''
+        
+        return initial
 
     def form_valid(self, form):
         with transaction.atomic():
             user = form.save(commit=False)
 
+            # ✅ Handle profile image
             if self.request.FILES.get('profile_image'):
                 user.profile_image = self.request.FILES.get('profile_image')
 
+            # ✅ Only update password if provided
             password = (form.cleaned_data.get('password') or '').strip()
             if password:
                 user.set_password(password)
 
+            # ✅ Handle company assignment
             if self.can_choose_company():
                 company = form.cleaned_data.get('company')
                 if company is None:
@@ -679,6 +739,10 @@ class UserUpdateView(UserLocationAssignmentMixin, LoginRequiredMixin, UpdateView
 
         messages.success(self.request, 'User updated successfully.')
         return redirect(self.success_url)
+
+    def form_invalid(self, form):
+        print(form.errors)
+        return super().form_invalid(form)
 
 
 class UserDetailView(LoginRequiredMixin, DetailView):

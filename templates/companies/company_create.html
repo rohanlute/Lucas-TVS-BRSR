@@ -87,22 +87,24 @@
                             <li class="nav-item flex-fill border-top" role="presentation">
                                 <a href="javascript:void(0);" class="nav-link active" data-bs-toggle="tab" data-bs-target="#companydetailTab" role="tab">Company Details</a>
                             </li>
+                            
+                            {% if is_superadmin %}
                             <li class="nav-item flex-fill border-top" role="presentation">
                                 <a href="javascript:void(0);" class="nav-link" data-bs-toggle="tab" data-bs-target="#profileTab" role="tab">Profile</a>
                             </li>
                             <li class="nav-item flex-fill border-top" role="presentation">
                                 <a href="javascript:void(0);" class="nav-link" data-bs-toggle="tab" data-bs-target="#passwordTab" role="tab">Password</a>
                             </li>
+                            {% endif %}
+                            
                             <li class="nav-item flex-fill border-top" role="presentation">
                                 <a href="javascript:void(0);" class="nav-link" data-bs-toggle="tab" data-bs-target="#billingTab" role="tab">Billing & Shipping</a>
-                            </li>
-                            <li class="nav-item flex-fill border-top" role="presentation">
-                                <a href="javascript:void(0);" class="nav-link" data-bs-toggle="tab" data-bs-target="#module_accessTab" role="tab">Module Access</a>
                             </li>
                         </ul>
                     </div>
 
                     <div class="tab-content">
+                        <!-- Company Details Tab - Always Visible -->
                         <div class="tab-pane fade show active" id="companydetailTab" role="tabpanel">
                             <div class="card-body personal-info">
                                 <div class="mb-4 d-flex align-items-center justify-content-between">
@@ -112,6 +114,7 @@
                                     </h5>
                                 </div>
 
+                                <!-- Company Logo -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">
                                         <label class="fw-semibold">Company Logo: </label>
@@ -126,12 +129,6 @@
                                                 {% endif %}
                                                 {{ form.company_logo }}
                                             </div>
-                                            <div class="d-flex flex-column gap-1">
-                                                <div class="fs-11 text-gray-500 mt-2"># Upload your prifile</div>
-                                                <div class="fs-11 text-gray-500"># Avatar size 150x150</div>
-                                                <div class="fs-11 text-gray-500"># Max upload size 2mb</div>
-                                                <div class="fs-11 text-gray-500"># Allowed file types: png, jpg, jpeg</div>
-                                            </div>
                                         </div>
                                         {% if form.company_logo.errors %}
                                             <div class="invalid-feedback d-block">{{ form.company_logo.errors|striptags }}</div>
@@ -139,6 +136,7 @@
                                     </div>
                                 </div>
 
+                                <!-- Company Name -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">
                                         <label for="{{ form.company_name.id_for_label }}" class="fw-semibold">Company: </label>
@@ -154,6 +152,7 @@
                                     </div>
                                 </div>
 
+                                <!-- Company Email -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">
                                         <label for="{{ form.email.id_for_label }}" class="fw-semibold">Company Email: </label>
@@ -169,6 +168,7 @@
                                     </div>
                                 </div>
 
+                                <!-- Mobile Number -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">
                                         <label for="{{ form.mobile_number.id_for_label }}" class="fw-semibold">Office Number: </label>
@@ -184,6 +184,7 @@
                                     </div>
                                 </div>
 
+                                <!-- Website -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">
                                         <label for="{{ form.website.id_for_label }}" class="fw-semibold">Website: </label>
@@ -198,7 +199,50 @@
                                         {% endif %}
                                     </div>
                                 </div>
+                                
+                                <!-- CIN Number -->
+                                <div class="row mb-4 align-items-center">
+                                    <div class="col-lg-4">
+                                        <label for="{{ form.cin_number.id_for_label }}" class="fw-semibold">CIN Number: </label>
+                                    </div>
+                                    <div class="col-lg-8">
+                                        <div class="input-group">
+                                            <div class="input-group-text">
+                                                <i class="feather-hash"></i>
+                                            </div>
+                                            {{ form.cin_number }}
+                                        </div>
+                                        {% if form.cin_number.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.cin_number.errors|striptags }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
 
+                                <!-- Date of Incorporation -->
+                                <div class="row mb-4 align-items-center">
+                                    <div class="col-lg-4">
+                                        <label for="{{ form.date_of_incorporation.id_for_label }}" class="fw-semibold">
+                                            Date of Incorporation:
+                                        </label>
+                                    </div>
+                                    <div class="col-lg-8">
+                                        <div class="input-group">
+                                            <div class="input-group-text">
+                                                <i class="feather-calendar"></i>
+                                            </div>
+                                            {{ form.date_of_incorporation }}
+                                        </div>
+                                        {% if form.date_of_incorporation.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.date_of_incorporation.errors|striptags }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- GST Number -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">
                                         <label for="{{ form.gst_number.id_for_label }}" class="fw-semibold">GST Number: </label>
@@ -214,6 +258,7 @@
                                     </div>
                                 </div>
 
+                                <!-- About Company -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">
                                         <label for="{{ form.about_company.id_for_label }}" class="fw-semibold">About Company: </label>
@@ -229,6 +274,28 @@
                                     </div>
                                 </div>
 
+                                <!-- Listed Company -->
+                                <div class="row mb-4 align-items-center">
+                                    <div class="col-lg-4">
+                                        <label class="fw-semibold">Listed Company: </label>
+                                    </div>
+                                    <div class="col-lg-8">
+                                        <div class="form-check form-switch">
+                                            {{ form.listed_company }}
+                                            <label class="form-check-label ms-2" for="{{ form.listed_company.id_for_label }}">
+                                                Active
+                                            </label>
+                                            <span class="text-muted fs-12">(Required for BRSR Applicability)</span>
+                                        </div>
+                                        {% if form.listed_company.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.listed_company.errors|striptags }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Status -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">
                                         <label class="fw-semibold">Status: </label>
@@ -246,6 +313,8 @@
                             </div>
                         </div>
 
+                        <!-- Profile Tab - Only for Superadmin -->
+                        {% if is_superadmin %}
                         <div class="tab-pane fade" id="profileTab" role="tabpanel">
                             <div class="card-body personal-info">
                                 <div class="mb-4 d-flex align-items-center justify-content-between">
@@ -254,6 +323,8 @@
                                         <span class="fs-12 fw-normal text-muted text-truncate-1-line">Following information is publicly displayed, be careful! </span>
                                     </h5>
                                 </div>
+                                
+                                <!-- Profile Avatar -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">
                                         <label class="fw-semibold">Avatar: </label>
@@ -261,23 +332,18 @@
                                     <div class="col-lg-8">
                                         <div class="mb-4 mb-md-0 d-flex gap-4 your-brand">
                                             <div class="wd-100 ht-100 position-relative overflow-hidden border border-gray-2 rounded">
-                                            {% if form.profile_image.value %}
-                                                <img src="{{ form.profile_image.value.url }}" class="upload-pic img-fluid rounded h-100 w-100" alt="Profile Image">
-                                            {% else %}
-                                                <img src="{% static 'images/company-logo-placeholder.svg' %}" class="upload-pic img-fluid rounded h-100 w-100"alt="Company Logo">
-                                            {% endif %}
-
-                                            <input name="profile_image" type="file" accept="image/*" class="file-upload position-absolute top-0 start-0 w-100 h-100" style="opacity:0;cursor:pointer;z-index:100;">
-                                        </div>
-                                            <div class="d-flex flex-column gap-1">
-                                                <div class="fs-11 text-gray-500 mt-2"># Upload your profile</div>
-                                                <div class="fs-11 text-gray-500"># Avatar size 150x150</div>
-                                                <div class="fs-11 text-gray-500"># Max upload size 2mb</div>
-                                                <div class="fs-11 text-gray-500"># Allowed file types: png, jpg, jpeg</div>
+                                                {% if form.profile_image.value %}
+                                                    <img src="{{ form.profile_image.value.url }}" class="upload-pic img-fluid rounded h-100 w-100" alt="Profile Image">
+                                                {% else %}
+                                                    <img src="{% static 'images/company-logo-placeholder.svg' %}" class="upload-pic img-fluid rounded h-100 w-100" alt="Company Logo">
+                                                {% endif %}
+                                                <input name="profile_image" type="file" accept="image/*" class="file-upload position-absolute top-0 start-0 w-100 h-100" style="opacity:0;cursor:pointer;z-index:100;">
                                             </div>
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- Profile Fields -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4"><label for="fullnameInput" class="fw-semibold">Name: </label></div>
                                     <div class="col-lg-8">
@@ -301,7 +367,7 @@
                                     <div class="col-lg-8">
                                         <div class="input-group">
                                             <div class="input-group-text"><i class="feather-link-2"></i></div>
-                                            <input name="profile_username" type="url" class="form-control" id="usernameInput" placeholder="Username">
+                                            <input name="profile_username" type="text" class="form-control" id="usernameInput" placeholder="Username">
                                         </div>
                                     </div>
                                 </div>
@@ -334,7 +400,10 @@
                                 </div>
                             </div>
                         </div>
+                        {% endif %}
 
+                        <!-- Password Tab - Only for Superadmin -->
+                        {% if is_superadmin %}
                         <div class="tab-pane fade" id="passwordTab" role="tabpanel">
                             <div class="card-body pass-info">
                                 <div class="mb-4 d-flex align-items-center justify-content-between">
@@ -344,25 +413,24 @@
                                     </h5>
                                 </div>
                                 <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4"><label for="Input" class="fw-semibold">Password: </label></div>
+                                    <div class="col-lg-4"><label for="passwordInput" class="fw-semibold">Password: </label></div>
                                     <div class="col-lg-8">
                                         <div class="input-group">
                                             <div class="input-group-text"><i class="feather-key"></i></div>
                                             <input name="password" type="password" class="form-control" id="passwordInput" placeholder="Password">
-                                            <div class="input-group-text border-start bg-gray-2 c-pointer show-pass"data-target="passwordInput">
+                                            <div class="input-group-text border-start bg-gray-2 c-pointer show-pass" data-target="passwordInput">
                                                 <i class="feather-eye"></i>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4"><label for="Input" class="fw-semibold">Password Confirm: </label></div>
+                                    <div class="col-lg-4"><label for="newPassword" class="fw-semibold">Password Confirm: </label></div>
                                     <div class="col-lg-8 generate-pass">
                                         <div class="input-group field">
                                             <div class="input-group-text"><i class="feather-key"></i></div>
                                             <input name="confirm_password" type="password" class="form-control password" id="newPassword" placeholder="Password Confirm">
-                                            <div class="input-group-text border-start bg-gray-2 c-pointer show-pass"
-                                                data-target="newPassword">
+                                            <div class="input-group-text border-start bg-gray-2 c-pointer show-pass" data-target="newPassword">
                                                 <i class="feather-eye"></i>
                                             </div>
                                         </div>
@@ -416,7 +484,9 @@
                                 </div>
                             </div>
                         </div>
+                        {% endif %}
 
+                        <!-- Billing Tab - Always Visible -->
                         <div class="tab-pane fade" id="billingTab" role="tabpanel">
                             <div class="card-body pass-info">
                                 <div class="mb-4 d-flex align-items-center justify-content-between">
@@ -446,16 +516,11 @@
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4"><label class="fw-semibold">Country: </label></div>
                                     <div class="col-lg-8">
-                                        <!-- <select name="billing_country" class="form-control" data-select2-selector="country">
-                                            <option selected>United States</option>
-                                            <option>India</option>
-                                            <option>United Kingdom</option>
-                                            <option>Canada</option>
-                                        </select> -->
                                         <select name="billing_country" id="billing_country" class="form-control">
                                             <option value="">Select Country</option>
                                             {% for country in countries %}
-                                                <option value="{{ country.id }}">
+                                                <option value="{{ country.id }}"
+                                                    {% if country.name == "India" %}selected{% endif %}>
                                                     {{ country.name }}
                                                 </option>
                                             {% endfor %}
@@ -480,46 +545,26 @@
                                 </div>
                             </div>
                         </div>
-
-                        <div class="tab-pane fade" id="module_accessTab" role="tabpanel">
-                            <div class="card-body notify-activity-section">
-                                <div class="mb-4 d-flex align-items-center justify-content-between">
-                                    <h5 class="fw-bold mb-0 me-4">
-                                        <span class="d-block mb-2">Access Activity:</span>
-                                        <span class="fs-12 fw-normal text-muted text-truncate-1-line">Lookup you access activity checkup.</span>
-                                    </h5>
-                                </div>
-                                <div class="hstack justify-content-between p-4 mb-3 border border-dashed border-gray-3 rounded-1">
-                                    <div class="hstack me-4">
-                                        <div class="avatar-text"><i class="feather-briefcase"></i></div>
-                                        <div class="ms-4">
-                                            <a href="javascript:void(0);" class="fw-bold mb-1 text-truncate-1-line">BRSR</a>
-                                            <div class="fs-12 text-muted text-truncate-1-line">Business Responsibility and Sustainability Reporting for ESG compliance.</div>
-                                        </div>
-                                    </div>
-                                    <div class="form-check form-switch form-switch-sm">
-                                        <input name="module_access_brsr" value="1" class="form-check-input c-pointer" type="checkbox" id="formSwitchComment">
-                                    </div>
-                                </div>
-                                <div class="hstack justify-content-between p-4 mb-3 border border-dashed border-gray-3 rounded-1">
-                                    <div class="hstack me-4">
-                                        <div class="avatar-text"><i class="feather-briefcase"></i></div>
-                                        <div class="ms-4">
-                                            <a href="javascript:void(0);" class="fw-bold mb-1 text-truncate-1-line">GRI</a>
-                                            <div class="fs-12 text-muted text-truncate-1-line">Global sustainability reporting standards for organizational transparency.</div>
-                                        </div>
-                                    </div>
-                                    <div class="form-check form-switch form-switch-sm">
-                                        <input name="module_access_gri" value="1" class="form-check-input c-pointer" type="checkbox" id="formSwitchReplie">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    {% if form.errors %}
+    <div class="alert alert-danger">
+        <strong>Form Errors:</strong>
+        <ul>
+            {% for field, errors in form.errors.items %}
+                <li>
+                    <strong>{{ field }}:</strong>
+                    {% for error in errors %}
+                        {{ error }}
+                    {% endfor %}
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
     <!-- [ Main Content ] end -->
 </form>
 {% endblock %}
@@ -527,6 +572,7 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Password show/hide toggle
     document.querySelectorAll('.show-pass').forEach(button => {
         button.addEventListener('click', function() {
             const targetId = this.dataset.target;
@@ -544,73 +590,77 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    
     if (typeof feather !== 'undefined'){
         feather.replace();
     }
+
+    // Get the default selected country (India)
+    const defaultCountryId = $('#billing_country').val();
+    
+    // If a country is pre-selected (India), load its states on page load
+    if (defaultCountryId) {
+        loadStates(defaultCountryId);
+    }
 });
-</script>
-<script>
 
-$("#billing_country").change(function(){
-
-    let country_id = $(this).val();
-
-    $.get(
-        "/companies/get-states/" + country_id + "/",
-        function(data){
-
-            $("#billing_state").html(
-                '<option value="">Select State</option>'
-            );
-
-            $("#billing_city").html(
-                '<option value="">Select City</option>'
-            );
-
-            $.each(data, function(i, state){
-
-                $("#billing_state").append(
-
-                    '<option value="'+state.id+'">'+state.name+'</option>'
-
-                );
-
+// Function to load states
+function loadStates(countryId, selectedStateId = null) {
+    $.get("/companies/get-states/" + countryId + "/", function(data) {
+        const stateSelect = $("#billing_state");
+        stateSelect.html('<option value="">Select State</option>');
+        
+        if (data && data.length > 0) {
+            $.each(data, function(i, state) {
+                const selected = (selectedStateId && state.id == selectedStateId) ? 'selected' : '';
+                stateSelect.append('<option value="' + state.id + '" ' + selected + '>' + state.name + '</option>');
             });
-
         }
+        
+        // If a state is selected, load its cities
+        if (selectedStateId) {
+            loadCities(selectedStateId);
+        }
+    }).fail(function() {
+        console.error('Failed to load states');
+    });
+}
 
-    );
+// Function to load cities
+function loadCities(stateId, selectedCityId = null) {
+    $.get("/companies/get-cities/" + stateId + "/", function(data) {
+        const citySelect = $("#billing_city");
+        citySelect.html('<option value="">Select City</option>');
+        
+        if (data && data.length > 0) {
+            $.each(data, function(i, city) {
+                const selected = (selectedCityId && city.id == selectedCityId) ? 'selected' : '';
+                citySelect.append('<option value="' + city.id + '" ' + selected + '>' + city.name + '</option>');
+            });
+        }
+    }).fail(function() {
+        console.error('Failed to load cities');
+    });
+}
 
+// Country-State-City cascade
+$("#billing_country").change(function(){
+    let country_id = $(this).val();
+    if (country_id) {
+        loadStates(country_id);
+    } else {
+        $("#billing_state").html('<option value="">Select State</option>');
+        $("#billing_city").html('<option value="">Select City</option>');
+    }
 });
-
 
 $("#billing_state").change(function(){
-
     let state_id = $(this).val();
-
-    $.get(
-        "/companies/get-cities/" + state_id + "/",
-        function(data){
-
-            $("#billing_city").html(
-                '<option value="">Select City</option>'
-            );
-
-            $.each(data, function(i, city){
-
-                $("#billing_city").append(
-
-                    '<option value="'+city.id+'">'+city.name+'</option>'
-
-                );
-
-            });
-
-        }
-
-    );
-
+    if (state_id) {
+        loadCities(state_id);
+    } else {
+        $("#billing_city").html('<option value="">Select City</option>');
+    }
 });
-
 </script>
 {% endblock %}

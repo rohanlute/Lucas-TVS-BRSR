@@ -46,7 +46,6 @@ INSTALLED_APPS = [
     'apps.timesheets',
     'apps.organizations',
     'apps.calculator',
-    'apps.environmental',
     'apps.emission',
     # 
     'rest_framework',
@@ -98,28 +97,28 @@ STATICFILES_STORAGE = (
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 # #######Local #####
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'Lucas_TVS_BRSR_db',
-#         'USER': 'postgres',
-#         'PASSWORD': 'admin',
-#         'HOST': 'localhost',
-#         'PORT': '5432',  # use your PostgreSQL port
-#     }
-# }
-
-
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "lucas_db",
-        "USER": "lucas_user",
-        "PASSWORD": "Lucas_db_@99",
-        "HOST": "localhost",
-        "PORT": "5432",
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'Lucas_TVS_BRSR_db',
+        'USER': 'postgres',
+        'PASSWORD': 'admin',
+        'HOST': 'localhost',
+        'PORT': '5432',  # use your PostgreSQL port
     }
 }
+
+
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.postgresql",
+#         "NAME": "lucas_db",
+#         "USER": "lucas_user",
+#         "PASSWORD": "Lucas_db_@99",
+#         "HOST": "localhost",
+#         "PORT": "5432",
+#     }
+# }
 
 
 AUTH_USER_MODEL = 'accounts.User'
