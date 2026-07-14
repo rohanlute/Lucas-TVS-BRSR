@@ -1,0 +1,453 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{% if object %}Edit Workflow Configuration{% else %}Create Workflow Configuration{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .approval-configuration-editor-page .template-shell {
+        border-radius: 1.25rem;
+    }
+
+    .approval-configuration-editor-page .stage-card {
+        border: 1px solid rgba(148, 163, 184, .25);
+        border-radius: 1rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    }
+
+    .approval-configuration-editor-page .stage-card.deleted {
+        opacity: .45;
+        filter: grayscale(.25);
+    }
+
+    .approval-configuration-editor-page .stage-number {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        background: #0d6efd;
+        color: #fff;
+    }
+
+    .approval-configuration-editor-page .flow-preview {
+        position: relative;
+        padding-left: 1.25rem;
+    }
+
+    .approval-configuration-editor-page .flow-preview:before {
+        content: "";
+        position: absolute;
+        left: .45rem;
+        top: .2rem;
+        bottom: .2rem;
+        width: 2px;
+        background: linear-gradient(180deg, #0d6efd, #14b8a6);
+    }
+
+    .approval-configuration-editor-page .flow-step {
+        position: relative;
+        padding: .5rem 0 .75rem 0;
+    }
+
+    .approval-configuration-editor-page .flow-step:before {
+        content: "";
+        position: absolute;
+        left: -1.1rem;
+        top: .8rem;
+        width: .75rem;
+        height: .75rem;
+        border-radius: 999px;
+        background: #fff;
+        border: 2px solid #0d6efd;
+        box-shadow: 0 0 0 4px rgba(13, 110, 253, .08);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<form method="post">
+    {% csrf_token %}
+    <div class="approval-configuration-editor-page">
+        <div class="page-header">
+            <div class="page-header-left d-flex align-items-center">
+                <div class="page-header-title">
+                    <h5 class="m-b-10">{% if object %}Edit{% else %}Create{% endif %} Workflow Configuration</h5>
+                </div>
+                <ul class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'accounts:dashboard' %}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'organizations:dashboard' %}">Organization</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'organizations:workflow_configuration_template_list' %}">Workflow Configurations</a></li>
+                    <li class="breadcrumb-item active">{% if object %}Edit{% else %}Create{% endif %}</li>
+                </ul>
+            </div>
+            <div class="page-header-right ms-auto">
+                <div class="d-flex gap-2">
+                    <a href="{% url 'organizations:workflow_configuration_template_list' %}" class="btn btn-light-brand">
+                        <i class="feather-arrow-left me-2"></i>Back
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="feather-save me-2"></i>
+                        Save Workflow Configuration
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <div class="row g-4">
+                <div class="col-12 col-xl-4">
+                    <div class="card border-0 shadow-sm template-shell h-100">
+                        <div class="card-body">
+                            <h5 class="fw-bold mb-3">Template Details</h5>
+                            <div class="mb-3">
+                                <label class="form-label">Company</label>
+                                {{ form.company }}
+                                {% if form.company.errors %}<div class="invalid-feedback d-block">{{ form.company.errors }}</div>{% endif %}
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Framework</label>
+                                {{ form.framework }}
+                                {% if form.framework.errors %}<div class="invalid-feedback d-block">{{ form.framework.errors }}</div>{% endif %}
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Template Name</label>
+                                {{ form.name }}
+                                {% if form.name.errors %}<div class="invalid-feedback d-block">{{ form.name.errors }}</div>{% endif %}
+                            </div>
+                            <div class="form-check form-switch mt-4">
+                                {{ form.is_active }}
+                                <label class="form-check-label" for="{{ form.is_active.id_for_label }}">Active template</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-xl-8">
+                    <div class="card border-0 shadow-sm template-shell mb-4">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <h5 class="fw-bold mb-1">Approval Flow</h5>
+                                    <p class="text-muted mb-0">Each level is role-based. Drag-and-drop can be added later if needed, but this editor keeps the order contiguous automatically.</p>
+                                </div>
+                                <button type="button" class="btn btn-light-brand" id="add-stage-btn">
+                                    <i class="feather-plus me-2"></i>Add Stage
+                                </button>
+                            </div>
+
+                            {{ formset.management_form }}
+                            {% if formset.non_form_errors %}
+                            <div class="alert alert-danger">
+                                <ul class="mb-0">
+                                    {% for error in formset.non_form_errors %}
+                                    <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                            <div id="stage-list" class="d-grid gap-3">
+                            {% for stage_form in formset.forms %}
+                                {% for field in stage_form %}
+                                    {% for error in field.errors %}
+                                        <div class="text-danger small">
+                                            {{ field.label }} : {{ error }}
+                                        </div>
+                                    {% endfor %}
+                                {% endfor %}
+
+                                {% for error in stage_form.non_field_errors %}
+                                <div class="alert alert-danger">
+                                    {{ error }}
+                                </div>
+                                {% endfor %}
+                                <div class="stage-card p-3" data-stage-card>
+                                    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <span class="stage-number">{{ forloop.counter }}</span>
+                                            <div>
+                                                <div class="fw-bold">Stage {{ forloop.counter }}</div>
+                                                <div class="text-muted small">Role gate for this stage</div>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" data-remove-stage>
+                                            Remove
+                                        </button>
+                                    </div>
+
+                                    {{ stage_form.id }}
+                                    {{ stage_form.level }}
+                                    {{ stage_form.DELETE }}
+
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Label</label>
+                                            {{ stage_form.label }}
+                                            {% if stage_form.label.errors %}<div class="invalid-feedback d-block">{{ stage_form.label.errors }}</div>{% endif %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Stage Type</label>
+                                            {{ stage_form.stage_type }}
+                                            {% if stage_form.stage_type.errors %}<div class="invalid-feedback d-block">{{ stage_form.stage_type.errors }}</div>{% endif %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Role</label>
+                                            {{ stage_form.role }}
+                                            {% if stage_form.role.errors %}<div class="invalid-feedback d-block">{{ stage_form.role.errors }}</div>{% endif %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Escalation Role</label>
+                                            {{ stage_form.escalation_role }}
+                                            {% if stage_form.escalation_role.errors %}<div class="invalid-feedback d-block">{{ stage_form.escalation_role.errors }}</div>{% endif %}
+                                        </div>
+                                        <div class="col-md-4 due-days-wrapper">
+                                            <label class="form-label">Due Days</label>
+                                            {{ stage_form.due_days }}
+                                        </div>
+                                        <div class="col-md-8">
+                                            <div class="row g-2 mt-1">
+                                                <div class="col-6 col-md-3 form-check">
+                                                    {{ stage_form.can_approve }}
+                                                    <label class="form-check-label" for="{{ stage_form.can_approve.id_for_label }}">Approve</label>
+                                                </div>
+                                                <div class="col-6 col-md-3 form-check">
+                                                    {{ stage_form.can_reject }}
+                                                    <label class="form-check-label" for="{{ stage_form.can_reject.id_for_label }}">Reject</label>
+                                                </div>
+                                                <div class="col-6 col-md-3 form-check">
+                                                    {{ stage_form.can_reassign }}
+                                                    <label class="form-check-label" for="{{ stage_form.can_reassign.id_for_label }}">Reassign</label>
+                                                </div>
+                                                <div class="col-6 col-md-3 form-check">
+                                                    {{ stage_form.can_escalate }}
+                                                    <label class="form-check-label" for="{{ stage_form.can_escalate.id_for_label }}">Escalate</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% if stage_form.non_field_errors %}
+                                    <div class="alert alert-danger mt-3 mb-0">{{ stage_form.non_field_errors }}</div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+
+                            <template id="empty-stage-template">
+                                <div class="stage-card p-3" data-stage-card>
+                                    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <span class="stage-number">#</span>
+                                            <div>
+                                                <div class="fw-bold">Stage #</div>
+                                                <div class="text-muted small">Role gate for this stage</div>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" data-remove-stage>
+                                            Remove
+                                        </button>
+                                    </div>
+
+                                    {{ formset.empty_form.id }}
+                                    {{ formset.empty_form.level }}
+                                    {{ formset.empty_form.DELETE }}
+
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Label</label>
+                                            {{ formset.empty_form.label }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Stage Type</label>
+                                            {{ formset.empty_form.stage_type }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Role</label>
+                                            {{ formset.empty_form.role }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Escalation Role</label>
+                                            {{ formset.empty_form.escalation_role }}
+                                        </div>
+                                        <div class="col-md-4 due-days-wrapper">
+                                            <label class="form-label">Due Days</label>
+                                            {{ formset.empty_form.due_days }}
+                                        </div>
+                                        <div class="col-md-8">
+                                            <div class="row g-2 mt-1">
+                                                <div class="col-6 col-md-3 form-check">
+                                                    {{ formset.empty_form.can_approve }}
+                                                    <label class="form-check-label">Approve</label>
+                                                </div>
+                                                <div class="col-6 col-md-3 form-check">
+                                                    {{ formset.empty_form.can_reject }}
+                                                    <label class="form-check-label">Reject</label>
+                                                </div>
+                                                <div class="col-6 col-md-3 form-check">
+                                                    {{ formset.empty_form.can_reassign }}
+                                                    <label class="form-check-label">Reassign</label>
+                                                </div>
+                                                <div class="col-6 col-md-3 form-check">
+                                                    {{ formset.empty_form.can_escalate }}
+                                                    <label class="form-check-label">Escalate</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    {% if object and object.stages.all %}
+                    <div class="card border-0 shadow-sm template-shell">
+                        <div class="card-body">
+                            <h5 class="fw-bold mb-3">Current Flow Preview</h5>
+                            <div class="flow-preview">
+                                {% for stage in object.stages.all %}
+                                <div class="flow-step">
+                                    <div class="fw-semibold">L{{ stage.level }} · {{ stage.label }}</div>
+                                    <div class="text-muted small">{{ stage.get_stage_type_display }} · {{ stage.role.role_name }}</div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    const stageList = document.getElementById('stage-list');
+    const addButton = document.getElementById('add-stage-btn');
+    const totalFormsInput = document.getElementById('id_stages-TOTAL_FORMS');
+    const template = document.getElementById('empty-stage-template');
+
+    function toggleDueDays(card){
+        const stageType = card.querySelector('select[name$="-stage_type"]');
+        if(!stageType) return;
+        const dueWrapper = card.querySelector('.due-days-wrapper');
+        const dueInput = card.querySelector('[name$="-due_days"]');
+
+        const hideFor = ["question_assignment", "data_entry", "review"];
+        if (hideFor.includes(stageType.value)){
+            dueWrapper.style.display = "none";
+            if (dueInput){
+                dueInput.value = "";
+            }
+        }else{
+            dueWrapper.style.display = "";
+        }
+    }
+
+    function syncStageNumbers() {
+        const cards = stageList.querySelectorAll('[data-stage-card]:not(.d-none)');
+        cards.forEach((card, index) => {
+            const number = card.querySelector('.stage-number');
+            const heading = card.querySelector('.fw-bold');
+            const levelField = card.querySelector('input[name$="-level"]');
+            if (number) {
+                number.textContent = index + 1;
+            }
+            if (heading) {
+                heading.textContent = `Stage ${index + 1}`;
+            }
+            if (levelField) {
+                levelField.value = index + 1;
+            }
+        });
+        validateFinalApproval();
+    }
+
+    function wireRemoveButtons(card) {
+        const stageType = card.querySelector('select[name$="-stage_type"]');
+        if (stageType){
+            toggleDueDays(card);
+            stageType.addEventListener("change",function(){
+                toggleDueDays(card);
+                validateFinalApproval();
+            });
+        }
+        const removeButton = card.querySelector('[data-remove-stage]');
+        if (!removeButton) {
+            return;
+        }
+        removeButton.addEventListener('click', function () {
+            const deleteInput = card.querySelector('input[type="checkbox"][name$="-DELETE"]');
+            if (deleteInput) {
+                deleteInput.checked = true;
+            }
+            card.classList.add('d-none', 'deleted');
+            syncStageNumbers();
+        });
+    }
+
+    function validateFinalApproval() {
+        const cards = [...stageList.querySelectorAll('[data-stage-card]:not(.d-none)')];
+        let finalApprovalIndex = -1;
+        cards.forEach(function(card, index){
+            const stageType = card.querySelector('select[name$="-stage_type"]');
+            if(stageType && stageType.value === "final_approval"){
+                finalApprovalIndex = index;
+            }
+        });
+    cards.forEach(function(card){
+        card.classList.remove("border-danger");
+        const msg = card.querySelector(".final-stage-error");
+        if(msg){
+            msg.remove();
+        }
+    });
+
+    if(finalApprovalIndex !== -1 && finalApprovalIndex !== cards.length - 1){
+        const card = cards[finalApprovalIndex];
+        card.classList.add("border-danger");
+        card.insertAdjacentHTML(
+            "beforeend",
+            '<div class="alert alert-danger mt-3 final-stage-error">Final Approval must always be the last stage.</div>'
+        );
+    }
+}
+
+    function addStage() {
+        const formIndex = parseInt(totalFormsInput.value, 10);
+        const html = template.innerHTML.replace(/__prefix__/g, formIndex);
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = html.trim();
+        const card = wrapper.firstElementChild;
+        stageList.appendChild(card);
+        totalFormsInput.value = formIndex + 1;
+        wireRemoveButtons(card);
+        toggleDueDays(card);
+        validateFinalApproval();
+        syncStageNumbers();
+    }
+
+    stageList.querySelectorAll('[data-stage-card]').forEach(wireRemoveButtons);
+    addButton.addEventListener('click', addStage);
+    syncStageNumbers();
+})();
+</script>
+{% endblock %}

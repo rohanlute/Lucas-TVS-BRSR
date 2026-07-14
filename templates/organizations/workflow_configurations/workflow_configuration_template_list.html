@@ -1,0 +1,241 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Workflow Configurations{% endblock %}
+
+{% block extra_css %}
+<style>
+    .approval-configuration-list-page .template-card {
+        border-radius: 1.25rem;
+        overflow: hidden;
+    }
+
+    .approval-configuration-list-page .template-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+    }
+
+    .approval-configuration-list-page .stage-track {
+        position: relative;
+        padding-left: 1.5rem;
+    }
+
+    .approval-configuration-list-page .stage-track:before {
+        content: "";
+        position: absolute;
+        left: .45rem;
+        top: .3rem;
+        bottom: .3rem;
+        width: 2px;
+        background: linear-gradient(180deg, #3b82f6, #14b8a6);
+    }
+
+    .approval-configuration-list-page .stage-pill {
+        position: relative;
+        margin-bottom: .75rem;
+    }
+
+    .approval-configuration-list-page .stage-pill:before {
+        content: "";
+        position: absolute;
+        left: -1.15rem;
+        top: .45rem;
+        width: .7rem;
+        height: .7rem;
+        border-radius: 999px;
+        background: #fff;
+        border: 2px solid #3b82f6;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, .08);
+    }
+    .page-header{
+        background:#fff;
+        border-radius:14px;
+        padding:22px 24px;
+        margin-bottom:25px;
+        box-shadow:0 2px 12px rgba(0,0,0,.05);
+    }
+
+    .page-header .form-control,
+    .page-header .form-select{
+        height:46px;
+        border-radius:10px;
+    }
+
+    .page-header .btn{
+        height:46px;
+        border-radius:10px;
+        white-space:nowrap;
+    }
+
+    .page-header-title h4{
+        font-weight:700;
+    }
+
+    .breadcrumb{
+        margin-top:6px;
+    }
+
+    @media(max-width:991px){
+
+        .page-header{
+            padding:18px;
+        }
+
+        .page-header .btn{
+            width:100%;
+        }
+
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="approval-configuration-list-page">
+    <div class="page-header">
+        <div class="row w-100 align-items-center gy-3">
+
+            <!-- Left -->
+            <div class="col-lg-4">
+                <div class="page-header-title">
+                <h4 class="mb-1 fw-bold">Workflow Configurations</h4>
+                </div>
+            </div>
+
+            <!-- Right -->
+            <div class="col-lg-8">
+
+                <form method="get">
+
+                    <div class="row g-2 justify-content-end">
+
+                        <div class="col-lg-4 col-md-6">
+                            <input
+                                type="text"
+                                name="search"
+                                class="form-control"
+                                placeholder="Search templates"
+                                value="{{ search_query }}">
+                        </div>
+
+                        <div class="col-lg-3 col-md-6">
+                            <select name="company" class="form-select">
+                                <option value="">All Companies</option>
+
+                                {% for company in companies %}
+                                <option
+                                    value="{{ company.id }}"
+                                    {% if selected_company == company.id|stringformat:'s' %}selected{% endif %}>
+                                    {{ company.company_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-auto">
+                            <button class="btn btn-light-brand w-100">
+                                <i class="feather-filter me-1"></i>
+                                Filter
+                            </button>
+                        </div>
+
+                        <div class="col-auto">
+                            <a href="{% url 'organizations:workflow_configuration_template_create' %}" class="btn btn-primary">
+                                <i class="feather-plus me-2"></i>Create Template
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="row g-4">
+            {% for template in workflow_configuration_templates %}
+            <div class="col-12 col-xl-6">
+                <div class="card template-card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                            <div>
+                                <h5 class="fw-bold mb-1">{{ template.name }}</h5>
+                                <div class="text-muted">{{ template.company.company_name }} · {{ template.get_framework_display }}</div>
+                            </div>
+                            <div class="text-end">
+                                {% if template.is_active %}
+                                    <span class="badge bg-soft-success text-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-soft-secondary text-secondary">Inactive</span>
+                                {% endif %}
+                                <div class="small text-muted mt-2">{{ template.stage_count }} stage{{ template.stage_count|pluralize }}</div>
+                            </div>
+                        </div>
+
+                        <div class="template-meta mb-4">
+                            <span class="badge bg-soft-primary text-primary">Framework: {{ template.get_framework_display }}</span>
+                            <span class="badge bg-soft-info text-info">Company: {{ template.company.company_code }}</span>
+                            <span class="badge bg-soft-warning text-warning">Updated {{ template.updated_at|date:"d M Y" }}</span>
+                        </div>
+
+                        <div class="stage-track">
+                            {% for stage in template.stages.all %}
+                            <div class="stage-pill">
+                                <div class="fw-semibold">L{{ stage.level }} · {{ stage.label }}</div>
+                                <div class="text-muted small">{{ stage.get_stage_type_display }} · Role: {{ stage.role.role_name }}</div>
+                            </div>
+                            {% empty %}
+                            <div class="text-muted">No stages configured yet.</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-0 pt-0 pb-3 px-3">
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{% url 'organizations:workflow_configuration_template_edit' template.pk %}" class="btn btn-light-brand">Edit</a>
+                            <form method="post" action="{% url 'organizations:workflow_configuration_template_delete' template.pk %}" onsubmit="return confirm('Delete this workflow configuration template?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center py-5">
+                        <h5 class="fw-bold mb-2">No workflow configurations yet</h5>
+                        <p class="text-muted mb-3">Create a company-scoped workflow configuration to control workflow stages by role.</p>
+                        <a href="{% url 'organizations:workflow_configuration_template_create' %}" class="btn btn-primary">Create Template</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if is_paginated %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

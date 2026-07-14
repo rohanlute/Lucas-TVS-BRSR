@@ -1,6 +1,10 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+from django.utils import timezone
+from datetime import timedelta
 import re
 
 from ..companies.models import Country,State,City
@@ -294,3 +298,185 @@ class FinancialMonth(models.Model):
 
     def __str__(self):
         return self.month_name
+
+
+class ApprovalConfigurationTemplate(models.Model):
+    """
+    Company-scoped workflow configuration definition for configurable workflow flows.
+    """
+
+    FRAMEWORK_CHOICES = [
+        ("BRSR", "BRSR"),
+        ("GRI", "GRI"),
+        ("EMISSION", "Emission"),
+        ("OTHER", "Other"),
+    ]
+
+    company = models.ForeignKey(
+        "companies.Company",
+        on_delete=models.CASCADE,
+        related_name="workflow_configuration_templates",
+    )
+    framework = models.CharField(max_length=50, choices=FRAMEWORK_CHOICES, default="BRSR")
+    name = models.CharField(max_length=100)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["company__company_name", "framework", "name"]
+        unique_together = ("company", "framework", "name")
+
+    def __str__(self):
+        return f"{self.company} - {self.name}"
+
+    @property
+    def stage_count(self):
+        return self.stages.count()
+
+    @property
+    def first_stage(self):
+        return self.stages.order_by("level").first()
+
+
+class ApprovalConfigurationStage(models.Model):
+    STAGE_TYPE_CHOICES = [
+        ("question_assignment","Question Assignment"),
+        ("data_entry", "Data Entry"),
+        ("review", "Review"),
+        ("approval", "Approval"),
+        ("pre_final_approval", "Pre-Final Approval"),
+        ("final_approval", "Final Approval"),
+    ]
+
+    template = models.ForeignKey(ApprovalConfigurationTemplate, on_delete=models.CASCADE, related_name="stages",)
+    level = models.PositiveIntegerField()
+    label = models.CharField(max_length=100)
+    stage_type = models.CharField(max_length=20, choices=STAGE_TYPE_CHOICES)
+    role = models.ForeignKey("accounts.Role", on_delete=models.PROTECT, related_name="workflow_configuration_stages",)
+    can_approve = models.BooleanField(default=True)
+    can_reject = models.BooleanField(default=True)
+    can_reassign = models.BooleanField(default=False)
+    can_escalate = models.BooleanField(default=False)
+    due_days = models.PositiveIntegerField(null=True, blank=True)
+    escalation_role = models.ForeignKey( "accounts.Role", on_delete=models.SET_NULL, null=True, blank=True, related_name="+",)   
+
+    class Meta:
+        ordering = ["template", "level"]
+        unique_together = ("template", "level")
+
+    def __str__(self):
+        return f"{self.template.name} - L{self.level}: {self.label}"
+
+    def next_stage(self):
+        return (
+            ApprovalConfigurationStage.objects.filter(template=self.template, level__gt=self.level)
+            .order_by("level")
+            .first()
+        )
+
+    def previous_stage(self):
+        return (
+            ApprovalConfigurationStage.objects.filter(template=self.template, level__lt=self.level)
+            .order_by("-level")
+            .first()
+        )
+
+
+class ApprovalConfigurationTask(models.Model):
+
+    template = models.ForeignKey(
+        ApprovalConfigurationTemplate,
+        on_delete=models.PROTECT,
+        related_name="tasks",
+    )
+    current_stage = models.ForeignKey(
+        ApprovalConfigurationStage,
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+
+    target_content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        related_name="+",
+    )
+    target_object_id = models.PositiveIntegerField()
+    target = GenericForeignKey("target_content_type", "target_object_id")
+
+    current_assignee_content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.CASCADE,
+        related_name="+",
+    )
+    current_assignee_object_id = models.PositiveIntegerField()
+    current_assignee = GenericForeignKey(
+        "current_assignee_content_type",
+        "current_assignee_object_id",
+    )
+
+    is_completed = models.BooleanField(default=False)
+    is_returned = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["target_content_type", "target_object_id"]),
+            models.Index(fields=["current_assignee_content_type", "current_assignee_object_id"]),
+            models.Index(fields=["is_completed", "is_returned"]),
+        ]
+
+    def __str__(self):
+        return f"Task[{self.target}] @ {self.current_stage}"
+
+    @property
+    def is_overdue(self):
+        due_days = self.current_stage.due_days
+        if not due_days:
+            return False
+        return self.created_at and self.created_at + timedelta(days=due_days) < timezone.now()
+
+
+class ApprovalConfigurationTaskLog(models.Model):
+    ACTION_CHOICES = [
+        ("submit", "Submit"),
+        ("approve", "Approve"),
+        ("reject", "Reject"),
+        ("reassign", "Reassign"),
+        ("escalate", "Escalate"),
+    ]
+
+    task = models.ForeignKey(ApprovalConfigurationTask, on_delete=models.CASCADE, related_name="logs")
+    action = models.CharField(max_length=20, choices=ACTION_CHOICES)
+    from_stage = models.ForeignKey(
+        ApprovalConfigurationStage,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    to_stage = models.ForeignKey(
+        ApprovalConfigurationStage,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    actor_content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+    actor_object_id = models.PositiveIntegerField(null=True, blank=True)
+    actor = GenericForeignKey("actor_content_type", "actor_object_id")
+    remark = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.task_id} - {self.action}"

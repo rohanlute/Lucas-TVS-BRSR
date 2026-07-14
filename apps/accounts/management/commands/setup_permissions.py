@@ -130,7 +130,7 @@ class Command(BaseCommand):
         role, created = Role.objects.get_or_create(
             role_code='ESG-CHAIR',
             defaults={
-                'role_name': 'ESG Core Team — Chairperson / CXO Sponsor',
+                'role_name': 'ESG Chairperson',
                 'description': 'Overall sustainability sponsor; final sign-off before BRSR submission to Board',
                 'is_active': True
             }
@@ -153,7 +153,7 @@ class Command(BaseCommand):
         role, created = Role.objects.get_or_create(
             role_code='ESG-HEAD',
             defaults={
-                'role_name': 'ESG Core Team — Head / Manager',
+                'role_name': 'ESG Head',
                 'description': 'Owns the end-to-end BRSR report; consolidates and reviews department data',
                 'is_active': True
             }
@@ -176,7 +176,7 @@ class Command(BaseCommand):
         role, created = Role.objects.get_or_create(
             role_code='ESG-COORD',
             defaults={
-                'role_name': 'ESG Core Team — Coordinator',
+                'role_name': 'ESG Coordinator',
                 'description': 'Day-to-day data collection follow-up, reminders, and consolidation support',
                 'is_active': True
             }
@@ -198,7 +198,7 @@ class Command(BaseCommand):
         role, created = Role.objects.get_or_create(
             role_code='DEPT-APPR',
             defaults={
-                'role_name': 'Department Data Reviewer / Approver',
+                'role_name': 'Department Approver',
                 'description': 'Reviews and approves data submitted by data-entry users within the department',
                 'is_active': True
             }
@@ -220,7 +220,7 @@ class Command(BaseCommand):
         role, created = Role.objects.get_or_create(
             role_code='DEPT-USER',
             defaults={
-                'role_name': 'Department Data Owner / Contributor',
+                'role_name': 'Department User',
                 'description': 'Enters raw BRSR data points for their department/plant each reporting cycle',
                 'is_active': True
             }
@@ -242,7 +242,7 @@ class Command(BaseCommand):
         role, created = Role.objects.get_or_create(
             role_code='PLANT-COORD',
             defaults={
-                'role_name': 'Plant / Site Coordinator',
+                'role_name': 'Plant Coordinator',
                 'description': 'Single point of contact for all BRSR data originating from a specific plant',
                 'is_active': True
             }
@@ -262,9 +262,9 @@ class Command(BaseCommand):
     def create_auditor_role(self):
         """Create Auditor role"""
         role, created = Role.objects.get_or_create(
-            role_code='AUDIT',
+            role_code='AUDITOR',
             defaults={
-                'role_name': 'Internal / External Auditor (Assurance Provider)',
+                'role_name': 'Auditor',
                 'description': 'Read-only assurance access to verify data and evidence trail before submission',
                 'is_active': True
             }
@@ -279,7 +279,7 @@ class Command(BaseCommand):
         ]
         perms = Permissions.objects.filter(code__in=perm_codes)
         role.permissions.set(perms)
-        self.stdout.write(f'  ✓ {"Created" if created else "Updated"}: AUDIT role ({perms.count()} permissions)')
+        self.stdout.write(f'  ✓ {"Created" if created else "Updated"}: AUDITOR role ({perms.count()} permissions)')
 
     def create_exec_view_role(self):
         """Create Executive Viewer role"""
