@@ -11,6 +11,7 @@ from apps.accounts.models import *
 from .forms import CompanyForm
 from .models import *
 from django.db.models import Q
+from django.utils import timezone
 from django.http import JsonResponse
 from .models import State, City
 
@@ -58,6 +59,7 @@ class CompanyListView(LoginRequiredMixin, ListView):
 
 
 # ============= Company Management - Create =======================
+# companies/views.py
 class CompanyCreateView(LoginRequiredMixin, CreateView):
     model = Company
     form_class = CompanyForm
@@ -68,11 +70,12 @@ class CompanyCreateView(LoginRequiredMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["countries"] = Country.objects.filter(is_active=True).order_by("name")
+        context["is_superadmin"] = self.request.user.is_superuser
         return context
 
     def form_valid(self, form):
-        password = (self.request.POST.get('password') or '').strip()
-        confirm_password = (self.request.POST.get('confirm_password') or '').strip()
+        password = form.cleaned_data.get('password')
+        confirm_password = form.cleaned_data.get('confirm_password')
 
         if not password or not confirm_password:
             form.add_error(None, 'Password is required for the company admin.')
@@ -83,19 +86,33 @@ class CompanyCreateView(LoginRequiredMixin, CreateView):
             return self.form_invalid(form)
 
         with transaction.atomic():
-            company = form.save(commit=False)
-            company.company_code = self._generate_company_code(
-                form.cleaned_data['company_name']
-            )
-
             profile_full_name = self.request.POST.get('profile_full_name', '').strip()
             profile_email = self.request.POST.get('profile_email', '').strip()
             profile_username = self.request.POST.get('profile_username', '').strip()
             profile_phone = self.request.POST.get('profile_phone', '').strip()
             profile_designation = self.request.POST.get('profile_designation', '').strip()
             profile_about = self.request.POST.get('profile_about', '').strip()
-
+            
+            company = form.save(commit=False)
             company.contact_person = profile_full_name or company.company_name
+
+            billing_country = form.cleaned_data.get('billing_country')
+            billing_state = form.cleaned_data.get('billing_state')
+            billing_city = form.cleaned_data.get('billing_city')
+            
+            company.billing_address = form.cleaned_data.get('billing_address', '')
+            company.billing_zip_code = form.cleaned_data.get('billing_zip_code', '')
+            company.billing_country_id = billing_country.id if billing_country else None
+            company.billing_state_id = billing_state.id if billing_state else None
+            company.billing_city_id = billing_city.id if billing_city else None
+
+            company.company_code = self._generate_company_code(
+                form.cleaned_data['company_name']
+            )
+            
+            # ✅ Set initial last_login
+            company.last_login = timezone.now()
+
             company.save()
 
             role, _ = Role.objects.get_or_create(
@@ -126,35 +143,32 @@ class CompanyCreateView(LoginRequiredMixin, CreateView):
                 is_company_user=True,
             )
 
+            # ✅ Set user's last_login
+            user.last_login = timezone.now()
+            user.save(update_fields=['last_login'])
+
+            # ✅ Update company's last_login to match user (already set above)
+            company.last_login = user.last_login
+            company.save(update_fields=['last_login'])
+
             profile_image = self.request.FILES.get('profile_image')
             if profile_image:
                 user.profile_image = profile_image
                 user.save(update_fields=['profile_image'])
-            
-            company.billing_address = self.request.POST.get('billing_address', '').strip() or None
-            company.billing_zip_code = self.request.POST.get('billing_zip_code', '').strip() or None
-            company.billing_country_id = self.request.POST.get("billing_country") or None
-            company.billing_state_id = self.request.POST.get("billing_state") or None
-            company.billing_city_id = self.request.POST.get("billing_city") or None
-            company.module_access_brsr = self.request.POST.get('module_access_brsr') == '1'
-            company.module_access_gri = self.request.POST.get('module_access_gri') == '1'
-            company.save(update_fields=[
-                'contact_person',
-                'billing_address',
-                'billing_zip_code',
-                'billing_country',
-                'billing_state',
-                'billing_city',
-                'module_access_brsr',
-                'module_access_gri',
-            ])
-
+        
             self.object = company
 
         messages.success(self.request, 'Company and company admin created successfully.')
         return redirect(self.get_success_url())
 
+    def form_invalid(self, form):
+        context = self.get_context_data()
+        context['form'] = form
+        return self.render_to_response(context)
+
     def _generate_company_code(self, company_name):
+        from django.utils.text import slugify
+        
         base_code = slugify(company_name).replace('-', '').upper()[:12] or 'COMPANY'
         company_code = base_code
         suffix = 1
@@ -167,6 +181,8 @@ class CompanyCreateView(LoginRequiredMixin, CreateView):
         return company_code
 
     def _generate_company_username(self, company):
+        from django.utils.text import slugify
+        
         base_username = slugify(company.company_name).replace('-', '').lower()[:20] or 'companyadmin'
         username = base_username
         suffix = 1
@@ -189,13 +205,12 @@ class CompanyCreateView(LoginRequiredMixin, CreateView):
 
         return username
 
-
-# ============= Company Management - View =======================
 class CompanyDetailView(LoginRequiredMixin, DetailView):
     model = Company
     template_name = 'companies/company_view.html'
     context_object_name = 'company'
     login_url = 'accounts:login'
+
 
 class CompanyUpdateView(LoginRequiredMixin, UpdateView):
     template_name = 'companies/company_edit.html'
@@ -209,14 +224,68 @@ class CompanyUpdateView(LoginRequiredMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         context['company_admin'] = User.objects.filter(company=self.object, is_company_user=True).first()
         context["countries"] = Country.objects.filter(is_active=True).order_by("name")
+        
+        company = self.object
+        
+        if company.billing_country_id:
+            context["states"] = State.objects.filter(
+                country_id=company.billing_country_id,
+                is_active=True
+            ).order_by("name")
+        else:
+            context["states"] = State.objects.none()
+        
+        if company.billing_state_id:
+            context["cities"] = City.objects.filter(
+                state_id=company.billing_state_id,
+                is_active=True
+            ).order_by("name")
+        else:
+            context["cities"] = City.objects.none()
+        
+        context["billing_address"] = company.billing_address or ''
+        context["billing_zip_code"] = company.billing_zip_code or ''
+        context["billing_country_id"] = company.billing_country_id
+        context["billing_state_id"] = company.billing_state_id
+        context["billing_city_id"] = company.billing_city_id
+        
         return context
 
-    def form_valid(self,form):
-        password = (self.request.POST.get('password')or '').strip()
-        confirm_password = (self.request.POST.get('confirm_password')or '').strip()
+    def get_initial(self):
+        """Pre-populate form with existing data"""
+        initial = super().get_initial()
+        company = self.object
+        
+        initial['company_name'] = company.company_name
+        initial['email'] = company.email
+        initial['mobile_number'] = company.mobile_number
+        initial['website'] = company.website
+        initial['gst_number'] = company.gst_number
+        initial['cin_number'] = company.cin_number
+        initial['date_of_incorporation'] = company.date_of_incorporation
+        initial['contact_person'] = company.contact_person
+        initial['billing_address'] = company.billing_address
+        initial['billing_zip_code'] = company.billing_zip_code
+        initial['billing_country'] = company.billing_country_id
+        initial['billing_state'] = company.billing_state_id
+        initial['billing_city'] = company.billing_city_id
+        initial['about_company'] = company.about_company
+        initial['listed_company'] = company.listed_company
+        initial['is_active'] = company.is_active
+        
+        # ✅ Ensure password fields are always empty
+        initial['password'] = ''
+        initial['confirm_password'] = ''
+        
+        return initial
+
+    def form_valid(self, form):
+        password = (self.request.POST.get('password') or '').strip()
+        confirm_password = (self.request.POST.get('confirm_password') or '').strip()
 
         with transaction.atomic():
             company = form.save(commit=False)
+            
             profile_full_name = self.request.POST.get('profile_full_name', '').strip()
             profile_email = self.request.POST.get('profile_email', '').strip()
             profile_username = self.request.POST.get('profile_username', '').strip()
@@ -224,16 +293,20 @@ class CompanyUpdateView(LoginRequiredMixin, UpdateView):
             profile_designation = self.request.POST.get('profile_designation', '').strip()
             profile_about = self.request.POST.get('profile_about', '').strip()
 
-            company.contact_person = profile_full_name or company.company_name
+            if profile_full_name:
+                company.contact_person = profile_full_name
 
-            company.billing_address = self.request.POST.get('billing_address', '').strip() or None
-            company.billing_zip_code = self.request.POST.get('billing_zip_code', '').strip() or None
-            company.billing_country_id = self.request.POST.get("billing_country") or None
-            company.billing_state_id = self.request.POST.get("billing_state") or None
-            company.billing_city_id = self.request.POST.get("billing_city") or None
-
-            company.module_access_brsr = self.request.POST.get('module_access_brsr') == '1'
-            company.module_access_gri = self.request.POST.get('module_access_gri') == '1'
+            # Get billing data - use cleaned data from form
+            company.billing_address = form.cleaned_data.get('billing_address', '')
+            company.billing_zip_code = form.cleaned_data.get('billing_zip_code', '')
+            
+            billing_country = form.cleaned_data.get('billing_country')
+            billing_state = form.cleaned_data.get('billing_state')
+            billing_city = form.cleaned_data.get('billing_city')
+            
+            company.billing_country_id = billing_country.id if billing_country else None
+            company.billing_state_id = billing_state.id if billing_state else None
+            company.billing_city_id = billing_city.id if billing_city else None
 
             company.save()
 
@@ -245,27 +318,49 @@ class CompanyUpdateView(LoginRequiredMixin, UpdateView):
                         form.add_error('profile_username', 'This username is already taken by another user.')
                         return self.form_invalid(form)
 
-                user.full_name = profile_full_name or company.company_name
-                user.email = profile_email or company.email
-                user.mobile_number = profile_phone or company.mobile_number
-                user.designation = profile_designation or None
-                user.about = profile_about or None
+                # Update user fields
+                if profile_full_name:
+                    user.full_name = profile_full_name
+                if profile_email:
+                    user.email = profile_email
+                if profile_phone:
+                    user.mobile_number = profile_phone
+                if profile_designation:
+                    user.designation = profile_designation
+                if profile_about:
+                    user.about = profile_about
+                if profile_username:
+                    user.username = profile_username
 
+                # Update profile image if uploaded
                 profile_image = self.request.FILES.get('profile_image')
                 if profile_image:
                     user.profile_image = profile_image
                 
+                # ✅ Update password ONLY if provided
                 if password:
                     if password != confirm_password:
                         form.add_error(None, 'Password and confirm password do not match.')
                         return self.form_invalid(form)
                     user.set_password(password)
+                    # Note: set_password doesn't automatically save
+                    # We'll save below with all other changes
                 
+                # ✅ REMOVED: Manual last_login update
+                # last_login should only be updated by Django's login() function
+                # during actual user authentication
+                
+                # ✅ Save all user changes (including password if changed)
                 user.save()
             
             messages.success(self.request, 'Company and company admin updated successfully.')
             return redirect(self.get_success_url())
 
+    def form_invalid(self, form):
+        context = self.get_context_data()
+        context['form'] = form
+        return self.render_to_response(context)
+   
 class CompanyDeleteView(LoginRequiredMixin, View):
     login_url = 'accounts:login'
     def post(self, request, pk):

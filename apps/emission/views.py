@@ -1,128 +1,20 @@
 from django.views.generic import TemplateView
 from django.http import JsonResponse
 from django.views import View
-
-
-class EmissionsDashboardView(TemplateView):
-    """
-    Renders the main Carbon Emissions Dashboard page
-    (KPI cards, monthly trend, scope breakdown, by-plant chart,
-    task status, recent activity).
-    """
-    template_name = "emission/dashboard.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        context["kpis"] = [
-            {"label": "TOTAL EMISSIONS YTD", "value": 50276, "unit": "tCO2e",
-             "delta": -4.2, "accent": "green"},
-            {"label": "SCOPE 1 DIRECT", "value": 14470, "unit": "tCO2e",
-             "delta": -2.1, "accent": "teal"},
-            {"label": "SCOPE 2 INDIRECT", "value": 10266, "unit": "tCO2e",
-             "delta": -6.8, "accent": "blue"},
-            {"label": "SCOPE 3 VALUE CHAIN", "value": 25540, "unit": "tCO2e",
-             "delta": 1.3, "accent": "orange"},
-        ]
-
-        context["months"] = ["Apr", "May", "Jun", "Jul", "Aug", "Sep",
-                              "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"]
-        context["scope1_series"] = [1420, 1390, 1350, 1300, 1480, 1550,
-                                     1500, 1380, 1300, 1250, 1300, 1400]
-        context["scope2_series"] = [980, 950, 900, 870, 1000, 1050,
-                                     1000, 910, 860, 830, 870, 930]
-        context["scope3_series"] = [2450, 2380, 2300, 2250, 2500, 2600,
-                                     2550, 2300, 2200, 2150, 2250, 2400]
-
-        context["scope_breakdown"] = [
-            {"name": "Scope 1", "value": 14470, "pct": 28.8, "color": "#22c07a"},
-            {"name": "Scope 2", "value": 10266, "pct": 20.4, "color": "#17b6a7"},
-            {"name": "Scope 3", "value": 25540, "pct": 50.8, "color": "#3b6df0"},
-        ]
-
-        context["by_plant"] = [
-            {"name": "Mundra", "value": 8600},
-            {"name": "Tiroda", "value": 8100},
-            {"name": "Raipur", "value": 7300},
-            {"name": "Kawai", "value": 6600},
-            {"name": "Udupi", "value": 5900},
-        ]
-
-        context["task_status"] = {
-            "total": 142,
-            "completed": 98,
-            "pending_review": 23,
-            "overdue": 7,
-        }
-
-        context["recent_activity"] = [
-            {"status": "ok", "title": "Q3 Diesel Consumption — Mundra Plant",
-             "author": "Priya Sharma", "meta": "2h ago"},
-            {"status": "warn", "title": "Nov Grid Electricity — Tiroda Plant",
-             "author": "Rahul Mehta", "meta": "3d overdue"},
-            {"status": "pending", "title": "Business Travel — Q3 FY25",
-             "author": "Neha Gupta", "meta": "5h ago"},
-            {"status": "warn", "title": "Refrigerant Leakage — Raipur Plant",
-             "author": "Amit Singh", "meta": "1d ago"},
-            {"status": "ok", "title": "Water Withdrawal — Kawai Plant",
-             "author": "Sunita Rao", "meta": "6h ago"},
-        ]
-
-        return context
-
-
-class EmissionsDashboardDataView(View):
-    """
-    Optional JSON endpoint — same data as above, useful if the front end
-    (e.g. the Chart.js widgets) wants to fetch/refresh the dashboard via AJAX
-    instead of relying purely on server-rendered context.
-    """
-
-    def get(self, request, *args, **kwargs):
-        data = {
-            "kpis": {
-                "total_ytd": 50276,
-                "scope1": 14470,
-                "scope2": 10266,
-                "scope3": 25540,
-            },
-            "monthly_trend": {
-                "months": ["Apr", "May", "Jun", "Jul", "Aug", "Sep",
-                           "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"],
-                "scope1": [1420, 1390, 1350, 1300, 1480, 1550,
-                          1500, 1380, 1300, 1250, 1300, 1400],
-                "scope2": [980, 950, 900, 870, 1000, 1050,
-                          1000, 910, 860, 830, 870, 930],
-                "scope3": [2450, 2380, 2300, 2250, 2500, 2600,
-                          2550, 2300, 2200, 2150, 2250, 2400],
-            },
-            "by_plant": [
-                {"name": "Mundra", "value": 8600},
-                {"name": "Tiroda", "value": 8100},
-                {"name": "Raipur", "value": 7300},
-                {"name": "Kawai", "value": 6600},
-                {"name": "Udupi", "value": 5900},
-            ],
-            "task_status": {
-                "total": 142, "completed": 98,
-                "pending_review": 23, "overdue": 7,
-            },
-        }
-        return JsonResponse(data)
-# emission/views.py
-
-from django.views.generic import TemplateView
-from django.views import View
-from django.http import JsonResponse
+from django.urls import reverse_lazy
 from dataclasses import dataclass
 from typing import List, Dict, Any
 from datetime import datetime
 import json
+from django.views.generic import (
+    ListView,
+    CreateView,
+    UpdateView,
+    DeleteView,
+)
+from .models import EmissionTransaction
+from .forms import EmissionTransactionForm
 
-
-# =============================================
-# DASHBOARD VIEWS
-# =============================================
 
 class EmissionsDashboardView(TemplateView):
     """
@@ -894,3 +786,120 @@ class ESGDisclosureView(TemplateView):
         context = super().get_context_data(**kwargs)
         context['current_year'] = datetime.now().year
         return context
+
+class EmissionTransactionListView(ListView):
+
+    model = EmissionTransaction
+
+    template_name = "emission/transaction_list.html"
+
+    context_object_name = "transactions"
+
+    paginate_by = 20
+
+    def get_queryset(self):
+
+        queryset = (
+            EmissionTransaction.objects
+            .select_related(
+                "company",
+                "plant",
+                "financial_year",
+                "financial_month",
+                "activity",
+                "unit",
+            )
+            .order_by(
+                "-financial_year",
+                "financial_month",
+                "plant",
+            )
+        )
+
+        search = self.request.GET.get("search")
+
+        if search:
+
+            queryset = queryset.filter(
+                activity__name__icontains=search
+            )
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+
+        context["search"] = self.request.GET.get(
+            "search",
+            "",
+        )
+
+        context["total_transactions"] = (
+            EmissionTransaction.objects.count()
+        )
+
+        context["draft_count"] = (
+            EmissionTransaction.objects.filter(
+                status="DRAFT"
+            ).count()
+        )
+
+        context["submitted_count"] = (
+            EmissionTransaction.objects.filter(
+                status="SUBMITTED"
+            ).count()
+        )
+
+        context["approved_count"] = (
+            EmissionTransaction.objects.filter(
+                status="APPROVED"
+            ).count()
+        )
+
+        return context
+
+class EmissionTransactionCreateView(CreateView):
+
+    model = EmissionTransaction
+
+    form_class = EmissionTransactionForm
+
+    template_name = "emission/transaction_form.html"
+
+    success_url = reverse_lazy(
+        "emission:transaction_list"
+    )
+
+    def form_valid(self, form):
+
+        if self.request.user.is_authenticated:
+
+            form.instance.created_by = self.request.user
+
+        return super().form_valid(form)
+    
+
+
+class EmissionTransactionUpdateView(UpdateView):
+
+    model = EmissionTransaction
+
+    form_class = EmissionTransactionForm
+
+    template_name = "emission/transaction_form.html"
+
+    success_url = reverse_lazy(
+        "emission:transaction_list"
+    )
+
+
+class EmissionTransactionDeleteView(DeleteView):
+
+    model = EmissionTransaction
+
+    template_name = "emission/transaction_delete.html"
+
+    success_url = reverse_lazy(
+        "emission:transaction_list"
+    )

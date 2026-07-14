@@ -10,8 +10,11 @@ from .views import (
     CreateAssignmentView,
     GetDepartmentsByPlantView,
     CreateAssignmentSubmitView,
-    ESGDisclosureView
-    
+    ESGDisclosureView,
+    EmissionTransactionListView,
+    EmissionTransactionDeleteView,
+    EmissionTransactionUpdateView,
+    EmissionTransactionCreateView,
 )
 
 app_name = "emission"
@@ -35,4 +38,10 @@ urlpatterns = [
     
     #=====report====
     path("esg/", ESGDisclosureView.as_view(), name="esg-disclosure"),
+    
+    
+    path("transactions/",EmissionTransactionListView.as_view(),name="transaction_list",),
+    path("transactions/create/",EmissionTransactionCreateView.as_view(),name="transaction_create",),
+    path("transactions/<int:pk>/edit/",EmissionTransactionUpdateView.as_view(),name="transaction_update",),
+    path("transactions/<int:pk>/delete/",EmissionTransactionDeleteView.as_view(),name="transaction_delete",),
 ]

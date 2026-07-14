@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'base/base.html' %}
 
 {% block title %}Emission Transaction{% endblock %}
 
@@ -29,7 +29,7 @@
 
                 </button>
 
-                <a href="{% url 'environmental:transaction_list' %}"
+                <a href="{% url 'emission:transaction_list' %}"
                    class="btn btn-secondary">
 
                     Cancel

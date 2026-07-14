@@ -147,12 +147,10 @@
                     <i class="feather-x me-1"></i> Clear
                 </a>
                 {% endif %}
-                {% if request.user|has_perm:'CREATE_USER' %}
-                <a href="{% url 'accounts:user_create' %}" class="btn btn-primary">
+                <a href="{% url 'emission:transaction_create' %}" class="btn btn-primary">
                     <i class="feather-plus me-2"></i>
                     <span>Add Transaction</span>
                 </a>
-                {% endif %}
             </div>
         </div>
     </div>
@@ -275,7 +273,7 @@
                                     <div class="fs-14 fw-semibold text-dark mb-2">No Emission Transactions Found</div>
                                     <p class="text-muted mb-3">Create the first emission transactions to see it listed here.</p>
                                     {% if request.user|has_perm:'CREATE_USER' %}
-                                    <a href="{% url 'environmental:transaction_create' %}" class="btn btn-primary">
+                                    <a href="{% url 'emission:transaction_create' %}" class="btn btn-primary">
                                         <i class="feather-plus me-2"></i>
                                         <span>Add Transaction</span>
                                     </a>
