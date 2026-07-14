@@ -10,7 +10,11 @@ from .forms import BRSRAssignmentForm
 from .models import Assignment, BRSRPrinciple, BRSRQuestion, BRSRSection, QuestionResponse
 from .views import (
     _assignment_context,
+    _assignment_target_role_codes,
+    _default_assignee_for_context,
+    _get_assignment_scope,
     _get_section_principle,
+    _plant_assignees,
     _pdf_questions_queryset,
     _question_metadata,
     _question_queryset,
@@ -73,6 +77,17 @@ def _serialize_question(question):
     }
 
 
+def _serialize_user(user):
+    return {
+        "id": user.id,
+        "name": user.full_name or user.get_full_name() or user.username,
+        "username": user.username,
+        "department_id": user.department_id,
+        "department_name": user.department.name if user.department_id else "",
+        "role_code": getattr(getattr(user, "role", None), "role_code", "") or "",
+    }
+
+
 class BRSRWorkspaceDataAPIView(APIView):
     def get(self, request):
         section_code = request.query_params.get("section_code")
@@ -102,6 +117,9 @@ class BRSRWorkspaceDataAPIView(APIView):
         payload = {
             "section": _serialize_section(section),
             "principle": _serialize_principle(principle) if principle else None,
+            "assignment_scope": _get_assignment_scope(request.user),
+            "current_user_id": request.user.id,
+            "current_user_name": request.user.full_name or request.user.get_full_name() or request.user.username,
             "sections": [_serialize_section(item) for item in section_cards],
             "principles": [_serialize_principle(item) for item in principle_cards],
             "topics": [_serialize_question(question) for question in questions],
@@ -142,6 +160,28 @@ class BRSRWorkspaceDataAPIView(APIView):
             ),
         }
         return Response(payload)
+
+
+class AssignmentOptionsAPIView(APIView):
+    def get(self, request):
+        plant_id = request.query_params.get("plant_id")
+        if not plant_id:
+            return Response({"detail": "plant_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        plant = get_object_or_404(Plant, pk=plant_id, is_active=True)
+        target_role_codes = _assignment_target_role_codes(request.user)
+        assignees = _plant_assignees(plant, target_role_codes=target_role_codes, current_user=request.user)
+        default_assignee = _default_assignee_for_context(request.user, plant)
+
+        return Response(
+            {
+                "plant": {"id": plant.id, "name": plant.name, "code": plant.code},
+                "scope": _get_assignment_scope(request.user),
+                "assignees": [_serialize_user(item) for item in assignees],
+                "default_assignee": _serialize_user(default_assignee) if default_assignee else None,
+                "target_role_codes": target_role_codes,
+            }
+        )
 
 
 class QuestionDetailAPIView(APIView):
@@ -221,17 +261,30 @@ class AssignmentCreateAPIView(APIView):
             return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
 
         user_ct = ContentType.objects.get_for_model(User)
+        plant = form.cleaned_data["plant"]
+        assigner = form.cleaned_data.get("assigner") or request.user
+        assignee = form.cleaned_data["assignee"]
+        eligible_assignees = _plant_assignees(
+            plant,
+            target_role_codes=_assignment_target_role_codes(request.user),
+            current_user=request.user,
+        )
+        if assignee not in eligible_assignees:
+            assignee = _default_assignee_for_context(request.user, plant)
+        if assignee is None:
+            return Response({"detail": "No eligible assignee found for the selected plant."}, status=status.HTTP_400_BAD_REQUEST)
+
         assignment = Assignment.objects.create(
-            plant=form.cleaned_data["plant"],
+            plant=plant,
             principle=principle,
             section=section,
             financial_year=form.cleaned_data["financial_year"],
             # parent assignment removed from creation flow
             data_collection_frequency=form.cleaned_data.get("data_collection_frequency") or "",
             assigner_content_type=user_ct,
-            assigner_object_id=form.cleaned_data["assigner"].pk,
+            assigner_object_id=assigner.pk,
             assignee_content_type=user_ct,
-            assignee_object_id=form.cleaned_data["assignee"].pk,
+            assignee_object_id=assignee.pk,
             due_date=form.cleaned_data.get("due_date"),
             priority=form.cleaned_data["priority"],
             notes=form.cleaned_data.get("notes"),

@@ -31,6 +31,7 @@ urlpatterns = [
     # path('api/', include('apps.calculator.urls')),  # For /api/get-conversion/
     path('calculator/', include('apps.calculator.urls')),  # For /calculator/api/get-conversion
     path("emission/", include('apps.emission.urls')),
+    path("goals/", include("apps.goals.urls")),
 ]
 
 

@@ -20,6 +20,7 @@ class BRSRAssignmentForm(forms.Form):
     )
     assigner = forms.ModelChoiceField(
         queryset=User.objects.none(),
+        required=False,
         widget=forms.Select(attrs={"class": "form-select"}),
     )
     assignee = forms.ModelChoiceField(
@@ -76,4 +77,3 @@ class BRSRAssignmentForm(forms.Form):
 
         if not self.is_bound and financial_year_choices:
             self.initial.setdefault("financial_year", financial_year_choices[0][0])
-

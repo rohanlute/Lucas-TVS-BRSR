@@ -2,9 +2,11 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.generic import TemplateView
+from apps.accounts.models import Department
 from apps.organizations.models import FinancialYear, Plant
 from .forms import BRSRAssignmentForm
 from .models import Assignment, BRSRPrinciple, BRSRQuestion, BRSRSection, QuestionResponse
@@ -110,6 +112,180 @@ def _workflow_counts(questions):
     }
 
 
+def _actor_content_type_map():
+    return {
+        "user": ContentType.objects.get_for_model(User),
+        "department": ContentType.objects.get_for_model(Department),
+        "plant": ContentType.objects.get_for_model(Plant),
+    }
+
+
+def _actor_label(actor):
+    if not actor:
+        return ""
+    if hasattr(actor, "full_name") and actor.full_name:
+        return actor.full_name
+    if hasattr(actor, "name") and actor.name:
+        return actor.name
+    return str(actor)
+
+
+def _get_assignment_scope(user):
+    role_code = getattr(getattr(user, "role", None), "role_code", "") or ""
+    if user.is_superuser or user.is_super_admin or role_code == "COMPANYADMIN":
+        return "plant"
+    if role_code in {"PLANT-COORD", "PLANT_COORD", "PLANTCOORD"}:
+        return "department"
+    if role_code in {"DEPT-APPR", "DEPT-USER", "DEPARTMENT-USER", "DEPARTMENT-APPR"}:
+        return "user"
+    if getattr(user, "department_id", None) and user.assigned_plants.exists():
+        return "department"
+    return "user"
+
+
+def _assignment_scope_queryset(user, plant=None, department=None):
+    role_code = getattr(getattr(user, "role", None), "role_code", "") or ""
+    if user.is_superuser or user.is_super_admin or role_code == "COMPANYADMIN":
+        return Assignment.objects.all()
+
+    ct_map = _actor_content_type_map()
+    filters = Q(assignee_content_type=ct_map["user"], assignee_object_id=user.id)
+
+    plant_ids = list(user.assigned_plants.filter(is_active=True).values_list("id", flat=True))
+    if plant_ids:
+        filters |= Q(assignee_content_type=ct_map["plant"], assignee_object_id__in=plant_ids)
+
+    if getattr(user, "department_id", None):
+        filters |= Q(
+            assignee_content_type=ct_map["department"],
+            assignee_object_id=user.department_id,
+        )
+
+    if plant:
+        filters |= Q(plant=plant)
+    if department:
+        filters |= Q(assignee_content_type=ct_map["department"], assignee_object_id=department.id)
+    return Assignment.objects.filter(filters).distinct()
+
+
+def _plant_departments(plant):
+    if not plant:
+        return Department.objects.none()
+    return (
+        Department.objects.filter(users__assigned_plants=plant, is_active=True)
+        .distinct()
+        .order_by("name")
+    )
+
+
+def _assignment_target_role_codes(user):
+    role_code = getattr(getattr(user, "role", None), "role_code", "") or ""
+    if user.is_superuser or user.is_super_admin or role_code == "COMPANYADMIN":
+        return ["PLANT-COORD", "PLANT_COORD", "PLANTCOORD"]
+    if role_code in {"PLANT-COORD", "PLANT_COORD", "PLANTCOORD"}:
+        return ["DEPT-APPR", "DEPT-USER", "DEPARTMENT-USER", "DEPARTMENT-APPR"]
+    return ["DEPT-USER", "DEPT-APPR", "DEPARTMENT-USER", "DEPARTMENT-APPR"]
+
+
+def _plant_assignees(plant, target_role_codes=None, current_user=None):
+    if not plant:
+        return User.objects.none()
+
+    queryset = (
+        User.objects.filter(is_active=True, assigned_plants=plant,)
+        .exclude(Q(is_superuser=True) | Q(role__role_code__in=["SUPERADMIN", "COMPANYADMIN"]))
+        .select_related("department", "role")
+        .order_by("full_name", "username")
+    )
+
+    if target_role_codes:
+        queryset = queryset.filter(role__role_code__in=target_role_codes)
+    if current_user:
+        queryset = queryset.exclude(pk=current_user.pk)
+
+    return queryset.distinct()
+
+def _default_assignee_for_context(user, plant):
+    assignees = _plant_assignees(plant, target_role_codes=_assignment_target_role_codes(user), current_user=user)
+    if not assignees.exists():
+        return None
+
+    role_rank = {
+        "COMPANYADMIN": 0,
+        "SUPERADMIN": 0,
+        "PLANT-COORD": 1,
+        "PLANT_COORD": 1,
+        "DEPT-APPR": 2,
+        "DEPT-USER": 3,
+        "COMPANYUSER": 4,
+    }
+
+    def sort_key(item):
+        role_code = getattr(getattr(item, "role", None), "role_code", "") or ""
+        return (
+            role_rank.get(role_code, 99),
+            item.department_id or 999999,
+            item.full_name or item.username,
+        )
+
+    return sorted(assignees, key=sort_key)[0]
+
+
+def _serialize_assignment(assignment):
+    questions = list(assignment.questions.select_related("section", "principle").order_by("display_order", "question_number"))
+    first_question = questions[0] if questions else None
+    response_map = {
+        response.question_id: response.status
+        for response in assignment.responses.all().only("question_id", "status")
+    }
+    return {
+        "id": assignment.id,
+        "assignment_id": assignment.assignment_id,
+        "plant": assignment.plant.name if assignment.plant_id else "",
+        "plant_code": assignment.plant.code if assignment.plant_id else "",
+        "assignee": _actor_label(assignment.assignee),
+        "assignee_type": assignment.assignee_content_type.model if assignment.assignee_content_type_id else "",
+        "assigner": _actor_label(assignment.assigner),
+        "section": assignment.section.name if assignment.section_id else "",
+        "section_code": assignment.section.code if assignment.section_id else "",
+        "principle": assignment.principle.principle_name if assignment.principle_id else "",
+        "financial_year": assignment.financial_year,
+        "due_date": assignment.due_date.isoformat() if assignment.due_date else "",
+        "priority": assignment.priority,
+        "overall_status": assignment.overall_status,
+        "is_overdue": assignment.is_overdue,
+        "question_count": len(questions),
+        "questions": [
+            {
+                "id": question.id,
+                "question_id": question.question_id,
+                "title": question.question_text,
+                "number": question.question_number,
+                "section_code": question.section.code,
+                "principle_slug": question.principle.slug if question.principle else "",
+                "status": response_map.get(question.id, "draft"),
+            }
+            for question in questions
+        ],
+        "workspace_url": (
+            reverse(
+                "brsr:question_workspace_principle",
+                kwargs={
+                    "section_code": first_question.section.code,
+                    "principle_slug": first_question.principle.slug,
+                },
+            )
+            if first_question and first_question.principle
+            else reverse(
+                "brsr:question_workspace_section",
+                kwargs={"section_code": first_question.section.code},
+            )
+            if first_question
+            else ""
+        ),
+    }
+
+
 def _assignment_context(section, principle, questions):
     latest_assignment = (
         Assignment.objects.filter(section=section, principle=principle)
@@ -176,6 +352,41 @@ class BRSRDashboardView(LoginRequiredMixin, TemplateView):
         context["total_questions"] = _pdf_questions_queryset().count()
         context["total_sections"] = sections.count()
         context["total_principles"] = principles.count()
+        return context
+
+
+class AssignmentDashboardView(LoginRequiredMixin, TemplateView):
+    login_url = "accounts:login"
+    template_name = "brsr/assignment_dashboard.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        assignments = (
+            _assignment_scope_queryset(user)
+            .select_related(
+                "plant",
+                "section",
+                "principle",
+                "assignee_content_type",
+                "assigner_content_type",
+            )
+            .prefetch_related(
+                "questions",
+                "responses",
+                "questions__section",
+                "questions__principle",
+            )
+            .order_by("-created_at")
+        )
+
+        serialized_assignments = [_serialize_assignment(assignment) for assignment in assignments]
+        context["assignments"] = serialized_assignments
+        context["assignment_count"] = len(serialized_assignments)
+        context["open_count"] = sum(1 for item in serialized_assignments if item["overall_status"] != "completed")
+        context["completed_count"] = sum(1 for item in serialized_assignments if item["overall_status"] == "completed")
+        context["overdue_count"] = sum(1 for item in serialized_assignments if item["is_overdue"])
+        context["assignment_scope"] = _get_assignment_scope(user)
         return context
 
 
@@ -291,6 +502,8 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
         context["question_save_api_url"] = reverse("brsr:question_save_api", kwargs={"question_id": "__question__"})
         context["question_submit_api_url"] = reverse("brsr:question_submit_api", kwargs={"question_id": "__question__"})
         context["assignment_create_api_url"] = reverse("brsr:assignment_create_api")
+        context["assignment_options_api_url"] = reverse("brsr:assignment_options_api")
+        context["assignment_dashboard_url"] = reverse("brsr:assignment_dashboard")
         context["current_section_code"] = section_code if section_code else (context["section"].code if context.get("section") else "")
         context["current_principle_slug"] = principle_slug if principle_slug else (context["principle"].slug if context.get("principle") else "")
         return render(request, self.template_name, context)
@@ -354,6 +567,8 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
                 "question_save_api_url": reverse("brsr:question_save_api", kwargs={"question_id": "__question__"}),
                 "question_submit_api_url": reverse("brsr:question_submit_api", kwargs={"question_id": "__question__"}),
                 "assignment_create_api_url": reverse("brsr:assignment_create_api"),
+                "assignment_options_api_url": reverse("brsr:assignment_options_api"),
+                "assignment_dashboard_url": reverse("brsr:assignment_dashboard"),
                 "assignment_form": form,
                 "current_section_code": section_code if section_code else (context["section"].code if context.get("section") else ""),
                 "current_principle_slug": principle_slug if principle_slug else (context["principle"].slug if context.get("principle") else ""),

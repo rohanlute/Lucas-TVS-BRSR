@@ -579,6 +579,11 @@ class UserCreateView(UserLocationAssignmentMixin, LoginRequiredMixin, CreateView
         
         # ✅ Configure company field
         self.configure_company_field(form)
+        if self.request.user.is_super_admin:
+            form.fields['role'].queryset = Role.objects.order_by('role_name')
+        else:
+            form.fields['role'].queryset = Role.objects.exclude(role_code='SUPERADMIN').order_by('role_name')
+
         return form
 
     def get_initial(self):
@@ -800,7 +805,10 @@ class RoleListView(LoginRequiredMixin, ListView):
     context_object_name = 'roles'
 
     def get_queryset(self):
-        return Role.objects.prefetch_related('permissions').order_by('role_name')
+        queryset = Role.objects.prefetch_related('permissions').order_by('role_name')
+        if not self.request.user.is_super_admin:
+            queryset = queryset.exclude(role_code='SUPERADMIN')
+        return queryset
 
 
 class RoleCreateView(RolePermissionContextMixin, LoginRequiredMixin, CreateView):
