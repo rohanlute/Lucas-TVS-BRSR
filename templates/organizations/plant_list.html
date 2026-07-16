@@ -28,7 +28,6 @@
         </div>
         <ul class="breadcrumb">
             <li class="breadcrumb-item"><a href="#">Home</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'organizations:dashboard' %}">Organization</a></li>
             <li class="breadcrumb-item active">Plants</li>
         </ul>
     </div>
@@ -68,7 +67,6 @@
                             <th>Code</th>
                             <th>Name</th>
                             <th>City</th>
-                            <th>Locations</th>
                             <th>Status</th>
                             <th class="text-end">Actions</th>
                         </tr>
@@ -79,10 +77,6 @@
                             <td><strong>{{ plant.code }}</strong></td>
                             <td>{{ plant.name }}</td>
                             <td>{{ plant.city }}, {{ plant.state }}</td>
-                            <td>
-                                <span class="badge bg-soft-info text-info me-1">{{ plant.total_locations }} Total</span>
-                                <span class="badge bg-soft-success text-success">{{ plant.active_locations }} Active</span>
-                            </td>
                             <td>
                                 {% if plant.is_active %}
                                 <span class="badge bg-soft-success text-success">Active</span>

@@ -6,9 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from datetime import timedelta
 import re
-
 from ..companies.models import Country,State,City
-# apps/organizations/models.py
 
 class Plant(models.Model):
     """Manufacturing Plant/Unit"""
@@ -16,21 +14,22 @@ class Plant(models.Model):
     name = models.CharField(max_length=200)
     code = models.CharField(max_length=50, unique=True)
     address = models.TextField()
-    country = models.ForeignKey(Country,
+    country = models.ForeignKey(
+        Country,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="plants"
     )
-
-    state = models.ForeignKey(State,
+    state = models.ForeignKey(
+        State,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name="plants"
     )
-
-    city = models.ForeignKey(City,
+    city = models.ForeignKey(
+        City,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -43,7 +42,13 @@ class Plant(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,null=True,blank=True,related_name="created_plants")
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_plants"
+    )
     
     class Meta:
         ordering = ['name']
@@ -56,145 +61,6 @@ class Plant(models.Model):
     def clean(self):
         if self.code:
             self.code = self.code.upper()
-    
-    @property
-    def zone_count(self):
-        return self.zones.count()
-    
-    @property
-    def active_zone_count(self):
-        return self.zones.filter(is_active=True).count()
-    
-    @property
-    def location_count(self):
-        """Get count of all locations through zones"""
-        from django.db.models import Count
-        return Location.objects.filter(zone__plant=self).count()
-    
-    @property
-    def active_location_count(self):
-        """Get count of active locations through zones"""
-        return Location.objects.filter(zone__plant=self, is_active=True).count()
-    
-    @property
-    def sublocation_count(self):
-        """Get count of all sublocations through zones and locations"""
-        from .models import SubLocation
-        return SubLocation.objects.filter(location__zone__plant=self).count()
-    
-    @property
-    def active_sublocation_count(self):
-        """Get count of active sublocations through zones and locations"""
-        from .models import SubLocation
-        return SubLocation.objects.filter(location__zone__plant=self, is_active=True).count()
-
-class Zone(models.Model):
-    """Zones within a Plant (e.g., Zone A, Zone B)"""
-    
-    plant = models.ForeignKey(Plant, on_delete=models.CASCADE, related_name='zones')
-    name = models.CharField(max_length=200)
-    code = models.CharField(max_length=50)
-    description = models.TextField(blank=True)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    sequence = models.PositiveIntegerField(default=0)
-    
-    class Meta:
-        ordering = ['plant','sequence', 'name']
-        unique_together = ['plant', 'code']
-        verbose_name = 'Zone'
-        verbose_name_plural = 'Zones'
-    
-    def __str__(self):
-        return f"{self.plant.name} - {self.name}"
-    
-    def clean(self):
-        # Convert code to uppercase
-        if self.code:
-            self.code = self.code.upper()
-    
-    def save(self, *args, **kwargs):
-        if self.name:
-            match = re.search(r'\d+', self.name)
-            if match:
-                self.sequence = int(match.group())
-            else:
-                self.sequence = 0
-        super().save(*args, **kwargs)
-
-    @property
-    def location_count(self):
-        return self.locations.count()
-    
-    @property
-    def active_location_count(self):
-        return self.locations.filter(is_active=True).count()
-
-
-class Location(models.Model):
-    """Locations within a Zone"""
-    
-    zone = models.ForeignKey(Zone, on_delete=models.CASCADE, related_name='locations')
-    name = models.CharField(max_length=200)
-    code = models.CharField(max_length=50)
-    description = models.TextField(blank=True)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        ordering = ['zone', 'name']
-        unique_together = ['zone', 'code']
-        verbose_name = 'Location'
-        verbose_name_plural = 'Locations'
-    
-    def __str__(self):
-        return f"{self.zone.plant.name} - {self.zone.name} - {self.name}"
-    
-    def clean(self):
-        # Convert code to uppercase
-        if self.code:
-            self.code = self.code.upper()
-    
-    @property
-    def plant(self):
-        """Get the plant through zone"""
-        return self.zone.plant
-
-class SubLocation(models.Model):
-    """Sub-locations within a Location"""
-    
-    location = models.ForeignKey(Location, on_delete=models.CASCADE, related_name='sublocations')
-    name = models.CharField(max_length=200)
-    code = models.CharField(max_length=50,blank=True)
-    description = models.TextField(blank=True)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    
-    class Meta:
-        ordering = ['location', 'name']
-        verbose_name = 'Sub-Location'
-        verbose_name_plural = 'Sub-Locations'
-    
-    def __str__(self):
-        return f"{self.location.zone.plant.name} - {self.location.zone.name} - {self.location.name} - {self.name}"
-    
-    def clean(self):
-        # Convert code to uppercase
-        if self.code:
-            self.code = self.code.upper()
-    
-    @property
-    def plant(self):
-        """Get the plant through location -> zone"""
-        return self.location.zone.plant
-    
-    @property
-    def zone(self):
-        """Get the zone through location"""
-        return self.location.zone
     
 class FinancialYear(models.Model):
     financial_year = models.CharField(

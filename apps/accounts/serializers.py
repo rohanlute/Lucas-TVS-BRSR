@@ -18,9 +18,6 @@ class UserSerializer(serializers.ModelSerializer):
 
     role = RoleSerializer(read_only=True)
     assigned_plants = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    assigned_zones = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    assigned_locations = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
-    assigned_sublocations = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
     class Meta:
         model = User
@@ -38,8 +35,5 @@ class UserSerializer(serializers.ModelSerializer):
             'role',
             'company',
             'is_active',
-            'assigned_plants',
-            'assigned_zones',
-            'assigned_locations',
-            'assigned_sublocations',
+            'assigned_plants'
         ]

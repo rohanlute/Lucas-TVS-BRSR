@@ -1,0 +1,1242 @@
+<!-- apps/goals/templates/goals/goal_detail.html -->
+
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{{ material_topic }} - Goals Detail{% endblock %}
+
+{% block extra_css %}
+<style>
+    .gd-page {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        margin: 18px;
+    }
+
+    .gd-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 16px 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    .gd-topbar .gd-fields {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 28px;
+    }
+
+    .gd-field-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .gd-field-group label {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1a2332;
+        white-space: nowrap;
+        margin: 0;
+    }
+
+    .gd-field-group select {
+        border: 1px solid #e4e9f0;
+        border-radius: 10px;
+        padding: 9px 36px 9px 14px;
+        font-size: 14px;
+        color: #1a2332;
+        background-color: #ffffff;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7a8f' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        cursor: pointer;
+        min-width: 220px;
+        transition: all 0.2s ease;
+    }
+
+    .gd-field-group select:focus {
+        border-color: #3454d1;
+        box-shadow: 0 0 0 3px rgba(52, 84, 209, 0.08);
+        outline: none;
+    }
+
+    .metric-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 18px 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    .metric-tab {
+        border: 1.5px solid transparent;
+        background: transparent;
+        padding: 10px 16px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #6b7a8f;
+        cursor: pointer;
+        text-align: center;
+        line-height: 1.35;
+        transition: all 0.2s ease;
+        min-width: 120px;
+    }
+
+    .metric-tab:hover {
+        color: #3454d1;
+        background: #f4f6fb;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .metric-tab.active {
+        border-color: #16213e;
+        background: #16213e;
+        color: #ffffff;
+    }
+
+    .metric-tab.active .metric-unit {
+        color: #aab4c9;
+    }
+
+    .metric-tab .metric-unit {
+        font-size: 10px;
+        color: #8a94a6;
+        display: block;
+        font-weight: 400;
+        margin-top: 2px;
+    }
+
+    .gd-grid {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 20px;
+        align-items: stretch;
+    }
+
+    .gd-left {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .stat-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+
+    .stat-mini-card {
+        background: #ffffff;
+        border: 1px solid #edf0f5;
+        border-radius: 12px;
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .stat-mini-card .stat-label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        color: #8a94a6;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .stat-mini-card .stat-label i {
+        font-size: 12px;
+        color: #8a94a6;
+    }
+
+    .stat-mini-card .stat-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a2332;
+    }
+
+    .stat-mini-card .stat-value.current {
+        color: #3454d1;
+    }
+
+    .stat-mini-card .stat-value.baseline {
+        color: #ff9f43;
+    }
+
+    .stat-mini-card .stat-value.target {
+        color: #28a745;
+    }
+
+    .stat-mini-card .stat-unit {
+        font-size: 11px;
+        color: #8a94a6;
+        margin-top: 2px;
+    }
+
+    .config-panel {
+        background: #ffffff;
+        border: 1px solid #edf0f5;
+        border-radius: 14px;
+        padding: 18px 18px 20px;
+        flex: 1;
+    }
+
+    .config-field {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 10px 0;
+        border-bottom: 1px solid #f4f6fb;
+    }
+
+    .config-field:last-of-type {
+        border-bottom: none;
+    }
+
+    .config-field label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1a2332;
+        flex: 0 0 auto;
+        min-width: 120px;
+    }
+
+    .config-field label .text-danger {
+        color: #dc3545;
+    }
+
+    .config-field .form-control-mini {
+        flex: 1 1 auto;
+        max-width: 160px;
+        border: 1px solid #e4e9f0;
+        border-radius: 10px;
+        padding: 8px 12px;
+        font-size: 13px;
+        color: #1a2332;
+        background: #ffffff;
+        transition: all 0.2s ease;
+    }
+
+    .config-field select.form-control-mini {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7a8f' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 32px;
+        cursor: pointer;
+    }
+
+    .config-field .form-control-mini:focus {
+        border-color: #3454d1;
+        box-shadow: 0 0 0 3px rgba(52, 84, 209, 0.08);
+        outline: none;
+    }
+
+    .config-field .form-control-mini.is-invalid {
+        border-color: #dc3545;
+    }
+
+    .config-field .form-control-mini[readonly] {
+        background: #f4f6fb;
+        cursor: not-allowed;
+        color: #6b7a8f;
+    }
+
+    .config-field .pct-wrap {
+        position: relative;
+        flex: 1 1 auto;
+        max-width: 160px;
+    }
+
+    .config-field .pct-wrap .form-control-mini {
+        max-width: none;
+        width: 100%;
+        padding-right: 28px;
+    }
+
+    .config-field .pct-wrap span {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 12px;
+        color: #8a94a6;
+        pointer-events: none;
+    }
+
+    .config-save-btn {
+        width: 100%;
+        margin-top: 14px;
+        padding: 10px 18px;
+        background: #3454d1;
+        color: #ffffff;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .config-save-btn:hover {
+        background: #1a3fa8;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(52, 84, 209, 0.3);
+    }
+
+    .config-save-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .chart-card {
+        background: #ffffff;
+        border: 1px solid #edf0f5;
+        border-radius: 14px;
+        padding: 20px 22px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 460px;
+        flex: 1;
+    }
+
+    .chart-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 18px;
+        flex-shrink: 0;
+    }
+
+    .chart-card-header h6 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1a2332;
+        margin: 0;
+    }
+
+    .chart-legend {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .chart-legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: #46536a;
+        cursor: pointer;
+        user-select: none;
+        padding: 4px 8px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+
+    .chart-legend-item:hover {
+        background: #f0f3f8;
+    }
+
+    .chart-legend-item input[type="checkbox"] {
+        width: 15px;
+        height: 15px;
+        accent-color: #16213e;
+        cursor: pointer;
+        margin: 0;
+    }
+
+    .chart-canvas-wrap {
+        position: relative;
+        flex: 1;
+        min-height: 320px;
+    }
+
+    .chart-empty-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #16213e;
+        color: #ffffff;
+        padding: 12px 20px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 500;
+        white-space: nowrap;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        z-index: 2;
+    }
+
+    .no-data {
+        text-align: center;
+        padding: 30px 20px;
+        color: #8a94a6;
+    }
+
+    .no-data i {
+        font-size: 32px;
+        color: #d0d8e4;
+        margin-bottom: 10px;
+        display: block;
+    }
+
+    .no-data h6 {
+        color: #1a2332;
+        margin-bottom: 4px;
+    }
+
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+
+    .toast-custom {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 16px 24px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        border-left: 4px solid #28a745;
+        margin-bottom: 10px;
+        min-width: 300px;
+        animation: slideIn 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .toast-custom.toast-error {
+        border-left-color: #dc3545;
+    }
+
+    .toast-custom .toast-icon.success { color: #28a745; }
+    .toast-custom .toast-icon.error { color: #dc3545; }
+
+    .toast-custom .toast-message {
+        font-size: 14px;
+        color: #1a2332;
+        flex: 1;
+    }
+
+    .toast-custom .toast-close {
+        background: none;
+        border: none;
+        color: #8a94a6;
+        cursor: pointer;
+        font-size: 18px;
+        padding: 0 4px;
+    }
+
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
+    @media (max-width: 1100px) {
+        .gd-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .chart-card {
+            min-height: 400px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .gd-topbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .gd-topbar .gd-fields {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .gd-field-group {
+            justify-content: space-between;
+        }
+
+        .gd-field-group select {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .stat-row {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+        .config-field {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .config-field .form-control-mini,
+        .config-field .pct-wrap {
+            max-width: 100%;
+            width: 100%;
+        }
+
+        .chart-legend {
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .chart-card {
+            min-height: 350px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .stat-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .chart-card {
+            min-height: 300px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Goal Details</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'goals:dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'goals:dashboard' %}">Goals</a></li>
+            <li class="breadcrumb-item active">{{ material_topic }}</li>
+        </ul>
+    </div>
+</div>
+
+<div class="gd-page">
+
+    <!-- Top Toolbar -->
+    <div class="gd-topbar">
+        <div class="gd-fields">
+            <div class="gd-field-group">
+                <label for="gdMaterialTopic">Material Topic</label>
+                <select id="gdMaterialTopic" onchange="gdNavigateTopic(this.value)">
+                    {% if all_material_topics %}
+                        {% for topic in all_material_topics %}
+                            <option value="{% url 'goals:goal_detail' topic %}" {% if topic == material_topic %}selected{% endif %}>{{ topic }}</option>
+                        {% endfor %}
+                    {% else %}
+                        <option value="{% url 'goals:goal_detail' material_topic %}" selected>{{ material_topic }}</option>
+                    {% endif %}
+                </select>
+            </div>
+
+            <div class="gd-field-group">
+                <label for="gdGoal">Goal</label>
+                <select id="gdGoal" onchange="gdGoalChanged(this.value)">
+                    <option value="">Select Goal</option>
+                    {% if goals %}
+                        {% for goal in goals %}
+                            <option value="{{ goal.name }}" {% if selected_goal == goal.name %}selected{% endif %}>{{ goal.name }}</option>
+                        {% endfor %}
+                    {% else %}
+                        <option value="">No goals defined for this topic</option>
+                    {% endif %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metric Tabs -->
+    <div class="metric-tabs" id="metricTabs">
+        {% if metrics %}
+            {% for metric_name, values in metrics.items %}
+                <button type="button" 
+                        class="metric-tab {% if forloop.first %}active{% endif %}" 
+                        data-metric="{{ metric_name }}" 
+                        data-unit="{{ values.unit }}"
+                        onclick="selectMetric('{{ metric_name }}')">
+                    {{ metric_name }}
+                    <span class="metric-unit">{{ values.unit }}</span>
+                </button>
+            {% endfor %}
+        {% else %}
+            <div class="no-data" style="width:100%;">
+                <i class="fas fa-chart-bar"></i>
+                <h6>No KPIs available</h6>
+                <p class="text-muted">Select a goal to view its KPIs.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Main Grid -->
+    <div class="gd-grid">
+
+        <!-- Left Column -->
+        <div class="gd-left">
+            <!-- Stat Cards -->
+            <div class="stat-row">
+                <div class="stat-mini-card">
+                    <span class="stat-label"><i class="fas fa-circle-dot"></i> Current</span>
+                    <span class="stat-value current" id="statCurrent">0.00</span>
+                    <span class="stat-unit" id="statCurrentUnit">{{ config.unit|default:'' }}</span>
+                </div>
+                <div class="stat-mini-card">
+                    <span class="stat-label"><i class="fas fa-arrow-trend-up"></i> Baseline</span>
+                    <span class="stat-value baseline" id="statBaseline">0</span>
+                    <span class="stat-unit" id="statBaselineUnit">{{ config.unit|default:'' }}</span>
+                </div>
+                <div class="stat-mini-card">
+                    <span class="stat-label"><i class="fas fa-crosshairs"></i> Target</span>
+                    <span class="stat-value target" id="statTarget">0</span>
+                    <span class="stat-unit" id="statTargetUnit">{{ config.unit|default:'' }}</span>
+                </div>
+            </div>
+
+            <!-- Config Panel -->
+            <div class="config-panel" id="configPanel">
+                <form id="configForm" method="POST" action="{% url 'goals:goal_config_update' material_topic %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="selected_goal" id="selectedGoal" value="{{ selected_goal }}">
+                    
+                    <div class="config-field">
+                        <label for="baselineYear">Baseline Year <span class="text-danger">*</span></label>
+                        <select class="form-control-mini" id="baselineYear" name="baseline_year" required>
+                            <option value="">Select Baseline Year</option>
+                        </select>
+                    </div>
+
+                    <div class="config-field">
+                        <label for="baselineValue">Baseline Value <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control-mini" id="baselineValue" name="baseline_value"
+                               value="{{ config.baseline_value|default:'' }}" required min="0" step="0.01" placeholder="Enter value">
+                    </div>
+
+                    <div class="config-field">
+                        <label for="targetYear">Target Year <span class="text-danger">*</span></label>
+                        <select class="form-control-mini" id="targetYear" name="target_year" required>
+                            <option value="">Select Target Year</option>
+                        </select>
+                    </div>
+
+                    <div class="config-field">
+                        <label for="targetReduction">Target Reduction <span class="text-danger">*</span></label>
+                        <div class="pct-wrap">
+                            <input type="number" class="form-control-mini" id="targetReduction" name="target_reduction"
+                                   value="{{ config.target_reduction|default:'' }}" required min="0" max="100" step="0.01" placeholder="Enter %">
+                            <span>%</span>
+                        </div>
+                    </div>
+
+                    <div class="config-field">
+                        <label for="targetValue">Target Value <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control-mini" id="targetValue" name="target_value"
+                               value="{{ config.target_value|default:'' }}" readonly>
+                    </div>
+
+                    <div class="config-field">
+                        <label for="unitInput">Unit <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control-mini" id="unitInput" name="unit"
+                               value="{{ config.unit|default:'' }}" placeholder="e.g. Kilolitre, tCO₂e">
+                    </div>
+
+                    <button type="submit" class="config-save-btn" id="saveConfigBtn">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right Column - Chart -->
+        <div class="chart-card">
+            <div class="chart-card-header">
+                <h6 id="chartTitle">Select a metric</h6>
+                <div class="chart-legend">
+                    <span class="chart-legend-item">
+                        <input type="checkbox" id="chkActual" checked onchange="toggleLine('Actual')">
+                        Actual
+                    </span>
+                    <span class="chart-legend-item">
+                        <input type="checkbox" id="chkProjected" checked onchange="toggleLine('Projected')">
+                        Projected
+                    </span>
+                    <span class="chart-legend-item">
+                        <input type="checkbox" id="chkTargeted" checked onchange="toggleLine('Targeted')">
+                        Targeted
+                    </span>
+                </div>
+            </div>
+            <div class="chart-canvas-wrap">
+                <canvas id="metricChart"></canvas>
+                <div class="chart-empty-overlay" id="chartEmptyOverlay">
+                    Please fill in baseline and target metrics to view progress
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Data passed to JS -->
+{{ metrics|json_script:"metricsData" }}
+{{ config|json_script:"configData" }}
+{{ goals_json|json_script:"goalsData" }}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get data from JSON scripts
+    const metricsData = JSON.parse(document.getElementById('metricsData').textContent || '{}');
+    const configData = JSON.parse(document.getElementById('configData').textContent || '{}');
+    const goalsData = JSON.parse(document.getElementById('goalsData').textContent || '[]');
+
+    console.log('=== DEBUG: Goal Detail Page ===');
+    console.log('Goals Data:', goalsData);
+    console.log('Metrics Data:', metricsData);
+    console.log('Config Data:', configData);
+
+    // Get DOM elements
+    const statCurrent = document.getElementById('statCurrent');
+    const statBaseline = document.getElementById('statBaseline');
+    const statTarget = document.getElementById('statTarget');
+    const statCurrentUnit = document.getElementById('statCurrentUnit');
+    const statBaselineUnit = document.getElementById('statBaselineUnit');
+    const statTargetUnit = document.getElementById('statTargetUnit');
+    const chartTitle = document.getElementById('chartTitle');
+    const emptyOverlay = document.getElementById('chartEmptyOverlay');
+    const unitInput = document.getElementById('unitInput');
+    const goalSelect = document.getElementById('gdGoal');
+
+    // Get active metric (first one from metrics)
+    const metricNames = Object.keys(metricsData);
+    let activeMetric = metricNames.length > 0 ? metricNames[0] : null;
+    
+    console.log('Active Metric:', activeMetric);
+
+    let chartInstance = null;
+    let chartData = {};
+
+    // ===== Select Metric Function =====
+    window.selectMetric = function(metricName) {
+        activeMetric = metricName;
+        // Update active class on tabs
+        document.querySelectorAll('.metric-tab').forEach(function(tab) {
+            tab.classList.remove('active');
+            if (tab.getAttribute('data-metric') === metricName) {
+                tab.classList.add('active');
+            }
+        });
+        // Update chart title
+        chartTitle.textContent = metricName;
+        // Update unit
+        const m = metricsData[metricName] || {};
+        if (m.unit) {
+            unitInput.value = m.unit;
+            configData.unit = m.unit;
+            updateStatUnits(m.unit);
+        }
+        renderChart(metricName);
+    };
+
+    // ===== Update Stat Units =====
+    function updateStatUnits(unit) {
+        const unitDisplay = unit || '';
+        statCurrentUnit.textContent = unitDisplay;
+        statBaselineUnit.textContent = unitDisplay;
+        statTargetUnit.textContent = unitDisplay;
+    }
+
+    // ===== Goal Changed =====
+    window.gdGoalChanged = function(goalName) {
+        console.log('Goal changed to:', goalName);
+        
+        if (!goalName) {
+            const tabsContainer = document.getElementById('metricTabs');
+            tabsContainer.innerHTML = `
+                <div class="no-data" style="width:100%;">
+                    <i class="fas fa-chart-bar"></i>
+                    <h6>No KPIs available</h6>
+                    <p class="text-muted">Select a goal to view its KPIs.</p>
+                </div>
+            `;
+            emptyOverlay.style.display = 'flex';
+            updateStatUnits('');
+            return;
+        }
+        
+        document.getElementById('selectedGoal').value = goalName;
+        
+        // Redirect to the same page with the goal parameter
+        const url = "{% url 'goals:goal_detail' material_topic %}?goal=" + encodeURIComponent(goalName);
+        window.location.href = url;
+    };
+
+    // ===== Generate Year Options =====
+    function populateYearDropdowns() {
+        const currentYear = 2026;
+        const baselineSelect = document.getElementById('baselineYear');
+        const targetSelect = document.getElementById('targetYear');
+        
+        baselineSelect.innerHTML = '<option value="">Select Baseline Year</option>';
+        targetSelect.innerHTML = '<option value="">Select Target Year</option>';
+        
+        for (let year = currentYear; year >= 2006; year--) {
+            const option = document.createElement('option');
+            option.value = 'Apr-' + year;
+            option.textContent = 'Apr-' + year;
+            if (configData.baseline_year && configData.baseline_year === 'Apr-' + year) {
+                option.selected = true;
+            }
+            baselineSelect.appendChild(option);
+        }
+        
+        for (let year = currentYear; year <= currentYear + 20; year++) {
+            const option = document.createElement('option');
+            option.value = 'Apr-' + year;
+            option.textContent = 'Apr-' + year;
+            if (configData.target_year && configData.target_year === 'Apr-' + year) {
+                option.selected = true;
+            }
+            targetSelect.appendChild(option);
+        }
+    }
+
+    // ===== Generate Year Range =====
+    function getYearRange(startYear, endYear) {
+        const years = [];
+        for (let year = startYear; year <= endYear; year++) {
+            years.push(String(year));
+        }
+        return years;
+    }
+
+    // ===== Parse year from "Apr-YYYY" =====
+    function yearOf(label) {
+        if (!label) return null;
+        const parts = String(label).split('-');
+        const y = parseInt(parts[parts.length - 1], 10);
+        return isNaN(y) ? null : y;
+    }
+
+    // ===== Toggle Line (checkbox) =====
+    window.toggleLine = function(label) {
+        if (!chartInstance) return;
+        
+        let datasetIndex = -1;
+        if (label === 'Actual') {
+            return;
+        } else if (label === 'Projected') {
+            datasetIndex = chartInstance.data.datasets.findIndex(d => d.label === 'Projected');
+        } else if (label === 'Targeted') {
+            datasetIndex = chartInstance.data.datasets.findIndex(d => d.label === 'Targeted');
+        }
+        
+        if (datasetIndex !== -1) {
+            const meta = chartInstance.getDatasetMeta(datasetIndex);
+            meta.hidden = !meta.hidden;
+            chartInstance.update();
+        }
+    };
+
+    // ===== Render Chart =====
+    function renderChart(metricName) {
+        const m = metricsData[metricName] || {};
+        chartTitle.textContent = metricName || 'Select a metric';
+
+        if (m.unit) {
+            unitInput.value = m.unit;
+            configData.unit = m.unit;
+            updateStatUnits(m.unit);
+        }
+
+        const baselineValue = parseFloat(document.getElementById('baselineValue').value) || 0;
+        const targetValue = parseFloat(document.getElementById('targetValue').value) || 0;
+        const baselineYearStr = document.getElementById('baselineYear').value;
+        const targetYearStr = document.getElementById('targetYear').value;
+        
+        const baselineYear = yearOf(baselineYearStr);
+        const targetYear = yearOf(targetYearStr);
+
+        statCurrent.textContent = '0.00';
+        statBaseline.textContent = baselineValue.toFixed(2);
+        statTarget.textContent = targetValue.toFixed(2);
+
+        const hasBaselineTarget = baselineYear !== null && targetYear !== null &&
+            baselineValue > 0 && targetValue > 0 &&
+            baselineYear < targetYear;
+
+        if (chartInstance) {
+            chartInstance.destroy();
+            chartInstance = null;
+        }
+
+        if (!hasBaselineTarget) {
+            emptyOverlay.style.display = 'flex';
+            statCurrent.textContent = '0.00';
+            statBaseline.textContent = '0.00';
+            statTarget.textContent = '0.00';
+            return;
+        }
+        emptyOverlay.style.display = 'none';
+
+        const years = getYearRange(baselineYear, targetYear);
+        const numYears = years.length;
+
+        const baselineData = years.map(() => baselineValue);
+        const projectedData = years.map(() => baselineValue);
+
+        const targetData = years.map((_, index) => {
+            const progress = index / (numYears - 1);
+            return baselineValue - (baselineValue - targetValue) * progress;
+        });
+
+        chartData = {
+            years: years,
+            baseline: baselineValue,
+            target: targetValue,
+            baselineData: baselineData,
+            projectedData: projectedData,
+            targetData: targetData
+        };
+
+        const datasets = [];
+
+        datasets.push({
+            label: 'Projected',
+            data: projectedData,
+            borderColor: '#ff9f43',
+            borderWidth: 1.5,
+            borderDash: [],
+            tension: 0,
+            pointRadius: 3,
+            pointBackgroundColor: '#ff9f43',
+            pointBorderColor: '#ff9f43',
+            pointBorderWidth: 1,
+            fill: false,
+        });
+
+        datasets.push({
+            label: 'Targeted',
+            data: targetData,
+            borderColor: '#28a745',
+            borderWidth: 1.5,
+            tension: 0.3,
+            pointRadius: 3,
+            pointBackgroundColor: '#28a745',
+            pointBorderColor: '#28a745',
+            pointBorderWidth: 1,
+            fill: false,
+        });
+
+        const ctx = document.getElementById('metricChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: { 
+                labels: years,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#ffffff',
+                        titleColor: '#1a2332',
+                        bodyColor: '#1a2332',
+                        borderColor: '#e4e9f0',
+                        borderWidth: 1,
+                        padding: 12,
+                        cornerRadius: 8,
+                        displayColors: false,
+                        callbacks: {
+                            title: function(tooltipItems) {
+                                return 'Year: ' + tooltipItems[0].label;
+                            },
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                let value = context.parsed.y;
+                                if (value !== null && value !== undefined) {
+                                    return label + ': ' + value.toFixed(2);
+                                }
+                                return label;
+                            },
+                            afterBody: function(tooltipItems) {
+                                const index = tooltipItems[0].dataIndex;
+                                const baselineVal = chartData.baselineData[index];
+                                return 'Baseline: ' + baselineVal.toFixed(2);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true,
+                        max: Math.ceil((baselineValue * 1.2) / 10) * 10,
+                        grid: { color: '#f0f3f8', drawBorder: false },
+                        ticks: {
+                            stepSize: Math.ceil((baselineValue * 1.2) / 10),
+                            font: { size: 11 }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Value',
+                            color: '#8a94a6',
+                            font: { size: 12, weight: '500' }
+                        }
+                    },
+                    x: { 
+                        grid: { display: false },
+                        ticks: { font: { size: 11 }, maxRotation: 45 },
+                        title: {
+                            display: true,
+                            text: 'Year',
+                            color: '#8a94a6',
+                            font: { size: 12, weight: '500' }
+                        }
+                    },
+                },
+            },
+        });
+
+        // Apply checkbox states
+        const chkProjected = document.getElementById('chkProjected');
+        if (chkProjected && !chkProjected.checked) {
+            const idx = chartInstance.data.datasets.findIndex(d => d.label === 'Projected');
+            if (idx !== -1) {
+                chartInstance.getDatasetMeta(idx).hidden = true;
+                chartInstance.update();
+            }
+        }
+        
+        const chkTargeted = document.getElementById('chkTargeted');
+        if (chkTargeted && !chkTargeted.checked) {
+            const idx = chartInstance.data.datasets.findIndex(d => d.label === 'Targeted');
+            if (idx !== -1) {
+                chartInstance.getDatasetMeta(idx).hidden = true;
+                chartInstance.update();
+            }
+        }
+    }
+
+    // ===== Initialize =====
+    // Populate year dropdowns
+    populateYearDropdowns();
+    
+    // Set config values if they exist
+    if (configData.baseline_value) {
+        document.getElementById('baselineValue').value = configData.baseline_value;
+    }
+    if (configData.target_reduction) {
+        document.getElementById('targetReduction').value = configData.target_reduction;
+    }
+    if (configData.target_value) {
+        document.getElementById('targetValue').value = configData.target_value;
+    }
+    if (configData.unit) {
+        unitInput.value = configData.unit;
+        updateStatUnits(configData.unit);
+    }
+
+    // Calculate target if values exist
+    const baselineValueInput = document.getElementById('baselineValue');
+    const targetReductionInput = document.getElementById('targetReduction');
+    const targetValueInput = document.getElementById('targetValue');
+
+    function calculateTarget() {
+        const baseline = parseFloat(baselineValueInput.value) || 0;
+        const reduction = parseFloat(targetReductionInput.value) || 0;
+        
+        if (baseline > 0 && reduction > 0) {
+            const calculated = baseline * (1 - reduction / 100);
+            targetValueInput.value = calculated.toFixed(2);
+        } else {
+            targetValueInput.value = '';
+        }
+        
+        if (activeMetric) {
+            renderChart(activeMetric);
+        }
+    }
+
+    baselineValueInput.addEventListener('input', calculateTarget);
+    targetReductionInput.addEventListener('input', calculateTarget);
+
+    document.getElementById('baselineYear').addEventListener('change', function() {
+        const baselineValue = parseFloat(baselineValueInput.value) || 0;
+        const targetVal = parseFloat(targetValueInput.value) || 0;
+        if (baselineValue > 0 && targetVal > 0) {
+            if (activeMetric) renderChart(activeMetric);
+        }
+    });
+    
+    document.getElementById('targetYear').addEventListener('change', function() {
+        const baselineValue = parseFloat(baselineValueInput.value) || 0;
+        const targetVal = parseFloat(targetValueInput.value) || 0;
+        if (baselineValue > 0 && targetVal > 0) {
+            if (activeMetric) renderChart(activeMetric);
+        }
+    });
+
+    unitInput.addEventListener('input', function() {
+        updateStatUnits(this.value);
+        configData.unit = this.value;
+    });
+
+    // Set initial active metric
+    if (activeMetric) {
+        chartTitle.textContent = activeMetric;
+        const firstMetric = metricsData[activeMetric];
+        if (firstMetric && firstMetric.unit) {
+            unitInput.value = firstMetric.unit;
+            updateStatUnits(firstMetric.unit);
+        }
+        // Set active class on first tab
+        const firstTab = document.querySelector('.metric-tab');
+        if (firstTab) {
+            firstTab.classList.add('active');
+        }
+    }
+
+    // Only render chart if all values are present
+    if (activeMetric && 
+        document.getElementById('baselineYear').value && 
+        document.getElementById('targetYear').value &&
+        parseFloat(baselineValueInput.value) > 0 && 
+        parseFloat(targetValueInput.value) > 0) {
+        renderChart(activeMetric);
+    } else {
+        emptyOverlay.style.display = 'flex';
+    }
+
+    // ===== Config form submission (AJAX) =====
+    const configForm = document.getElementById('configForm');
+    const saveBtn = document.getElementById('saveConfigBtn');
+
+    configForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const inputs = this.querySelectorAll('input, select');
+        let isValid = true;
+        inputs.forEach(input => {
+            if (input.hasAttribute('required') && !input.value) {
+                input.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                input.classList.remove('is-invalid');
+            }
+        });
+
+        if (!isValid) {
+            showToast('Please fill in all required fields.', 'error');
+            return;
+        }
+
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+        const formData = new FormData(this);
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrftoken,
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showToast(data.message || 'Configuration saved successfully!', 'success');
+                if (data.data) {
+                    configData.baseline_year = data.data.baseline_year || configData.baseline_year;
+                    configData.baseline_value = data.data.baseline_value || configData.baseline_value;
+                    configData.target_year = data.data.target_year || configData.target_year;
+                    configData.target_reduction = data.data.target_reduction || configData.target_reduction;
+                    configData.target_value = data.data.target_value || configData.target_value;
+                    configData.unit = data.data.unit || configData.unit;
+                    
+                    targetValueInput.value = data.data.target_value || targetValueInput.value;
+                    unitInput.value = data.data.unit || unitInput.value;
+                    updateStatUnits(unitInput.value);
+                    
+                    if (activeMetric) renderChart(activeMetric);
+                }
+            } else {
+                showToast(data.message || 'An error occurred. Please try again.', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('An error occurred. Please try again.', 'error');
+        })
+        .finally(() => {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save';
+        });
+    });
+
+    // ===== Toast notifications =====
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast-custom ${type === 'error' ? 'toast-error' : ''}`;
+        const iconClass = type === 'error' ? 'fas fa-exclamation-circle error' : 'fas fa-check-circle success';
+        toast.innerHTML = `
+            <span class="toast-icon ${type === 'error' ? 'error' : 'success'}"><i class="${iconClass}"></i></span>
+            <span class="toast-message">${message}</span>
+            <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => { if (toast.parentElement) toast.remove(); }, 300);
+            }
+        }, 4000);
+    }
+
+    window.gdShowToast = showToast;
+});
+
+// ===== Material Topic switcher =====
+function gdNavigateTopic(url) {
+    if (url) window.location.href = url;
+}
+</script>
+{% endblock %}
