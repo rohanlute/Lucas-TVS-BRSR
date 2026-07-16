@@ -1285,3 +1285,42 @@ class LoadEmissionTransactionsView(View):
             "transactions": data,
 
         })
+
+
+
+
+class ScopeCategoriesView(View):
+
+    def get(self, request):
+
+        scope_code = request.GET.get("scope")
+
+        scope = (
+            EmissionScope.objects
+            .prefetch_related("categories")
+            .filter(code=scope_code)
+            .first()
+        )
+
+        if not scope:
+            return JsonResponse({
+                "success": False
+            })
+
+        categories = []
+
+        for category in scope.categories.filter(
+            is_active=True
+        ).order_by("display_order"):
+
+            categories.append({
+                "id": category.id,
+                "name": category.name,
+            })
+
+        return JsonResponse({
+            "success": True,
+            "scope": scope.name,
+            "description": scope.description,
+            "categories": categories,
+        })
