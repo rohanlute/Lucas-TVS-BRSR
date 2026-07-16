@@ -14,7 +14,7 @@ from datetime import timedelta
 from .forms import UserCreateForm, RolePermissionForm, DepartmentForm
 from .models import User, Role, Department
 from apps.accounts.models.permission import Permissions
-from apps.organizations.models import Plant, Zone, Location, SubLocation
+from apps.organizations.models import Plant
 from apps.email_master.services import EmailService
 from django.http import HttpResponseRedirect
 from django.template.loader import render_to_string
@@ -266,11 +266,7 @@ class DashboardView(LoginRequiredMixin,TemplateView):
 
 
 class UserLocationAssignmentMixin:
-
     assignment_plant_name = 'assigned_plants'
-    assignment_zone_name = 'assigned_zones'
-    assignment_location_name = 'assigned_locations'
-    assignment_sublocation_name = 'assigned_sublocations'
 
     def can_choose_company(self):
         user = self.request.user
@@ -301,16 +297,10 @@ class UserLocationAssignmentMixin:
         if not user_obj:
             return {
                 'plants': set(),
-                'zones': set(),
-                'locations': set(),
-                'sublocations': set(),
             }
 
         return {
             'plants': set(user_obj.assigned_plants.values_list('id', flat=True)),
-            'zones': set(user_obj.assigned_zones.values_list('id', flat=True)),
-            'locations': set(user_obj.assigned_locations.values_list('id', flat=True)),
-            'sublocations': set(user_obj.assigned_sublocations.values_list('id', flat=True)),
         }
 
     def get_selected_company_for_assignment(self):
@@ -344,31 +334,12 @@ class UserLocationAssignmentMixin:
     def get_assignment_tree(self, user_obj=None, company=None):
         assigned_ids = self.get_selected_assignment_ids(user_obj)
 
-        zone_queryset = Zone.objects.filter(is_active=True)
-        location_queryset = Location.objects.filter(is_active=True)
-        sublocation_queryset = SubLocation.objects.filter(is_active=True)
+        plant_queryset = Plant.objects.filter(is_active=True)
 
         if user_obj:
-            zone_queryset = zone_queryset.filter(Q(is_active=True) | Q(id__in=assigned_ids['zones']))
-            location_queryset = location_queryset.filter(Q(is_active=True) | Q(id__in=assigned_ids['locations']))
-            sublocation_queryset = sublocation_queryset.filter(Q(is_active=True) | Q(id__in=assigned_ids['sublocations']))
+            plant_queryset = plant_queryset.filter(Q(is_active=True) | Q(id__in=assigned_ids['plants']))
 
-        return self.get_assignment_scope_plants(user_obj, company).prefetch_related(
-            Prefetch(
-                'zones',
-                queryset=zone_queryset.prefetch_related(
-                    Prefetch(
-                        'locations',
-                        queryset=location_queryset.prefetch_related(
-                            Prefetch(
-                                'sublocations',
-                                queryset=sublocation_queryset
-                            )
-                        )
-                    )
-                )
-            )
-        )
+        return self.get_assignment_scope_plants(user_obj, company)
 
     def _post_id_set(self, field_name):
         return {
@@ -377,72 +348,28 @@ class UserLocationAssignmentMixin:
             if str(value).isdigit()
         }
 
-    def _expand_assignment_ids(self, plant_ids, zone_ids, location_ids, sublocation_ids):
+    def _expand_assignment_ids(self, plant_ids):
         expanded_plants = set(plant_ids)
-        expanded_zones = set(zone_ids)
-        expanded_locations = set(location_ids)
-        expanded_sublocations = set(sublocation_ids)
-
-        zone_qs = Zone.objects.filter(id__in=expanded_zones).select_related('plant')
-        location_qs = Location.objects.filter(id__in=expanded_locations).select_related('zone__plant')
-        sublocation_qs = SubLocation.objects.filter(id__in=expanded_sublocations).select_related('location__zone__plant')
-
-        expanded_plants.update(zone_qs.values_list('plant_id', flat=True))
-        expanded_plants.update(location_qs.values_list('zone__plant_id', flat=True))
-        expanded_plants.update(sublocation_qs.values_list('location__zone__plant_id', flat=True))
-
-        expanded_zones.update(location_qs.values_list('zone_id', flat=True))
-        expanded_zones.update(sublocation_qs.values_list('location__zone_id', flat=True))
-
-        expanded_locations.update(sublocation_qs.values_list('location_id', flat=True))
 
         return {
             'plants': expanded_plants,
-            'zones': expanded_zones,
-            'locations': expanded_locations,
-            'sublocations': expanded_sublocations,
         }
 
     def get_selected_assignment_ids(self, user_obj=None):
         if self.request.method == 'POST':
             return self._expand_assignment_ids(
                 self._post_id_set(self.assignment_plant_name),
-                self._post_id_set(self.assignment_zone_name),
-                self._post_id_set(self.assignment_location_name),
-                self._post_id_set(self.assignment_sublocation_name),
             )
 
         if user_obj:
             selected_plants = set(user_obj.assigned_plants.values_list('id', flat=True))
-            selected_zones = set(user_obj.assigned_zones.values_list('id', flat=True))
-            selected_locations = set(user_obj.assigned_locations.values_list('id', flat=True))
-            selected_sublocations = set(user_obj.assigned_sublocations.values_list('id', flat=True))
-
-            zone_qs = Zone.objects.filter(id__in=selected_zones).select_related('plant')
-            location_qs = Location.objects.filter(id__in=selected_locations).select_related('zone__plant')
-            sublocation_qs = SubLocation.objects.filter(id__in=selected_sublocations).select_related('location__zone__plant')
-
-            selected_plants.update(zone_qs.values_list('plant_id', flat=True))
-            selected_plants.update(location_qs.values_list('zone__plant_id', flat=True))
-            selected_plants.update(sublocation_qs.values_list('location__zone__plant_id', flat=True))
-
-            selected_zones.update(location_qs.values_list('zone_id', flat=True))
-            selected_zones.update(sublocation_qs.values_list('location__zone_id', flat=True))
-
-            selected_locations.update(sublocation_qs.values_list('location_id', flat=True))
 
             return {
                 'plants': selected_plants,
-                'zones': selected_zones,
-                'locations': selected_locations,
-                'sublocations': selected_sublocations,
             }
 
         return {
             'plants': set(),
-            'zones': set(),
-            'locations': set(),
-            'sublocations': set(),
         }
 
     def get_assignment_context(self, user_obj=None):
@@ -451,9 +378,6 @@ class UserLocationAssignmentMixin:
         return {
             'company_plants': self.get_assignment_tree(user_obj, company),
             'selected_plant_ids': selected_ids['plants'],
-            'selected_zone_ids': selected_ids['zones'],
-            'selected_location_ids': selected_ids['locations'],
-            'selected_sublocation_ids': selected_ids['sublocations'],
         }
 
     def sync_user_assignments(self, user_obj):
@@ -462,46 +386,13 @@ class UserLocationAssignmentMixin:
 
         selected_ids = self._expand_assignment_ids(
             self._post_id_set(self.assignment_plant_name),
-            self._post_id_set(self.assignment_zone_name),
-            self._post_id_set(self.assignment_location_name),
-            self._post_id_set(self.assignment_sublocation_name),
         )
 
         allowed_plants = set(
             scope_plants.filter(id__in=selected_ids['plants']).values_list('id', flat=True)
         )
 
-        zone_qs = Zone.objects.filter(
-            id__in=selected_ids['zones'],
-            is_active=True,
-            plant__in=scope_plants,
-        ).select_related('plant')
-        allowed_zones = set(zone_qs.values_list('id', flat=True))
-        allowed_plants.update(zone_qs.values_list('plant_id', flat=True))
-
-        location_qs = Location.objects.filter(
-            id__in=selected_ids['locations'],
-            is_active=True,
-            zone__plant__in=scope_plants,
-        ).select_related('zone__plant')
-        allowed_locations = set(location_qs.values_list('id', flat=True))
-        allowed_zones.update(location_qs.values_list('zone_id', flat=True))
-        allowed_plants.update(location_qs.values_list('zone__plant_id', flat=True))
-
-        sublocation_qs = SubLocation.objects.filter(
-            id__in=selected_ids['sublocations'],
-            is_active=True,
-            location__zone__plant__in=scope_plants,
-        ).select_related('location__zone__plant')
-        allowed_sublocations = set(sublocation_qs.values_list('id', flat=True))
-        allowed_locations.update(sublocation_qs.values_list('location_id', flat=True))
-        allowed_zones.update(sublocation_qs.values_list('location__zone_id', flat=True))
-        allowed_plants.update(sublocation_qs.values_list('location__zone__plant_id', flat=True))
-
         user_obj.assigned_plants.set(allowed_plants)
-        user_obj.assigned_zones.set(allowed_zones)
-        user_obj.assigned_locations.set(allowed_locations)
-        user_obj.assigned_sublocations.set(allowed_sublocations)
 
 
 # -----------------------------------------------

@@ -2,7 +2,7 @@ from django.db import models
 from apps.calculator.models import Unit
 from ..companies.models import Company
 from config import settings
-from ..organizations.models import (FinancialYear,FinancialMonth,Plant,)
+from ..organizations.models import FinancialYear,FinancialMonth,Plant
 from decimal import Decimal
 from django.utils import timezone
 

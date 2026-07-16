@@ -1,19 +1,1063 @@
-{% extends "base/base.html" %}
+{% extends 'base/base.html' %}
+{% load static %}
+{% block title %}Goals-Dashboard{% endblock %}
 
-{% block title %}Goal Dashboard{% endblock %}
+{% block extra_css %}
+<style>
+    /* ===== Adjust this to match your actual sidebar width ===== */
+    :root {
+        --gd-sidebar-width: 260px;
+    }
+
+    /* ===== Goals Section ===== */
+    .goals-container {
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 28px 32px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    .goals-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 28px;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .goals-header .search-wrapper {
+        position: relative;
+        flex: 1;
+        max-width: 400px;
+        min-width: 200px;
+    }
+
+    .goals-header .search-wrapper input {
+        width: 100%;
+        padding: 10px 16px 10px 44px;
+        border: 1px solid #e4e9f0;
+        border-radius: 12px;
+        font-size: 14px;
+        color: #1a2332;
+        background: #ffffff;
+        outline: none;
+        transition: all 0.2s ease;
+        font-weight: 400;
+    }
+
+    .goals-header .search-wrapper input::placeholder {
+        color: #9aa5b5;
+        font-weight: 400;
+    }
+
+    .goals-header .search-wrapper input:focus {
+        border-color: #3454d1;
+        box-shadow: 0 0 0 3px rgba(52, 84, 209, 0.08);
+    }
+
+    .goals-header .search-wrapper i {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9aa5b5;
+        font-size: 18px;
+    }
+
+    .goals-header .add-goal-btn {
+        padding: 10px 22px;
+        background: #3454d1;
+        color: #ffffff;
+        border: none;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+    }
+
+    .goals-header .add-goal-btn:hover {
+        background: #1a3fa8;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(52, 84, 209, 0.3);
+    }
+
+    .goals-header .add-goal-btn i {
+        font-size: 16px;
+    }
+
+    /* ===== Goal Cards - 3 Column Layout (BRSR-style flat cards) ===== */
+    .goals-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+        margin: 24px;
+    }
+
+    .goal-card {
+        border: 1px solid #edf0f5;
+        border-radius: 16px;
+        padding: 24px 26px;
+        background: #ffffff;
+        min-height: 210px;
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+        transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .goal-card:hover {
+        border-color: #dde4f5;
+        box-shadow: 0 10px 26px rgba(30, 45, 90, 0.08);
+        transform: translateY(-2px);
+    }
+
+    .goal-card .card-top-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .goal-card .card-code {
+        font-size: 12px;
+        font-weight: 700;
+        color: #8a94a6;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        padding-top: 2px;
+    }
+
+    .goal-card .card-top-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .goal-card .card-count {
+        font-size: 13px;
+        font-weight: 600;
+        color: #3454d1;
+        white-space: nowrap;
+    }
+
+    .goal-card .card-title {
+        font-size: 19px;
+        font-weight: 700;
+        color: #1a2332;
+        margin-bottom: 10px;
+        line-height: 1.3;
+    }
+
+    .goal-card .card-description {
+        font-size: 14px;
+        color: #6b7a8f;
+        line-height: 1.65;
+        flex: 1;
+    }
+
+    .goal-card .card-description ul {
+        margin: 0;
+        padding-left: 18px;
+    }
+
+    .goal-card .card-description ul li {
+        margin-bottom: 6px;
+        list-style: disc;
+        color: #46536a;
+    }
+
+    .goal-card .card-description ul li::marker {
+        color: #c3cbdb;
+    }
+
+    /* ===== Three Dots Menu (now inline in the top row) ===== */
+    .card-dropdown {
+        position: relative;
+        line-height: 1;
+    }
+
+    .card-dropdown .dropdown-toggle {
+        background: none;
+        border: none;
+        color: #8a94a6;
+        font-size: 18px;
+        cursor: pointer;
+        padding: 4px 6px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        line-height: 1;
+    }
+
+    .card-dropdown .dropdown-toggle:hover {
+        background: #f0f3f8;
+        color: #1a2332;
+    }
+
+    .dropdown-menu {
+        min-width: 160px;
+        padding: 8px 0;
+        border: 1px solid #e9edf4;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        background: #ffffff;
+        font-family: inherit;
+    }
+
+    .dropdown-menu .dropdown-item {
+        padding: 8px 20px;
+        font-size: 14px;
+        font-family: inherit;
+        color: #1a2332;
+        transition: all 0.15s ease;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+    }
+
+    .dropdown-menu .dropdown-item:hover {
+        background: #f0f4ff;
+        color: #3454d1;
+    }
+
+    .dropdown-menu .dropdown-item i {
+        font-size: 16px;
+        width: 20px;
+        color: #8a94a6;
+    }
+
+    .dropdown-menu .dropdown-item:hover i {
+        color: #3454d1;
+    }
+
+    .dropdown-menu .dropdown-item.text-danger:hover {
+        background: #fce4ec;
+        color: #dc3545;
+    }
+
+    .dropdown-menu .dropdown-item.text-danger:hover i {
+        color: #dc3545;
+    }
+
+    .dropdown-divider {
+        margin: 4px 0;
+        border-color: #f0f3f8;
+    }
+
+    /* ===== Modal Styles - centered within content area, excluding sidebar, fixed size ===== */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: var(--gd-sidebar-width);
+        width: calc(100% - var(--gd-sidebar-width));
+        height: 100%;
+        z-index: 1055;
+        display: none;
+        overflow-x: hidden;
+        overflow-y: auto;
+        font-family: inherit;
+    }
+
+    .modal-dialog-centered {
+        min-height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+    }
+
+    .modal-dialog {
+        position: relative;
+        width: 260px;
+        max-width: 100%;
+        margin: 0;
+        pointer-events: none;
+    }
+
+    .modal-content {
+        width: 60%;
+        border-radius: 18px;
+        pointer-events: auto;
+        background: #ffffff;
+        box-shadow: 0 20px 60px rgba(15, 25, 55, 0.18);
+        font-family: inherit;
+    }
+
+    .modal-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        padding: 16px 24px;
+        border-bottom: 1px solid #f0f3f8;
+        border-top-left-radius: 18px;
+        border-top-right-radius: 18px;
+    }
+
+    .modal-header .modal-title {
+        font-size: 16px;
+        font-weight: 600;
+        font-family: inherit;
+        color: #1a2332;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .modal-header .btn-close {
+        padding: 0.5rem 0.5rem;
+        margin: -0.5rem -0.5rem -0.5rem auto;
+        background: transparent;
+        border: 0;
+        font-family: inherit;
+        font-size: 1.5rem;
+        line-height: 1;
+        color: #000;
+        opacity: 0.5;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .modal-header .btn-close:hover {
+        opacity: 1;
+        transform: rotate(90deg);
+    }
+
+    .modal-body {
+        position: relative;
+        flex: 1 1 auto;
+        padding: 20px 24px;
+        font-family: inherit;
+    }
+
+    .modal-footer {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        padding: 12px 24px;
+        border-top: 1px solid #f0f3f8;
+        border-bottom-right-radius: 18px;
+        border-bottom-left-radius: 18px;
+        gap: 8px;
+    }
+
+    .modal-footer .btn-secondary {
+        background: #f0f3f8;
+        border: none;
+        color: #6b7a8f;
+        padding: 6px 20px;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .modal-footer .btn-secondary:hover {
+        background: #e4e9f0;
+    }
+
+    .modal-footer .btn-primary {
+        background: #3454d1;
+        border: none;
+        padding: 6px 20px;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #fff;
+        cursor: pointer;
+    }
+
+    .modal-footer .btn-primary:hover {
+        background: #1a3fa8;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(52, 84, 209, 0.3);
+    }
+
+    .modal-footer .btn-primary:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .form-label {
+        font-weight: 500;
+        font-family: inherit;
+        color: #1a2332;
+        font-size: 13px;
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    .form-label .text-danger {
+        color: #dc3545;
+    }
+
+    .form-select {
+        border: 1px solid #e4e9f0;
+        border-radius: 10px;
+        padding: 8px 14px;
+        font-family: inherit;
+        font-size: 13px;
+        color: #1a2332;
+        transition: all 0.2s ease;
+        background-color: #ffffff;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7a8f' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        padding-right: 36px;
+        cursor: pointer;
+        width: 100%;
+    }
+
+    .form-select:focus {
+        border-color: #3454d1;
+        box-shadow: 0 0 0 3px rgba(52, 84, 209, 0.08);
+        outline: none;
+    }
+
+    .form-select.is-invalid {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.08);
+    }
+
+    .form-select.is-valid {
+        border-color: #28a745;
+        box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.08);
+    }
+
+    .form-select option:disabled {
+        color: #9aa5b5;
+    }
+
+    .invalid-feedback {
+        display: none;
+        font-family: inherit;
+        font-size: 12px;
+        color: #dc3545;
+        margin-top: 4px;
+    }
+
+    .invalid-feedback.show {
+        display: block;
+    }
+
+    .modal-alert {
+        padding: 8px 14px !important;
+        border-radius: 8px !important;
+        margin-bottom: 12px !important;
+        font-size: 13px !important;
+        font-family: inherit !important;
+        display: none;
+    }
+
+    .modal-alert.show {
+        display: block !important;
+    }
+
+    .modal-alert-success {
+        background: #e8f5e9;
+        color: #2e7d32;
+        border: 1px solid #c8e6c9;
+    }
+
+    .modal-alert-danger {
+        background: #fce4ec;
+        color: #c62828;
+        border: 1px solid #f5c6cb;
+    }
+
+    /* Modal Backdrop - dims the full page, including the sidebar */
+    .modal-backdrop-custom {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 1040;
+        display: none;
+    }
+
+    /* No Goals */
+    .no-goals {
+        text-align: center;
+        padding: 60px 20px;
+        color: #8a94a6;
+    }
+
+    .no-goals .no-goals-icon {
+        font-size: 48px;
+        color: #d0d8e4;
+        margin-bottom: 16px;
+    }
+
+    .no-goals .no-goals-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1a2332;
+        margin-bottom: 8px;
+    }
+
+    .no-goals .no-goals-text {
+        font-size: 14px;
+        color: #8a94a6;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 1200px) {
+        .goals-cards-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 991px) {
+        /* Sidebar is typically collapsed/hidden below this breakpoint */
+        .modal {
+            left: 0;
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .goals-container {
+            padding: 20px 16px;
+        }
+
+        .goals-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .goals-header .search-wrapper {
+            max-width: 100%;
+        }
+
+        .goals-header .add-goal-btn {
+            justify-content: center;
+        }
+
+        .goals-cards-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .goal-card {
+            padding: 20px;
+        }
+
+        .goal-card .card-title {
+            font-size: 16px;
+        }
+
+        .modal-body {
+            padding: 16px 20px;
+        }
+
+        .modal-header {
+            padding: 14px 20px;
+        }
+
+        .modal-footer {
+            padding: 12px 20px;
+            flex-direction: column-reverse;
+            gap: 8px;
+        }
+
+        .modal-footer .btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .modal-dialog {
+            width: 100%;
+        }
+
+        .modal-dialog-centered {
+            padding: 16px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .goals-cards-grid {
+            gap: 16px;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-
-<div class="container-fluid">
-
-    <h3 class="mb-4">
-        Goal Dashboard
-    </h3>
-
-    <div class="alert alert-info">
-        Goal Management Module Successfully Created.
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Goals Dashboard</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="#">Home</a></li>
+            <li class="breadcrumb-item active">Goals</li>
+        </ul>
     </div>
-
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                <button class="btn btn-primary" id="openAddGoalModal">
+                    <i class="fas fa-plus"></i> Add Goals
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
+<!-- Goals Cards Section - 3 Column Layout (no outer container/card wrapper) -->
+{% if grouped_goals %}
+    <div class="goals-cards-grid">
+        {% for group in grouped_goals %}
+            <div class="goal-card" onclick="window.location.href='{% url 'goals:goal_detail' group.material_topic %}'">
+                <div class="card-top-row">
+                    <span class="card-code">Topic</span>
+                    <div class="card-top-actions" onclick="event.stopPropagation()">
+                        <span class="card-count">
+                            {{ group.goals|length }} goal{% if group.goals|length > 1 %}s{% endif %}
+                        </span>
+                       <div class="dropdown">
+                        <i class="feather-more-vertical" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer; font-size: 18px;"></i>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="#" onclick="openAddGoalModalWithTopic('{{ group.material_topic }}')">
+                                        <i class="feather-plus"></i> Add Goal
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="POST" action="{% url 'goals:delete_topic' group.material_topic %}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete all goals under {{ group.material_topic }}?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="feather-trash-2"></i> Delete Topic
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-title">{{ group.material_topic }}</div>
+                <div class="card-description">
+                    <ul>
+                        {% for goal in group.goals %}
+                            <li>{{ goal.name }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="no-goals">
+        <div class="no-goals-icon">
+            <i class="fas fa-bullseye"></i>
+        </div>
+        <div class="no-goals-title">No Goals Yet</div>
+        <div class="no-goals-text">Click "Add Goals" to create your first sustainability goal.</div>
+    </div>
+{% endif %}
+
+<!-- ===== ADD GOAL MODAL - FIXED SIZE, CENTERED IN CONTENT AREA ===== -->
+<div class="modal" id="addGoalModal" tabindex="-1" aria-labelledby="addGoalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addGoalModalLabel">
+                    <i class="fas fa-plus-circle me-2" style="color: #3454d1;"></i>
+                    Add Goal
+                </h5>
+                <button type="button" class="btn-close" onclick="closeModal()" aria-label="Close">&times;</button>
+            </div>
+            <form id="addGoalForm" method="POST" action="{% url 'goals:add_goal' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <!-- Alert messages -->
+                    <div id="modalAlert" class="modal-alert"></div>
+
+                    <!-- Material Topic -->
+                    <div class="mb-3">
+                        <label for="materialTopic" class="form-label">
+                            Material Topic <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select" id="materialTopic" name="material_topic" required>
+                            <option value="">Select a material topic</option>
+                            <option value="Stationary Combustion">Stationary Combustion</option>
+                            <option value="Mobile Combustion">Mobile Combustion</option>
+                            <option value="Process Emissions">Process Emissions</option>
+                            <option value="Fugitive Emissions">Fugitive Emissions</option>
+                            <option value="Purchased Electricity">Purchased Electricity</option>
+                            <option value="Purchased Steam, Heat & Cooling">Purchased Steam, Heat &amp; Cooling</option>
+                            <option value="Purchased Goods & Services">Purchased Goods &amp; Services</option>
+                            <option value="Business Travel">Business Travel</option>
+                            <option value="Employee Commuting">Employee Commuting</option>
+                            <option value="Transportation & Distribution">Transportation &amp; Distribution</option>
+                            <option value="Waste Generated in Operations">Waste Generated in Operations</option>
+                            <option value="Upstream & Downstream Activities">Upstream &amp; Downstream Activities</option>
+                        </select>
+                        <div class="invalid-feedback" id="materialTopicError">Please select a material topic.</div>
+                    </div>
+
+                    <!-- Goal -->
+                    <div class="mb-2">
+                        <label for="goalName" class="form-label">
+                            Goal <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select" id="goalName" name="goal_name" required>
+                            <option value="">Select Goal</option>
+                            <!-- Stationary Combustion -->
+                            <option value="Reduce Fuel Consumption" data-topic="Stationary Combustion">Reduce Fuel Consumption</option>
+                            <option value="Improve Boiler Efficiency" data-topic="Stationary Combustion">Improve Boiler Efficiency</option>
+                            <option value="Lower Direct GHG Emissions" data-topic="Stationary Combustion">Lower Direct GHG Emissions</option>
+                            <!-- Mobile Combustion -->
+                            <option value="Reduce Fuel Usage" data-topic="Mobile Combustion">Reduce Fuel Usage</option>
+                            <option value="Improve Fleet Efficiency" data-topic="Mobile Combustion">Improve Fleet Efficiency</option>
+                            <option value="Transition to Low-Emission Vehicles" data-topic="Mobile Combustion">Transition to Low-Emission Vehicles</option>
+                            <!-- Process Emissions -->
+                            <option value="Reduce Process Emissions" data-topic="Process Emissions">Reduce Process Emissions</option>
+                            <option value="Improve Process Efficiency" data-topic="Process Emissions">Improve Process Efficiency</option>
+                            <option value="Adopt Cleaner Technologies" data-topic="Process Emissions">Adopt Cleaner Technologies</option>
+                            <!-- Fugitive Emissions -->
+                            <option value="Prevent Refrigerant Leakage" data-topic="Fugitive Emissions">Prevent Refrigerant Leakage</option>
+                            <option value="Reduce Fugitive Emissions" data-topic="Fugitive Emissions">Reduce Fugitive Emissions</option>
+                            <option value="Improve Leak Detection & Maintenance" data-topic="Fugitive Emissions">Improve Leak Detection &amp; Maintenance</option>
+                            <!-- Purchased Electricity -->
+                            <option value="Reduce Electricity Consumption" data-topic="Purchased Electricity">Reduce Electricity Consumption</option>
+                            <option value="Increase Renewable Electricity" data-topic="Purchased Electricity">Increase Renewable Electricity</option>
+                            <option value="Improve Energy Efficiency" data-topic="Purchased Electricity">Improve Energy Efficiency</option>
+                            <!-- Purchased Steam, Heat & Cooling -->
+                            <option value="Optimize Energy Use" data-topic="Purchased Steam, Heat & Cooling">Optimize Energy Use</option>
+                            <option value="Reduce Energy Losses" data-topic="Purchased Steam, Heat & Cooling">Reduce Energy Losses</option>
+                            <option value="Increase Low-Carbon Energy Sources" data-topic="Purchased Steam, Heat & Cooling">Increase Low-Carbon Energy Sources</option>
+                            <!-- Purchased Goods & Services -->
+                            <option value="Sustainable Procurement" data-topic="Purchased Goods & Services">Sustainable Procurement</option>
+                            <option value="Reduce Supplier Emissions" data-topic="Purchased Goods & Services">Reduce Supplier Emissions</option>
+                            <option value="Improve Supplier ESG Performance" data-topic="Purchased Goods & Services">Improve Supplier ESG Performance</option>
+                            <!-- Business Travel -->
+                            <option value="Reduce Travel Emissions" data-topic="Business Travel">Reduce Travel Emissions</option>
+                            <option value="Promote Virtual Meetings" data-topic="Business Travel">Promote Virtual Meetings</option>
+                            <option value="Encourage Low-Carbon Travel" data-topic="Business Travel">Encourage Low-Carbon Travel</option>
+                            <!-- Employee Commuting -->
+                            <option value="Encourage Public Transport" data-topic="Employee Commuting">Encourage Public Transport</option>
+                            <option value="Promote Carpooling" data-topic="Employee Commuting">Promote Carpooling</option>
+                            <option value="Support Remote Working" data-topic="Employee Commuting">Support Remote Working</option>
+                            <!-- Transportation & Distribution -->
+                            <option value="Optimize Logistics" data-topic="Transportation & Distribution">Optimize Logistics</option>
+                            <option value="Reduce Transportation Emissions" data-topic="Transportation & Distribution">Reduce Transportation Emissions</option>
+                            <option value="Improve Fuel Efficiency" data-topic="Transportation & Distribution">Improve Fuel Efficiency</option>
+                            <!-- Waste Generated in Operations -->
+                            <option value="Reduce Operational Waste" data-topic="Waste Generated in Operations">Reduce Operational Waste</option>
+                            <option value="Increase Recycling" data-topic="Waste Generated in Operations">Increase Recycling</option>
+                            <option value="Divert Waste from Landfill" data-topic="Waste Generated in Operations">Divert Waste from Landfill</option>
+                            <!-- Upstream & Downstream Activities -->
+                            <option value="Improve Value Chain Sustainability" data-topic="Upstream & Downstream Activities">Improve Value Chain Sustainability</option>
+                            <option value="Reduce Lifecycle Emissions" data-topic="Upstream & Downstream Activities">Reduce Lifecycle Emissions</option>
+                            <option value="Collaborate with Supply Chain Partners" data-topic="Upstream & Downstream Activities">Collaborate with Supply Chain Partners</option>
+                        </select>
+                        <div class="invalid-feedback" id="goalNameError">Please select a goal.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Close</button>
+                    <button type="submit" class="btn btn-primary" id="submitGoalBtn">
+                        <i class="fas fa-plus"></i> Add Goal
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Backdrop -->
+<div class="modal-backdrop-custom" id="modalBackdrop"></div>
+
+<script>
+// Modal Functions - Manual Control (No Fade)
+function openModal() {
+    const modal = document.getElementById('addGoalModal');
+    const backdrop = document.getElementById('modalBackdrop');
+    
+    modal.style.display = 'block';
+    backdrop.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+    const modal = document.getElementById('addGoalModal');
+    const backdrop = document.getElementById('modalBackdrop');
+    
+    modal.style.display = 'none';
+    backdrop.style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+// Close modal on backdrop click
+document.getElementById('modalBackdrop').addEventListener('click', function() {
+    closeModal();
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeModal();
+    }
+});
+
+// Function to open modal with pre-selected topic
+function openAddGoalModalWithTopic(topic) {
+    openModal();
+    // Set the material topic dropdown value
+    const materialTopic = document.getElementById('materialTopic');
+    if (materialTopic) {
+        materialTopic.value = topic;
+        // Trigger change event to filter goals
+        const event = new Event('change');
+        materialTopic.dispatchEvent(event);
+        // Add validation class
+        materialTopic.classList.add('is-valid');
+    }
+}
+
+// Get CSRF token from cookie
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Open modal on button click
+document.addEventListener('DOMContentLoaded', function() {
+    const openBtn = document.getElementById('openAddGoalModal');
+    if (openBtn) {
+        openBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            openModal();
+        });
+    }
+    
+    // Material Topic -> Goal filtering
+    const materialTopic = document.getElementById('materialTopic');
+    const goalName = document.getElementById('goalName');
+    
+    // Filter goals based on selected material topic
+    materialTopic.addEventListener('change', function() {
+        const selectedTopic = this.value;
+        const options = goalName.querySelectorAll('option');
+        
+        // Reset select
+        goalName.value = '';
+        
+        // Show/hide options based on topic
+        options.forEach(function(option) {
+            if (option.value === '') {
+                option.style.display = '';
+                return;
+            }
+            
+            const topic = option.getAttribute('data-topic');
+            if (selectedTopic === '' || topic === selectedTopic) {
+                option.style.display = '';
+            } else {
+                option.style.display = 'none';
+            }
+        });
+        
+        // Reset validation
+        goalName.classList.remove('is-valid', 'is-invalid');
+        document.getElementById('goalNameError').classList.remove('show');
+    });
+    
+    // Modal Form Handling
+    const form = document.getElementById('addGoalForm');
+    const submitBtn = document.getElementById('submitGoalBtn');
+    const materialTopicError = document.getElementById('materialTopicError');
+    const goalNameError = document.getElementById('goalNameError');
+    const modalAlert = document.getElementById('modalAlert');
+
+    // Real-time validation
+    materialTopic.addEventListener('change', function() {
+        if (this.value) {
+            this.classList.remove('is-invalid');
+            this.classList.add('is-valid');
+            materialTopicError.classList.remove('show');
+        } else {
+            this.classList.remove('is-valid');
+            this.classList.add('is-invalid');
+        }
+    });
+
+    goalName.addEventListener('change', function() {
+        if (this.value) {
+            this.classList.remove('is-invalid');
+            this.classList.add('is-valid');
+            goalNameError.classList.remove('show');
+        } else {
+            this.classList.remove('is-valid');
+            this.classList.add('is-invalid');
+        }
+    });
+
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        let isValid = true;
+
+        // Hide previous alert
+        modalAlert.className = 'modal-alert';
+        modalAlert.style.display = 'none';
+
+        // Validate Material Topic
+        if (!materialTopic.value) {
+            materialTopic.classList.add('is-invalid');
+            materialTopicError.classList.add('show');
+            isValid = false;
+        } else {
+            materialTopic.classList.remove('is-invalid');
+            materialTopic.classList.add('is-valid');
+            materialTopicError.classList.remove('show');
+        }
+
+        // Validate Goal
+        if (!goalName.value) {
+            goalName.classList.add('is-invalid');
+            goalNameError.classList.add('show');
+            isValid = false;
+        } else {
+            goalName.classList.remove('is-invalid');
+            goalName.classList.add('is-valid');
+            goalNameError.classList.remove('show');
+        }
+
+        if (!isValid) {
+            modalAlert.textContent = 'Please fill in all required fields.';
+            modalAlert.className = 'modal-alert modal-alert-danger show';
+            modalAlert.style.display = 'block';
+            
+            const firstInvalid = document.querySelector('.is-invalid');
+            if (firstInvalid) {
+                firstInvalid.focus();
+                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return;
+        }
+
+        // Disable submit button
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Adding...';
+
+        // Get CSRF token
+        const csrftoken = getCookie('csrftoken');
+
+        // Submit form via AJAX
+        const formData = new FormData(form);
+
+        fetch('/goals/add-goal/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': csrftoken,
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                modalAlert.textContent = data.message || 'Goal added successfully!';
+                modalAlert.className = 'modal-alert modal-alert-success show';
+                modalAlert.style.display = 'block';
+                
+                // Reset form
+                materialTopic.value = '';
+                goalName.value = '';
+                materialTopic.classList.remove('is-valid');
+                goalName.classList.remove('is-valid');
+                
+                // Reset goal options visibility
+                const options = goalName.querySelectorAll('option');
+                options.forEach(function(option) {
+                    option.style.display = '';
+                });
+                
+                // Reset button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-plus me-2"></i> Add Goal';
+                
+                // Close modal and reload after 1.5 seconds
+                setTimeout(function() {
+                    closeModal();
+                    location.reload();
+                }, 1500);
+            } else {
+                let errorMsg = '';
+                if (data.errors) {
+                    for (const [field, errors] of Object.entries(data.errors)) {
+                        errorMsg += errors.join(' ') + ' ';
+                    }
+                }
+                modalAlert.textContent = errorMsg || data.message || 'An error occurred. Please try again.';
+                modalAlert.className = 'modal-alert modal-alert-danger show';
+                modalAlert.style.display = 'block';
+                
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-plus me-2"></i> Add Goal';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            modalAlert.textContent = 'An error occurred. Please try again.';
+            modalAlert.className = 'modal-alert modal-alert-danger show';
+            modalAlert.style.display = 'block';
+            
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-plus me-2"></i> Add Goal';
+        });
+    });
+
+    // Reset form when modal is closed
+    const modal = document.getElementById('addGoalModal');
+    const observer = new MutationObserver(function() {
+        if (modal.style.display === 'none') {
+            materialTopic.classList.remove('is-valid', 'is-invalid');
+            goalName.classList.remove('is-valid', 'is-invalid');
+            materialTopicError.classList.remove('show');
+            goalNameError.classList.remove('show');
+            modalAlert.className = 'modal-alert';
+            modalAlert.style.display = 'none';
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-plus me-2"></i> Add Goal';
+        }
+    });
+    observer.observe(modal, { attributes: true, attributeFilter: ['style'] });
+});
+</script>
 {% endblock %}

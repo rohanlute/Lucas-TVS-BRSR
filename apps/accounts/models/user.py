@@ -56,24 +56,6 @@ class User(AbstractUser):
         related_name='assigned_users'
     )
 
-    assigned_zones = models.ManyToManyField(
-        'organizations.Zone',
-        blank=True,
-        related_name='assigned_users'
-    )
-
-    assigned_locations = models.ManyToManyField(
-        'organizations.Location',
-        blank=True,
-        related_name='assigned_users'
-    )
-
-    assigned_sublocations = models.ManyToManyField(
-        'organizations.SubLocation',
-        blank=True,
-        related_name='assigned_users'
-    )
-
     mobile_number = models.CharField(
         max_length=15,
         blank=True,
