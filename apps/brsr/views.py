@@ -7,7 +7,8 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.generic import TemplateView
 from apps.accounts.models import Department
-from apps.organizations.models import FinancialYear, Plant
+from apps.organizations.models import ApprovalConfigurationTemplate, FinancialYear, Plant
+from apps.organizations.workflow_configuration_engine import WorkflowConfigurationEngine
 from .forms import BRSRAssignmentForm
 from .models import Assignment, BRSRPrinciple, BRSRQuestion, BRSRSection, QuestionResponse
 
@@ -36,6 +37,208 @@ def _get_default_section():
 
 def _get_default_principle():
     return BRSRPrinciple.objects.filter(is_active=True).order_by("principle_number").first()
+
+
+def _workflow_template_queryset():
+    return (
+        ApprovalConfigurationTemplate.objects.filter(is_active=True, framework="BRSR")
+        .select_related("company")
+        .prefetch_related("stages", "stages__role", "stages__escalation_role")
+        .order_by("company__company_name", "name")
+    )
+
+
+def _workflow_entry_stage(template):
+    if not template:
+        return None
+
+    first_stage = template.first_stage
+    if not first_stage:
+        return None
+
+    if first_stage.stage_type == "question_assignment":
+        next_stage = first_stage.next_stage()
+        if next_stage:
+            return next_stage
+
+    return first_stage
+
+
+def _company_scope_plants(user):
+    queryset = Plant.objects.filter(is_active=True)
+    if user.is_superuser or getattr(user, "is_super_admin", False):
+        return queryset.order_by("name")
+    if getattr(user, "company_id", None):
+        return queryset.filter(created_by__company_id=user.company_id).order_by("name")
+    return queryset.filter(id__in=user.assigned_plants.filter(is_active=True).values_list("id", flat=True)).order_by("name")
+
+
+def _assignment_queryset_for_user(user):
+    queryset = Assignment.objects.all()
+    if user.is_superuser or getattr(user, "is_super_admin", False):
+        return queryset
+    if getattr(user, "company_id", None):
+        return queryset.filter(plant__created_by__company_id=user.company_id)
+    plant_ids = user.assigned_plants.filter(is_active=True).values_list("id", flat=True)
+    return queryset.filter(plant_id__in=plant_ids)
+
+
+def _resolve_brsr_workflow_template(user=None, plant=None):
+    queryset = _workflow_template_queryset()
+
+    company_id = getattr(user, "company_id", None)
+    if company_id:
+        template = queryset.filter(company_id=company_id).first()
+        if template:
+            return template
+
+    plant_company_id = getattr(getattr(plant, "created_by", None), "company_id", None)
+    if plant_company_id:
+        template = queryset.filter(company_id=plant_company_id).first()
+        if template:
+            return template
+
+    return queryset.first()
+
+
+def _workflow_assignees_for_stage(plant, stage, current_user=None):
+    if not plant:
+        return User.objects.none()
+
+    if not stage or not stage.role_id:
+        return _plant_assignees(plant, current_user=current_user)
+
+    queryset = (
+        User.objects.filter(
+            is_active=True,
+            assigned_plants=plant,
+            role_id=stage.role_id,
+        )
+        .select_related("role", "department")
+        .order_by("full_name", "username")
+    )
+    plant_company_id = getattr(getattr(plant, "created_by", None), "company_id", None)
+    if plant_company_id:
+        queryset = queryset.filter(company_id=plant_company_id)
+    if current_user:
+        queryset = queryset.exclude(pk=current_user.pk)
+    return queryset.distinct()
+
+
+def _first_workflow_assignee_for_stage(plant, stage, current_user=None):
+    assignee = _workflow_assignees_for_stage(plant, stage, current_user=current_user).first()
+    if stage and stage.role_id and assignee is None:
+        raise ValueError(f"No eligible assignee found for stage '{stage.label}'.")
+    return assignee
+
+
+def _resolve_brsr_assignee(plant, template, selected_assignee=None, current_user=None):
+    stage = _workflow_entry_stage(template) if template else None
+    if not stage or not stage.role_id:
+        return selected_assignee or _workflow_assignees_for_stage(plant, stage, current_user=current_user).first()
+
+    eligible = _workflow_assignees_for_stage(plant, stage, current_user=current_user)
+    if selected_assignee and eligible.filter(pk=selected_assignee.pk).exists():
+        return selected_assignee
+
+    default_assignee = eligible.first()
+    if default_assignee:
+        return default_assignee
+
+    raise ValueError("No eligible assignee matches the first stage of the configured BRSR workflow.")
+
+
+def _advance_assignment_to_entry_stage(assignment, actor=None):
+    """
+    If the workflow starts with a question-assignment gate, move it forward to
+    the actual data-entry stage so the assignee can work on the response.
+    """
+    task = assignment.workflow_task
+    if not task or not task.current_stage_id:
+        return task
+
+    current_stage = task.current_stage
+    if not current_stage or current_stage.stage_type != "question_assignment":
+        return task
+
+    next_stage = current_stage.next_stage()
+    if not next_stage:
+        return task
+
+    if next_stage.stage_type != "data_entry":
+        return task
+
+    assignee_role_id = getattr(getattr(assignment, "assignee", None), "role_id", None)
+    if next_stage.role_id and assignee_role_id != next_stage.role_id:
+        return task
+
+    WorkflowConfigurationEngine.advance_to_next_stage(
+        task,
+        assignment.assigner or actor or assignment.assignee,
+        remark="Auto-advanced to data entry stage after assignment creation.",
+        next_assignee=assignment.assignee,
+    )
+    return task
+
+
+def _is_approval_stage(stage_type):
+    return stage_type in {"review", "approval", "pre_final_approval", "final_approval"}
+
+
+def _approval_stage_queryset(user):
+    assignments = _assignment_queryset_for_user(user).select_related(
+        "plant",
+        "section",
+        "principle",
+        "workflow_template",
+        "assignee_content_type",
+        "assigner_content_type",
+    ).prefetch_related(
+        "questions",
+        "responses",
+        "questions__section",
+        "questions__principle",
+    )
+    return [assignment for assignment in assignments if assignment.workflow_stage_type and _is_approval_stage(assignment.workflow_stage_type)]
+
+
+def _serialize_workflow_task(task):
+    if not task:
+        return None
+    return {
+        "id": task.id,
+        "template": task.template.name if task.template_id else "",
+        "stage": task.current_stage.label if task.current_stage_id else "",
+        "stage_type": task.current_stage.stage_type if task.current_stage_id else "",
+        "stage_level": task.current_stage.level if task.current_stage_id else None,
+        "assignee": str(task.current_assignee) if task.current_assignee else "",
+        "is_completed": task.is_completed,
+        "is_returned": task.is_returned,
+        "is_overdue": task.is_overdue,
+        "history_url": reverse("organizations:workflow_configuration_task_history", kwargs={"pk": task.pk}),
+    }
+
+
+def _ensure_assignment_workflow_task(assignment, current_user=None):
+    if assignment.workflow_task:
+        task = assignment.workflow_task
+        _advance_assignment_to_entry_stage(assignment, actor=current_user)
+        return task
+    template = assignment.workflow_template
+    if not template:
+        template = _resolve_brsr_workflow_template(user=current_user, plant=assignment.plant)
+        if template:
+            assignment.workflow_template = template
+            assignment.save(update_fields=["workflow_template", "updated_at"])
+    if not template or not template.first_stage:
+        return None
+    from apps.organizations.workflow_configuration_engine import WorkflowConfigurationEngine
+    first_assignee = assignment.assignee or current_user
+    if first_assignee is None:
+        return None
+    task = WorkflowConfigurationEngine.start(template, assignment, first_assignee)
+    _advance_assignment_to_entry_stage(assignment, actor=current_user)
+    return task
 
 def _get_section_principle(section_code=None, principle_slug=None):
     section = None
@@ -71,13 +274,11 @@ def _question_queryset(section, principle=None):
     return qs
 
 
-def _question_status(question):
-    response = (
-        QuestionResponse.objects.filter(question=question)
-        .select_related("assignment")
-        .order_by("-updated_at", "-created_at")
-        .first()
-    )
+def _question_status(question, assignment=None):
+    response_qs = QuestionResponse.objects.filter(question=question)
+    if assignment is not None:
+        response_qs = response_qs.filter(assignment=assignment)
+    response = response_qs.select_related("assignment").order_by("-updated_at", "-created_at").first()
     if response:
         return response.status
     return "draft"
@@ -96,9 +297,11 @@ def _question_metadata(question):
     }
 
 
-def _workflow_counts(questions):
+def _workflow_counts(questions, assignment=None):
     question_ids = [q.id for q in questions]
     responses = QuestionResponse.objects.filter(question_id__in=question_ids)
+    if assignment is not None:
+        responses = responses.filter(assignment=assignment)
     total = len(question_ids)
     completed = responses.filter(status="approved").values("question_id").distinct().count()
     submitted = responses.filter(status__in=["submitted", "resubmitted"]).values("question_id").distinct().count()
@@ -234,6 +437,7 @@ def _default_assignee_for_context(user, plant):
 def _serialize_assignment(assignment):
     questions = list(assignment.questions.select_related("section", "principle").order_by("display_order", "question_number"))
     first_question = questions[0] if questions else None
+    workflow_task = assignment.workflow_task
     response_map = {
         response.question_id: response.status
         for response in assignment.responses.all().only("question_id", "status")
@@ -250,6 +454,10 @@ def _serialize_assignment(assignment):
         "section_code": assignment.section.code if assignment.section_id else "",
         "principle": assignment.principle.principle_name if assignment.principle_id else "",
         "financial_year": assignment.financial_year,
+        "workflow_template": assignment.workflow_template_name,
+        "workflow_stage": assignment.workflow_stage_label,
+        "workflow_stage_type": assignment.workflow_stage_type,
+        "workflow_task": _serialize_workflow_task(workflow_task),
         "due_date": assignment.due_date.isoformat() if assignment.due_date else "",
         "priority": assignment.priority,
         "overall_status": assignment.overall_status,
@@ -268,32 +476,35 @@ def _serialize_assignment(assignment):
             for question in questions
         ],
         "workspace_url": (
-            reverse(
-                "brsr:question_workspace_principle",
-                kwargs={
-                    "section_code": first_question.section.code,
-                    "principle_slug": first_question.principle.slug,
-                },
+            (
+                reverse(
+                    "brsr:question_workspace_principle",
+                    kwargs={
+                        "section_code": first_question.section.code,
+                        "principle_slug": first_question.principle.slug,
+                    },
+                )
+                if first_question and first_question.principle
+                else reverse(
+                    "brsr:question_workspace_section",
+                    kwargs={"section_code": first_question.section.code},
+                )
+                if first_question
+                else ""
             )
-            if first_question and first_question.principle
-            else reverse(
-                "brsr:question_workspace_section",
-                kwargs={"section_code": first_question.section.code},
-            )
-            if first_question
-            else ""
+            + (f"?assignment_id={assignment.id}" if assignment.id else "")
         ),
     }
 
 
-def _assignment_context(section, principle, questions):
+def _assignment_context(section, principle, questions, assignment=None, user=None):
     latest_assignment = (
         Assignment.objects.filter(section=section, principle=principle)
         .select_related("plant")
         .order_by("-created_at")
         .first()
     )
-    plant_qs = Plant.objects.filter(is_active=True).order_by("name")
+    plant_qs = _company_scope_plants(user) if user else Plant.objects.filter(is_active=True).order_by("name")
     user_qs = User.objects.filter(is_active=True).select_related("role", "department").order_by(
         "full_name", "username"
     )
@@ -301,6 +512,7 @@ def _assignment_context(section, principle, questions):
     # Parent assignment / delegation removed from workflow
     return {
         "latest_assignment": latest_assignment,
+        "current_assignment": assignment,
         "assignment_form": BRSRAssignmentForm(
             plant_queryset=plant_qs,
             user_queryset=user_qs,
@@ -311,6 +523,53 @@ def _assignment_context(section, principle, questions):
         "users": user_qs,
         "financial_years": fy_qs,
     }
+
+
+def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_queryset):
+    plant = cleaned_data["plant"]
+    workflow_template = _resolve_brsr_workflow_template(user=user, plant=plant)
+    if not workflow_template:
+        raise ValueError("No active BRSR workflow template is configured for this company.")
+    if not workflow_template.first_stage:
+        raise ValueError("The configured BRSR workflow template has no stages.")
+
+    assignee = _resolve_brsr_assignee(
+        plant,
+        workflow_template,
+        selected_assignee=cleaned_data["assignee"],
+        current_user=user,
+    )
+    if assignee is None:
+        raise ValueError(
+            "No eligible assignee matches the first stage of the configured BRSR workflow."
+        )
+
+    user_ct = ContentType.objects.get_for_model(User)
+    assigner = cleaned_data.get("assigner") or user
+    assignment = Assignment.objects.create(
+        plant=plant,
+        principle=principle,
+        section=section,
+        financial_year=cleaned_data["financial_year"],
+        workflow_template=workflow_template,
+        data_collection_frequency=cleaned_data.get("data_collection_frequency") or "",
+        assigner_content_type=user_ct,
+        assigner_object_id=assigner.pk,
+        assignee_content_type=user_ct,
+        assignee_object_id=assignee.pk,
+        due_date=cleaned_data.get("due_date"),
+        priority=cleaned_data["priority"],
+        notes=cleaned_data.get("notes"),
+    )
+    assignment.questions.set(question_queryset)
+    for question in question_queryset:
+        QuestionResponse.objects.get_or_create(
+            assignment=assignment,
+            question=question,
+        )
+    _ensure_assignment_workflow_task(assignment, current_user=user)
+    _advance_assignment_to_entry_stage(assignment, actor=user)
+    return assignment
 
 
 class BRSRDashboardView(LoginRequiredMixin, TemplateView):
@@ -368,6 +627,7 @@ class AssignmentDashboardView(LoginRequiredMixin, TemplateView):
                 "plant",
                 "section",
                 "principle",
+                "workflow_template",
                 "assignee_content_type",
                 "assigner_content_type",
             )
@@ -390,18 +650,107 @@ class AssignmentDashboardView(LoginRequiredMixin, TemplateView):
         return context
 
 
+class ApprovalDashboardView(LoginRequiredMixin, TemplateView):
+    login_url = "accounts:login"
+    template_name = "brsr/approval_dashboard.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        assignments = _approval_stage_queryset(user)
+        grouped = {}
+        total_questions = 0
+        stage_counts = {
+            "review": 0,
+            "approval": 0,
+            "pre_final_approval": 0,
+            "final_approval": 0,
+        }
+        for assignment in assignments:
+            stage_type = assignment.workflow_stage_type or ""
+            if stage_type in stage_counts:
+                stage_counts[stage_type] += 1
+            company = getattr(getattr(assignment.plant, "created_by", None), "company", None)
+            company_key = company.company_name if company else "Unknown Company"
+            plant_key = assignment.plant.name if assignment.plant_id else "Unknown Plant"
+            company_bucket = grouped.setdefault(company_key, {})
+            plant_bucket = company_bucket.setdefault(plant_key, [])
+            questions = list(
+                assignment.questions.select_related("section", "principle").order_by("display_order", "question_number")
+            )
+            responses = {
+                response.question_id: response
+                for response in assignment.responses.select_related("question")
+            }
+            question_rows = []
+            for question in questions:
+                response = responses.get(question.id)
+                question_rows.append(
+                    {
+                        "question_id": question.question_id,
+                        "title": question.question_text,
+                        "number": question.question_number,
+                        "status": response.status if response else "draft",
+                        "workflow_stage": assignment.workflow_stage_label,
+                        "workflow_stage_type": assignment.workflow_stage_type,
+                        "response_value": response.response_value if response else "",
+                        "response_json": response.response_json if response else {},
+                        "review_remark": response.review_remark if response else "",
+                        "assignment_id": assignment.id,
+                    }
+                )
+            total_questions += len(question_rows)
+            plant_bucket.append(
+                {
+                    "assignment": _serialize_assignment(assignment),
+                    "questions": question_rows,
+                }
+            )
+
+        context["grouped_assignments"] = grouped
+        context["assignment_count"] = len(assignments)
+        context["question_count"] = total_questions
+        context["stage_counts"] = stage_counts
+        context["approval_stage_count"] = (
+            stage_counts["approval"]
+            + stage_counts["pre_final_approval"]
+            + stage_counts["final_approval"]
+        )
+        return context
+
+
 class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
     login_url = "accounts:login"
     template_name = "brsr/brsr_question_workspace.html"
 
-    def _build_context(self, section_code=None, principle_slug=None, question_id=None):
+    def _build_context(self, section_code=None, principle_slug=None, question_id=None, assignment_id=None):
         section, principle = _get_section_principle(section_code, principle_slug)
         if not section:
             section = _get_default_section()
         if not section:
             return {"section": None, "principle": None, "questions": [], "topics": []}
 
-        questions = list(_question_queryset(section, principle))
+        assignment = None
+        if assignment_id:
+            assignment = (
+                Assignment.objects.select_related("plant", "section", "principle", "workflow_template")
+                .prefetch_related("questions", "questions__section", "questions__principle", "responses")
+                .filter(pk=assignment_id)
+                .first()
+            )
+
+        if assignment:
+            _ensure_assignment_workflow_task(assignment, current_user=self.request.user)
+            questions = list(
+                assignment.questions.filter(section=section).select_related("section", "principle", "parent_question").order_by("display_order", "question_number")
+            )
+            if section.code == "section_c" and principle:
+                questions = [question for question in questions if question.principle_id == principle.id]
+            elif section.code != "section_c":
+                questions = [question for question in questions if question.principle_id is None]
+        else:
+            questions = list(_question_queryset(section, principle))
+
         active_question = None
         if question_id:
             active_question = next((q for q in questions if q.question_id == question_id), None)
@@ -415,7 +764,7 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
                     "question_id": question.question_id,
                     "title": question.question_text,
                     "question_type": question.question_type,
-                    "status": _question_status(question),
+                    "status": _question_status(question, assignment=assignment),
                     "section_code": question.section.code,
                     "question_number": question.question_number,
                     "help_text": question.help_text or "",
@@ -428,12 +777,11 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
 
         active_question_payload = None
         if active_question:
-            response = (
-                QuestionResponse.objects.filter(question=active_question)
-                .select_related("assignment")
-                .order_by("-updated_at", "-created_at")
-                .first()
-            )
+            response_qs = QuestionResponse.objects.filter(question=active_question)
+            if assignment:
+                response_qs = response_qs.filter(assignment=assignment)
+            response = response_qs.select_related("assignment").order_by("-updated_at", "-created_at").first()
+            task = assignment.workflow_task if assignment and assignment.workflow_task else (response.workflow_task if response else None)
             active_question_payload = {
                 "question_id": active_question.question_id,
                 "title": active_question.question_text,
@@ -450,6 +798,9 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
                 "response_value": response.response_value if response else "",
                 "is_editable": response.is_editable if response else True,
                 "assignment_id": response.assignment.assignment_id if response else "",
+                "workflow_stage": task.current_stage.label if task and task.current_stage_id else "",
+                "workflow_stage_type": task.current_stage.stage_type if task and task.current_stage_id else "",
+                "workflow_task": _serialize_workflow_task(task) if task else None,
             }
 
         section_cards = []
@@ -478,38 +829,44 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
                 )
 
         question_queryset = BRSRQuestion.objects.filter(id__in=[q.id for q in questions])
-        assignment_bundle = _assignment_context(section, principle, question_queryset)
+        assignment_bundle = _assignment_context(section, principle, question_queryset, assignment=assignment, user=self.request.user)
 
         return {
             "section": section,
             "principle": principle,
+            "assignment": assignment,
             "topics": topics,
             "active_question": active_question_payload,
             "active_question_id": active_question.question_id if active_question else "",
             "active_question_type": active_question.question_type if active_question else "",
             "section_cards": section_cards,
             "principle_cards": principle_cards,
-            "counts": _workflow_counts(questions),
+            "counts": _workflow_counts(questions, assignment=assignment),
             **assignment_bundle,
         }
 
     def get(self, request, section_code=None, principle_slug=None, question_id=None):
-        context = self._build_context(section_code, principle_slug, question_id)
+        assignment_id = request.GET.get("assignment_id")
+        context = self._build_context(section_code, principle_slug, question_id, assignment_id=assignment_id)
         if not context.get("section"):
             messages.info(request, "No active BRSR section found.")
         context["workspace_api_url"] = reverse("brsr:workspace_api")
         context["question_detail_api_url"] = reverse("brsr:question_detail_api", kwargs={"question_id": "__question__"})
         context["question_save_api_url"] = reverse("brsr:question_save_api", kwargs={"question_id": "__question__"})
         context["question_submit_api_url"] = reverse("brsr:question_submit_api", kwargs={"question_id": "__question__"})
+        context["question_approve_api_url"] = reverse("brsr:question_approve_api", kwargs={"question_id": "__question__"})
+        context["question_reject_api_url"] = reverse("brsr:question_reject_api", kwargs={"question_id": "__question__"})
         context["assignment_create_api_url"] = reverse("brsr:assignment_create_api")
         context["assignment_options_api_url"] = reverse("brsr:assignment_options_api")
         context["assignment_dashboard_url"] = reverse("brsr:assignment_dashboard")
+        context["assignment_id"] = assignment_id or ""
         context["current_section_code"] = section_code if section_code else (context["section"].code if context.get("section") else "")
         context["current_principle_slug"] = principle_slug if principle_slug else (context["principle"].slug if context.get("principle") else "")
         return render(request, self.template_name, context)
 
     def post(self, request, section_code=None, principle_slug=None, question_id=None):
-        context = self._build_context(section_code, principle_slug, question_id)
+        assignment_id = request.GET.get("assignment_id")
+        context = self._build_context(section_code, principle_slug, question_id, assignment_id=assignment_id)
         active_questions = _pdf_questions_queryset().filter(section=context["section"])
         if context["principle"]:
             active_questions = active_questions.filter(principle=context["principle"])
@@ -518,7 +875,7 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
 
         form = BRSRAssignmentForm(
             request.POST,
-            plant_queryset=Plant.objects.filter(is_active=True).order_by("name"),
+            plant_queryset=_company_scope_plants(self.request.user),
             user_queryset=User.objects.filter(is_active=True).select_related("role", "department").order_by(
                 "full_name", "username"
             ),
@@ -526,29 +883,34 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
             financial_year_queryset=FinancialYear.objects.all().order_by("-start_date"),
         )
         if form.is_valid():
-            user_ct = ContentType.objects.get_for_model(User)
-            assignment = Assignment.objects.create(
-                plant=form.cleaned_data["plant"],
-                principle=context["principle"],
-                section=context["section"],
-                financial_year=form.cleaned_data["financial_year"],
-                # parent removed from creation flow
-                data_collection_frequency=form.cleaned_data.get("data_collection_frequency") or "",
-                assigner_content_type=user_ct,
-                assigner_object_id=form.cleaned_data["assigner"].pk,
-                assignee_content_type=user_ct,
-                assignee_object_id=form.cleaned_data["assignee"].pk,
-                due_date=form.cleaned_data.get("due_date"),
-                priority=form.cleaned_data["priority"],
-                notes=form.cleaned_data.get("notes"),
-            )
             selected_questions = form.cleaned_data["question_ids"]
-            assignment.questions.set(selected_questions)
-            for question in selected_questions:
-                QuestionResponse.objects.get_or_create(
-                    assignment=assignment,
-                    question=question,
+            try:
+                assignment = _create_brsr_assignment(
+                    user=self.request.user,
+                    section=context["section"],
+                    principle=context["principle"],
+                    cleaned_data=form.cleaned_data,
+                    question_queryset=selected_questions,
                 )
+            except ValueError as exc:
+                form.add_error(None, str(exc))
+                context.update(
+                    {
+                        "workspace_api_url": reverse("brsr:workspace_api"),
+                        "question_detail_api_url": reverse("brsr:question_detail_api", kwargs={"question_id": "__question__"}),
+                        "question_save_api_url": reverse("brsr:question_save_api", kwargs={"question_id": "__question__"}),
+                        "question_submit_api_url": reverse("brsr:question_submit_api", kwargs={"question_id": "__question__"}),
+                        "question_approve_api_url": reverse("brsr:question_approve_api", kwargs={"question_id": "__question__"}),
+                        "question_reject_api_url": reverse("brsr:question_reject_api", kwargs={"question_id": "__question__"}),
+                        "assignment_create_api_url": reverse("brsr:assignment_create_api"),
+                        "assignment_options_api_url": reverse("brsr:assignment_options_api"),
+                        "assignment_dashboard_url": reverse("brsr:assignment_dashboard"),
+                        "assignment_form": form,
+                        "current_section_code": section_code if section_code else (context["section"].code if context.get("section") else ""),
+                        "current_principle_slug": principle_slug if principle_slug else (context["principle"].slug if context.get("principle") else ""),
+                    }
+                )
+                return render(request, self.template_name, context)
             messages.success(
                 request,
                 f"Assignment {assignment.assignment_id} created for {selected_questions.count()} questions.",
@@ -566,6 +928,8 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
                 "question_detail_api_url": reverse("brsr:question_detail_api", kwargs={"question_id": "__question__"}),
                 "question_save_api_url": reverse("brsr:question_save_api", kwargs={"question_id": "__question__"}),
                 "question_submit_api_url": reverse("brsr:question_submit_api", kwargs={"question_id": "__question__"}),
+                "question_approve_api_url": reverse("brsr:question_approve_api", kwargs={"question_id": "__question__"}),
+                "question_reject_api_url": reverse("brsr:question_reject_api", kwargs={"question_id": "__question__"}),
                 "assignment_create_api_url": reverse("brsr:assignment_create_api"),
                 "assignment_options_api_url": reverse("brsr:assignment_options_api"),
                 "assignment_dashboard_url": reverse("brsr:assignment_dashboard"),

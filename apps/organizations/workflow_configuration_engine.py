@@ -23,6 +23,38 @@ class WorkflowConfigurationEngine:
         return actor_ct, getattr(actor, "pk", None)
 
     @classmethod
+    def _move_to_stage(cls, task, user, next_stage, remark="", next_assignee=None, action="approve"):
+        actor_ct, actor_id = cls._actor_ref(user)
+        next_assignee_ct = next_assignee_id = None
+        if next_assignee is not None:
+            next_assignee_ct, next_assignee_id = cls._actor_ref(next_assignee)
+            if not next_assignee_ct or not next_assignee_id:
+                raise ValueError("next_assignee must be a concrete model instance.")
+
+        with transaction.atomic():
+            ApprovalConfigurationTaskLog.objects.create(
+                task=task,
+                action=action,
+                from_stage=task.current_stage,
+                to_stage=next_stage,
+                actor_content_type=actor_ct,
+                actor_object_id=actor_id,
+                remark=remark,
+            )
+            if next_stage is None:
+                task.is_completed = True
+                task.is_returned = False
+            else:
+                task.current_stage = next_stage
+                task.is_returned = False
+                if next_assignee is not None:
+                    task.current_assignee_content_type = next_assignee_ct
+                    task.current_assignee_object_id = next_assignee_id
+            task.save()
+            cls._sync_denormalized_status(task)
+        return task
+
+    @classmethod
     def start(cls, template, target, first_assignee):
         first_stage = template.stages.order_by("level").first()
         if not first_stage:
@@ -60,38 +92,20 @@ class WorkflowConfigurationEngine:
             raise PermissionDenied("User role does not match the required approver role for this stage.")
 
         next_stage = stage.next_stage()
-        next_assignee_ct = next_assignee_id = None
-        if next_assignee is not None:
-            next_assignee_ct, next_assignee_id = cls._actor_ref(next_assignee)
-            if not next_assignee_ct or not next_assignee_id:
-                raise ValueError("next_assignee must be a concrete model instance.")
-
-        actor_ct, actor_id = cls._actor_ref(user)
-        with transaction.atomic():
-            ApprovalConfigurationTaskLog.objects.create(
-                task=task,
-                action="approve",
-                from_stage=stage,
-                to_stage=next_stage,
-                actor_content_type=actor_ct,
-                actor_object_id=actor_id,
-                remark=remark,
-            )
-            if next_stage is None:
-                task.is_completed = True
-                task.is_returned = False
-            else:
-                task.current_stage = next_stage
-                task.is_returned = False
-                if next_assignee is not None:
-                    task.current_assignee_content_type = next_assignee_ct
-                    task.current_assignee_object_id = next_assignee_id
-            task.save()
-            cls._sync_denormalized_status(task)
-        return task
+        return cls._move_to_stage(task, user, next_stage, remark=remark, next_assignee=next_assignee, action="approve")
 
     @classmethod
-    def reject(cls, task, user, remark, return_to_stage=None):
+    def advance_to_next_stage(cls, task, user, remark="", next_assignee=None):
+        """
+        Move a task to the next workflow stage without enforcing approver
+        permissions. This is intended for automatic system transitions, such as
+        skipping a question-assignment gate after the assignment is created.
+        """
+        next_stage = task.current_stage.next_stage() if task.current_stage_id else None
+        return cls._move_to_stage(task, user, next_stage, remark=remark, next_assignee=next_assignee, action="approve")
+
+    @classmethod
+    def reject(cls, task, user, remark, return_to_stage=None, return_to_assignee=None):
         stage = task.current_stage
         if not stage.can_reject:
             raise PermissionDenied("This stage cannot reject.")
@@ -115,6 +129,12 @@ class WorkflowConfigurationEngine:
             task.current_stage = target_stage
             task.is_returned = True
             task.is_completed = False
+            if return_to_assignee is not None:
+                assignee_ct, assignee_id = cls._actor_ref(return_to_assignee)
+                if not assignee_ct or not assignee_id:
+                    raise ValueError("return_to_assignee must be a concrete model instance.")
+                task.current_assignee_content_type = assignee_ct
+                task.current_assignee_object_id = assignee_id
             task.save()
             cls._sync_denormalized_status(task)
         return task

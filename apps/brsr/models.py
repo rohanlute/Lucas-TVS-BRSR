@@ -19,7 +19,7 @@ Design goals addressed:
 """
 
 from django.db import models
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from django.utils.text import slugify
@@ -261,8 +261,21 @@ class Assignment(models.Model):
     principle = models.ForeignKey(BRSRPrinciple, on_delete=models.CASCADE, related_name='assignments', null=True, blank=True)
     section = models.ForeignKey(BRSRSection, on_delete=models.CASCADE, related_name='assignments')
     financial_year = models.CharField(max_length=20)
+    workflow_template = models.ForeignKey(
+        'organizations.ApprovalConfigurationTemplate',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='brsr_assignments',
+    )
 
     questions = models.ManyToManyField(BRSRQuestion, related_name='assignments')
+    workflow_tasks = GenericRelation(
+        'organizations.ApprovalConfigurationTask',
+        content_type_field='target_content_type',
+        object_id_field='target_object_id',
+        related_query_name='brsr_assignment',
+    )
 
     # who assigned it (generic: User for client-level, BusinessUnitStaff for HOD-level, ...)
     assigner_content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, related_name='+')
@@ -312,6 +325,36 @@ class Assignment(models.Model):
         return f'{self.assignment_id} -> {self.assignee}'
 
     @property
+    def workflow_task(self):
+        return self.workflow_tasks.select_related('template', 'current_stage').order_by('-created_at').first()
+
+    @property
+    def workflow_stage(self):
+        task = self.workflow_task
+        return task.current_stage if task else None
+
+    @property
+    def workflow_stage_label(self):
+        stage = self.workflow_stage
+        return stage.label if stage else ''
+
+    @property
+    def workflow_stage_type(self):
+        stage = self.workflow_stage
+        return stage.stage_type if stage else ''
+
+    @property
+    def is_editable(self):
+        stage_type = self.workflow_stage_type
+        if stage_type:
+            return stage_type == "data_entry"
+        return True
+
+    @property
+    def workflow_template_name(self):
+        return self.workflow_template.name if self.workflow_template_id else ''
+
+    @property
     def is_overdue(self):
         return bool(self.due_date) and self.due_date < timezone.now().date() and self.overall_status != 'completed'
 
@@ -357,6 +400,12 @@ class QuestionResponse(WorkflowMixin, models.Model):
     )
     answered_by_object_id = models.PositiveIntegerField(null=True, blank=True)
     answered_by = GenericForeignKey('answered_by_content_type', 'answered_by_object_id')
+    workflow_tasks = GenericRelation(
+        'organizations.ApprovalConfigurationTask',
+        content_type_field='target_content_type',
+        object_id_field='target_object_id',
+        related_query_name='brsr_question_response',
+    )
 
     is_complete = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -396,6 +445,77 @@ class QuestionResponse(WorkflowMixin, models.Model):
 
     def __str__(self):
         return f'{self.assignment.plant.name} - {self.question.question_id}'
+
+    @property
+    def workflow_task(self):
+        return self.workflow_tasks.select_related('template', 'current_stage').order_by('-created_at').first()
+
+    @property
+    def workflow_template(self):
+        return self.assignment.workflow_template if self.assignment_id else None
+
+    @property
+    def workflow_stage(self):
+        task = self.workflow_task
+        return task.current_stage if task else None
+
+    @property
+    def workflow_stage_label(self):
+        stage = self.workflow_stage
+        return stage.label if stage else ''
+
+    @property
+    def workflow_stage_type(self):
+        stage = self.workflow_stage
+        return stage.stage_type if stage else ''
+
+    def _ensure_workflow_task(self, first_assignee=None):
+        template = self.workflow_template
+        if not template:
+            return None
+
+        task = self.workflow_task
+        if task:
+            return task
+
+        from apps.organizations.workflow_configuration_engine import WorkflowConfigurationEngine
+
+        assignee = first_assignee or getattr(self.assignment, 'assignee', None) or self.answered_by
+        if assignee is None:
+            return None
+        return WorkflowConfigurationEngine.start(template, self, assignee)
+
+    def submit(self, user):
+        task = self._ensure_workflow_task(first_assignee=getattr(self.assignment, 'assignee', None))
+        if task:
+            self.status = WorkflowStatus.RESUBMITTED if self.resubmission_count else WorkflowStatus.SUBMITTED
+            self.submitted_by = user
+            self.submitted_at = timezone.now()
+            self.save(update_fields=['status', 'submitted_by', 'submitted_at'])
+            return
+        super().submit(user)
+
+    def approve(self, user, remark=''):
+        task = self.workflow_task
+        if task:
+            from apps.organizations.workflow_configuration_engine import WorkflowConfigurationEngine
+
+            WorkflowConfigurationEngine.approve(task, user, remark=remark)
+            return
+        super().approve(user, remark=remark)
+
+    def reject(self, user, remark):
+        task = self.workflow_task
+        if task:
+            from apps.organizations.workflow_configuration_engine import WorkflowConfigurationEngine
+
+            WorkflowConfigurationEngine.reject(task, user, remark=remark)
+            return
+        super().reject(user, remark)
+
+    def resubmit(self, user):
+        self.resubmission_count += 1
+        self.submit(user)
 
 
 class ResponseRevision(models.Model):

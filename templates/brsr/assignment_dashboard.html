@@ -367,6 +367,14 @@
             <div class="text-muted">{{ assignment.financial_year }}</div>
           </div>
           <div class="mb-3">
+            <div class="fw-semibold text-dark">Workflow Template</div>
+            <div class="text-muted">{{ assignment.workflow_template|default:"-" }}</div>
+          </div>
+          <div class="mb-3">
+            <div class="fw-semibold text-dark">Current Stage</div>
+            <div class="text-muted">{{ assignment.workflow_stage|default:"-" }}</div>
+          </div>
+          <div class="mb-3">
             <div class="fw-semibold text-dark">Due Date</div>
             <div class="text-muted">{{ assignment.due_date|default:"-" }}</div>
           </div>

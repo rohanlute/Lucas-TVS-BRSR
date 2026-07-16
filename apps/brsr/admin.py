@@ -175,7 +175,8 @@ class BRSRQuestionAdmin(admin.ModelAdmin):
 class AssignmentAdmin(admin.ModelAdmin):
     """Admin interface for Assignments."""
     list_display = (
-        'assignment_id', 'plant', 'principle', 'section', 'assignee',
+        'assignment_id', 'plant', 'principle', 'section', 'workflow_template_display', 'workflow_stage_display',
+        'assignee',
         'priority', 'due_date_display', 'overall_status_display',
         'question_count'
     )
@@ -192,7 +193,7 @@ class AssignmentAdmin(admin.ModelAdmin):
     fieldsets = (
         (None, {
             'fields': (
-                'assignment_id', 'plant', 'principle', 'section',
+                'assignment_id', 'plant', 'principle', 'section', 'workflow_template',
                 'financial_year', 'questions'
             )
         }),
@@ -244,6 +245,14 @@ class AssignmentAdmin(admin.ModelAdmin):
     def question_count(self, obj):
         return obj.questions.count()
     question_count.short_description = 'Questions'
+
+    def workflow_template_display(self, obj):
+        return obj.workflow_template.name if obj.workflow_template_id else '-'
+    workflow_template_display.short_description = 'Workflow Template'
+
+    def workflow_stage_display(self, obj):
+        return obj.workflow_stage_label or '-'
+    workflow_stage_display.short_description = 'Current Stage'
 
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related(

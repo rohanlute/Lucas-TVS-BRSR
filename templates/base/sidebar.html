@@ -66,26 +66,41 @@
                     </ul>
                 </li>
                 {% endif %}
-                <li class="nxl-item">
-                    <a href="{% url 'brsr:brsr_list' %}" class="nxl-link">
+                <li class="nxl-item nxl-hasmenu">
+                    <a href="javascript:void(0);" class="nxl-link">
                         <span class="nxl-micon">
                             <i class="feather-layout"></i>
                         </span>
                         <span class="nxl-mtext">BRSR</span>
-                    </a>
-                </li>
-                <li class="nxl-item">
-                    <a href="{% url 'brsr:assignment_dashboard' %}" class="nxl-link">
-                        <span class="nxl-micon">
-                            <i class="feather-list"></i>
+                        <span class="nxl-arrow">
+                            <i class="feather-chevron-right"></i>
                         </span>
-                        <span class="nxl-mtext">Assignment Dashboard</span>
                     </a>
+
+                    <ul class="nxl-submenu">
+                        <li class="nxl-item">
+                            <a class="nxl-link" href="{% url 'brsr:brsr_list' %}">
+                                Dashboard
+                            </a>
+                        </li>
+
+                        <li class="nxl-item">
+                            <a class="nxl-link" href="{% url 'brsr:assignment_dashboard' %}">
+                                Assignment Dashboard
+                            </a>
+                        </li>
+
+                        <li class="nxl-item">
+                            <a class="nxl-link" href="{% url 'brsr:approval_dashboard' %}">
+                                Approval Dashboard
+                            </a>
+                        </li>
+                    </ul>
                 </li>
                <li class="nxl-item nxl-hasmenu">
                     <a href="javascript:void(0);" class="nxl-link">
                         <span class="nxl-micon">
-                            <i class="feather-send"></i>
+                            <i class="feather-globe"></i>
                         </span>
                         <span class="nxl-mtext">Emissions</span>
                         <span class="nxl-arrow">
