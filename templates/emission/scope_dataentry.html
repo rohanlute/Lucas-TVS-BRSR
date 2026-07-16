@@ -1,0 +1,2642 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Scope Data Entry{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --ink: #24304a;
+        --ink-soft: #42516f;
+        --muted: #6f7b91;
+        --surface: #ffffff;
+        --bg: #f5f7fb;
+        --border: #e3e8f0;
+        --border-strong: #cfd7e6;
+        --brand: #2563eb;
+        --brand-bg: #eaf1ff;
+        --success: #16a34a;
+        --success-bg: #e7f8ee;
+        --warn: #d97706;
+        --warn-bg: #fff5e6;
+        --danger: #dc2626;
+        --danger-bg: #fdecec;
+        --radius: 12px;
+        --shadow: 0 18px 40px rgba(28, 44, 73, .08);
+        --font-display: 'Space Grotesk', 'Segoe UI', sans-serif;
+        --font-body: 'Inter', 'Segoe UI', sans-serif;
+    }
+
+    .brsr-shell {
+        min-height: calc(100vh - 140px);
+        display: grid;
+        grid-template-columns: 330px 1fr;
+        gap: 0;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        overflow: hidden;
+        background: linear-gradient(180deg, #f9fbff 0%, #f4f7fc 100%);
+        box-shadow: var(--shadow);
+    }
+
+    .brsr-sidebar {
+        background: var(--surface);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .sidebar-head {
+        padding: 18px 18px 14px;
+        border-bottom: 1px solid var(--border);
+        background:
+            radial-gradient(circle at top right, rgba(37, 99, 235, .12), transparent 38%),
+            linear-gradient(180deg, #fff 0%, #fbfcff 100%);
+    }
+
+    .brand-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+
+    .brand-row h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--ink);
+    }
+
+    .brand-row small {
+        display: block;
+        margin-top: 3px;
+        font-size: 12px;
+        color: var(--muted);
+    }
+
+    .progress-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 7px;
+    }
+
+    .progress-track {
+        height: 6px;
+        border-radius: 999px;
+        background: var(--border);
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #2563eb, #60a5fa);
+        transition: width .25s ease;
+    }
+
+    .sidebar-tools {
+        padding: 14px 18px 16px;
+        border-bottom: 1px solid var(--border);
+        display: grid;
+        gap: 12px;
+    }
+
+    .tool-label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--muted);
+    }
+
+    .workspace-select,
+    .workspace-input,
+    .workspace-textarea {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #fff;
+        color: var(--ink);
+        font-size: 13px;
+        padding: 10px 12px;
+        outline: none;
+    }
+
+    .workspace-select:focus,
+    .workspace-input:focus,
+    .workspace-textarea:focus {
+        border-color: var(--brand);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+    }
+
+    .question-scroll {
+        flex: 1;
+        overflow: auto;
+        padding: 14px 10px 18px;
+    }
+
+    .question-list {
+        position: relative;
+        list-style: none;
+        margin: 0;
+        padding: 0 0 0 26px;
+    }
+
+    .question-list::before {
+        content: '';
+        position: absolute;
+        left: 9px;
+        top: 10px;
+        bottom: 10px;
+        width: 2px;
+        background: var(--border);
+    }
+
+    .nav-group {
+        margin-bottom: 16px;
+    }
+
+    .nav-group-head {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0 0 8px;
+        padding-left: 6px;
+    }
+
+    .question-item {
+        position: relative;
+        padding: 10px 12px 10px 14px;
+        margin-bottom: 4px;
+        border-radius: 10px;
+        color: var(--ink-soft);
+        cursor: pointer;
+        font-size: 13.5px;
+        line-height: 1.35;
+        transition: background .15s ease, color .15s ease, transform .15s ease;
+    }
+
+    .question-item:hover {
+        background: var(--bg);
+        transform: translateX(2px);
+    }
+
+    .question-item.active {
+        background: var(--brand-bg);
+        color: var(--brand);
+        font-weight: 600;
+    }
+
+    .question-dot {
+        position: absolute;
+        left: -24px;
+        top: 13px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid var(--border-strong);
+        background: var(--surface);
+    }
+
+    .question-dot.todo {
+        border-color: var(--border-strong);
+    }
+
+    .question-dot.in-progress {
+        border-color: #f59e0b;
+        background: var(--warn-bg);
+    }
+
+    .question-dot.in-progress::after {
+        content: '';
+        width: 6px;
+        height: 6px;
+        background: #f59e0b;
+        border-radius: 50%;
+        display: block;
+        margin: 2px auto 0;
+    }
+
+    .question-dot.approved {
+        border-color: var(--success);
+        background: var(--success);
+    }
+
+    .question-dot.approved::after {
+        content: '\2713';
+        color: #fff;
+        display: block;
+        text-align: center;
+        line-height: 10px;
+        font-size: 9px;
+        font-weight: 700;
+    }
+
+    .question-dot.rejected {
+        border-color: var(--danger);
+        background: var(--danger-bg);
+    }
+
+    .question-dot.rejected::after {
+        content: '!';
+        color: var(--danger);
+        display: block;
+        text-align: center;
+        line-height: 10px;
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .brsr-main {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        background: linear-gradient(180deg, #fff 0%, #fbfcff 100%);
+    }
+
+    .workspace-top {
+        padding: 18px 20px 0;
+    }
+
+    .status-banner {
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: var(--brand-bg);
+        color: var(--brand);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        font-size: 13px;
+        margin-bottom: 14px;
+    }
+
+    .main-panel {
+        margin: 20px 20px;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--surface);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 10px 24px rgba(28, 44, 73, .05);
+    }
+
+    .panel-header {
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+    }
+
+    .panel-title h2 {
+        margin: 0;
+        font-size: 21px;
+        color: var(--ink);
+    }
+
+    .panel-title p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+    }
+
+    .pill-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .pill {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink-soft);
+        background: #fff;
+    }
+
+    .pill.brand {
+        border-color: var(--brand);
+        background: var(--brand-bg);
+        color: var(--brand);
+    }
+
+    .pill.success {
+        border-color: var(--success);
+        background: var(--success-bg);
+        color: var(--success);
+    }
+
+    .pill.warn {
+        border-color: var(--warn);
+        background: var(--warn-bg);
+        color: var(--warn);
+    }
+
+    .panel-body {
+        flex: 1;
+        overflow: auto;
+        padding: 18px 20px 24px;
+    }
+
+    .group-block {
+        margin-bottom: 16px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        overflow: hidden;
+    }
+
+    .group-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        background: #f8fbff;
+        border-bottom: 1px solid var(--border);
+        cursor: pointer;
+    }
+
+    .group-head h3 {
+        margin: 0;
+        font-size: 14px;
+        color: var(--ink);
+    }
+
+    .group-body {
+        padding: 16px;
+    }
+
+    .question-container {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        overflow: hidden;
+        background: #fff;
+        margin-bottom: 14px;
+    }
+
+    .question-header {
+        padding: 15px 16px;
+        background: #fafcff;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        cursor: pointer;
+    }
+
+    .question-header-left {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        min-width: 0;
+    }
+
+    .question-checkbox {
+        width: 18px;
+        height: 18px;
+        margin-top: 3px;
+        flex-shrink: 0;
+    }
+
+    .question-title {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--ink);
+        line-height: 1.45;
+    }
+
+    .question-number {
+        color: var(--brand);
+        margin-right: 6px;
+    }
+
+    .question-meta {
+        margin-top: 6px;
+        font-size: 12px;
+        color: var(--muted);
+    }
+
+    .question-content {
+        display: none;
+        padding: 18px 16px 16px;
+        min-width: 0;
+        overflow-x: auto;
+    }
+
+    .question-container.active .question-content {
+        display: block;
+    }
+
+    .status-badge {
+        flex-shrink: 0;
+        padding: 5px 9px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+
+    .status-badge.todo {
+        background: #eef2f7;
+        color: #64748b;
+    }
+
+    .status-badge.in-progress {
+        background: var(--warn-bg);
+        color: var(--warn);
+    }
+
+    .status-badge.approved {
+        background: var(--success-bg);
+        color: var(--success);
+    }
+
+    .status-badge.rejected {
+        background: var(--danger-bg);
+        color: var(--danger);
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ink-soft);
+    }
+
+    .form-textarea {
+        width: 100%;
+        min-height: 110px;
+        resize: vertical;
+    }
+
+    .choice-stack {
+        display: grid;
+        gap: 10px;
+    }
+
+    .choice-item {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #fff;
+    }
+
+    .choice-item input {
+        margin-top: 3px;
+        flex-shrink: 0;
+    }
+
+    .choice-item span {
+        font-size: 13px;
+        color: var(--ink-soft);
+        line-height: 1.4;
+    }
+
+    .table-container {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        display: block;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #fff;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table-container>table,
+    .data-table {
+        width: max-content;
+        max-width: none;
+        table-layout: auto;
+        border-collapse: collapse;
+        min-width: 760px;
+    }
+
+    .table-container>table th,
+    .table-container>table td,
+    .data-table th,
+    .data-table td {
+        border: 1px solid var(--border);
+        padding: 10px 12px;
+        vertical-align: top;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .table-container>table th,
+    .data-table th {
+        background: #f8fafc;
+        color: var(--ink);
+        font-weight: 700;
+    }
+
+    .table-container>table input,
+    .table-container>table textarea,
+    .table-container>table select,
+    .data-table input,
+    .data-table textarea,
+    .data-table select {
+        width: 100%;
+        min-width: 140px;
+        box-sizing: border-box;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 13px;
+        background: #fff;
+    }
+
+    .table-container>table textarea,
+    .data-table textarea {
+        min-width: 220px;
+        min-height: 64px;
+        resize: vertical;
+    }
+
+    .table-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+    }
+
+    .btn-brsr {
+        border: none;
+        border-radius: 10px;
+        padding: 10px 16px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .btn-brsr.primary {
+        background: var(--ink);
+        color: #fff;
+    }
+
+    .btn-brsr.secondary {
+        background: #eef2f7;
+        color: var(--ink-soft);
+    }
+
+    .btn-brsr.success {
+        background: var(--success);
+        color: #fff;
+    }
+
+    .btn-brsr.warn {
+        background: var(--warn);
+        color: #fff;
+    }
+
+    .assignment-launcher {
+        padding: 0 20px 20px;
+    }
+
+    .assignment-summary {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        padding: 14px 16px;
+        border: 1px dashed var(--border-strong);
+        border-radius: 14px;
+        background: #fbfcff;
+        margin-top: 16px;
+    }
+
+    .assignment-summary h4 {
+        margin: 0 0 4px;
+        font-size: 15px;
+        color: var(--ink);
+    }
+
+    .assignment-summary p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--muted);
+    }
+
+    .modal-backdrop-brsr {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, .5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 1040;
+        padding: 20px;
+    }
+
+    .modal-backdrop-brsr.active {
+        display: flex;
+    }
+
+    .modal-card {
+        width: min(1100px, 100%);
+        max-height: 90vh;
+        overflow: auto;
+        background: #fff;
+        border-radius: 18px;
+        border: 1px solid var(--border);
+        box-shadow: 0 30px 70px rgba(15, 23, 42, .24);
+    }
+
+    .modal-head {
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-head h3 {
+        margin: 0;
+        font-size: 18px;
+        color: var(--ink);
+    }
+
+    .modal-body {
+        padding: 18px 20px 20px;
+    }
+
+    .assignment-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .assignment-grid .full {
+        grid-column: 1 / -1;
+    }
+
+    .assignment-grid .half {
+        grid-column: span 1;
+    }
+
+    .selected-list {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--ink-soft);
+        font-size: 13px;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 16px;
+        flex-wrap: wrap;
+    }
+
+    @media (max-width: 1200px) {
+        .brsr-shell {
+            grid-template-columns: 1fr;
+        }
+        .brsr-sidebar {
+            border-right: none;
+            border-bottom: 1px solid var(--border);
+        }
+        .assignment-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .scope-card {
+        border: none;
+        border-radius: 16px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        overflow: hidden;
+        height: 100%;
+        position: relative;
+    }
+    .scope-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+    }
+    .scope-card .card-body {
+        padding: 1.5rem 1.5rem 1.5rem 1.5rem;
+    }
+    .scope-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+    .scope-badge {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        padding: 4px 12px;
+        border-radius: 100px;
+        text-transform: uppercase;
+        background: #f1f5f9;
+        color: #475569;
+    }
+    .scope-value {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1.2;
+        margin: 0;
+    }
+    .scope-desc {
+        font-size: 13px;
+        color: #64748b;
+        margin: 2px 0 6px 0;
+    }
+    .scope-trend {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 2px 10px 2px 8px;
+        border-radius: 100px;
+    }
+    .scope-trend.up { background: #fef2f2; color: #dc2626; }
+    .scope-trend.down { background: #ecfdf5; color: #16a34a; }
+    .scope-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
+    }
+
+    /* Scope 1 – Direct emissions (green) */
+    .scope-1 .scope-badge { background: #dcfce7; color: #166534; }
+    .scope-1 .scope-icon { background: #dcfce7; color: #16a34a; }
+    .scope-1 .scope-value { color: #16a34a; }
+
+    /* Scope 2 – Energy indirect (blue) */
+    .scope-2 .scope-badge { background: #dbeafe; color: #1e40af; }
+    .scope-2 .scope-icon { background: #dbeafe; color: #2563eb; }
+    .scope-2 .scope-value { color: #2563eb; }
+
+    /* Scope 3 – Value chain (amber) */
+    .scope-3 .scope-badge { background: #fef3c7; color: #92400e; }
+    .scope-3 .scope-icon { background: #fef3c7; color: #d97706; }
+    .scope-3 .scope-value { color: #d97706; }
+
+    /* subtle top accent bar */
+    .scope-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+    }
+    .scope-1::before { background: #16a34a; }
+    .scope-2::before { background: #2563eb; }
+    .scope-3::before { background: #d97706; }
+
+    @media (max-width: 575.98px) {
+        .scope-value { font-size: 1.6rem; }
+        .scope-card .card-body { padding: 1.25rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Scope Data Entry</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'accounts:dashboard' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'brsr:brsr_list' %}">Scope</a></li>
+            <li class="breadcrumb-item">Data Entry</li>
+        </ul>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="row g-4 mb-4">
+        <!-- Scope 1 -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card scope-card scope-1 stretch stretch-full">
+                <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <div class="scope-header">
+                                <span class="scope-badge">Scope 1</span>
+                                <span class="scope-desc">Direct emissions</span>
+                            </div>
+                            <h3 class="scope-value">1,245 tCO₂e</h3>
+                            <div class="d-flex align-items-center mt-1 flex-wrap">
+                                <span class="scope-trend down">
+                                    <i class="feather-trending-down" style="font-size:14px;"></i> -5%
+                                </span>
+                                <span class="fs-12 text-muted ms-2">vs last year</span>
+                                <span class="fs-12 text-muted ms-2">2023</span>
+                            </div>
+                        </div>
+                        <div class="scope-icon">
+                            <i class="feather-activity"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scope 2 -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card scope-card scope-2 stretch stretch-full">
+                <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <div class="scope-header">
+                                <span class="scope-badge">Scope 2</span>
+                                <span class="scope-desc">Energy indirect</span>
+                            </div>
+                            <h3 class="scope-value">3,892 tCO₂e</h3>
+                            <div class="d-flex align-items-center mt-1 flex-wrap">
+                                <span class="scope-trend up">
+                                    <i class="feather-trending-up" style="font-size:14px;"></i> +12%
+                                </span>
+                                <span class="fs-12 text-muted ms-2">vs last year</span>
+                                <span class="fs-12 text-muted ms-2">2023</span>
+                            </div>
+                        </div>
+                        <div class="scope-icon">
+                            <i class="feather-cloud"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scope 3 -->
+        <div class="col-xl-4 col-md-6">
+            <div class="card scope-card scope-3 stretch stretch-full">
+                <div class="card-body">
+                    <div class="d-flex align-items-start justify-content-between">
+                        <div>
+                            <div class="scope-header">
+                                <span class="scope-badge">Scope 3</span>
+                                <span class="scope-desc">Value chain</span>
+                            </div>
+                            <h3 class="scope-value">5,678 tCO₂e</h3>
+                            <div class="d-flex align-items-center mt-1 flex-wrap">
+                                <span class="scope-trend up">
+                                    <i class="feather-trending-up" style="font-size:14px;"></i> +8%
+                                </span>
+                                <span class="fs-12 text-muted ms-2">vs last year</span>
+                                <span class="fs-12 text-muted ms-2">2023</span>
+                            </div>
+                        </div>
+                        <div class="scope-icon">
+                            <i class="feather-bar-chart-2"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ===== END SCOPE CARDS ===== -->
+
+    <div class="brsr-shell">
+        <!-- ===== SIDEBAR ===== -->
+        <aside class="brsr-sidebar">
+            <div class="sidebar-head">
+                <div class="brand-row">
+                    <div>
+                        <h3>{{ scope.name }}</h3>
+                        <small>{{ scope.description }}</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="question-scroll">
+                <!-- ===== EMISSION SOURCES (top) ===== -->
+                <div class="nav-group">
+                    <div class="nav-group-head">EMISSION SOURCES</div>
+                    {% for category in categories %}
+
+                        <div class="question-item category-item {% if forloop.first %}active{% endif %}"
+                            data-category-id="{{ category.id }}">
+                            <span class="question-dot todo"></span>
+                            {{ category.name }}
+                        </div>
+
+                    {% endfor %}
+                </div>
+
+                <!-- ===== "What is Scope 1?" NOTE (bottom) ===== -->
+                <div class="nav-group note-box" style="margin-top: 20px; padding: 14px 16px; background: #f8fafc; border-radius: 12px; border: 1px solid var(--border);">
+                    <div style="font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 6px;">What is Scope 1?</div>
+                    <div style="font-size: 13px; color: var(--ink-soft); line-height: 1.5; margin-bottom: 10px;">
+                        {{ scope.description }}
+                    </div>
+                    <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px;">
+                        Categories:
+                    </div>
+                    <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: var(--ink-soft); line-height: 1.8;">
+                        <li>Diesel Vehicles</li>
+                        <li>Petrol Vehicles</li>
+                        <li>CNG Vehicles</li>
+                        <li>Aviation Fuel</li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+
+        
+        <!-- ===== MAIN ===== -->
+        <main class="brsr-main">
+            <div class="main-panel">
+                <div class="panel-body">
+                    
+                    <!-- ======================================== -->
+                    <!-- CARD 1: IMPORT DATA FROM EXCEL TEMPLATE  -->
+                    <!-- ======================================== -->
+                    <div class="card border-0 shadow-sm" style="border-radius: var(--radius);">
+                        <div class="card-body">
+                            <!-- Header -->
+                            <div class="mb-4">
+                                <h2 class="fs-4 fw-bold" style="color: var(--ink);">Import Data from Excel Template</h2>
+                                <p class="text-muted" style="font-size: 14px;">Master data entry: Download our latest Excel template, fill in your emission data offline, and upload it back for instant processing.</p>
+                            </div>
+
+                            <!-- Steps -->
+                            <div class="row g-4 mb-4">
+                                <!-- Step 1 -->
+                                <div class="col-md-4">
+                                    <div class="card h-100 border-0 shadow-sm" style="border-radius: var(--radius);">
+                                        <div class="card-body text-center">
+                                            <div class="avatar-text avatar-lg bg-primary-subtle text-primary mx-auto mb-3">
+                                                <i class="feather-download"></i>
+                                            </div>
+                                            <h5 class="fw-bold">1. Download Template</h5>
+                                            <p class="text-muted small">Get our latest Excel template with all emission source sheets.</p>
+                                            <button class="btn btn-brsr primary w-100 mt-2">Download Template</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Step 2 -->
+                                <div class="col-md-4">
+                                    <div class="card h-100 border-0 shadow-sm" style="border-radius: var(--radius);">
+                                        <div class="card-body text-center">
+                                            <div class="avatar-text avatar-lg bg-warning-subtle text-warning mx-auto mb-3">
+                                                <i class="feather-file"></i>
+                                            </div>
+                                            <h5 class="fw-bold">2. Fill Data Offline</h5>
+                                            <p class="text-muted small">Enter your emission data in the Excel file offline.</p>
+                                            <span class="badge bg-warning-subtle text-warning w-100 py-2">Sheets Included</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Step 3 -->
+                                <div class="col-md-4">
+                                    <div class="card h-100 border-0 shadow-sm" style="border-radius: var(--radius);">
+                                        <div class="card-body text-center">
+                                            <div class="avatar-text avatar-lg bg-success-subtle text-success mx-auto mb-3">
+                                                <i class="feather-upload"></i>
+                                            </div>
+                                            <h5 class="fw-bold">3. Upload &amp; Import</h5>
+                                            <p class="text-muted small">Upload filled Excel and we import for automatic calculation.</p>
+                                            <button class="btn btn-brsr success w-100 mt-2">Upload File</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Features -->
+                            <div class="row g-3 mt-2">
+                                <div class="col-md-6">
+                                    <ul class="list-unstyled d-flex flex-column gap-2">
+                                        <li><i class="feather-check-circle text-success me-2"></i> Pre-configured emission source sheets</li>
+                                        <li><i class="feather-check-circle text-success me-2"></i> GWP values automatically applied</li>
+                                        <li><i class="feather-check-circle text-success me-2"></i> Detailed instructions included</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <ul class="list-unstyled d-flex flex-column gap-2">
+                                        <li><i class="feather-check-circle text-success me-2"></i> Auto-calculation formulas built-in</li>
+                                        <li><i class="feather-check-circle text-success me-2"></i> Color-coded input cells (Blue)</li>
+                                        <li><i class="feather-check-circle text-success me-2"></i> Total emissions calculated per sheet</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ======================================== -->
+                    <!-- CARD 2: CONTEXT INFORMATION              -->
+                    <!-- ======================================== -->
+                    <div class="card border-0 shadow-sm mb-4" style="border-radius: var(--radius);">
+                        <div class="card-header bg-transparent d-flex justify-content-between align-items-center" style="cursor: pointer; padding: 1rem 1.25rem;" data-bs-toggle="collapse" data-bs-target="#contextAccordion" aria-expanded="true" aria-controls="contextAccordion">
+                            <h4 class="fw-bold mb-0" style="color: var(--ink);">CONTEXT INFORMATION</h4>
+                            <span class="badge bg-light text-muted"><i class="feather-chevron-down" id="contextIcon"></i></span>
+                        </div>
+                        <div id="contextAccordion" class="collapse show">
+                            <div class="card-body">
+                                <div class="row g-3">
+
+                                    <!-- Company -->
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ Company ] <span class="text-danger">*</span>
+                                        </label>
+
+                                        <select id="company" class="workspace-select">
+                                            {% for company in companies %}
+                                                <option value="{{ company.id }}" {% if forloop.first %}selected{% endif %}>
+                                                    {{ company.company_name }}
+                                                </option>
+                                            {% endfor %}
+
+                                        </select>
+                                    </div>
+
+                                    <!-- Plant -->
+                                    <div class="col-md-8">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ Plant ] <span class="text-danger">*</span>
+                                        </label>
+
+                                        <select id="plant" class="workspace-select">
+                                            <option value="">Select Plant</option>
+                                            {% for plant in plants %}
+                                                <option
+                                                    value="{{ plant.id }}"
+                                                    data-country="{{ plant.country.name|default:'' }}"
+                                                    data-state="{{ plant.state.name|default:'' }}"
+                                                    data-city="{{ plant.city.name|default:'' }}"
+                                                >
+                                                    {{ plant.name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+
+                                    <!-- Financial Year -->
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ Financial Year ] <span class="text-danger">*</span>
+                                        </label>
+
+                                        <select id="financialYear" class="workspace-select">
+                                            <option value="">Select Financial Year</option>
+
+                                            {% for fy in financial_years %}
+                                                <option
+                                                    value="{{ fy.id }}"
+                                                    {% if current_financial_year and fy.id == current_financial_year.id %}
+                                                        selected
+                                                    {% endif %}
+                                                >
+                                                    {{ fy.financial_year }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+
+                                    <!-- Financial Month -->
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ Financial Month ] <span class="text-danger">*</span>
+                                        </label>
+
+                                        <select id="financialMonth" class="workspace-select">
+                                            <option value="">Select Month</option>
+
+                                            {% for month in financial_months %}
+                                                <option
+                                                    value="{{ month.id }}"
+                                                    {% if current_financial_month and month.id == current_financial_month.id %}
+                                                        selected
+                                                    {% endif %}
+                                                >
+                                                    {{ month.month_name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+
+                                    <!-- Country -->
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ Country ]
+                                        </label>
+
+                                        <input
+                                            id="country"
+                                            class="workspace-input"
+                                            readonly
+                                        >
+                                    </div>
+
+                                    <!-- State -->
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ State ]
+                                        </label>
+
+                                        <input
+                                            id="state"
+                                            class="workspace-input"
+                                            readonly
+                                        >
+                                    </div>
+
+                                    <!-- City -->
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ City ]
+                                        </label>
+
+                                        <input
+                                            id="city"
+                                            class="workspace-input"
+                                            readonly
+                                        >
+                                    </div>
+
+                                    <!-- Base Year -->
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ Base Year ]
+                                        </label>
+
+                                        <input
+                                            id="baseYear"
+                                            class="workspace-input"
+                                            type="text"
+                                            placeholder="Example : 2021-22"
+                                        >
+                                    </div>
+
+                                    <!-- Reporting Frequency -->
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ Reporting Frequency ]
+                                        </label>
+
+                                        <select id="frequency" class="workspace-select">
+                                            <option value="MONTHLY">Monthly</option>
+                                            <option value="QUARTERLY">Quarterly</option>
+                                            <option value="HALF_YEARLY">Half Yearly</option>
+                                            <option value="ANNUALLY">Annually</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Consolidation -->
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ Consolidation Approach ]
+                                        </label>
+
+                                        <select id="consolidation" class="workspace-select">
+                                            <option>Operational Control</option>
+                                            <option>Financial Control</option>
+                                            <option>Equity Share</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Reporting Standard -->
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ Reporting Standard ]
+                                        </label>
+
+                                        <input
+                                            class="workspace-input"
+                                            value="GHG Protocol"
+                                            readonly
+                                        >
+                                    </div>
+
+                                    <!-- Data Collection Method -->
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ Data Collection Method ]
+                                        </label>
+
+                                        <select id="collectionMethod" class="workspace-select">
+                                            <option value="MANUAL">Manual Entry</option>
+                                            <option value="EXCEL">Excel Import</option>
+                                            <option value="API">API Integration</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Recalculation Context -->
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ Recalculation Context ]
+                                        </label>
+
+                                        <textarea
+                                            id="recalculationContext"
+                                            class="workspace-textarea"
+                                            rows="2"
+                                        ></textarea>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ===== SECOND ACCORDION: EMISSION SOURCES DATA ENTRY ===== -->
+                    <div class="card border-0 shadow-sm mb-4" style="border-radius: var(--radius);">
+                        <div class="card-header bg-transparent d-flex justify-content-between align-items-center" style="cursor: pointer; padding: 1rem 1.25rem;" data-bs-toggle="collapse" data-bs-target="#emissionAccordion" aria-expanded="false" aria-controls="emissionAccordion">
+                            <h4 class="fw-bold mb-0" style="color: var(--ink);">EMISSION SOURCES DATA ENTRY</h4>
+                            <span class="badge bg-light text-muted"><i class="feather-chevron-down" id="emissionIcon"></i></span>
+                        </div>
+                        <div id="emissionAccordion" class="collapse">
+                            <div class="card-body">
+                                <!-- Mobile Combustion -->
+                                <div class="mb-4">
+                                    <h5 class="fw-bold" style="color: var(--ink);">Mobile Combustion</h5>
+                                    <p class="text-muted" style="font-size: 14px;">— Enter activity data below. Emission factors are auto-applied.</p>
+                                </div>
+
+                                <!-- Available Emission Factors -->
+                                <div class="mb-4 p-3 border rounded-3" style="background: #f8fafc; border-color: var(--border);">
+                                    <h6 class="fw-bold mb-2" style="font-size: 13px; color: var(--ink-soft);">AVAILABLE EMISSION FACTORS</h6>
+                                    <div class="d-flex flex-wrap gap-4">
+                                        <div>
+                                            <span class="fw-bold" style="font-size: 18px; color: var(--success);">0.002674</span>
+                                            <span class="text-muted" style="font-size: 12px; display: block;">tCO₂e / litres</span>
+                                            <span class="text-muted" style="font-size: 12px;">Diesel (Road) — IPCC AR6</span>
+                                        </div>
+                                        <div>
+                                            <span class="fw-bold" style="font-size: 18px; color: var(--success);">0.001711</span>
+                                            <span class="text-muted" style="font-size: 12px; display: block;">tCO₂e / litres</span>
+                                            <span class="text-muted" style="font-size: 12px;">Petrol (Road) — IPCC AR6</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Data Table -->
+                                <div class="table-container mb-3">
+                                    <table class="data-table" style="min-width: 600px;">
+                                        <thead>
+                                            <tr>
+                                                <th>ACTIVITY</th>
+                                                <th>SOURCE</th>
+                                                <th>QUANTITY</th>
+                                                <th>UNIT</th>
+                                                <th>EMISSION FACTOR</th>
+                                                <th>TOTAL EMISSION</th>
+                                                <th>ACTION</th>
+                                            </tr>
+                                        </thead>
+                                        <!-- <tbody>
+                                            <tr>
+                                                <td>
+                                                    <select class="workspace-select" style="min-width: 140px;">
+                                                        <option value="">Select type</option>
+                                                        <option value="diesel" selected>Diesel</option>
+                                                        <option value="petrol">Petrol</option>
+                                                        <option value="cng">CNG</option>
+                                                        <option value="lpg">LPG</option>
+                                                    </select>
+                                                </td>
+                                                <td><input class="workspace-input" type="number" value="100" placeholder="0.00" style="min-width: 80px;"></td>
+                                                <td>
+                                                    <select class="workspace-select" style="min-width: 80px;">
+                                                        <option value="litres" selected>litres</option>
+                                                        <option value="kg">kg</option>
+                                                        <option value="m3">m³</option>
+                                                    </select>
+                                                </td>
+                                                <td><input class="workspace-input" type="text" value="0.002674" readonly style="background: #f1f5f9; min-width: 100px;"></td>
+                                                <td><input class="workspace-input" type="text" value="0.2674" readonly style="background: #f1f5f9; min-width: 100px;"></td>
+                                                <td><button type="button" class="btn-brsr secondary btn-sm" style="padding: 4px 8px;">−</button></td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <select class="workspace-select" style="min-width: 140px;">
+                                                        <option value="">Select type</option>
+                                                        <option value="diesel">Diesel</option>
+                                                        <option value="petrol" selected>Petrol</option>
+                                                        <option value="cng">CNG</option>
+                                                        <option value="lpg">LPG</option>
+                                                    </select>
+                                                </td>
+                                                <td><input class="workspace-input" type="number" value="50" placeholder="0.00" style="min-width: 80px;"></td>
+                                                <td>
+                                                    <select class="workspace-select" style="min-width: 80px;">
+                                                        <option value="litres" selected>litres</option>
+                                                        <option value="kg">kg</option>
+                                                        <option value="m3">m³</option>
+                                                    </select>
+                                                </td>
+                                                <td><input class="workspace-input" type="text" value="0.001711" readonly style="background: #f1f5f9; min-width: 100px;"></td>
+                                                <td><input class="workspace-input" type="text" value="0.0856" readonly style="background: #f1f5f9; min-width: 100px;"></td>
+                                                <td><button type="button" class="btn-brsr secondary btn-sm" style="padding: 4px 8px;">−</button></td>
+                                            </tr>
+                                        </tbody> -->
+                                        <tbody id="activityTableBody">
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="mt-2">
+                                    <button type="button" class="btn-brsr secondary"><i class="feather-plus me-1"></i> Add Activity Row</button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ===== END SECOND ACCORDION ===== -->
+                    <!-- If needed only selected company do required -->
+                     <!-- ===== THIRD ACCORDION: BIOGENIC CO₂ EMISSIONS ===== -->
+                    {% comment %} <div class="card border-0 shadow-sm mb-4" style="border-radius: var(--radius);">
+                        <div class="card-header bg-transparent d-flex justify-content-between align-items-center" style="cursor: pointer; padding: 1rem 1.25rem;" data-bs-toggle="collapse" data-bs-target="#biogenicAccordion" aria-expanded="false" aria-controls="biogenicAccordion">
+                            <h4 class="fw-bold mb-0" style="color: var(--ink);">BIOGENIC CO₂ EMISSIONS</h4>
+                            <span class="badge bg-light text-muted"><i class="feather-chevron-down"></i></span>
+                        </div>
+                        <div id="biogenicAccordion" class="collapse">
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <!-- Fuel Type -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold" style="font-size: 13px; color: var(--ink-soft);">Fuel Type</label>
+                                        <select class="workspace-select">
+                                            <option value="">Select Fuel Type</option>
+                                            <option value="biomass">Biomass</option>
+                                            <option value="wood">Wood</option>
+                                            <option value="biofuel">Biofuel</option>
+                                        </select>
+                                    </div>
+                                    <!-- Quantity -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold" style="font-size: 13px; color: var(--ink-soft);">Quantity</label>
+                                        <input class="workspace-input" type="number" placeholder="Enter quantity" value="100">
+                                    </div>
+                                    <!-- Emission Factor (read‑only) -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold" style="font-size: 13px; color: var(--ink-soft);">Emission Factor</label>
+                                        <input class="workspace-input" type="text" value="0.000000 kgCO₂e/kg" readonly style="background: #f1f5f9;">
+                                    </div>
+                                    <!-- Auto-Calculated Biogenic CO₂ -->
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold" style="font-size: 13px; color: var(--ink-soft);">Auto-Calculated Biogenic CO₂</label>
+                                        <input class="workspace-input" type="text" value="0.00 tCO₂e" readonly style="background: #f1f5f9; font-weight: 700; color: var(--success);">
+                                    </div>
+                                </div>
+                                <div class="mt-3 p-3 bg-light rounded-3" style="background: #f8fafc !important; border: 1px solid var(--border);">
+                                    <p class="mb-0 text-muted" style="font-size: 14px;"><i class="feather-info me-1"></i> Reported separately per GHG Protocol</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>  {% endcomment %}
+
+                    <!-- ===== FOURTH ACCORDION: REVIEW & SUBMIT ===== -->
+                    <div class="card border-0 shadow-sm mb-4" style="border-radius: var(--radius);">
+                        <div class="card-header bg-transparent d-flex justify-content-between align-items-center" style="cursor: pointer; padding: 1rem 1.25rem;" data-bs-toggle="collapse" data-bs-target="#reviewAccordion" aria-expanded="false" aria-controls="reviewAccordion">
+                            <h4 class="fw-bold mb-0" style="color: var(--ink);">REVIEW &amp; SUBMIT</h4>
+                            <span class="badge bg-light text-muted"><i class="feather-chevron-down"></i></span>
+                        </div>
+                        <div id="reviewAccordion" class="collapse">
+                            <div class="card-body">
+
+                                <!-- Summary Grid -->
+                                <div class="row g-3 mb-4">
+
+                                    <!-- Company -->
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold"
+                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
+                                            Company
+                                        </label>
+
+                                        <p id="reviewCompany"
+                                            class="fw-semibold"
+                                            style="color:var(--ink);">
+                                            -
+                                        </p>
+                                    </div>
+
+                                    <!-- Plant -->
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold"
+                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
+                                            Plant
+                                        </label>
+
+                                        <p id="reviewPlant"
+                                            class="fw-semibold"
+                                            style="color:var(--ink);">
+                                            -
+                                        </p>
+                                    </div>
+
+                                    <!-- Scope -->
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold"
+                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
+                                            Scope
+                                        </label>
+
+                                        <p id="reviewScope"
+                                            class="fw-semibold"
+                                            style="color:var(--ink);">
+                                            {{ scope.name }}
+                                        </p>
+                                    </div>
+
+                                    <!-- Category -->
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold"
+                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
+                                            Category
+                                        </label>
+
+                                        <p id="reviewCategory"
+                                            class="fw-semibold"
+                                            style="color:var(--ink);">
+                                            -
+                                        </p>
+                                    </div>
+
+                                    <!-- Financial Year -->
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold"
+                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
+                                            Financial Year
+                                        </label>
+
+                                        <p id="reviewFinancialYear"
+                                            class="fw-semibold"
+                                            style="color:var(--ink);">
+                                            -
+                                        </p>
+                                    </div>
+
+                                    <!-- Financial Month -->
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold"
+                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
+                                            Financial Month
+                                        </label>
+
+                                        <p id="reviewFinancialMonth"
+                                            class="fw-semibold"
+                                            style="color:var(--ink);">
+                                            -
+                                        </p>
+                                    </div>
+
+                                    <!-- Frequency -->
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold"
+                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
+                                            Reporting Frequency
+                                        </label>
+
+                                        <p id="reviewFrequency"
+                                            class="fw-semibold"
+                                            style="color:var(--ink);">
+                                            -
+                                        </p>
+                                    </div>
+
+                                    <!-- Status -->
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold"
+                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
+                                            Status
+                                        </label>
+
+                                        <p id="reviewStatus"
+                                            class="fw-bold text-warning">
+                                            Draft
+                                        </p>
+                                    </div>
+
+                                    <!-- Activities -->
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold"
+                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
+                                            Activities Entered
+                                        </label>
+
+                                        <p id="reviewActivities"
+                                            class="fw-bold text-primary">
+                                            0
+                                        </p>
+                                    </div>
+
+                                    <!-- Sources -->
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold"
+                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
+                                            Sources Used
+                                        </label>
+
+                                        <p id="reviewSources"
+                                            class="fw-bold text-success">
+                                            0
+                                        </p>
+                                    </div>
+
+                                    <!-- Quantity -->
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold"
+                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
+                                            Total Quantity
+                                        </label>
+
+                                        <p id="reviewQuantity"
+                                            class="fw-bold"
+                                            style="color:var(--brand);">
+                                            0.0000
+                                        </p>
+                                    </div>
+
+                                    <!-- Total Emission -->
+                                    <div class="col-md-3">
+                                        <label class="form-label fw-semibold"
+                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
+                                            Total Emission
+                                        </label>
+
+                                        <p id="reviewEmission"
+                                            class="fw-bold"
+                                            style="color:var(--success);">
+                                            0.0000 tCO₂e
+                                        </p>
+                                    </div>
+
+                                </div>
+
+                                <!-- Total Emissions -->
+                                {% comment %} <div class="p-4 mb-4 rounded-3" style="background: var(--brand-bg); border: 1px solid var(--brand);">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="fw-semibold" style="font-size: 16px; color: var(--brand);">Total Scope 1 Emissions — Mobile Combustion</span>
+                                        <span class="fw-bold" style="font-size: 24px; color: var(--brand);">0.0000 tCO₂e</span>
+                                    </div>
+                                </div> {% endcomment %}
+
+                                <!-- Total Emissions -->
+                                <div class="p-4 mb-4 rounded-3"
+                                    style="background: var(--brand-bg); border: 1px solid var(--brand);">
+
+                                    <div class="d-flex justify-content-between align-items-center">
+
+                                        <div>
+
+                                            <div
+                                                class="fw-semibold"
+                                                style="font-size:16px;color:var(--brand);"
+                                            >
+                                                Total Scope Emissions
+                                            </div>
+
+                                            <div
+                                                id="reviewEmissionCategory"
+                                                class="text-muted"
+                                                style="font-size:13px;"
+                                            >
+                                                -
+                                            </div>
+
+                                        </div>
+
+                                        <div
+                                            id="reviewTotalEmission"
+                                            class="fw-bold"
+                                            style="font-size:28px;color:var(--brand);"
+                                        >
+                                            0.0000 tCO₂e
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+
+                                <!-- Validation Summary -->
+                                <div class="card border-0 shadow-sm mb-4"
+                                    style="border-radius: var(--radius);">
+
+                                    <div class="card-header bg-transparent">
+
+                                        <h5
+                                            class="fw-bold mb-0"
+                                            style="color:var(--ink);"
+                                        >
+                                            Validation Summary
+                                        </h5>
+
+                                    </div>
+
+                                    <div class="card-body">
+
+                                        <div
+                                            id="validationList"
+                                            class="row g-3"
+                                        >
+
+                                            <div class="col-md-4">
+
+                                                <div
+                                                    class="p-3 rounded-3"
+                                                    style="background:#fef2f2;border:1px solid #fecaca;"
+                                                >
+
+                                                    <div
+                                                        class="fw-bold text-danger"
+                                                    >
+                                                        Company
+                                                    </div>
+
+                                                    <small class="text-muted">
+                                                        Not Selected
+                                                    </small>
+
+                                                </div>
+
+                                            </div>
+
+                                            <div class="col-md-4">
+
+                                                <div
+                                                    class="p-3 rounded-3"
+                                                    style="background:#fef2f2;border:1px solid #fecaca;"
+                                                >
+
+                                                    <div
+                                                        class="fw-bold text-danger"
+                                                    >
+                                                        Plant
+                                                    </div>
+
+                                                    <small class="text-muted">
+                                                        Not Selected
+                                                    </small>
+
+                                                </div>
+
+                                            </div>
+
+                                            <div class="col-md-4">
+
+                                                <div
+                                                    class="p-3 rounded-3"
+                                                    style="background:#fef2f2;border:1px solid #fecaca;"
+                                                >
+
+                                                    <div
+                                                        class="fw-bold text-danger"
+                                                    >
+                                                        Activities
+                                                    </div>
+
+                                                    <small class="text-muted">
+                                                        No Data
+                                                    </small>
+
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+
+                                <!-- Activity Summary -->
+                                <div class="card border-0 shadow-sm mb-4"
+                                    style="border-radius: var(--radius);">
+
+                                    <div class="card-header bg-transparent">
+
+                                        <h5
+                                            class="fw-bold mb-0"
+                                            style="color:var(--ink);"
+                                        >
+                                            Activity-wise Emission Summary
+                                        </h5>
+
+                                    </div>
+
+                                    <div class="card-body p-0">
+
+                                        <div class="table-responsive">
+
+                                            <table class="table table-bordered mb-0">
+
+                                                <thead class="table-light">
+
+                                                    <tr>
+
+                                                        <th>Activity</th>
+
+                                                        <th>Source</th>
+
+                                                        <th class="text-end">Quantity</th>
+
+                                                        <th class="text-end">Emission</th>
+
+                                                    </tr>
+
+                                                </thead>
+
+                                                <tbody id="reviewActivitySummary">
+
+                                                    <tr>
+
+                                                        <td colspan="4"
+                                                            class="text-center text-muted">
+
+                                                            No Data Entered
+
+                                                        </td>
+
+                                                    </tr>
+
+                                                </tbody>
+
+                                            </table>
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="d-flex gap-3">
+                                    <button class="btn btn-brsr success" style="padding: 10px 30px;">Submit for Review</button>
+                                    <button id="saveDraft" class="btn btn-brsr secondary" style="padding: 10px 30px;">Save Draft</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- ===== MODAL (static) ===== -->
+<div class="modal-backdrop-brsr" id="assignModal">
+    <div class="modal-card">
+        <div class="modal-head">
+            <h3>Create Assignment</h3>
+            <button type="button" class="btn-brsr secondary">Close</button>
+        </div>
+        <div class="modal-body">
+            <form>
+                <div class="assignment-grid">
+                    <div>
+                        <label class="tool-label">Plant</label>
+                        <select class="workspace-select">
+                            <option value="1">Mumbai Plant (MUM-01)</option>
+                            <option value="2" selected>Pune Plant (PUN-02)</option>
+                            <option value="3">Bangalore Plant (BLR-03)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="tool-label">Financial Year</label>
+                        <select class="workspace-select">
+                            <option value="2024-25">2024–25</option>
+                            <option value="2025-26" selected>2025–26</option>
+                            <option value="2026-27">2026–27</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="tool-label">Submission Frequency</label>
+                        <select class="workspace-select">
+                            <option value="quarterly">Quarterly</option>
+                            <option value="half_yearly">Half Yearly</option>
+                            <option value="annual" selected>Annual</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="tool-label">Priority</label>
+                        <select class="workspace-select">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                            <option value="urgent">Urgent</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="tool-label">Assigner</label>
+                        <input class="workspace-input" type="text" value="Admin User (admin@company.com)" readonly>
+                    </div>
+                    <div>
+                        <label class="tool-label">Assign To</label>
+                        <select class="workspace-select">
+                            <option value="">Select Assign To</option>
+                            <option value="101" selected>Rahul Sharma (Plant Admin)</option>
+                            <option value="102">Priya Patel (Compliance)</option>
+                            <option value="103">Amit Kumar (Quality)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="tool-label">Due Date</label>
+                        <input class="workspace-input" type="date" value="2026-12-31">
+                    </div>
+                    <div class="full">
+                        <label class="tool-label">Notes</label>
+                        <textarea class="workspace-textarea" rows="3" placeholder="Assignment notes">Please complete all questions under Principle 2 before the deadline.</textarea>
+                    </div>
+                    <div class="full">
+                        <label class="tool-label">Selected Questions</label>
+                        <ul class="selected-list">
+                            <li>1.1. Corporate identity number <small>(q101)</small></li>
+                            <li>1.3. Year of incorporation <small>(q103)</small></li>
+                            <li>2.1. Product safety certification <small>(q201)</small></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-brsr secondary">Cancel</button>
+                    <button type="submit" class="btn-brsr primary">Create Assignment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+
+
+
+
+document.addEventListener("DOMContentLoaded", function () {
+
+    const categories = document.querySelectorAll(".category-item");
+
+    categories.forEach(function (category) {
+
+        category.addEventListener("click", function () {
+
+            // ---- 1. Update active state ----
+            categories.forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+
+            // ---- 2. Fetch activities for this category ----
+            const categoryId = this.dataset.categoryId;
+
+            fetch(`/emission/api/category-activities/?category_id=${categoryId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.getElementById("activityTableBody");
+                    tbody.innerHTML = "";
+
+                    data.activities.forEach(function(activity){
+
+                        if(activity.sources.length === 0){
+
+                            tbody.innerHTML += `
+
+                                <tr
+                                    data-activity="${activity.id}"
+                                    data-unit="${activity.base_unit_id}"
+                                    data-source=""
+                                >
+
+                                    <td>${activity.name}</td>
+
+                                    <td>
+                                        <span class="text-danger">
+                                            No Source Available
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <input
+                                            type="number"
+                                            class="workspace-input quantity"
+                                            placeholder="0"
+                                        >
+                                    </td>
+
+                                    <td>${activity.unit}</td>
+
+                                    <td>
+                                        <input
+                                            class="workspace-input factor"
+                                            readonly
+                                        >
+                                    </td>
+
+                                    <td>
+                                        <input
+                                            class="workspace-input total"
+                                            readonly
+                                        >
+                                    </td>
+
+                                    <td></td>
+
+                                </tr>
+
+                            `;
+
+                        }
+
+                        else{
+
+                            activity.sources.forEach(function(source){
+
+                                tbody.innerHTML += `
+
+                                    <tr
+                                        data-activity="${activity.id}"
+                                        data-source="${source.id}"
+                                        data-unit="${activity.base_unit_id}"
+                                    >
+
+                                        <td>${activity.name}</td>
+
+                                        <td>
+                                            ${source.name}
+                                        </td>
+
+                                        <td>
+
+                                            <input
+                                                type="number"
+                                                class="workspace-input quantity"
+                                                placeholder="0"
+                                            >
+
+                                        </td>
+
+                                        <td>${activity.unit}</td>
+
+                                        <td>
+
+                                            <input
+                                                class="workspace-input factor"
+                                                readonly
+                                            >
+
+                                        </td>
+
+                                        <td>
+
+                                            <input
+                                                class="workspace-input total"
+                                                readonly
+                                            >
+
+                                        </td>
+
+                                        <td>
+
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-outline-danger remove-row"
+                                                disabled
+                                            >
+                                                <i class="feather-trash"></i>
+                                            </button>
+
+                                        </td>
+
+                                    </tr>
+
+                                `;
+
+                            });
+
+                        }
+
+                    });
+
+                    // =========================================
+                    // Fetch factor & calculate total
+                    // =========================================
+                    document.querySelectorAll("#activityTableBody tr").forEach(function(row){
+
+                        const activityId = row.dataset.activity;
+
+                        // Load factor immediately
+                        fetch(`/emission/api/activity-factor/?activity_id=${activityId}`)
+                            .then(response => response.json())
+                            .then(result => {
+
+                                if(result.success){
+
+                                    row.querySelector(".factor").value = result.factor;
+
+                                }
+
+                            });
+
+                        // Calculate total on quantity change
+                        row.querySelector(".quantity").addEventListener("input", function(){
+
+                            const qty = parseFloat(this.value) || 0;
+
+                            const factor = parseFloat(
+                                row.querySelector(".factor").value
+                            ) || 0;
+
+                            row.querySelector(".total").value =
+                                (qty * factor).toFixed(4);
+
+                        });
+
+                    });
+
+
+
+                    // After populating, reload any saved transactions
+                    loadTransactions();
+                    setTimeout(function () {
+                        updateReviewSummary();
+                    }, 300);
+                });
+        });
+    });
+});
+
+// ==============================================
+// Get CSRF Token
+// ==============================================
+function getCookie(name) {
+
+    let cookieValue = null;
+
+    if (document.cookie && document.cookie !== "") {
+
+        const cookies = document.cookie.split(";");
+
+        for (let cookie of cookies) {
+
+            cookie = cookie.trim();
+
+            if (cookie.startsWith(name + "=")) {
+
+                cookieValue = decodeURIComponent(
+                    cookie.substring(name.length + 1)
+                );
+
+                break;
+            }
+        }
+    }
+
+    return cookieValue;
+}
+
+const csrftoken = getCookie("csrftoken");
+
+
+// ==============================================
+// Save Draft
+// ==============================================
+document.getElementById("saveDraft").addEventListener("click", function () {
+
+    // -----------------------------
+    // Context Information
+    // -----------------------------
+    const company = document.getElementById("company").value;
+    const plant = document.getElementById("plant").value;
+    const financialYear = document.getElementById("financialYear").value;
+    const financialMonth = document.getElementById("financialMonth").value;
+
+    // -----------------------------
+    // Validation
+    // -----------------------------
+    if (!company) {
+        alert("Please select Company.");
+        return;
+    }
+
+    if (!plant) {
+        alert("Please select Plant.");
+        return;
+    }
+
+    if (!financialYear) {
+        alert("Please select Financial Year.");
+        return;
+    }
+
+    if (!financialMonth) {
+        alert("Please select Financial Month.");
+        return;
+    }
+
+    // -----------------------------
+    // Collect Activities
+    // -----------------------------
+    const rows = [];
+
+    document.querySelectorAll("#activityTableBody tr").forEach(function (row) {
+
+        const quantity = parseFloat(
+            row.querySelector(".quantity").value
+        ) || 0;
+
+        // Ignore empty rows
+        if (quantity <= 0) {
+            return;
+        }
+
+        rows.push({
+
+            activity: parseInt(row.dataset.activity),
+
+            source: parseInt(row.dataset.source),
+
+            unit: parseInt(row.dataset.unit),
+
+            quantity: quantity,
+
+            factor: parseFloat(row.querySelector(".factor").value) || 0,
+
+            total: parseFloat(row.querySelector(".total").value) || 0,
+
+        });
+
+    });
+    console.log(rows);
+
+    // -----------------------------
+    // Check if any activity entered
+    // -----------------------------
+    if (rows.length === 0) {
+
+        alert("Please enter at least one quantity.");
+
+        return;
+    }
+
+    console.log("Saving Data...");
+
+    console.log({
+
+        company: company,
+        plant: plant,
+        financial_year: financialYear,
+        financial_month: financialMonth,
+        rows: rows,
+
+    });
+
+    // -----------------------------
+    // Save to Django
+    // -----------------------------
+    fetch("/emission/api/save-transactions/", {
+
+        method: "POST",
+
+        headers: {
+
+            "Content-Type": "application/json",
+
+            "X-CSRFToken": csrftoken,
+
+        },
+
+        body: JSON.stringify({
+
+            company: company,
+
+            plant: plant,
+
+            financial_year: financialYear,
+
+            financial_month: financialMonth,
+
+            rows: rows,
+
+        }),
+
+    })
+
+    .then(response => response.json())
+
+    .then(result => {
+
+        if (result.success) {
+
+            alert(result.message);
+
+            console.log(result);
+
+        } else {
+
+            alert(result.message);
+
+            console.log(result);
+
+        }
+
+    })
+
+    .catch(error => {
+
+        console.error(error);
+
+        alert("Something went wrong while saving.");
+
+    });
+
+});
+
+
+document.getElementById("plant").addEventListener("change", function () {
+
+    const option = this.options[this.selectedIndex];
+
+    document.getElementById("country").value =
+        option.dataset.country || "";
+
+    document.getElementById("state").value =
+        option.dataset.state || "";
+
+    document.getElementById("city").value =
+        option.dataset.city || "";
+
+});
+
+
+
+
+
+function loadTransactions() {
+    console.log("loadTransactions() called");
+    const company = document.getElementById("company").value;
+    const plant = document.getElementById("plant").value;
+    const financialYear = document.getElementById("financialYear").value;
+    const financialMonth = document.getElementById("financialMonth").value;
+
+    console.log({
+        company,
+        plant,
+        financialYear,
+        financialMonth
+    });
+
+    if (
+        !company ||
+        !plant ||
+        !financialYear ||
+        !financialMonth
+    ) {
+        return;
+    }
+
+    fetch(
+
+        `/emission/api/load-transactions/?company=${company}&plant=${plant}&financial_year=${financialYear}&financial_month=${financialMonth}`
+
+    )
+
+    .then(response => response.json())
+
+    .then(result => {
+
+        if (!result.success) {
+            return;
+        }
+
+        result.transactions.forEach(function(transaction){
+
+            const row = document.querySelector(
+
+                `tr[data-activity="${transaction.activity}"][data-source="${transaction.source}"]`
+
+            );
+
+
+            if(!row){
+                return;
+            }
+
+            row.querySelector(".quantity").value = transaction.quantity;
+
+            row.querySelector(".factor").value = transaction.factor;
+
+            row.querySelector(".quantity").value = transaction.quantity;
+
+            row.querySelector(".factor").value = transaction.factor;
+
+            row.querySelector(".total").value = transaction.total;
+
+            updateReviewSummary();
+
+        });
+
+    });
+
+}
+
+
+document.getElementById("company").addEventListener("change", function(){
+
+    loadTransactions();
+
+    updateReviewSummary();
+
+});
+
+document.getElementById("plant")
+.addEventListener("change", function(){
+
+    loadTransactions();
+
+    updateReviewSummary();
+
+});
+
+document.getElementById("financialYear")
+.addEventListener("change", function(){
+
+    loadTransactions();
+
+    updateReviewSummary();
+
+});
+
+
+document.getElementById("financialMonth")
+.addEventListener("change", function(){
+
+    loadTransactions();
+
+    updateReviewSummary();
+
+});
+
+document.getElementById("frequency")
+.addEventListener("change", updateReviewSummary);
+
+
+window.addEventListener("load", function () {
+
+    loadTransactions();
+
+    setTimeout(function(){
+
+        updateReviewSummary();
+
+    },300);
+
+});
+
+
+// =============================================
+// Review Summary
+// =============================================
+function updateReviewSummary() {
+
+    // ----------------------------
+    // Company
+    // ----------------------------
+    const company = document.getElementById("company");
+
+    document.getElementById("reviewCompany").innerText =
+        company.options[company.selectedIndex]?.text || "-";
+
+
+    // ----------------------------
+    // Plant
+    // ----------------------------
+    const plant = document.getElementById("plant");
+
+    document.getElementById("reviewPlant").innerText =
+        plant.value ?
+        plant.options[plant.selectedIndex].text :
+        "-";
+
+
+    // ----------------------------
+    // Scope
+    // ----------------------------
+    document.getElementById("reviewScope").innerText =
+        "{{ scope.name }}";
+
+
+    // ----------------------------
+    // Category
+    // ----------------------------
+    const activeCategory =
+        document.querySelector(".category-item.active");
+
+    document.getElementById("reviewCategory").innerText =
+        activeCategory ?
+        activeCategory.innerText.trim() :
+        "-";
+
+    document.getElementById("reviewEmissionCategory").innerText =
+        activeCategory ?
+        activeCategory.innerText.trim() :
+        "-";
+
+
+    // ----------------------------
+    // Financial Year
+    // ----------------------------
+    const fy =
+        document.getElementById("financialYear");
+
+    document.getElementById("reviewFinancialYear").innerText =
+        fy.value ?
+        fy.options[fy.selectedIndex].text :
+        "-";
+
+
+    // ----------------------------
+    // Financial Month
+    // ----------------------------
+    const month =
+        document.getElementById("financialMonth");
+
+    document.getElementById("reviewFinancialMonth").innerText =
+        month.value ?
+        month.options[month.selectedIndex].text :
+        "-";
+
+
+    // ----------------------------
+    // Frequency
+    // ----------------------------
+    const frequency =
+        document.getElementById("frequency");
+
+    document.getElementById("reviewFrequency").innerText =
+        frequency.options[frequency.selectedIndex].text;
+
+
+    // ----------------------------
+    // Totals
+    // ----------------------------
+    let totalQuantity = 0;
+    let totalEmission = 0;
+    let activities = 0;
+
+    const sources = new Set();
+
+    document.querySelectorAll("#activityTableBody tr")
+        .forEach(function(row){
+
+            const qty =
+                parseFloat(
+                    row.querySelector(".quantity").value
+                ) || 0;
+
+            const total =
+                parseFloat(
+                    row.querySelector(".total").value
+                ) || 0;
+
+            if(qty > 0){
+
+                activities++;
+
+                totalQuantity += qty;
+
+                totalEmission += total;
+
+                if(row.dataset.source){
+                    sources.add(row.dataset.source);
+                }
+
+            }
+
+        });
+
+    document.getElementById("reviewActivities").innerText =
+        activities;
+
+    document.getElementById("reviewSources").innerText =
+        sources.size;
+
+    document.getElementById("reviewQuantity").innerText =
+        totalQuantity.toFixed(4);
+
+    document.getElementById("reviewEmission").innerText =
+        totalEmission.toFixed(4) + " tCO₂e";
+
+    document.getElementById("reviewTotalEmission").innerText =
+        totalEmission.toFixed(4) + " tCO₂e";
+
+
+    // =====================================
+// Activity-wise Summary
+// =====================================
+const tbody = document.getElementById(
+    "reviewActivitySummary"
+);
+
+tbody.innerHTML = "";
+
+document.querySelectorAll("#activityTableBody tr")
+.forEach(function(row){
+
+    const qty = parseFloat(
+        row.querySelector(".quantity").value
+    ) || 0;
+
+    if(qty <= 0){
+        return;
+    }
+
+    const activity =
+        row.cells[0].innerText.trim();
+
+    const source =
+        row.cells[1].innerText.trim();
+
+    const unit =
+        row.cells[3].innerText.trim();
+
+    const emission =
+        parseFloat(
+            row.querySelector(".total").value
+        ) || 0;
+
+    tbody.innerHTML += `
+
+        <tr>
+
+            <td>${activity}</td>
+
+            <td>${source}</td>
+
+            <td class="text-end">
+
+                ${qty.toFixed(2)} ${unit}
+
+            </td>
+
+            <td class="text-end fw-bold">
+
+                ${emission.toFixed(4)} tCO₂e
+
+            </td>
+
+        </tr>
+
+    `;
+
+});
+
+
+if(tbody.innerHTML === ""){
+
+    tbody.innerHTML = `
+
+        <tr>
+
+            <td
+                colspan="4"
+                class="text-center text-muted"
+            >
+
+                No Data Entered
+
+            </td>
+
+        </tr>
+
+    `;
+
+}
+
+}
+</script>
+
+{% endblock %}

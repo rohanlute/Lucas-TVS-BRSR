@@ -2,6 +2,7 @@ from django.urls import path
 from .views import (
     EmissionsDashboardView, 
     EmissionsDashboardDataView,
+    ScopeDashboardView,
     TaskListView,
     TaskFilterView,
     TaskToggleView,
@@ -15,6 +16,10 @@ from .views import (
     EmissionTransactionDeleteView,
     EmissionTransactionUpdateView,
     EmissionTransactionCreateView,
+    CategoryActivitiesView,
+    ActivityFactorView,
+    SaveEmissionTransactionsView,
+    LoadEmissionTransactionsView,
 )
 
 app_name = "emission"
@@ -23,6 +28,14 @@ urlpatterns = [
     # ===== DASHBOARD =====
     path("", EmissionsDashboardView.as_view(), name="dashboard"),
     path("api/data/", EmissionsDashboardDataView.as_view(), name="dashboard-data"),
+
+    #====== SCOPE =======
+    path("scope_dataentry/", ScopeDashboardView.as_view(), name="scope_dataentry"),
+    path("api/category-activities/",CategoryActivitiesView.as_view(),name="category-activities"),
+    path("api/activity-factor/",ActivityFactorView.as_view(),name="activity-factor"),
+    path("api/save-transactions/",SaveEmissionTransactionsView.as_view(),name="save-transactions"),
+    path("api/load-transactions/",LoadEmissionTransactionsView.as_view(),name="load-transactions"),
+    
     
     # ===== TASK LIST =====
     path("tasks/", TaskListView.as_view(), name="task-list"),

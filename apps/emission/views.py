@@ -903,3 +903,385 @@ class EmissionTransactionDeleteView(DeleteView):
     success_url = reverse_lazy(
         "emission:transaction_list"
     )
+
+
+
+
+
+
+
+
+
+
+
+
+
+from .models import (
+    EmissionTransaction,
+    EmissionScope,
+    EmissionCategory,
+)
+
+from apps.companies.models import Company
+from apps.organizations.models import (
+    Plant,
+    FinancialYear,
+    FinancialMonth,
+)
+
+from django.utils import timezone
+from ..organizations.models import FinancialYear, FinancialMonth
+
+class ScopeDashboardView(ListView):
+
+    model = EmissionTransaction
+
+    template_name = "emission/scope_dataentry.html"
+
+    context_object_name = "transactions"
+
+    paginate_by = 20
+
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+
+        scope = (
+            EmissionScope.objects
+            .prefetch_related("categories")
+            .get(code="S1")
+        )
+
+        context["scope"] = scope
+
+        context["categories"] = (
+            scope.categories
+            .filter(is_active=True)
+            .order_by("display_order")
+        )
+
+        context["companies"] = Company.objects.filter(
+            is_active=True
+        ).order_by(
+            "company_name"
+        )
+
+        context["plants"] = Plant.objects.filter(
+            is_active=True
+        ).order_by(
+            "name"
+        )
+
+        context["financial_years"] = FinancialYear.objects.all()
+
+        context["financial_months"] = (
+            FinancialMonth.objects
+            .filter(is_active=True)
+            .order_by("display_order")
+        )
+
+        today = timezone.now().date()
+
+        current_financial_year = (
+            FinancialYear.objects.filter(
+                start_date__lte=today,
+                end_date__gte=today
+            ).first()
+        )
+
+        current_month_number = today.month
+
+        # Convert calendar month to your financial month numbering
+        month_mapping = {
+            4: 1,   # April
+            5: 2,
+            6: 3,
+            7: 4,
+            8: 5,
+            9: 6,
+            10: 7,
+            11: 8,
+            12: 9,
+            1: 10,
+            2: 11,
+            3: 12,
+        }
+
+        current_financial_month = FinancialMonth.objects.filter(
+            month_number=month_mapping[current_month_number]
+        ).first()
+
+        context["current_financial_year"] = current_financial_year
+        context["current_financial_month"] = current_financial_month
+
+        return context
+    
+
+
+from django.http import JsonResponse
+from django.views import View
+
+from .models import (
+    EmissionActivity,
+    EmissionSource,
+)
+
+
+class CategoryActivitiesView(View):
+
+    def get(self, request, *args, **kwargs):
+
+        category_id = request.GET.get("category_id")
+
+        activities = (
+            EmissionActivity.objects.filter(
+                category_id=category_id,
+                is_active=True,
+            )
+            .select_related(
+                "base_unit",
+            )
+            .prefetch_related(
+                "sources",
+            )
+            .order_by(
+                "display_order",
+            )
+        )
+
+        data = []
+
+        for activity in activities:
+
+            sources = []
+
+            for source in activity.sources.filter(
+                is_active=True
+            ).order_by(
+                "display_order"
+            ):
+
+                sources.append(
+                    {
+                        "id": source.id,
+                        "code": source.source_code,
+                        "name": source.source_name,
+                    }
+                )
+
+            data.append(
+                {
+                    "id": activity.id,
+                    "code": activity.code,
+                    "name": activity.name,
+                    "unit": activity.base_unit.symbol,
+                    "base_unit_id": activity.base_unit.id,
+                    "sources": sources,
+                }
+            )
+
+        return JsonResponse(
+            {
+                "activities": data,
+            }
+        )
+    
+
+
+
+
+from django.utils import timezone
+
+from .models import (
+    EmissionFactor,
+)
+
+
+class ActivityFactorView(View):
+
+    def get(self, request, *args, **kwargs):
+
+        activity_id = request.GET.get("activity_id")
+
+        factor = (
+            EmissionFactor.objects
+            .select_related(
+                "unit",
+            )
+            .filter(
+                activity_id=activity_id,
+                is_active=True,
+                effective_from__lte=timezone.now().date(),
+            )
+            .order_by(
+                "-effective_from",
+            )
+            .first()
+        )
+
+        if not factor:
+
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "Emission factor not found.",
+                }
+            )
+
+        return JsonResponse(
+            {
+                "success": True,
+                "factor": str(factor.emission_factor),
+                "unit": factor.unit.symbol,
+                "source": factor.source,
+                "factor_id": factor.id,
+            }
+        )
+
+
+
+from django.views import View
+from django.db import transaction
+from django.utils import timezone
+from django.http import JsonResponse
+import json
+
+
+
+class SaveEmissionTransactionsView(View):
+
+    @transaction.atomic
+    def post(self, request):
+
+        try:
+
+            data = json.loads(request.body)
+
+            company_id = data["company"]
+            plant_id = data["plant"]
+            fy_id = data["financial_year"]
+            month_id = data["financial_month"]
+
+            rows = data["rows"]
+
+            for row in rows:
+
+                transaction_obj, created = (
+                    EmissionTransaction.objects.update_or_create(
+
+                        company_id=company_id,
+                        plant_id=plant_id,
+                        financial_year_id=fy_id,
+                        financial_month_id=month_id,
+                        activity_id=row["activity"],
+                        source_id=row["source"],
+
+                        defaults={
+
+                            "unit_id": row["unit"],
+
+                            "quantity": row["quantity"],
+
+                            "emission_factor": row.get("factor", 0),
+
+                            "total_emission": row.get("total", 0),
+
+                            "remarks": row.get("remarks", ""),
+
+                            "status": "DRAFT",
+
+                            "created_by": request.user,
+
+                        }
+
+                    )
+                )
+
+            return JsonResponse({
+
+                "success": True,
+
+                "message": "Transactions saved."
+
+            })
+
+        except Exception as e:
+
+            return JsonResponse({
+
+                "success": False,
+
+                "message": str(e)
+
+            })
+
+
+
+
+
+class LoadEmissionTransactionsView(View):
+
+    def get(self, request):
+
+        company = request.GET.get("company")
+        plant = request.GET.get("plant")
+        financial_year = request.GET.get("financial_year")
+        financial_month = request.GET.get("financial_month")
+
+        transactions = (
+            EmissionTransaction.objects
+            .filter(
+                company_id=company,
+                plant_id=plant,
+                financial_year_id=financial_year,
+                financial_month_id=financial_month,
+            )
+            .select_related(
+                "activity",
+            )
+        )
+
+        data = []
+
+        for transaction in transactions:
+
+            data.append({
+
+                "activity": transaction.activity_id,
+
+                "source": transaction.source_id,
+
+                "quantity": str(transaction.quantity),
+
+                "factor": str(transaction.emission_factor),
+
+                "total": str(transaction.total_emission),
+
+                "status": transaction.status,
+
+            })
+
+        print(
+            company,
+            plant,
+            financial_year,
+            financial_month,
+        )
+
+        print(
+            list(
+                transactions.values(
+                    "activity_id",
+                    "quantity",
+                    "total_emission"
+                )
+            )
+        )
+
+        return JsonResponse({
+
+            "success": True,
+
+            "transactions": data,
+
+        })

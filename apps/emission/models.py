@@ -98,6 +98,52 @@ class EmissionActivity(models.Model):
         return f"{self.category.name} - {self.name}"
     
 
+class EmissionSource(models.Model):
+
+    activity = models.ForeignKey(
+        EmissionActivity,
+        on_delete=models.CASCADE,
+        related_name="sources"
+    )
+
+    source_code = models.CharField(
+        max_length=30
+    )
+
+    source_name = models.CharField(
+        max_length=200
+    )
+
+    description = models.TextField(
+        blank=True
+    )
+
+    is_active = models.BooleanField(
+        default=True
+    )
+
+    display_order = models.PositiveIntegerField(
+        default=1
+    )
+
+    class Meta:
+
+        db_table = "env_emission_source"
+
+        ordering = [
+            "activity",
+            "display_order"
+        ]
+
+        unique_together = (
+            "activity",
+            "source_code",
+        )
+
+    def __str__(self):
+
+        return f"{self.activity.name} - {self.source_name}"
+
 
 
 class EmissionFactor(models.Model):
@@ -201,6 +247,12 @@ class EmissionTransaction(models.Model):
         EmissionActivity,
         on_delete=models.PROTECT,
         related_name="transactions"
+    )
+
+    source = models.ForeignKey(
+        EmissionSource,
+        on_delete=models.PROTECT,
+        related_name="transactions",
     )
 
     unit = models.ForeignKey(
@@ -311,6 +363,7 @@ class EmissionTransaction(models.Model):
                     "financial_year",
                     "financial_month",
                     "activity",
+                    "source",
                 ],
                 name="uq_env_transaction"
             )
