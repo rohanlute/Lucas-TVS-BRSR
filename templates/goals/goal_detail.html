@@ -79,12 +79,6 @@
         box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     }
 
-    .metric-tab-link {
-        text-decoration: none;
-        color: inherit;
-        display: inline-block;
-    }
-
     .metric-tab {
         border: 1.5px solid transparent;
         background: transparent;
@@ -97,7 +91,6 @@
         text-align: center;
         line-height: 1.35;
         transition: all 0.2s ease;
-        width: 100%;
         min-width: 120px;
     }
 
@@ -126,7 +119,6 @@
         margin-top: 2px;
     }
 
-    /* ===== Grid - Equal Height Cards ===== */
     .gd-grid {
         display: grid;
         grid-template-columns: 320px 1fr;
@@ -318,7 +310,6 @@
         transform: none;
     }
 
-    /* ===== Chart Card - Equal Height ===== */
     .chart-card {
         background: #ffffff;
         border: 1px solid #edf0f5;
@@ -582,20 +573,18 @@
         </div>
     </div>
 
-    <!-- Metric Tabs - Clickable -->
+    <!-- Metric Tabs -->
     <div class="metric-tabs" id="metricTabs">
         {% if metrics %}
             {% for metric_name, values in metrics.items %}
-                <a href="{% url 'goals:goal_detail_metric' material_topic metric_name %}?goal={{ selected_goal }}" 
-                   class="metric-tab-link">
-                    <button type="button" 
-                            class="metric-tab {% if metric_name == active_metric %}active{% endif %}" 
-                            data-metric="{{ metric_name }}" 
-                            data-unit="{{ values.unit }}">
-                        {{ metric_name }}
-                        <span class="metric-unit">{{ values.unit }}</span>
-                    </button>
-                </a>
+                <button type="button" 
+                        class="metric-tab {% if forloop.first %}active{% endif %}" 
+                        data-metric="{{ metric_name }}" 
+                        data-unit="{{ values.unit }}"
+                        onclick="selectMetric('{{ metric_name }}')">
+                    {{ metric_name }}
+                    <span class="metric-unit">{{ values.unit }}</span>
+                </button>
             {% endfor %}
         {% else %}
             <div class="no-data" style="width:100%;">
@@ -616,17 +605,17 @@
                 <div class="stat-mini-card">
                     <span class="stat-label"><i class="fas fa-circle-dot"></i> Current</span>
                     <span class="stat-value current" id="statCurrent">0.00</span>
-                    <span class="stat-unit" id="statCurrentUnit">{{ active_unit }}</span>
+                    <span class="stat-unit" id="statCurrentUnit">{{ config.unit|default:'' }}</span>
                 </div>
                 <div class="stat-mini-card">
                     <span class="stat-label"><i class="fas fa-arrow-trend-up"></i> Baseline</span>
                     <span class="stat-value baseline" id="statBaseline">0</span>
-                    <span class="stat-unit" id="statBaselineUnit">{{ active_unit }}</span>
+                    <span class="stat-unit" id="statBaselineUnit">{{ config.unit|default:'' }}</span>
                 </div>
                 <div class="stat-mini-card">
                     <span class="stat-label"><i class="fas fa-crosshairs"></i> Target</span>
                     <span class="stat-value target" id="statTarget">0</span>
-                    <span class="stat-unit" id="statTargetUnit">{{ active_unit }}</span>
+                    <span class="stat-unit" id="statTargetUnit">{{ config.unit|default:'' }}</span>
                 </div>
             </div>
 
@@ -635,7 +624,6 @@
                 <form id="configForm" method="POST" action="{% url 'goals:goal_config_update' material_topic %}">
                     {% csrf_token %}
                     <input type="hidden" name="selected_goal" id="selectedGoal" value="{{ selected_goal }}">
-                    <input type="hidden" name="active_metric" id="activeMetric" value="{{ active_metric }}">
                     
                     <div class="config-field">
                         <label for="baselineYear">Baseline Year <span class="text-danger">*</span></label>
@@ -675,7 +663,7 @@
                     <div class="config-field">
                         <label for="unitInput">Unit <span class="text-danger">*</span></label>
                         <input type="text" class="form-control-mini" id="unitInput" name="unit"
-                               value="{{ config.unit|default:active_unit }}" placeholder="e.g. Kilolitre, tCO₂e">
+                               value="{{ config.unit|default:'' }}" placeholder="e.g. Kilolitre, tCO₂e">
                     </div>
 
                     <button type="submit" class="config-save-btn" id="saveConfigBtn">
@@ -688,7 +676,7 @@
         <!-- Right Column - Chart -->
         <div class="chart-card">
             <div class="chart-card-header">
-                <h6 id="chartTitle">{{ active_metric|default:"Select a metric" }}</h6>
+                <h6 id="chartTitle">Select a metric</h6>
                 <div class="chart-legend">
                     <span class="chart-legend-item">
                         <input type="checkbox" id="chkActual" checked onchange="toggleLine('Actual')">
@@ -747,14 +735,36 @@ document.addEventListener('DOMContentLoaded', function() {
     const unitInput = document.getElementById('unitInput');
     const goalSelect = document.getElementById('gdGoal');
 
-    // Get active metric from URL or config
-    const activeMetricFromUrl = '{{ active_metric|escapejs }}';
-    const activeMetric = activeMetricFromUrl || configData.active_metric || Object.keys(metricsData)[0] || null;
+    // Get active metric (first one from metrics)
+    const metricNames = Object.keys(metricsData);
+    let activeMetric = metricNames.length > 0 ? metricNames[0] : null;
     
     console.log('Active Metric:', activeMetric);
 
     let chartInstance = null;
     let chartData = {};
+
+    // ===== Select Metric Function =====
+    window.selectMetric = function(metricName) {
+        activeMetric = metricName;
+        // Update active class on tabs
+        document.querySelectorAll('.metric-tab').forEach(function(tab) {
+            tab.classList.remove('active');
+            if (tab.getAttribute('data-metric') === metricName) {
+                tab.classList.add('active');
+            }
+        });
+        // Update chart title
+        chartTitle.textContent = metricName;
+        // Update unit
+        const m = metricsData[metricName] || {};
+        if (m.unit) {
+            unitInput.value = m.unit;
+            configData.unit = m.unit;
+            updateStatUnits(m.unit);
+        }
+        renderChart(metricName);
+    };
 
     // ===== Update Stat Units =====
     function updateStatUnits(unit) {
@@ -762,16 +772,6 @@ document.addEventListener('DOMContentLoaded', function() {
         statCurrentUnit.textContent = unitDisplay;
         statBaselineUnit.textContent = unitDisplay;
         statTargetUnit.textContent = unitDisplay;
-    }
-
-    // ===== Update Unit for Active Metric =====
-    function updateUnitForMetric(metricName) {
-        const m = metricsData[metricName] || {};
-        if (m.unit) {
-            unitInput.value = m.unit;
-            configData.unit = m.unit;
-            updateStatUnits(m.unit);
-        }
     }
 
     // ===== Goal Changed =====
@@ -869,10 +869,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===== Render Chart =====
     function renderChart(metricName) {
         const m = metricsData[metricName] || {};
-        chartTitle.textContent = metricName || '';
+        chartTitle.textContent = metricName || 'Select a metric';
 
         if (m.unit) {
-            updateUnitForMetric(metricName);
+            unitInput.value = m.unit;
+            configData.unit = m.unit;
+            updateStatUnits(m.unit);
         }
 
         const baselineValue = parseFloat(document.getElementById('baselineValue').value) || 0;
@@ -901,7 +903,6 @@ document.addEventListener('DOMContentLoaded', function() {
             statCurrent.textContent = '0.00';
             statBaseline.textContent = '0.00';
             statTarget.textContent = '0.00';
-            updateStatUnits('');
             return;
         }
         emptyOverlay.style.display = 'none';
@@ -1114,12 +1115,18 @@ document.addEventListener('DOMContentLoaded', function() {
         configData.unit = this.value;
     });
 
-    // Set initial unit for active metric
-    if (activeMetric && metricsData[activeMetric]) {
+    // Set initial active metric
+    if (activeMetric) {
+        chartTitle.textContent = activeMetric;
         const firstMetric = metricsData[activeMetric];
-        if (firstMetric.unit) {
+        if (firstMetric && firstMetric.unit) {
             unitInput.value = firstMetric.unit;
             updateStatUnits(firstMetric.unit);
+        }
+        // Set active class on first tab
+        const firstTab = document.querySelector('.metric-tab');
+        if (firstTab) {
+            firstTab.classList.add('active');
         }
     }
 

@@ -91,7 +91,7 @@
         font-size: 16px;
     }
 
-    /* ===== Goal Cards - 3 Column Layout (BRSR-style flat cards) ===== */
+    /* ===== Goal Cards ===== */
     .goals-cards-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -109,12 +109,13 @@
         flex-direction: column;
         cursor: pointer;
         transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+        position: relative;
     }
 
     .goal-card:hover {
-        border-color: #dde4f5;
-        box-shadow: 0 10px 26px rgba(30, 45, 90, 0.08);
-        transform: translateY(-2px);
+        border-color: #3454d1;
+        box-shadow: 0 10px 26px rgba(52, 84, 209, 0.12);
+        transform: translateY(-3px);
     }
 
     .goal-card .card-top-row {
@@ -177,7 +178,7 @@
         color: #c3cbdb;
     }
 
-    /* ===== Three Dots Menu (now inline in the top row) ===== */
+    /* ===== Three Dots Menu ===== */
     .card-dropdown {
         position: relative;
         line-height: 1;
@@ -251,7 +252,7 @@
         border-color: #f0f3f8;
     }
 
-    /* ===== Modal Styles - centered within content area, excluding sidebar, fixed size ===== */
+    /* ===== Modal Styles ===== */
     .modal {
         position: fixed;
         top: 0;
@@ -480,7 +481,6 @@
         border: 1px solid #f5c6cb;
     }
 
-    /* Modal Backdrop - dims the full page, including the sidebar */
     .modal-backdrop-custom {
         position: fixed;
         top: 0;
@@ -492,7 +492,6 @@
         display: none;
     }
 
-    /* No Goals */
     .no-goals {
         text-align: center;
         padding: 60px 20px;
@@ -525,7 +524,6 @@
     }
 
     @media (max-width: 991px) {
-        /* Sidebar is typically collapsed/hidden below this breakpoint */
         .modal {
             left: 0;
             width: 100%;
@@ -620,7 +618,7 @@
     </div>
 </div>
 
-<!-- Goals Cards Section - 3 Column Layout (no outer container/card wrapper) -->
+<!-- Goals Cards Section - Only shows goals added to session -->
 {% if grouped_goals %}
     <div class="goals-cards-grid">
         {% for group in grouped_goals %}
@@ -674,7 +672,7 @@
     </div>
 {% endif %}
 
-<!-- ===== ADD GOAL MODAL - FIXED SIZE, CENTERED IN CONTENT AREA ===== -->
+<!-- ===== ADD GOAL MODAL ===== -->
 <div class="modal" id="addGoalModal" tabindex="-1" aria-labelledby="addGoalModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -688,10 +686,8 @@
             <form id="addGoalForm" method="POST" action="{% url 'goals:add_goal' %}">
                 {% csrf_token %}
                 <div class="modal-body">
-                    <!-- Alert messages -->
                     <div id="modalAlert" class="modal-alert"></div>
 
-                    <!-- Material Topic -->
                     <div class="mb-3">
                         <label for="materialTopic" class="form-label">
                             Material Topic <span class="text-danger">*</span>
@@ -714,61 +710,13 @@
                         <div class="invalid-feedback" id="materialTopicError">Please select a material topic.</div>
                     </div>
 
-                    <!-- Goal -->
                     <div class="mb-2">
                         <label for="goalName" class="form-label">
                             Goal <span class="text-danger">*</span>
                         </label>
                         <select class="form-select" id="goalName" name="goal_name" required>
                             <option value="">Select Goal</option>
-                            <!-- Stationary Combustion -->
-                            <option value="Reduce Fuel Consumption" data-topic="Stationary Combustion">Reduce Fuel Consumption</option>
-                            <option value="Improve Boiler Efficiency" data-topic="Stationary Combustion">Improve Boiler Efficiency</option>
-                            <option value="Lower Direct GHG Emissions" data-topic="Stationary Combustion">Lower Direct GHG Emissions</option>
-                            <!-- Mobile Combustion -->
-                            <option value="Reduce Fuel Usage" data-topic="Mobile Combustion">Reduce Fuel Usage</option>
-                            <option value="Improve Fleet Efficiency" data-topic="Mobile Combustion">Improve Fleet Efficiency</option>
-                            <option value="Transition to Low-Emission Vehicles" data-topic="Mobile Combustion">Transition to Low-Emission Vehicles</option>
-                            <!-- Process Emissions -->
-                            <option value="Reduce Process Emissions" data-topic="Process Emissions">Reduce Process Emissions</option>
-                            <option value="Improve Process Efficiency" data-topic="Process Emissions">Improve Process Efficiency</option>
-                            <option value="Adopt Cleaner Technologies" data-topic="Process Emissions">Adopt Cleaner Technologies</option>
-                            <!-- Fugitive Emissions -->
-                            <option value="Prevent Refrigerant Leakage" data-topic="Fugitive Emissions">Prevent Refrigerant Leakage</option>
-                            <option value="Reduce Fugitive Emissions" data-topic="Fugitive Emissions">Reduce Fugitive Emissions</option>
-                            <option value="Improve Leak Detection & Maintenance" data-topic="Fugitive Emissions">Improve Leak Detection &amp; Maintenance</option>
-                            <!-- Purchased Electricity -->
-                            <option value="Reduce Electricity Consumption" data-topic="Purchased Electricity">Reduce Electricity Consumption</option>
-                            <option value="Increase Renewable Electricity" data-topic="Purchased Electricity">Increase Renewable Electricity</option>
-                            <option value="Improve Energy Efficiency" data-topic="Purchased Electricity">Improve Energy Efficiency</option>
-                            <!-- Purchased Steam, Heat & Cooling -->
-                            <option value="Optimize Energy Use" data-topic="Purchased Steam, Heat & Cooling">Optimize Energy Use</option>
-                            <option value="Reduce Energy Losses" data-topic="Purchased Steam, Heat & Cooling">Reduce Energy Losses</option>
-                            <option value="Increase Low-Carbon Energy Sources" data-topic="Purchased Steam, Heat & Cooling">Increase Low-Carbon Energy Sources</option>
-                            <!-- Purchased Goods & Services -->
-                            <option value="Sustainable Procurement" data-topic="Purchased Goods & Services">Sustainable Procurement</option>
-                            <option value="Reduce Supplier Emissions" data-topic="Purchased Goods & Services">Reduce Supplier Emissions</option>
-                            <option value="Improve Supplier ESG Performance" data-topic="Purchased Goods & Services">Improve Supplier ESG Performance</option>
-                            <!-- Business Travel -->
-                            <option value="Reduce Travel Emissions" data-topic="Business Travel">Reduce Travel Emissions</option>
-                            <option value="Promote Virtual Meetings" data-topic="Business Travel">Promote Virtual Meetings</option>
-                            <option value="Encourage Low-Carbon Travel" data-topic="Business Travel">Encourage Low-Carbon Travel</option>
-                            <!-- Employee Commuting -->
-                            <option value="Encourage Public Transport" data-topic="Employee Commuting">Encourage Public Transport</option>
-                            <option value="Promote Carpooling" data-topic="Employee Commuting">Promote Carpooling</option>
-                            <option value="Support Remote Working" data-topic="Employee Commuting">Support Remote Working</option>
-                            <!-- Transportation & Distribution -->
-                            <option value="Optimize Logistics" data-topic="Transportation & Distribution">Optimize Logistics</option>
-                            <option value="Reduce Transportation Emissions" data-topic="Transportation & Distribution">Reduce Transportation Emissions</option>
-                            <option value="Improve Fuel Efficiency" data-topic="Transportation & Distribution">Improve Fuel Efficiency</option>
-                            <!-- Waste Generated in Operations -->
-                            <option value="Reduce Operational Waste" data-topic="Waste Generated in Operations">Reduce Operational Waste</option>
-                            <option value="Increase Recycling" data-topic="Waste Generated in Operations">Increase Recycling</option>
-                            <option value="Divert Waste from Landfill" data-topic="Waste Generated in Operations">Divert Waste from Landfill</option>
-                            <!-- Upstream & Downstream Activities -->
-                            <option value="Improve Value Chain Sustainability" data-topic="Upstream & Downstream Activities">Improve Value Chain Sustainability</option>
-                            <option value="Reduce Lifecycle Emissions" data-topic="Upstream & Downstream Activities">Reduce Lifecycle Emissions</option>
-                            <option value="Collaborate with Supply Chain Partners" data-topic="Upstream & Downstream Activities">Collaborate with Supply Chain Partners</option>
+                            <!-- Goals will be filtered based on material topic -->
                         </select>
                         <div class="invalid-feedback" id="goalNameError">Please select a goal.</div>
                     </div>
@@ -788,7 +736,7 @@
 <div class="modal-backdrop-custom" id="modalBackdrop"></div>
 
 <script>
-// Modal Functions - Manual Control (No Fade)
+// Modal Functions
 function openModal() {
     const modal = document.getElementById('addGoalModal');
     const backdrop = document.getElementById('modalBackdrop');
@@ -807,34 +755,27 @@ function closeModal() {
     document.body.style.overflow = 'auto';
 }
 
-// Close modal on backdrop click
 document.getElementById('modalBackdrop').addEventListener('click', function() {
     closeModal();
 });
 
-// Close modal on Escape key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeModal();
     }
 });
 
-// Function to open modal with pre-selected topic
 function openAddGoalModalWithTopic(topic) {
     openModal();
-    // Set the material topic dropdown value
     const materialTopic = document.getElementById('materialTopic');
     if (materialTopic) {
         materialTopic.value = topic;
-        // Trigger change event to filter goals
         const event = new Event('change');
         materialTopic.dispatchEvent(event);
-        // Add validation class
         materialTopic.classList.add('is-valid');
     }
 }
 
-// Get CSRF token from cookie
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -850,7 +791,6 @@ function getCookie(name) {
     return cookieValue;
 }
 
-// Open modal on button click
 document.addEventListener('DOMContentLoaded', function() {
     const openBtn = document.getElementById('openAddGoalModal');
     if (openBtn) {
@@ -860,46 +800,90 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Material Topic -> Goal filtering
+    // ===== Complete Goals by Material Topic (for the modal) =====
+    const goalsByTopic = {
+        'Stationary Combustion': [
+            'Reduce Fuel Consumption',
+            'Lower GHG Emissions',
+            'Improve Efficiency'
+        ],
+        'Mobile Combustion': [
+            'Reduce Fuel Usage',
+            'Improve Fleet Efficiency',
+            'Reduce Emissions'
+        ],
+        'Process Emissions': [
+            'Reduce Process Emissions',
+            'Improve Process Efficiency'
+        ],
+        'Fugitive Emissions': [
+            'Reduce Refrigerant Leakage',
+            'Reduce Fugitive Emissions',
+            'Leak Prevention'
+        ],
+        'Purchased Electricity': [
+            'Reduce Electricity Use',
+            'Increase Renewable Energy',
+            'Reduce Emissions'
+        ],
+        'Purchased Steam, Heat & Cooling': [
+            'Optimize Energy Use',
+            'Reduce Emissions'
+        ],
+        'Purchased Goods & Services': [
+            'Sustainable Procurement',
+            'Responsible Sourcing'
+        ],
+        'Business Travel': [
+            'Reduce Travel Emissions'
+        ],
+        'Employee Commuting': [
+            'Sustainable Commuting'
+        ],
+        'Transportation & Distribution': [
+            'Reduce Logistics Emissions'
+        ],
+        'Waste Generated in Operations': [
+            'Reduce Waste',
+            'Increase Recycling',
+            'Waste Disposal'
+        ],
+        'Upstream & Downstream Activities': [
+            'Reduce Value Chain Emissions',
+            'Improve Supplier Performance'
+        ]
+    };
+
     const materialTopic = document.getElementById('materialTopic');
     const goalName = document.getElementById('goalName');
     
-    // Filter goals based on selected material topic
     materialTopic.addEventListener('change', function() {
         const selectedTopic = this.value;
         const options = goalName.querySelectorAll('option');
         
-        // Reset select
-        goalName.value = '';
+        goalName.innerHTML = '<option value="">Select Goal</option>';
         
-        // Show/hide options based on topic
-        options.forEach(function(option) {
-            if (option.value === '') {
-                option.style.display = '';
-                return;
-            }
-            
-            const topic = option.getAttribute('data-topic');
-            if (selectedTopic === '' || topic === selectedTopic) {
-                option.style.display = '';
-            } else {
-                option.style.display = 'none';
-            }
-        });
+        if (selectedTopic && goalsByTopic[selectedTopic]) {
+            goalsByTopic[selectedTopic].forEach(function(goal) {
+                const option = document.createElement('option');
+                option.value = goal;
+                option.textContent = goal;
+                option.setAttribute('data-topic', selectedTopic);
+                goalName.appendChild(option);
+            });
+        }
         
-        // Reset validation
         goalName.classList.remove('is-valid', 'is-invalid');
         document.getElementById('goalNameError').classList.remove('show');
     });
-    
-    // Modal Form Handling
+
+    // Form submission
     const form = document.getElementById('addGoalForm');
     const submitBtn = document.getElementById('submitGoalBtn');
     const materialTopicError = document.getElementById('materialTopicError');
     const goalNameError = document.getElementById('goalNameError');
     const modalAlert = document.getElementById('modalAlert');
 
-    // Real-time validation
     materialTopic.addEventListener('change', function() {
         if (this.value) {
             this.classList.remove('is-invalid');
@@ -922,16 +906,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Form submission
     form.addEventListener('submit', function(e) {
         e.preventDefault();
         let isValid = true;
 
-        // Hide previous alert
         modalAlert.className = 'modal-alert';
         modalAlert.style.display = 'none';
 
-        // Validate Material Topic
         if (!materialTopic.value) {
             materialTopic.classList.add('is-invalid');
             materialTopicError.classList.add('show');
@@ -942,7 +923,6 @@ document.addEventListener('DOMContentLoaded', function() {
             materialTopicError.classList.remove('show');
         }
 
-        // Validate Goal
         if (!goalName.value) {
             goalName.classList.add('is-invalid');
             goalNameError.classList.add('show');
@@ -966,14 +946,10 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Disable submit button
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Adding...';
 
-        // Get CSRF token
         const csrftoken = getCookie('csrftoken');
-
-        // Submit form via AJAX
         const formData = new FormData(form);
 
         fetch('/goals/add-goal/', {
@@ -984,47 +960,28 @@ document.addEventListener('DOMContentLoaded', function() {
                 'X-CSRFToken': csrftoken,
             }
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
                 modalAlert.textContent = data.message || 'Goal added successfully!';
                 modalAlert.className = 'modal-alert modal-alert-success show';
                 modalAlert.style.display = 'block';
                 
-                // Reset form
                 materialTopic.value = '';
-                goalName.value = '';
+                goalName.innerHTML = '<option value="">Select Goal</option>';
                 materialTopic.classList.remove('is-valid');
                 goalName.classList.remove('is-valid');
                 
-                // Reset goal options visibility
-                const options = goalName.querySelectorAll('option');
-                options.forEach(function(option) {
-                    option.style.display = '';
-                });
-                
-                // Reset button
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="fas fa-plus me-2"></i> Add Goal';
                 
-                // Close modal and reload after 1.5 seconds
                 setTimeout(function() {
                     closeModal();
                     location.reload();
                 }, 1500);
             } else {
-                let errorMsg = '';
-                if (data.errors) {
-                    for (const [field, errors] of Object.entries(data.errors)) {
-                        errorMsg += errors.join(' ') + ' ';
-                    }
-                }
-                modalAlert.textContent = errorMsg || data.message || 'An error occurred. Please try again.';
+                let errorMsg = data.message || 'An error occurred. Please try again.';
+                modalAlert.textContent = errorMsg;
                 modalAlert.className = 'modal-alert modal-alert-danger show';
                 modalAlert.style.display = 'block';
                 
@@ -1043,7 +1000,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Reset form when modal is closed
     const modal = document.getElementById('addGoalModal');
     const observer = new MutationObserver(function() {
         if (modal.style.display === 'none') {
