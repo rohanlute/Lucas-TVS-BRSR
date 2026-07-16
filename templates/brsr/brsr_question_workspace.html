@@ -415,6 +415,17 @@
     overflow-x:auto;
   }
 
+  .question-fieldset{
+    border:0;
+    padding:0;
+    margin:0;
+    min-width:0;
+  }
+
+  .question-fieldset:disabled{
+    opacity:.92;
+  }
+
   .question-container.active .question-content{
     display:block;
   }
@@ -564,6 +575,11 @@
   .btn-brsr.secondary{
     background:#eef2f7;
     color:var(--ink-soft);
+  }
+
+  .btn-brsr:disabled{
+    cursor:not-allowed;
+    opacity:.6;
   }
 
   .btn-brsr.success{
@@ -752,7 +768,7 @@
 
         <div class="panel-body" id="questionDeck"></div>
 
-        <div class="assignment-launcher">
+        <div class="assignment-launcher" id="assignmentLauncher" style="display:none;">
           <div class="assignment-summary">
             <div>
               <h4>Assign Questions</h4>
@@ -833,16 +849,21 @@
   const API_WORKSPACE = "{{ workspace_api_url|escapejs }}";
   const API_SAVE = "{{ question_save_api_url|escapejs }}";
   const API_SUBMIT = "{{ question_submit_api_url|escapejs }}";
+  const API_APPROVE = "{{ question_approve_api_url|escapejs }}";
+  const API_REJECT = "{{ question_reject_api_url|escapejs }}";
+  const API_COMMENT = "{{ question_comment_api_url|escapejs }}";
   const API_ASSIGN = "{{ assignment_create_api_url|escapejs }}";
   const API_ASSIGN_OPTIONS = "{{ assignment_options_api_url|escapejs }}";
   const INITIAL_SECTION = "{{ current_section_code|default:''|escapejs }}";
   const INITIAL_PRINCIPLE = "{{ current_principle_slug|default:''|escapejs }}";
   const INITIAL_QUESTION = "{{ active_question_id|default:''|escapejs }}";
+  const INITIAL_ASSIGNMENT = "{{ assignment_id|default:''|escapejs }}";
 
   const state = {
     sectionCode: INITIAL_SECTION,
     principleSlug: INITIAL_PRINCIPLE,
     questionId: INITIAL_QUESTION,
+    assignmentId: INITIAL_ASSIGNMENT,
     workspace: null,
     activeQuestion: null,
   };
@@ -862,7 +883,7 @@
       .replaceAll("'", '&#39;');
   }
 
-  // CRITICAL: Helper function to get the question ID from either question_id or local_id
+  // Helper function to get the question ID from either question_id or local_id
   function getQuestionId(question) {
     return question.question_id || question.local_id || null;
   }
@@ -963,10 +984,11 @@
     return fallback;
   }
 
-  function renderFieldControl(question, field, index) {
+  function renderFieldControl(question, field, index, disabled = false) {
     const fieldName = field.name || `field_${index + 1}`;
     const fieldLabel = field.label || field.name || `Field ${index + 1}`;
     const fieldValue = getStoredFieldValue(question, fieldName, '');
+    const disabledAttr = disabled ? 'disabled aria-disabled="true"' : '';
 
     if (field.kind === 'radio') {
       const options = Array.isArray(field.options) ? field.options : [];
@@ -980,7 +1002,7 @@
               const checked = String(optionValue) === String(fieldValue) ? 'checked' : '';
               return `
                 <label class="choice-item">
-                  <input type="radio" name="responseValue-${escapeHtml(fieldName)}" value="${escapeHtml(optionValue)}" data-field-name="${escapeHtml(fieldName)}" ${checked}>
+                  <input type="radio" name="responseValue-${escapeHtml(fieldName)}" value="${escapeHtml(optionValue)}" data-field-name="${escapeHtml(fieldName)}" ${checked} ${disabledAttr}>
                   <span>${escapeHtml(label)}</span>
                 </label>
               `;
@@ -1003,7 +1025,7 @@
               const checked = selected.includes(String(optionValue)) ? 'checked' : '';
               return `
                 <label class="choice-item">
-                  <input type="checkbox" value="${escapeHtml(optionValue)}" data-field-name="${escapeHtml(fieldName)}" ${checked}>
+                  <input type="checkbox" value="${escapeHtml(optionValue)}" data-field-name="${escapeHtml(fieldName)}" ${checked} ${disabledAttr}>
                   <span>${escapeHtml(label)}</span>
                 </label>
               `;
@@ -1017,7 +1039,7 @@
       return `
         <div class="form-group">
           <label class="form-label">${escapeHtml(fieldLabel)}</label>
-          <textarea class="workspace-textarea form-textarea" data-field-name="${escapeHtml(fieldName)}" placeholder="${escapeHtml(field.placeholder || 'Type your response here')}">${escapeHtml(typeof fieldValue === 'string' ? fieldValue : '')}</textarea>
+          <textarea class="workspace-textarea form-textarea" data-field-name="${escapeHtml(fieldName)}" placeholder="${escapeHtml(field.placeholder || 'Type your response here')}" ${disabledAttr}>${escapeHtml(typeof fieldValue === 'string' ? fieldValue : '')}</textarea>
         </div>
       `;
     }
@@ -1027,7 +1049,7 @@
       return `
         <div class="form-group">
           <label class="form-label">${escapeHtml(fieldLabel)}</label>
-          <input class="workspace-input" data-field-name="${escapeHtml(fieldName)}" type="${escapeHtml(inputType)}" value="${escapeHtml(typeof fieldValue === 'string' ? fieldValue : '')}" placeholder="${escapeHtml(field.placeholder || '')}">
+          <input class="workspace-input" data-field-name="${escapeHtml(fieldName)}" type="${escapeHtml(inputType)}" value="${escapeHtml(typeof fieldValue === 'string' ? fieldValue : '')}" placeholder="${escapeHtml(field.placeholder || '')}" ${disabledAttr}>
         </div>
       `;
     }
@@ -1052,16 +1074,16 @@
                   <tr>
                     ${columns.map((column) => {
                       const cellValue = row?.[column] ?? row?.[column.toLowerCase()] ?? '';
-                      return `<td><input type="text" data-field-name="${escapeHtml(fieldName)}" data-row-index="${rowIndex}" data-column-name="${escapeHtml(column)}" value="${escapeHtml(cellValue)}" placeholder="${escapeHtml(column)}"></td>`;
+                      return `<td><input type="text" data-field-name="${escapeHtml(fieldName)}" data-row-index="${rowIndex}" data-column-name="${escapeHtml(column)}" value="${escapeHtml(cellValue)}" placeholder="${escapeHtml(column)}" ${disabledAttr}></td>`;
                     }).join('')}
-                    <td><button type="button" class="btn-brsr secondary js-remove-row">-</button></td>
+                    <td><button type="button" class="btn-brsr secondary js-remove-row" ${disabledAttr}>-</button></td>
                   </tr>
                 `).join('')}
               </tbody>
             </table>
           </div>
           <div class="table-actions">
-            <button type="button" class="btn-brsr secondary js-add-row">Add Row</button>
+            <button type="button" class="btn-brsr secondary js-add-row" ${disabledAttr}>Add Row</button>
           </div>
         </div>
       `;
@@ -1070,23 +1092,24 @@
     return `
       <div class="form-group">
         <label class="form-label">${escapeHtml(fieldLabel)}</label>
-        <textarea class="workspace-textarea form-textarea" data-field-name="${escapeHtml(fieldName)}">${escapeHtml(typeof fieldValue === 'string' ? fieldValue : '')}</textarea>
+        <textarea class="workspace-textarea form-textarea" data-field-name="${escapeHtml(fieldName)}" ${disabledAttr}>${escapeHtml(typeof fieldValue === 'string' ? fieldValue : '')}</textarea>
       </div>
     `;
   }
 
-  function renderQuestionInput(question) {
+  function renderQuestionInput(question, disabled = false) {
     const value = question.response_value || '';
     const options = defaultChoiceOptions(question);
     const schema = tableSchema(question);
     const fields = Array.isArray(question.validation_rules && question.validation_rules.fields) ? question.validation_rules.fields : [];
     const qId = getQuestionId(question);
+    const disabledAttr = disabled ? 'disabled aria-disabled="true"' : '';
 
     if (fields.length) {
       return `
         <div class="form-group">
           <div class="choice-stack">
-            ${fields.map((field, index) => renderFieldControl(question, field, index)).join('')}
+            ${fields.map((field, index) => renderFieldControl(question, field, index, disabled)).join('')}
           </div>
         </div>
       `;
@@ -1096,7 +1119,7 @@
       return `
         <div class="form-group">
           <label class="form-label">Response</label>
-          <textarea class="workspace-textarea form-textarea" id="responseValue-${escapeHtml(qId)}" placeholder="${escapeHtml(question.placeholder_text || 'Type your response here')}">${escapeHtml(value)}</textarea>
+          <textarea class="workspace-textarea form-textarea" id="responseValue-${escapeHtml(qId)}" placeholder="${escapeHtml(question.placeholder_text || 'Type your response here')}" ${disabledAttr}>${escapeHtml(value)}</textarea>
         </div>
       `;
     }
@@ -1117,7 +1140,7 @@
       return `
         <div class="form-group">
           <label class="form-label">Response</label>
-          <input class="workspace-input" id="responseValue-${escapeHtml(qId)}" type="${type}" value="${escapeHtml(value)}" placeholder="${escapeHtml(question.placeholder_text || '')}">
+          <input class="workspace-input" id="responseValue-${escapeHtml(qId)}" type="${type}" value="${escapeHtml(value)}" placeholder="${escapeHtml(question.placeholder_text || '')}" ${disabledAttr}>
         </div>
       `;
     }
@@ -1134,7 +1157,7 @@
       return `
         <div class="form-group">
           <label class="form-label">Response</label>
-          <select class="workspace-select" id="responseValue-${escapeHtml(qId)}">${items.join('')}</select>
+          <select class="workspace-select" id="responseValue-${escapeHtml(qId)}" ${disabledAttr}>${items.join('')}</select>
         </div>
       `;
     }
@@ -1150,7 +1173,7 @@
               const checked = String(optionValue) === String(value) ? 'checked' : '';
               return `
                 <label class="choice-item">
-                  <input type="radio" name="responseValue-${escapeHtml(qId)}" value="${escapeHtml(optionValue)}" ${checked}>
+                  <input type="radio" name="responseValue-${escapeHtml(qId)}" value="${escapeHtml(optionValue)}" ${checked} ${disabledAttr}>
                   <span>${escapeHtml(label)}</span>
                 </label>
               `;
@@ -1172,7 +1195,7 @@
               const checked = selected.includes(String(optionValue)) ? 'checked' : '';
               return `
                 <label class="choice-item">
-                  <input type="checkbox" value="${escapeHtml(optionValue)}" ${checked}>
+                  <input type="checkbox" value="${escapeHtml(optionValue)}" ${checked} ${disabledAttr}>
                   <span>${escapeHtml(label)}</span>
                 </label>
               `;
@@ -1212,26 +1235,26 @@
                 ${rows.map((row, index) => `
                   <tr>
                     ${columns.map((column) => {
-                      const key = column.key || column.name;
-                      const cell = row?.[key] ?? '';
-                      const inputType = column.type || 'text';
-                      if (inputType === 'textarea') {
-                        return `<td><textarea data-key="${escapeHtml(key)}" placeholder="${escapeHtml(column.placeholder || '')}">${escapeHtml(cell)}</textarea></td>`;
-                      }
-                      if (inputType === 'select') {
-                        const choices = Array.isArray(column.options) ? column.options : [];
-                        return `<td><select data-key="${escapeHtml(key)}">${choices.map((choice) => `<option value="${escapeHtml(choice)}" ${String(choice) === String(cell) ? 'selected' : ''}>${escapeHtml(choice)}</option>`).join('')}</select></td>`;
-                      }
-                      return `<td><input data-key="${escapeHtml(key)}" type="text" value="${escapeHtml(cell)}" placeholder="${escapeHtml(column.placeholder || '')}"></td>`;
+              const key = column.key || column.name;
+              const cell = row?.[key] ?? '';
+              const inputType = column.type || 'text';
+              if (inputType === 'textarea') {
+                        return `<td><textarea data-key="${escapeHtml(key)}" placeholder="${escapeHtml(column.placeholder || '')}" ${disabledAttr}>${escapeHtml(cell)}</textarea></td>`;
+              }
+              if (inputType === 'select') {
+                const choices = Array.isArray(column.options) ? column.options : [];
+                        return `<td><select data-key="${escapeHtml(key)}" ${disabledAttr}>${choices.map((choice) => `<option value="${escapeHtml(choice)}" ${String(choice) === String(cell) ? 'selected' : ''}>${escapeHtml(choice)}</option>`).join('')}</select></td>`;
+              }
+                      return `<td><input data-key="${escapeHtml(key)}" type="text" value="${escapeHtml(cell)}" placeholder="${escapeHtml(column.placeholder || '')}" ${disabledAttr}></td>`;
                     }).join('')}
-                    <td><button type="button" class="btn-brsr secondary js-remove-row">-</button></td>
+                    <td><button type="button" class="btn-brsr secondary js-remove-row" ${disabledAttr}>-</button></td>
                   </tr>
                 `).join('')}
               </tbody>
             </table>
           </div>
           <div class="table-actions">
-            <button type="button" class="btn-brsr secondary js-add-row">Add Row</button>
+            <button type="button" class="btn-brsr secondary js-add-row" ${disabledAttr}>Add Row</button>
           </div>
         </div>
       `;
@@ -1240,7 +1263,7 @@
     return `
       <div class="form-group">
         <label class="form-label">Response</label>
-        <textarea class="workspace-textarea form-textarea" id="responseValue-${escapeHtml(qId)}">${escapeHtml(value)}</textarea>
+        <textarea class="workspace-textarea form-textarea" id="responseValue-${escapeHtml(qId)}" ${disabledAttr}>${escapeHtml(value)}</textarea>
       </div>
     `;
   }
@@ -1268,11 +1291,11 @@
     sectionSelect.onchange = async (event) => {
       const sectionCode = event.target.value;
       const nextPrinciple = sectionCode === 'section_c' && workspace.principles.length ? workspace.principles[0].slug : '';
-      await loadWorkspace(sectionCode, nextPrinciple, '');
+      await loadWorkspace(sectionCode, nextPrinciple, '', state.assignmentId);
     };
 
     principleSelect.onchange = async (event) => {
-      await loadWorkspace(workspace.section.code, event.target.value, '');
+      await loadWorkspace(workspace.section.code, event.target.value, '', state.assignmentId);
     };
 
     const grouped = groupQuestions(workspace.topics);
@@ -1305,7 +1328,23 @@
   function renderQuestionCard(question, isActive) {
     const selected = isActive ? 'active' : '';
     const qId = getQuestionId(question);
-    const choiceMarker = question.is_required ? '<span class="pill warn">Required</span>' : '';
+    const currentAssignment = state.workspace?.current_assignment || {};
+    const currentStageType = currentAssignment.workflow_stage_type || question.workflow_stage_type || '';
+    const canAct = currentAssignment.can_act ?? question.can_act ?? false;
+    const canSave = canAct && ['question_assignment', 'data_entry'].includes(currentStageType);
+    const canSubmit = canAct && currentStageType === 'data_entry';
+    const isLocked = question.is_editable === false;
+    
+    let actionButtons = '';
+    if (canSave) {
+      actionButtons = `
+        <div class="table-actions">
+          <button type="button" class="btn-brsr secondary js-save-question">Save Draft</button>
+          <button type="button" class="btn-brsr success js-submit-question" ${canSubmit ? '' : 'disabled title="Submit is available in the data entry stage"'}>Submit</button>
+        </div>
+      `;
+    }
+    
     return `
       <div class="question-container ${selected}" id="question-${escapeHtml(qId)}" data-question-id="${escapeHtml(qId)}">
         <div class="question-header">
@@ -1318,11 +1357,10 @@
           <span class="status-badge ${statusClass(question.status)}">${escapeHtml(question.status || 'draft')}</span>
         </div>
         <div class="question-content">
-          ${renderQuestionInput(question)}
-          <div class="table-actions">
-            <button type="button" class="btn-brsr secondary js-save-question">Save Draft</button>
-            <button type="button" class="btn-brsr success js-submit-question">Submit</button>
-          </div>
+          <fieldset class="question-fieldset" ${isLocked ? 'disabled' : ''}>
+            ${renderQuestionInput(question, isLocked)}
+            ${actionButtons}
+          </fieldset>
         </div>
       </div>
     `;
@@ -1427,6 +1465,12 @@
 
     document.getElementById('assignmentBadge').textContent = workspace.latest_assignment ? workspace.latest_assignment.assignment_id : 'Draft';
 
+    const assignmentLauncher = document.getElementById('assignmentLauncher');
+    const stageType = workspace.current_assignment?.workflow_stage_type || '';
+    if (assignmentLauncher) {
+      assignmentLauncher.style.display = (!stageType || stageType === 'question_assignment') ? '' : 'none';
+    }
+
     fillAssignmentOptions(workspace);
   }
 
@@ -1453,6 +1497,28 @@
     if (card) card.classList.toggle('question-selected', checked);
   }
 
+  function getNumericAssignmentId() {
+    // Try multiple sources to get the numeric assignment ID
+    if (state.workspace?.current_assignment?.id) {
+      return state.workspace.current_assignment.id.toString();
+    }
+    if (state.workspace?.id) {
+      return state.workspace.id.toString();
+    }
+    if (state.assignmentId && !isNaN(parseInt(state.assignmentId))) {
+      return state.assignmentId.toString();
+    }
+    // Check if any question has a numeric assignment_id
+    if (state.workspace?.topics) {
+      for (const topic of state.workspace.topics) {
+        if (topic.assignment_id && !isNaN(parseInt(topic.assignment_id))) {
+          return topic.assignment_id.toString();
+        }
+      }
+    }
+    return null;
+  }
+
   function collectQuestionPayload(questionId) {
     const question = state.workspace.topics.find((item) => {
       const qId = getQuestionId(item);
@@ -1463,7 +1529,25 @@
     const container = document.querySelector(`.question-container[data-question-id="${CSS.escape(questionId)}"]`);
     if (!container) return null;
 
-    const payload = { assignment_id: question.assignment_id || '' };
+    // Get the numeric assignment ID
+    let assignmentId = getNumericAssignmentId();
+    
+    // If no numeric ID found, try the question's assignment_id if it's numeric
+    if (!assignmentId && question.assignment_id && !isNaN(parseInt(question.assignment_id))) {
+      assignmentId = question.assignment_id.toString();
+    }
+    
+    // If still no ID, use the question's assignment_id as a fallback (might be the string code)
+    if (!assignmentId) {
+      assignmentId = question.assignment_id || '';
+    }
+
+    if (!assignmentId) {
+      console.error('No assignment ID found for question:', questionId);
+      return null;
+    }
+
+    const payload = { assignment_id: assignmentId };
     const fields = Array.isArray(question.validation_rules && question.validation_rules.fields) ? question.validation_rules.fields : [];
 
     if (fields.length) {
@@ -1531,46 +1615,90 @@
 
   async function saveQuestion(questionId) {
     const payload = collectQuestionPayload(questionId);
-    if (!payload || !payload.assignment_id) {
-      alert('Create an assignment before saving this question.');
+    if (!payload) {
+      alert('Could not collect question data. Please ensure you have an active assignment.');
       return;
     }
-    const response = await fetch(apiUrl(API_SAVE, questionId), {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken'),
-      },
-      body: JSON.stringify(payload),
-    });
-    if (response.ok) {
-      await loadWorkspace(state.sectionCode, state.principleSlug, questionId);
-    } else {
-      const data = await response.json().catch(() => ({}));
-      alert(data.detail || 'Unable to save the question.');
+    
+    if (!payload.assignment_id) {
+      alert('No assignment found for this question. Please create an assignment first.');
+      return;
+    }
+
+    console.log('Saving with payload:', payload);
+    
+    try {
+      const response = await fetch(apiUrl(API_SAVE, questionId), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      if (response.ok) {
+        await loadWorkspace(state.sectionCode, state.principleSlug, questionId, state.assignmentId);
+      } else {
+        const data = await response.json().catch(() => ({}));
+        alert(data.detail || 'Unable to save the question.');
+      }
+    } catch (error) {
+      console.error('Error saving question:', error);
+      alert('An error occurred while saving. Please check the console for details.');
     }
   }
 
   async function submitQuestion(questionId) {
     const payload = collectQuestionPayload(questionId);
-    if (!payload || !payload.assignment_id) {
-      alert('Create an assignment before submitting this question.');
+    if (!payload) {
+      alert('Could not collect question data. Please ensure you have an active assignment.');
       return;
     }
-    await saveQuestion(questionId);
-    const response = await fetch(apiUrl(API_SUBMIT, questionId), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken'),
-      },
-      body: JSON.stringify({ assignment_id: payload.assignment_id }),
-    });
-    if (response.ok) {
-      await loadWorkspace(state.sectionCode, state.principleSlug, questionId);
-    } else {
-      const data = await response.json().catch(() => ({}));
-      alert(data.detail || 'Unable to submit the question.');
+    
+    if (!payload.assignment_id) {
+      alert('No assignment found for this question. Please create an assignment first.');
+      return;
+    }
+
+    console.log('Submitting with payload:', payload);
+    
+    try {
+      // First save the question
+      const saveResponse = await fetch(apiUrl(API_SAVE, questionId), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      if (!saveResponse.ok) {
+        const data = await saveResponse.json().catch(() => ({}));
+        alert(data.detail || 'Unable to save the question before submission.');
+        return;
+      }
+      
+      // Then submit
+      const response = await fetch(apiUrl(API_SUBMIT, questionId), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({ assignment_id: payload.assignment_id }),
+      });
+      
+      if (response.ok) {
+        await loadWorkspace(state.sectionCode, state.principleSlug, questionId, state.assignmentId);
+      } else {
+        const data = await response.json().catch(() => ({}));
+        alert(data.detail || 'Unable to submit the question.');
+      }
+    } catch (error) {
+      console.error('Error submitting question:', error);
+      alert('An error occurred while submitting. Please check the console for details.');
     }
   }
 
@@ -1612,24 +1740,29 @@
       return;
     }
 
-    const params = new URLSearchParams({ plant_id: plantId });
-    const response = await fetch(`${API_ASSIGN_OPTIONS}?${params.toString()}`, {
-      headers: { 'Accept': 'application/json' },
-    });
-    const payload = await response.json();
+    try {
+      const params = new URLSearchParams({ plant_id: plantId });
+      const response = await fetch(`${API_ASSIGN_OPTIONS}?${params.toString()}`, {
+        headers: { 'Accept': 'application/json' },
+      });
+      const payload = await response.json();
 
-    const assignees = payload.assignees || [];
-    const defaultAssignee = payload.default_assignee || null;
+      const assignees = payload.assignees || [];
+      const defaultAssignee = payload.default_assignee || null;
 
-    assigneeSelect.innerHTML = assignees.length
-      ? ['<option value="">Select Assign To</option>']
-          .concat(assignees.map((item) => `<option value="${item.id}">${escapeHtml(item.name)}${item.department_name ? ` (${escapeHtml(item.department_name)})` : ''}</option>`))
-          .join('')
-      : '<option value="">No eligible assignee found</option>';
+      assigneeSelect.innerHTML = assignees.length
+        ? ['<option value="">Select Assign To</option>']
+            .concat(assignees.map((item) => `<option value="${item.id}">${escapeHtml(item.name)}${item.department_name ? ` (${escapeHtml(item.department_name)})` : ''}</option>`))
+            .join('')
+        : '<option value="">No eligible assignee found</option>';
 
-    const matchedAssignee = defaultAssignee || assignees[0] || null;
-    if (matchedAssignee) {
-      assigneeSelect.value = matchedAssignee.id.toString();
+      const matchedAssignee = defaultAssignee || assignees[0] || null;
+      if (matchedAssignee) {
+        assigneeSelect.value = matchedAssignee.id.toString();
+      }
+    } catch (error) {
+      console.error('Error loading assignees:', error);
+      assigneeSelect.innerHTML = '<option value="">Error loading assignees</option>';
     }
   }
 
@@ -1689,41 +1822,62 @@
       notes: document.getElementById('assignmentNotes').value,
     };
 
-    const response = await fetch(API_ASSIGN, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken'),
-      },
-      body: JSON.stringify(payload),
-    });
-    if (response.ok) {
-      closeModal();
-      window.location.href = "{{ assignment_dashboard_url|escapejs }}";
-    } else {
-      const data = await response.json().catch(() => ({}));
-      alert(data.detail || 'Unable to create assignment.');
+    try {
+      const response = await fetch(API_ASSIGN, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      if (response.ok) {
+        closeModal();
+        window.location.href = "{{ assignment_dashboard_url|escapejs }}";
+      } else {
+        const data = await response.json().catch(() => ({}));
+        alert(data.detail || 'Unable to create assignment.');
+      }
+    } catch (error) {
+      console.error('Error creating assignment:', error);
+      alert('An error occurred while creating the assignment. Please check the console for details.');
     }
   }
 
-  async function loadWorkspace(sectionCode, principleSlug, questionId) {
+  async function loadWorkspace(sectionCode, principleSlug, questionId, assignmentId) {
     const params = new URLSearchParams();
     if (sectionCode) params.set('section_code', sectionCode);
     if (principleSlug) params.set('principle_slug', principleSlug);
     if (questionId) params.set('question_id', questionId);
+    if (assignmentId) params.set('assignment_id', assignmentId);
 
-    const response = await fetch(`${API_WORKSPACE}?${params.toString()}`, {
-      headers: { 'Accept': 'application/json' },
-    });
-    const workspace = await response.json();
-    state.workspace = workspace;
-    state.sectionCode = workspace.section.code;
-    state.principleSlug = workspace.principle ? workspace.principle.slug : '';
-    state.questionId = workspace.active_question_id;
+    try {
+      const response = await fetch(`${API_WORKSPACE}?${params.toString()}`, {
+        headers: { 'Accept': 'application/json' },
+      });
+      const workspace = await response.json();
+      
+      console.log('Workspace loaded:', {
+        assignment_id: workspace.assignment_id,
+        current_assignment_id: workspace.current_assignment?.id,
+        current_assignment_assignment_id: workspace.current_assignment?.assignment_id,
+        first_question_assignment_id: workspace.topics?.[0]?.assignment_id
+      });
+      
+      state.workspace = workspace;
+      state.sectionCode = workspace.section.code;
+      state.principleSlug = workspace.principle ? workspace.principle.slug : '';
+      state.questionId = workspace.active_question_id;
+      state.assignmentId = workspace.assignment_id || assignmentId || state.assignmentId;
 
-    renderSidebar(workspace);
-    renderQuestionDeck(workspace, workspace.active_question_id);
-    refreshSelectedList();
+      renderSidebar(workspace);
+      renderQuestionDeck(workspace, workspace.active_question_id);
+      refreshSelectedList();
+    } catch (error) {
+      console.error('Error loading workspace:', error);
+      alert('Error loading workspace. Please refresh the page.');
+    }
   }
 
   // Event Listeners
@@ -1736,6 +1890,6 @@
   document.getElementById('assignmentForm').addEventListener('submit', submitAssignment);
 
   // Load workspace
-  loadWorkspace(state.sectionCode, state.principleSlug, state.questionId);
+  loadWorkspace(state.sectionCode, state.principleSlug, state.questionId, state.assignmentId);
 </script>
 {% endblock %}
