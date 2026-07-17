@@ -15,6 +15,7 @@ urlpatterns = [
     path("workspace/<slug:section_code>/<slug:principle_slug>/<str:question_id>/", brsr_workspace, name="question_workspace_question",),
     path("assignments/", AssignmentDashboardView.as_view(), name="assignment_dashboard"),
     path("approvals/", ApprovalDashboardView.as_view(), name="approval_dashboard"),
+    path('assignment/<int:assignment_id>/',  AssignmentDetailView.as_view(), name='assignment_detail'),
     path("api/workspace/", BRSRWorkspaceDataAPIView.as_view(), name="workspace_api"),
     path("api/assignment-options/", AssignmentOptionsAPIView.as_view(), name="assignment_options_api"),
     path("api/questions/<str:question_id>/", QuestionDetailAPIView.as_view(), name="question_detail_api"),

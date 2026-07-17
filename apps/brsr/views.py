@@ -1,3 +1,5 @@
+import json
+
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -648,6 +650,40 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
     _advance_assignment_to_entry_stage(assignment, actor=user)
     return assignment
 
+def _serialize_task_for_user(task, user):
+    """Serialize workflow task with user permissions."""
+    if not task:
+        return None
+    
+    assignee_id = task.current_assignee_object_id if (
+        task.current_assignee_content_type_id and 
+        task.current_assignee_content_type.model == "user"
+    ) else None
+    
+    current_user_role_id = getattr(user, "role_id", None)
+    current_stage_role_id = task.current_stage.role_id if task.current_stage_id else None
+    
+    can_act = bool(
+        user.is_authenticated
+        and (
+            user.is_superuser
+            or getattr(user, "is_super_admin", False)
+            or assignee_id == user.id
+            or (current_user_role_id and current_stage_role_id and current_user_role_id == current_stage_role_id)
+        )
+    )
+    
+    return {
+        "id": task.id,
+        "stage": task.current_stage.label if task.current_stage_id else "",
+        "stage_type": task.current_stage.stage_type if task.current_stage_id else "",
+        "stage_role_code": task.current_stage.role.role_code if (
+            task.current_stage_id and task.current_stage.role_id
+        ) else "",
+        "current_assignee_id": assignee_id,
+        "current_assignee": str(task.current_assignee) if task.current_assignee else "",
+        "can_act": can_act,
+    }
 
 class BRSRDashboardView(LoginRequiredMixin, TemplateView):
     login_url = "accounts:login"
@@ -795,6 +831,226 @@ class ApprovalDashboardView(LoginRequiredMixin, TemplateView):
         )
         return context
 
+class AssignmentDetailView(LoginRequiredMixin, TemplateView):
+    """
+    View for showing all submitted questions for a specific assignment.
+    """
+    login_url = "accounts:login"
+    template_name = "brsr/assignment_detail.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        assignment_id = kwargs.get('assignment_id')
+        user = self.request.user
+
+        # Get the assignment with proper permissions
+        assignment = get_object_or_404(
+            _assignment_queryset_for_user(user).select_related(
+                "plant",
+                "section",
+                "principle",
+                "workflow_template",
+                "assignee_content_type",
+                "assigner_content_type",
+            ).prefetch_related(
+                "questions",
+                "questions__section",
+                "questions__principle",
+                "responses",
+                "responses__question",
+            ),
+            pk=assignment_id
+        )
+
+        # Ensure workflow task exists
+        _ensure_assignment_workflow_task(assignment, current_user=user)
+
+        # Get all questions and their responses
+        questions = list(
+            assignment.questions.select_related("section", "principle")
+            .order_by("display_order", "question_number")
+        )
+
+        # Build a map of question_id to response
+        responses = {
+            response.question_id: response
+            for response in assignment.responses.select_related("question")
+        }
+
+        question_rows = []
+        for question in questions:
+            response = responses.get(question.id)
+            
+            # Get the response data
+            response_value = ""
+            response_json = {}
+            response_json_pretty = ""
+            has_response = False
+            answered_by = ""
+            
+            if response:
+                # Check if there's any response data
+                if response.response_value:
+                    response_value = response.response_value
+                    has_response = True
+                
+                if response.response_json:
+                    response_json = response.response_json
+                    has_response = True
+                    # Format JSON for display
+                    response_json_pretty = self._format_json_for_display(response.response_json)
+                
+                # Get answered by
+                if response.answered_by:
+                    answered_by = str(response.answered_by)
+            
+            question_rows.append({
+                "question_id": question.question_id,
+                "title": question.question_text,
+                "number": question.question_number,
+                "question_type": question.question_type,
+                "status": response.status if response else "draft",
+                "workflow_stage": assignment.workflow_stage_label,
+                "workflow_stage_type": assignment.workflow_stage_type,
+                "response_value": response_value,
+                "response_json": response_json,
+                "response_json_pretty": response_json_pretty,
+                "has_response": has_response,
+                "answered_by": answered_by,
+                "review_remark": response.review_remark if response else "",
+                "submitted_by": str(response.submitted_by) if response and response.submitted_by else "",
+                "submitted_at": response.submitted_at if response else None,
+                "reviewed_by": str(response.reviewed_by) if response and response.reviewed_by else "",
+                "reviewed_at": response.reviewed_at if response else None,
+                "can_act": self._can_act_on_question(assignment, response, user),
+            })
+
+        context["assignment"] = _serialize_assignment(assignment)
+        context["questions"] = question_rows
+        
+        # Group questions for display
+        context["question_groups"] = self._group_questions(question_rows)
+        
+        context["question_count"] = len(question_rows)
+        context["plant_name"] = assignment.plant.name if assignment.plant_id else ""
+        context["company_name"] = getattr(
+            getattr(assignment.plant, "created_by", None), 
+            "company_name", 
+            ""
+        )
+        
+        # Counts for summary
+        status_counts = {
+            "draft": 0,
+            "submitted": 0,
+            "approved": 0,
+            "rejected": 0,
+            "resubmitted": 0,
+        }
+        for q in question_rows:
+            status = q.get("status", "draft")
+            if status in status_counts:
+                status_counts[status] += 1
+        
+        context["status_counts"] = status_counts
+        context["approval_dashboard_url"] = reverse("brsr:approval_dashboard")
+        
+        return context
+
+    def _format_json_for_display(self, json_data):
+        """Format JSON data for display with proper indentation."""
+        if not json_data:
+            return ""
+        
+        import json
+        try:
+            # If it's already a dict/list, convert to formatted string
+            if isinstance(json_data, (dict, list)):
+                return json.dumps(json_data, indent=2, ensure_ascii=False)
+            # If it's a string, try to parse it as JSON first
+            if isinstance(json_data, str):
+                try:
+                    parsed = json.loads(json_data)
+                    return json.dumps(parsed, indent=2, ensure_ascii=False)
+                except json.JSONDecodeError:
+                    return json_data
+            return str(json_data)
+        except Exception:
+            return str(json_data)
+
+    def _format_json_as_table(self, json_data):
+        """Format JSON data as a table-like structure for better readability."""
+        if not json_data:
+            return ""
+        
+        if isinstance(json_data, dict):
+            lines = []
+            for key, value in json_data.items():
+                if isinstance(value, list) and value and isinstance(value[0], dict):
+                    # This is a list of objects - format as table
+                    lines.append(f"\n{key}:")
+                    headers = list(value[0].keys())
+                    # Create header row
+                    lines.append("  " + " | ".join(headers))
+                    lines.append("  " + "-" * 50)
+                    for item in value:
+                        row = []
+                        for header in headers:
+                            row.append(str(item.get(header, "")))
+                        lines.append("  " + " | ".join(row))
+                elif isinstance(value, list):
+                    lines.append(f"\n{key}:")
+                    for idx, item in enumerate(value, 1):
+                        if isinstance(item, dict):
+                            lines.append(f"  Entry {idx}:")
+                            for sub_key, sub_value in item.items():
+                                lines.append(f"    {sub_key}: {sub_value}")
+                        else:
+                            lines.append(f"  {idx}. {item}")
+                elif isinstance(value, dict):
+                    lines.append(f"\n{key}:")
+                    for sub_key, sub_value in value.items():
+                        lines.append(f"  {sub_key}: {sub_value}")
+                else:
+                    lines.append(f"{key}: {value}")
+            return "\n".join(lines)
+        
+        if isinstance(json_data, list):
+            lines = []
+            for idx, item in enumerate(json_data, 1):
+                if isinstance(item, dict):
+                    lines.append(f"Entry {idx}:")
+                    for key, value in item.items():
+                        lines.append(f"  {key}: {value}")
+                else:
+                    lines.append(f"{idx}. {item}")
+            return "\n".join(lines)
+        
+        return str(json_data)
+
+    def _group_questions(self, questions):
+        """Group questions by sub_section or section."""
+        groups = {}
+        for question in questions:
+            key = question.get("sub_section", "Questions") or "Questions"
+            if key not in groups:
+                groups[key] = {
+                    "label": key,
+                    "questions": []
+                }
+            groups[key]["questions"].append(question)
+        return list(groups.values())
+
+    def _can_act_on_question(self, assignment, response, user):
+        """Check if user can act on this question."""
+        if not assignment.workflow_task:
+            return False
+        
+        task_info = _serialize_task_for_user(assignment.workflow_task, user)
+        if not task_info:
+            return False
+        
+        return task_info.get("can_act", False) and response and response.status in ["submitted", "resubmitted"]
 
 class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
     login_url = "accounts:login"

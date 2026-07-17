@@ -165,6 +165,12 @@
     padding:18px 18px 14px;
     border-bottom:1px solid var(--border);
     background:linear-gradient(180deg,#fff 0%, #fbfcff 100%);
+    cursor:pointer;
+    transition:background .2s ease;
+  }
+
+  .assignment-card header:hover{
+    background:linear-gradient(180deg,#f8faff 0%, #fbfcff 100%);
   }
 
   .assignment-card header h3{
@@ -199,6 +205,47 @@
     padding:16px 18px 18px;
     display:grid;
     gap:14px;
+    display:none;
+  }
+
+  .assignment-body.expanded{
+    display:grid;
+  }
+
+  .assignment-summary{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px 18px;
+    background:#f8faff;
+    border-radius:12px;
+    margin-bottom:8px;
+  }
+
+  .assignment-summary .question-count{
+    font-size:13px;
+    color:var(--muted);
+  }
+
+  .assignment-summary .view-btn{
+    padding:8px 16px;
+    border-radius:8px;
+    border:1px solid var(--brand);
+    background:var(--brand-soft);
+    color:var(--brand);
+    font-weight:700;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+
+  .assignment-summary .view-btn:hover{
+    background:var(--brand);
+    color:#fff;
+  }
+
+  .assignment-summary .view-btn.expanded{
+    background:var(--brand);
+    color:#fff;
   }
 
   .question-row{
@@ -248,6 +295,18 @@
     word-break:break-word;
     color:var(--ink);
     font-size:13px;
+  }
+
+  .response-json{
+    margin:0;
+    white-space:pre-wrap;
+    word-break:break-word;
+    color:var(--ink);
+    font-size:13px;
+    font-family:monospace;
+    background:#f8faff;
+    padding:8px 12px;
+    border-radius:8px;
   }
 
   .approval-comment{
@@ -323,6 +382,17 @@
     color:var(--ink);
   }
 
+  /* Toggle icon */
+  .toggle-icon{
+    font-size:18px;
+    transition:transform .2s ease;
+    display:inline-block;
+  }
+
+  .toggle-icon.expanded{
+    transform:rotate(180deg);
+  }
+
   @media (max-width: 1200px){
     .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
     .plant-grid{grid-template-columns:1fr;}
@@ -336,6 +406,7 @@
     .assignment-body{padding-left:14px;padding-right:14px;}
     .question-actions{flex-direction:column;}
     .btn-action{width:100%;}
+    .assignment-summary{flex-direction:column;gap:8px;align-items:stretch;}
   }
 </style>
 {% endblock %}
@@ -387,18 +458,28 @@
           {% for plant_name, assignment_items in plants.items %}
             {% for item in assignment_items %}
               <article class="assignment-card">
-                <header>
-                  <h3>{{ plant_name }}</h3>
+                <header onclick="toggleAssignment(this)">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <h3>{{ plant_name }}</h3>
+                    <span class="toggle-icon" id="toggle-icon-{{ item.assignment.id }}">▼</span>
+                  </div>
                   {% with assignment=item.assignment %}
                     <div class="assignment-meta">
                       <span class="pill brand">{{ assignment.assignment_id }}</span>
                       <span class="pill">{{ assignment.workflow_template }}</span>
                       <span class="pill success">{{ assignment.workflow_stage }}</span>
                       <span class="pill">{{ assignment.assignee }}</span>
+                      <span class="pill">{{ item.questions|length }} question{{ item.questions|length|pluralize }}</span>
                     </div>
                   {% endwith %}
                 </header>
-                <div class="assignment-body">
+                <div class="assignment-body" id="body-{{ item.assignment.id }}">
+                  <div class="assignment-summary">
+                    <span class="question-count">{{ item.questions|length }} question{{ item.questions|length|pluralize }} submitted</span>
+                    <a href="{% url 'brsr:assignment_detail' item.assignment.id %}" class="view-btn">
+                      View All Questions →
+                    </a>
+                  </div>
                   {% for question in item.questions %}
                     <div class="question-row" data-assignment-id="{{ question.assignment_id }}" data-question-id="{{ question.question_id }}" data-stage-type="{{ question.workflow_stage_type }}">
                       <div class="question-row-top">
@@ -406,16 +487,37 @@
                         <span class="pill {% if question.status == 'approved' %}success{% elif question.status == 'rejected' %}warn{% else %}brand{% endif %}">{{ question.status }}</span>
                       </div>
 
-                      <div class="response-box">
-                        <span class="response-label">Submitted response</span>
-                        <p class="response-value">
-                          {% if question.response_value %}
-                            {{ question.response_value }}
-                          {% else %}
-                            {{ question.response_json|default:"{}" }}
-                          {% endif %}
-                        </p>
-                      </div>
+                      <!-- Show response value if available -->
+                      {% if question.response_value %}
+                        <div class="response-box">
+                          <span class="response-label">Submitted response</span>
+                          <p class="response-value">{{ question.response_value }}</p>
+                        </div>
+                      {% endif %}
+
+                      <!-- Show response_json if available (and no response_value) -->
+                      {% if question.response_json and not question.response_value %}
+                        <div class="response-box">
+                          <span class="response-label">Submitted response</span>
+                          <pre class="response-json">{{ question.response_json|json_script:"response-json"|safe }}</pre>
+                        </div>
+                      {% endif %}
+
+                      <!-- Show both if both exist -->
+                      {% if question.response_value and question.response_json %}
+                        <div class="response-box">
+                          <span class="response-label">Submitted response (structured)</span>
+                          <pre class="response-json">{{ question.response_json|json_script:"response-json"|safe }}</pre>
+                        </div>
+                      {% endif %}
+
+                      <!-- Show empty state if no response -->
+                      {% if not question.response_value and not question.response_json %}
+                        <div class="response-box">
+                          <span class="response-label">Submitted response</span>
+                          <p class="response-value" style="color:var(--muted);font-style:italic;">No response submitted</p>
+                        </div>
+                      {% endif %}
 
                       {% if question.review_remark %}
                         <div class="response-box">
@@ -458,6 +560,62 @@
 </div>
 
 <script>
+  // Toggle assignment body expansion
+  function toggleAssignment(header) {
+    const card = header.closest('.assignment-card');
+    const body = card.querySelector('.assignment-body');
+    const icon = card.querySelector('.toggle-icon');
+    
+    if (body.classList.contains('expanded')) {
+      body.classList.remove('expanded');
+      if (icon) icon.classList.remove('expanded');
+    } else {
+      body.classList.add('expanded');
+      if (icon) icon.classList.add('expanded');
+    }
+  }
+
+  // Toggle individual question visibility within an assignment
+  function toggleQuestions(event, button) {
+    event.stopPropagation();
+    const targetId = button.dataset.target;
+    const body = document.getElementById(targetId);
+    if (!body) return;
+
+    const questionRows = body.querySelectorAll('.question-row');
+    const isVisible = questionRows.length > 0 && questionRows[0].style.display !== 'none';
+
+    if (isVisible) {
+      questionRows.forEach(row => row.style.display = 'none');
+      button.textContent = 'View Questions';
+      button.classList.remove('expanded');
+    } else {
+      questionRows.forEach(row => row.style.display = 'block');
+      button.textContent = 'Hide Questions';
+      button.classList.add('expanded');
+    }
+  }
+
+  // Initialize: hide all question rows by default, but keep the body expanded
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.assignment-body').forEach(body => {
+      body.classList.add('expanded');
+      const questionRows = body.querySelectorAll('.question-row');
+      questionRows.forEach(row => row.style.display = 'none');
+      const viewBtn = body.querySelector('.view-btn');
+      if (viewBtn) {
+        viewBtn.textContent = 'View Questions';
+        viewBtn.classList.remove('expanded');
+      }
+    });
+
+    // Initialize toggle icons
+    document.querySelectorAll('.toggle-icon').forEach(icon => {
+      icon.classList.remove('expanded');
+    });
+  });
+
+  // API URLs and functions
   const APPROVE_URL = "{% url 'brsr:question_approve_api' question_id='__question__' %}";
   const REJECT_URL = "{% url 'brsr:question_reject_api' question_id='__question__' %}";
   const COMMENT_URL = "{% url 'brsr:question_comment_api' question_id='__question__' %}";

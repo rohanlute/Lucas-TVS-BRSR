@@ -471,12 +471,13 @@ class QuestionRejectAPIView(APIView):
         return_to_stage = None
         if assignment.workflow_task and assignment.workflow_task.template_id:
             return_to_stage = assignment.workflow_task.template.stages.filter(stage_type="data_entry").first()
+        return_to_assignee = getattr(response, "answered_by", None) or assignment.assignee
         WorkflowConfigurationEngine.reject(
             task,
             request.user,
             remark=remark,
             return_to_stage=return_to_stage,
-            return_to_assignee=assignment.assignee,
+            return_to_assignee=return_to_assignee,
         )
         response.refresh_from_db()
         return Response({"status": response.status, "workflow_task": _serialize_task_for_user(assignment.workflow_task, request.user)})
