@@ -1869,12 +1869,12 @@
 
                                     <div class="card-header bg-transparent">
 
-                                        <h5
-                                            class="fw-bold mb-0"
-                                            style="color:var(--ink);"
-                                        >
+                                        <h5 class="fw-bold mb-0" style="color:var(--ink);">
                                             Activity-wise Emission Summary
                                         </h5>
+                                        <button id="viewTransactionsBtn" class="btn btn-brsr secondary btn-sm" style="padding: 6px 16px; font-size: 12px;">
+                                            <i class="feather-eye"></i> View
+                                        </button>
 
                                     </div>
 
@@ -1927,6 +1927,9 @@
                                 <div class="d-flex gap-3">
                                     <button class="btn btn-brsr success" style="padding: 10px 30px;">Submit for Review</button>
                                     <button id="saveDraft" class="btn btn-brsr secondary" style="padding: 10px 30px;">Save Draft</button>
+                                    <button id="assignTaskBtn" class="btn btn-brsr primary" style="padding: 10px 30px;">
+                                        <i class="feather-user-plus"></i> Assign Task
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1938,83 +1941,130 @@
 </div>
 
 <!-- ===== MODAL (static) ===== -->
-<div class="modal-backdrop-brsr" id="assignModal">
+<!-- ===== ASSIGN TASK MODAL ===== -->
+<div class="modal-backdrop-brsr" id="assignScopeModal">
     <div class="modal-card">
         <div class="modal-head">
-            <h3>Create Assignment</h3>
-            <button type="button" class="btn-brsr secondary">Close</button>
+            <h3><i class="feather-user-plus"></i> Assign Scope Data Entry</h3>
+            <button type="button" class="btn-brsr secondary" id="closeAssignScopeModal">Close</button>
         </div>
         <div class="modal-body">
-            <form>
-                <div class="assignment-grid">
-                    <div>
-                        <label class="tool-label">Plant</label>
-                        <select class="workspace-select">
-                            <option value="1">Mumbai Plant (MUM-01)</option>
-                            <option value="2" selected>Pune Plant (PUN-02)</option>
-                            <option value="3">Bangalore Plant (BLR-03)</option>
+            <form id="assignScopeForm">
+                <div class="row g-3">
+                    <!-- Assignee -->
+                    <div class="col-md-6">
+                        <label class="tool-label">Assign To</label>
+                        <select class="workspace-select" id="assigneeSelect" required>
+                            <option value="">Select User</option>
+                            <!-- Populate via JavaScript or from context -->
                         </select>
                     </div>
-                    <div>
-                        <label class="tool-label">Financial Year</label>
-                        <select class="workspace-select">
-                            <option value="2024-25">2024–25</option>
-                            <option value="2025-26" selected>2025–26</option>
-                            <option value="2026-27">2026–27</option>
-                        </select>
+                    <!-- Due Date -->
+                    <div class="col-md-6">
+                        <label class="tool-label">Due Date</label>
+                        <input class="workspace-input" type="date" id="dueDateInput" required>
                     </div>
-                    <div>
-                        <label class="tool-label">Submission Frequency</label>
-                        <select class="workspace-select">
-                            <option value="quarterly">Quarterly</option>
-                            <option value="half_yearly">Half Yearly</option>
-                            <option value="annual" selected>Annual</option>
-                        </select>
-                    </div>
-                    <div>
+                    <!-- Priority -->
+                    <div class="col-md-6">
                         <label class="tool-label">Priority</label>
-                        <select class="workspace-select">
+                        <select class="workspace-select" id="prioritySelect">
                             <option value="low">Low</option>
                             <option value="medium" selected>Medium</option>
                             <option value="high">High</option>
                             <option value="urgent">Urgent</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="tool-label">Assigner</label>
-                        <input class="workspace-input" type="text" value="Admin User (admin@company.com)" readonly>
-                    </div>
-                    <div>
-                        <label class="tool-label">Assign To</label>
-                        <select class="workspace-select">
-                            <option value="">Select Assign To</option>
-                            <option value="101" selected>Rahul Sharma (Plant Admin)</option>
-                            <option value="102">Priya Patel (Compliance)</option>
-                            <option value="103">Amit Kumar (Quality)</option>
+                    <!-- Frequency -->
+                    <div class="col-md-6">
+                        <label class="tool-label">Frequency</label>
+                        <select class="workspace-select" id="frequencySelect">   <!-- ← changed id -->
+                            <option value="monthly">Monthly</option>
+                            <option value="quarterly">Quarterly</option>
+                            <option value="half_yearly">Half Yearly</option>
+                            <option value="yearly">Yearly</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="tool-label">Due Date</label>
-                        <input class="workspace-input" type="date" value="2026-12-31">
-                    </div>
-                    <div class="full">
+                    <!-- Notes -->
+                    <div class="col-12">
                         <label class="tool-label">Notes</label>
-                        <textarea class="workspace-textarea" rows="3" placeholder="Assignment notes">Please complete all questions under Principle 2 before the deadline.</textarea>
+                        <textarea class="workspace-textarea" rows="3" id="assignNotes" placeholder="Add instructions for the assignee..."></textarea>
                     </div>
-                    <div class="full">
-                        <label class="tool-label">Selected Questions</label>
-                        <ul class="selected-list">
-                            <li>1.1. Corporate identity number <small>(q101)</small></li>
-                            <li>1.3. Year of incorporation <small>(q103)</small></li>
-                            <li>2.1. Product safety certification <small>(q201)</small></li>
-                        </ul>
+                    <!-- Current scope summary (readonly) -->
+                    <div class="col-12">
+                        <label class="tool-label">Assigned Scope</label>
+                        <div class="p-3 bg-light rounded-3" style="border:1px solid var(--border);">
+                            <strong>Scope:</strong> <span id="assignScopeName">{{ scope.name }}</span><br>
+                            <strong>Company:</strong> <span id="assignCompanyName">-</span><br>
+                            <strong>Plant:</strong> <span id="assignPlantName">-</span><br>
+                            <strong>Financial Year:</strong> <span id="assignFY">-</span><br>
+                            <strong>Financial Month:</strong> <span id="assignMonth">-</span><br>
+                            <strong>Category:</strong> <span id="assignCategory">-</span>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn-brsr secondary">Cancel</button>
-                    <button type="submit" class="btn-brsr primary">Create Assignment</button>
+                    <button type="button" class="btn-brsr secondary" id="cancelAssignScope">Cancel</button>
+                    <button type="submit" class="btn-brsr primary">Assign Task</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== VIEW TRANSACTIONS MODAL ===== -->
+<div class="modal-backdrop-brsr" id="viewTransactionsModal">
+    <div class="modal-card" style="max-width: 900px;">
+        <div class="modal-head">
+            <h3><i class="feather-list"></i> All Transactions</h3>
+            <button type="button" class="btn-brsr secondary" id="closeViewTransactionsModal">Close</button>
+        </div>
+        <div class="modal-body" style="max-height: 70vh; overflow-y: auto; padding: 0;">
+
+            <!-- Summary by Source -->
+            <div style="padding: 12px 16px; border-bottom: 1px solid var(--border);">
+                <h6 class="fw-bold mb-2" style="color: var(--ink);">Summary by Source</h6>
+                <div class="table-container" style="border: none; border-radius: 0; margin-bottom: 0;">
+                    <table class="data-table" style="min-width: 500px; width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Source</th>
+                                <th>Total Quantity</th>
+                                <th>Unit</th>
+                                <th>Total Emission (tCO₂e)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="viewSummaryBody">
+                            <tr><td colspan="4" class="text-center text-muted">No data</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Detailed Transactions -->
+            <div style="padding: 12px 16px;">
+                <h6 class="fw-bold mb-2" style="color: var(--ink);">Detailed Transactions</h6>
+                <div class="table-container" style="border: none; border-radius: 0;">
+                    <table class="data-table" style="min-width: 700px; width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Activity</th>
+                                <th>Source</th>
+                                <th>Quantity</th>
+                                <th>Unit</th>
+                                <th>Emission Factor</th>
+                                <th>Total Emission</th>
+                            </tr>
+                        </thead>
+                        <tbody id="viewDetailBody">
+                            <tr><td colspan="6" class="text-center text-muted">No data</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+        <div class="modal-actions" style="padding: 12px 20px; border-top: 1px solid var(--border);">
+            <button type="button" class="btn-brsr secondary" id="closeViewTransactionsModalFooter">Close</button>
         </div>
     </div>
 </div>
@@ -2868,6 +2918,250 @@ function removeToast(toast) {
     }, 300);
 }
 
+
+// =============================================
+// ASSIGN TASK MODAL
+// =============================================
+const assignBtn = document.getElementById('assignTaskBtn');
+const assignModal = document.getElementById('assignScopeModal');
+const closeAssignBtn = document.getElementById('closeAssignScopeModal');
+const cancelAssignBtn = document.getElementById('cancelAssignScope');
+const assignForm = document.getElementById('assignScopeForm');
+
+// ---------- Open modal ----------
+assignBtn.addEventListener('click', function() {
+    // Populate summary fields with current selections
+    const company = document.getElementById('company');
+    const plant = document.getElementById('plant');
+    const fy = document.getElementById('financialYear');
+    const month = document.getElementById('financialMonth');
+    const activeCategory = document.querySelector('.category-item.active');
+
+    document.getElementById('assignCompanyName').textContent =
+        company.options[company.selectedIndex]?.text || '-';
+    document.getElementById('assignPlantName').textContent =
+        plant.options[plant.selectedIndex]?.text || '-';
+    document.getElementById('assignFY').textContent =
+        fy.options[fy.selectedIndex]?.text || '-';
+    document.getElementById('assignMonth').textContent =
+        month.options[month.selectedIndex]?.text || '-';
+    document.getElementById('assignCategory').textContent =
+        activeCategory ? activeCategory.innerText.trim() : '-';
+
+    // Populate assignee dropdown (replace with real data from your backend)
+    const select = document.getElementById('assigneeSelect');
+    select.innerHTML = '<option value="">Select User</option>';
+
+    // Example static users – replace with fetch from your users API
+    const users = [
+        { id: 1, name: 'Rahul Sharma' },
+        { id: 2, name: 'Priya Patel' },
+        { id: 3, name: 'Amit Kumar' }
+    ];
+    users.forEach(user => {
+        const opt = document.createElement('option');
+        opt.value = user.id;
+        opt.textContent = user.name;
+        select.appendChild(opt);
+    });
+
+    // Set default due date to +7 days
+    const today = new Date();
+    const dueDate = new Date(today);
+    dueDate.setDate(today.getDate() + 7);
+    document.getElementById('dueDateInput').value = dueDate.toISOString().split('T')[0];
+
+    // Show modal
+    assignModal.classList.add('active');
+});
+
+// ---------- Close modal ----------
+function closeAssignModal() {
+    assignModal.classList.remove('active');
+}
+closeAssignBtn.addEventListener('click', closeAssignModal);
+cancelAssignBtn.addEventListener('click', closeAssignModal);
+assignModal.addEventListener('click', function(e) {
+    if (e.target === this) closeAssignModal();
+});
+
+// ---------- Form submission ----------
+assignForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const assignee = document.getElementById('assigneeSelect').value;
+    const dueDate = document.getElementById('dueDateInput').value;
+    const priority = document.getElementById('prioritySelect').value;
+    const frequency = document.getElementById('frequencySelect').value;   // now unique
+    const notes = document.getElementById('assignNotes').value;
+
+    // Validations
+    if (!assignee) {
+        showToast('Please select an assignee.', 'error');
+        return;
+    }
+    if (!dueDate) {
+        showToast('Please select a due date.', 'error');
+        return;
+    }
+
+    // Build payload
+    const payload = {
+        scope_id: '{{ scope.id }}',
+        company: document.getElementById('company').value,
+        plant: document.getElementById('plant').value,
+        financial_year: document.getElementById('financialYear').value,
+        financial_month: document.getElementById('financialMonth').value,
+        category: document.querySelector('.category-item.active')?.innerText.trim() || '',
+        assignee: assignee,
+        due_date: dueDate,
+        priority: priority,
+        frequency: frequency,      // added
+        notes: notes
+    };
+
+    // Send to backend
+    fetch('/emission/api/assign-scope/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify(payload),
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showToast('Task assigned successfully!', 'success');
+            closeAssignModal();
+            // Optionally reset the form
+            assignForm.reset();
+        } else {
+            showToast(result.message || 'Assignment failed.', 'error');
+        }
+    })
+    .catch(error => {
+        console.error(error);
+        showToast('Network error. Please try again.', 'error');
+    });
+});
+
+
+
+// =============================================
+// VIEW TRANSACTIONS MODAL
+// =============================================
+const viewBtn = document.getElementById('viewTransactionsBtn');
+const viewModal = document.getElementById('viewTransactionsModal');
+const viewCloseBtns = document.querySelectorAll('#closeViewTransactionsModal, #closeViewTransactionsModalFooter');
+const viewBody = document.getElementById('viewTransactionsBody');
+
+// Function to populate the modal table with current rows
+// =============================================
+// POPULATE VIEW TRANSACTIONS MODAL (NEW)
+// =============================================
+function populateViewModal() {
+    const rows = document.querySelectorAll('#activityTableBody tr');
+    const summaryBody = document.getElementById('viewSummaryBody');
+    const detailBody = document.getElementById('viewDetailBody');
+
+    // --- 1. Build detail rows and collect summary data ---
+    let detailHtml = '';
+    const sourceMap = {}; // key: source name, value: { totalQty, totalEmission, unit }
+
+    if (rows.length === 0) {
+        summaryBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">No data entered yet.</td></tr>`;
+        detailBody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">No data entered yet.</td></tr>`;
+        return;
+    }
+
+    rows.forEach(row => {
+        const activity = row.cells[0]?.innerText.trim() || '';
+        const source = row.cells[1]?.innerText.trim() || '';
+        const quantityInput = row.querySelector('.quantity');
+        const unit = row.cells[3]?.innerText.trim() || '';
+        const factorInput = row.querySelector('.factor');
+        const totalInput = row.querySelector('.total');
+
+        const quantity = parseFloat(quantityInput?.value) || 0;
+        const factor = factorInput?.value || '0';
+        const total = parseFloat(totalInput?.value) || 0;
+
+        // Detail row (show all rows)
+        detailHtml += `
+            <tr>
+                <td>${activity}</td>
+                <td>${source}</td>
+                <td>${quantity}</td>
+                <td>${unit}</td>
+                <td>${factor}</td>
+                <td>${total.toFixed(4)}</td>
+            </tr>
+        `;
+
+        // Aggregate by source
+        if (source) {
+            if (!sourceMap[source]) {
+                sourceMap[source] = { totalQty: 0, totalEmission: 0, unit: unit };
+            }
+            sourceMap[source].totalQty += quantity;
+            sourceMap[source].totalEmission += total;
+        }
+    });
+
+    // --- 2. Build summary rows ---
+    let summaryHtml = '';
+    const sourceKeys = Object.keys(sourceMap);
+    if (sourceKeys.length === 0) {
+        summaryHtml = `<tr><td colspan="4" class="text-center text-muted">No data with quantity > 0.</td></tr>`;
+    } else {
+        sourceKeys.forEach(src => {
+            const data = sourceMap[src];
+            summaryHtml += `
+                <tr>
+                    <td><strong>${src}</strong></td>
+                    <td>${data.totalQty.toFixed(2)}</td>
+                    <td>${data.unit}</td>
+                    <td>${data.totalEmission.toFixed(4)}</td>
+                </tr>
+            `;
+        });
+        // Grand total row
+        let grandQty = 0, grandEm = 0;
+        sourceKeys.forEach(src => {
+            grandQty += sourceMap[src].totalQty;
+            grandEm += sourceMap[src].totalEmission;
+        });
+        summaryHtml += `
+            <tr style="font-weight: 700; background: #f8fafc;">
+                <td><strong>GRAND TOTAL</strong></td>
+                <td>${grandQty.toFixed(2)}</td>
+                <td></td>
+                <td>${grandEm.toFixed(4)}</td>
+            </tr>
+        `;
+    }
+
+    // --- 3. Insert into DOM ---
+    summaryBody.innerHTML = summaryHtml;
+    detailBody.innerHTML = detailHtml;
+}
+
+
+// Open modal
+viewBtn.addEventListener('click', function() {
+    populateViewModal();
+    viewModal.classList.add('active');
+});
+
+// Close modal functions
+function closeViewModal() {
+    viewModal.classList.remove('active');
+}
+viewCloseBtns.forEach(btn => btn.addEventListener('click', closeViewModal));
+viewModal.addEventListener('click', function(e) {
+    if (e.target === this) closeViewModal();
+});
 </script>
 
 {% endblock %}
