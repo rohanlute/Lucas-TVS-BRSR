@@ -1,0 +1,933 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{{ material_topic }} - Initiatives{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== FULL WIDTH OVERRIDES ===== */
+    .main-content {
+        max-width: 100% !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    footer, .footer {
+    display: none !important;
+}
+    .container, .container-fluid {
+        max-width: 100% !important;
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+    }
+    
+    .content-wrapper, .page-wrapper {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    
+    .detail-container {
+        max-width: 100% !important;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+    
+    .kpi-container {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    .detail-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: #f0f3f8;
+        border-radius: 8px;
+        color: #1a2332;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        margin-bottom: 20px;
+    }
+    
+    .back-button:hover {
+        background: #e4e9f0;
+        color: #3454d1;
+        text-decoration: none;
+    }
+    
+    .kpi-filter-badge {
+        background: #e8edff;
+        padding: 6px 14px;
+        border-radius: 20px;
+        color: #3454d1;
+        font-size: 13px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: 12px;
+    }
+    
+    .kpi-filter-badge a {
+        color: #dc3545;
+        text-decoration: none;
+    }
+    
+    .kpi-filter-badge a:hover {
+        color: #c62828;
+    }
+    
+    .topic-header-card {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #edf0f5;
+        padding: 24px 32px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    
+    .topic-header-card .topic-title {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .topic-header-card .topic-title .topic-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+    
+    .topic-header-card .topic-title .topic-icon.energy { background: #3454d1; }
+    .topic-header-card .topic-title .topic-icon.emissions { background: #28a745; }
+    .topic-header-card .topic-title .topic-icon.procurement { background: #ff9f43; }
+    .topic-header-card .topic-title .topic-icon.transport { background: #6c5ce7; }
+    .topic-header-card .topic-title .topic-icon.waste { background: #e17055; }
+    .topic-header-card .topic-title .topic-icon.social { background: #00b894; }
+    .topic-header-card .topic-title .topic-icon.default { background: #6b7a8f; }
+    
+    .topic-header-card .topic-title h1 {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1a2332;
+        margin: 0;
+    }
+    
+    .topic-header-card .topic-title .goal-subtitle {
+        font-size: 14px;
+        color: #6b7a8f;
+        margin-top: 4px;
+    }
+    
+    .topic-header-card .topic-title .goal-subtitle i {
+        color: #3454d1;
+    }
+    
+    .topic-header-card .topic-title .goal-subtitle strong {
+        color: #1a2332;
+    }
+    
+    .topic-header-card .topic-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 24px;
+        padding-top: 12px;
+        border-top: 1px solid #f0f3f8;
+    }
+    
+    .topic-header-card .topic-stats .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #6b7a8f;
+    }
+    
+    .topic-header-card .topic-stats .stat-item i {
+        color: #3454d1;
+        width: 18px;
+    }
+    
+    .topic-header-card .topic-stats .stat-item strong {
+        color: #1a2332;
+        font-weight: 600;
+    }
+    
+    /* ===== KPI CARD ===== */
+    .kpi-container {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #edf0f5;
+        margin-bottom: 24px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        width: 100%;
+    }
+    
+    .kpi-container .kpi-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 24px;
+        background: linear-gradient(135deg, #f0f4ff 0%, #e8edff 100%);
+        border-bottom: 1px solid #edf0f5;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .kpi-container .kpi-header .kpi-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .kpi-container .kpi-header .kpi-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: #3454d1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+    
+    .kpi-container .kpi-header .kpi-name {
+        font-size: 17px;
+        font-weight: 600;
+        color: #1a2332;
+    }
+    
+    .kpi-container .kpi-header .kpi-badge {
+        font-size: 12px;
+        background: #3454d1;
+        color: #ffffff;
+        padding: 2px 14px;
+        border-radius: 12px;
+        font-weight: 500;
+    }
+    
+    .kpi-container .kpi-body {
+        padding: 8px 0;
+    }
+    
+    /* ===== GOAL SECTION INSIDE KPI ===== */
+    .goal-section {
+        border-bottom: 1px solid #f0f3f8;
+    }
+    
+    .goal-section:last-child {
+        border-bottom: none;
+    }
+    
+    .goal-section .goal-header {
+        display: flex;
+        align-items: center;
+        padding: 12px 24px;
+        background: #f8faff;
+        border-left: 4px solid #3454d1;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .goal-section .goal-header .goal-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1a2332;
+    }
+    
+    .goal-section .goal-header .goal-badge {
+        font-size: 11px;
+        background: #e3f2fd;
+        color: #0d47a1;
+        padding: 2px 12px;
+        border-radius: 12px;
+        font-weight: 500;
+    }
+    
+    .goal-section .goal-header .goal-metrics {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-left: auto;
+    }
+    
+    .goal-section .goal-header .metric-tag {
+        font-size: 11px;
+        background: #e8edff;
+        color: #3454d1;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .goal-section .goal-header .metric-tag i {
+        font-size: 10px;
+    }
+    
+    /* ===== ACCORDION STYLES ===== */
+    .initiative-accordion {
+        border-bottom: 1px solid #f0f3f8;
+    }
+    
+    .initiative-accordion:last-child {
+        border-bottom: none;
+    }
+    
+    .initiative-accordion-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 24px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        gap: 12px;
+        background: #ffffff;
+    }
+    
+    .initiative-accordion-header:hover {
+        background: #f8faff;
+    }
+    
+    .initiative-accordion-header .accordion-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+        min-width: 0;
+        flex-wrap: wrap;
+    }
+    
+    .initiative-accordion-header .accordion-status {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 10px;
+        border-radius: 20px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+    }
+    
+    .initiative-accordion-header .accordion-status .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    
+    .initiative-accordion-header .accordion-status.planning {
+        background: #fff3e0;
+        color: #e65100;
+    }
+    .initiative-accordion-header .accordion-status.planning .status-dot { background: #e65100; }
+    
+    .initiative-accordion-header .accordion-status.in-progress {
+        background: #e3f2fd;
+        color: #0d47a1;
+    }
+    .initiative-accordion-header .accordion-status.in-progress .status-dot { background: #0d47a1; }
+    
+    .initiative-accordion-header .accordion-status.completed {
+        background: #e8f5e9;
+        color: #1b5e20;
+    }
+    .initiative-accordion-header .accordion-status.completed .status-dot { background: #1b5e20; }
+    
+    .initiative-accordion-header .accordion-status.on-hold {
+        background: #fce4ec;
+        color: #b71c1c;
+    }
+    .initiative-accordion-header .accordion-status.on-hold .status-dot { background: #b71c1c; }
+    
+    .initiative-accordion-header .accordion-title {
+        font-size: 14px;
+        font-weight: 500;
+        color: #1a2332;
+        flex: 1;
+        min-width: 150px;
+    }
+    
+    .initiative-accordion-header .accordion-title i {
+        color: #3454d1;
+        margin-right: 8px;
+        font-size: 13px;
+    }
+    
+    .initiative-accordion-header .accordion-meta {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        font-size: 12px;
+        color: #8a94a6;
+        flex-shrink: 0;
+        flex-wrap: wrap;
+    }
+    
+    .initiative-accordion-header .accordion-meta span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .initiative-accordion-header .accordion-meta i {
+        font-size: 12px;
+    }
+    
+    .initiative-accordion-header .accordion-toggle {
+        font-size: 14px;
+        color: #8a94a6;
+        transition: transform 0.3s ease;
+        flex-shrink: 0;
+        margin-left: 4px;
+    }
+    
+    .initiative-accordion-header .accordion-toggle.open {
+        transform: rotate(180deg);
+    }
+    
+    /* Accordion Body */
+    .initiative-accordion-body {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        background: #f8faff;
+    }
+    
+    .initiative-accordion-body.open {
+        max-height: 2000px;
+    }
+    
+    .initiative-accordion-body .body-content {
+        padding: 20px 24px 24px 24px;
+        border-top: 1px solid #edf0f5;
+    }
+    
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+    
+    .detail-item {
+        padding: 10px 14px;
+        background: #ffffff;
+        border-radius: 8px;
+        border: 1px solid #edf0f5;
+    }
+    
+    .detail-item .detail-label {
+        font-size: 10px;
+        font-weight: 600;
+        color: #8a94a6;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+    }
+    
+    .detail-item .detail-value {
+        font-size: 13px;
+        font-weight: 500;
+        color: #1a2332;
+    }
+    
+    .detail-item .detail-value .highlight {
+        color: #3454d1;
+        font-weight: 600;
+    }
+    
+    .detail-item .detail-value .progress-text {
+        font-size: 12px;
+        margin-left: 4px;
+    }
+    .detail-item .detail-value .progress-text.on-track { color: #28a745; }
+    .detail-item .detail-value .progress-text.at-risk { color: #ff9f43; }
+    .detail-item .detail-value .progress-text.behind { color: #dc3545; }
+    
+    .description-section {
+        margin-top: 12px;
+        padding: 12px 16px;
+        background: #ffffff;
+        border-radius: 8px;
+        border: 1px solid #edf0f5;
+    }
+    
+    .description-section .desc-label {
+        font-size: 11px;
+        font-weight: 600;
+        color: #8a94a6;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+    
+    .description-section .desc-text {
+        font-size: 13px;
+        color: #6b7a8f;
+        line-height: 1.6;
+    }
+    
+    .no-initiatives {
+        text-align: center;
+        padding: 60px 20px;
+        color: #8a94a6;
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #edf0f5;
+    }
+    
+    .no-initiatives i {
+        font-size: 48px;
+        color: #d0d8e4;
+        margin-bottom: 16px;
+        display: block;
+    }
+    
+    .no-initiatives h4 {
+        color: #1a2332;
+        margin-bottom: 8px;
+    }
+    
+    .no-initiatives a {
+        color: #3454d1;
+        text-decoration: none;
+    }
+    
+    .no-initiatives a:hover {
+        text-decoration: underline;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .topic-header-card {
+            padding: 16px 20px;
+        }
+        
+        .topic-header-card .topic-title h1 {
+            font-size: 20px;
+        }
+        
+        .topic-header-card .topic-stats {
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .kpi-container .kpi-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .goal-section .goal-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .goal-section .goal-header .goal-metrics {
+            margin-left: 0;
+        }
+        
+        .initiative-accordion-header {
+            flex-wrap: wrap;
+            padding: 12px 16px;
+        }
+        
+        .initiative-accordion-header .accordion-left {
+            flex-wrap: wrap;
+        }
+        
+        .initiative-accordion-header .accordion-title {
+            white-space: normal;
+            min-width: 100%;
+        }
+        
+        .initiative-accordion-header .accordion-meta {
+            flex-wrap: wrap;
+            gap: 8px;
+            width: 100%;
+        }
+        
+        .initiative-accordion-body .body-content {
+            padding: 16px;
+        }
+        
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .topic-header-card .topic-title .goal-subtitle {
+        font-size: 14px;
+        color: #6b7a8f;
+        margin-top: 4px;
+    }
+    
+    .topic-header-card .topic-title .goal-subtitle i {
+        color: #3454d1;
+    }
+    
+    .topic-header-card .topic-title .goal-subtitle strong {
+        color: #1a2332;
+    }
+    
+    .topic-header-card .topic-title .goal-subtitle .goal-separator {
+        color: #8a94a6;
+        margin: 0 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="detail-container">
+    <!-- Back Button -->
+    <a href="{% url 'goals:initiative_list' %}?topic={{ material_topic|urlencode }}{% if selected_kpi %}&kpi={{ selected_kpi|urlencode }}{% endif %}" class="back-button">
+        <i class="feather-arrow-left"></i>
+        Back to Initiatives
+        {% if selected_kpi %}
+        <span style="font-weight: 400; color: #6b7a8f; font-size: 12px; margin-left: 6px;">
+            ({{ selected_kpi }})
+        </span>
+        {% endif %}
+    </a>
+
+    <!-- Topic Header -->
+    <div class="topic-header-card">
+        <div class="topic-title">
+            <div class="topic-icon {{ topic_icon_class|default:'default' }}">
+                <i class="fas {{ topic_icon }}"></i>
+            </div>
+            <div>
+                <h1>{{ material_topic }}</h1>
+                {% if grouped_by_kpi %}
+                    {% for kpi_data in grouped_by_kpi %}
+                        {% if forloop.first %}
+                            {% with first_goal=kpi_data.goals|first %}
+                                {% if first_goal %}
+                                    <div class="goal-subtitle">
+                                        <i class="fas fa-bullseye"></i>
+                                        Goal: <strong>{{ first_goal.goal_name }}</strong>
+                                        {% if kpi_data.goals|length > 1 %}
+                                            <span style="color: #8a94a6; font-size: 12px;">
+                                                (+{{ kpi_data.goals|length|add:"-1" }} more goals)
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            </div>
+            {% if selected_kpi %}
+            <span class="kpi-filter-badge">
+                <i class="fas fa-filter"></i>
+                KPI: {{ selected_kpi }}
+                <a href="{% url 'goals:initiative_detail' material_topic=material_topic %}">
+                    <i class="fas fa-times-circle"></i>
+                </a>
+            </span>
+            {% endif %}
+        </div>
+        <div class="topic-stats">
+            <span class="stat-item">
+                <i class="fas fa-flag"></i>
+                KPIs: <strong>{{ total_kpis }}</strong>
+            </span>
+            <span class="stat-item">
+                <i class="fas fa-tasks"></i>
+                Total Initiatives: <strong>{{ total_initiatives }}</strong>
+            </span>
+            <span class="stat-item">
+                <i class="fas fa-check-circle"></i>
+                Completed: <strong>{{ completed_count|default:0 }}</strong>
+            </span>
+            <span class="stat-item">
+                <i class="fas fa-spinner"></i>
+                In Progress: <strong>{{ in_progress_count|default:0 }}</strong>
+            </span>
+            <span class="stat-item">
+                <i class="fas fa-clock"></i>
+                Planning: <strong>{{ planning_count|default:0 }}</strong>
+            </span>
+        </div>
+    </div>
+
+    <!-- Grouped by KPI -->
+    {% if grouped_by_kpi %}
+        {% for kpi_data in grouped_by_kpi %}
+        <div class="kpi-container">
+            <!-- KPI Header -->
+            <div class="kpi-header">
+                <div class="kpi-left">
+                    <div class="kpi-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <span class="kpi-name">{{ kpi_data.kpi_name }}</span>
+                    <span class="kpi-badge">{{ kpi_data.total_initiatives }} initiatives</span>
+                </div>
+                <div style="font-size: 12px; color: #6b7a8f;">
+                    <i class="fas fa-calendar-alt"></i>
+                    Unit: {{ kpi_data.kpi_unit|default:'N/A' }}
+                </div>
+            </div>
+            
+            <!-- Goals under this KPI -->
+            <div class="kpi-body">
+                {% for goal_data in kpi_data.goals %}
+                <div class="goal-section">
+                    <!-- Goal Header -->
+                    {% comment %} <div class="goal-header">
+                        <span class="goal-name">
+                            <i class="fas fa-bullseye" style="color: #3454d1; margin-right: 8px;"></i>
+                            {{ goal_data.goal_name }}
+                        </span>
+                        <span class="goal-badge">{{ goal_data.initiatives|length }} initiatives</span>
+                        <div class="goal-metrics">
+                            {% for metric in goal_data.metrics %}
+                            <span class="metric-tag">
+                                <i class="fas fa-chart-line"></i>
+                                {{ metric }}
+                            </span>
+                            {% endfor %}
+                        </div> {% endcomment %}
+                    </div>
+                    
+                    <!-- Initiatives Accordion List -->
+                    {% for initiative in goal_data.initiatives %}
+                    <div class="initiative-accordion">
+                        <!-- Accordion Header -->
+                        <div class="initiative-accordion-header" onclick="toggleAccordion(this)">
+                            <div class="accordion-left">
+                                <span class="accordion-status {{ initiative.status|lower|cut:' ' }}">
+                                    <span class="status-dot"></span>
+                                    {{ initiative.status }}
+                                </span>
+                                <span class="accordion-title">
+                                    <i class="fas fa-rocket"></i>
+                                    {{ initiative.name }}
+                                </span>
+                            </div>
+                            {% comment %} <div class="accordion-meta">
+                                <span>
+                                    <i class="feather-map-pin"></i>
+                                    {{ initiative.plant }}
+                                </span>
+                                <span>
+                                    <i class="feather-user"></i>
+                                    {{ initiative.assigned_to }}
+                                </span>
+                                <span>
+                                    <i class="feather-calendar"></i>
+                                    {{ initiative.due_date|date:"M d, Y"|default:initiative.due_date }}
+                                </span>
+                                <span>
+                                    <i class="feather-trending-up"></i>
+                                    {{ initiative.progress }}%
+                                </span>
+                            </div> {% endcomment %}
+                            <span class="accordion-toggle">
+                                <i class="fas fa-chevron-down"></i>
+                            </span>
+                        </div>
+                        
+                        <!-- Accordion Body -->
+                        <div class="initiative-accordion-body">
+                            <div class="body-content">
+                                <!-- Detail Grid -->
+                                <div class="detail-grid">
+                                    <div class="detail-item">
+                                        <div class="detail-label">Initiative Name</div>
+                                        <div class="detail-value">{{ initiative.name }}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Status</div>
+                                        <div class="detail-value">
+                                            <span class="accordion-status {{ initiative.status|lower|cut:' ' }}" style="display: inline-block;">
+                                                <span class="status-dot"></span>
+                                                {{ initiative.status }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">KPI / Metric</div>
+                                        <div class="detail-value">
+                                            <span class="highlight">{{ initiative.kpi }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Goal</div>
+                                        <div class="detail-value">{{ initiative.goal }}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Progress</div>
+                                        <div class="detail-value">
+                                            <span class="highlight">{{ initiative.progress }}%</span>
+                                            <span class="progress-text 
+                                                {% if initiative.progress >= 70 %}on-track
+                                                {% elif initiative.progress >= 40 %}at-risk
+                                                {% else %}behind{% endif %}">
+                                                {% if initiative.progress >= 70 %}✅ On Track
+                                                {% elif initiative.progress >= 40 %}⚠️ At Risk
+                                                {% else %}🔴 Behind
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Plant</div>
+                                        <div class="detail-value">{{ initiative.plant }}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Assigned To</div>
+                                        <div class="detail-value">{{ initiative.assigned_to }}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Due Date</div>
+                                        <div class="detail-value">{{ initiative.due_date|date:"F d, Y"|default:initiative.due_date }}</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">Priority</div>
+                                        <div class="detail-value">
+                                            <span class="priority-badge" style="padding: 2px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; background: {% if initiative.priority == 'High' %}#fce4ec; color: #c62828{% elif initiative.priority == 'Low' %}#e8f5e9; color: #1b5e20{% else %}#fff3e0; color: #e65100{% endif %};">
+                                                {{ initiative.priority|default:'Medium' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="detail-item" style="grid-column: 1 / -1;">
+                                        <div class="detail-label">Created</div>
+                                        <div class="detail-value">{{ initiative.created_at|default:"N/A" }}</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Description -->
+                                {% if initiative.description %}
+                                <div class="description-section">
+                                    <div class="desc-label">Description</div>
+                                    <div class="desc-text">{{ initiative.description }}</div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if initiative.metric_description %}
+                                <div class="description-section" style="margin-top: 8px;">
+                                    <div class="desc-label">Metric Description</div>
+                                    <div class="desc-text">{{ initiative.metric_description }}</div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div style="padding: 20px; text-align: center; color: #8a94a6;">
+                        No initiatives for this goal yet.
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="no-initiatives">
+            <i class="feather-inbox"></i>
+            <h4>No Initiatives Found</h4>
+            <p>
+                {% if selected_kpi %}
+                No initiatives found for KPI: <strong>{{ selected_kpi }}</strong>
+                <br>
+                <a href="{% url 'goals:initiative_detail' material_topic=material_topic %}">
+                    <i class="fas fa-arrow-left"></i> View all initiatives for this topic
+                </a>
+                {% else %}
+                Click the "Add Initiative" button to create your first initiative.
+                {% endif %}
+            </p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+// Toggle accordion - expand/collapse initiative details (with toggle)
+function toggleAccordion(header) {
+    const body = header.nextElementSibling;
+    const toggle = header.querySelector('.accordion-toggle');
+    
+    // Check if this accordion is already open
+    const isOpen = body.classList.contains('open');
+    
+    // Get the parent goal section
+    const parentGoal = header.closest('.goal-section');
+    
+    if (parentGoal) {
+        // Close all accordions in the same goal
+        const allBodies = parentGoal.querySelectorAll('.initiative-accordion-body');
+        const allToggles = parentGoal.querySelectorAll('.accordion-toggle');
+        
+        allBodies.forEach(function(openBody) {
+            // Skip the current one if we're going to open it
+            if (openBody !== body || !isOpen) {
+                openBody.classList.remove('open');
+            }
+        });
+        allToggles.forEach(function(openToggle) {
+            // Skip the current one if we're going to open it
+            if (openToggle !== toggle || !isOpen) {
+                openToggle.classList.remove('open');
+            }
+        });
+    }
+    
+    // Toggle the clicked accordion
+    if (isOpen) {
+        // If it was open, close it
+        body.classList.remove('open');
+        toggle.classList.remove('open');
+    } else {
+        // If it was closed, open it
+        body.classList.add('open');
+        toggle.classList.add('open');
+    }
+}
+
+// Open first accordion by default
+document.addEventListener('DOMContentLoaded', function() {
+    const firstGoalSection = document.querySelector('.goal-section');
+    if (firstGoalSection) {
+        const firstAccordionBody = firstGoalSection.querySelector('.initiative-accordion-body');
+        if (firstAccordionBody) {
+            const firstHeader = firstAccordionBody.previousElementSibling;
+            const firstToggle = firstHeader.querySelector('.accordion-toggle');
+            firstAccordionBody.classList.add('open');
+            if (firstToggle) {
+                firstToggle.classList.add('open');
+            }
+        }
+    }
+});
+</script>
+
+{% endblock %}

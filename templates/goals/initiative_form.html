@@ -1,0 +1,452 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Add Initiative{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        font-weight: 600;
+        color: #1a2332;
+        margin-bottom: 6px;
+        display: block;
+    }
+    
+    .form-group label .required {
+        color: #dc3545;
+    }
+    
+    .form-control {
+        border: 1px solid #e4e9f0;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 14px;
+        color: #1a2332;
+        transition: all 0.2s ease;
+        width: 100%;
+        font-family: inherit;
+    }
+    
+    .form-control:focus {
+        border-color: #3454d1;
+        box-shadow: 0 0 0 3px rgba(52, 84, 209, 0.08);
+        outline: none;
+    }
+    
+    .form-control.is-invalid {
+        border-color: #dc3545;
+    }
+    
+    select.form-control {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7a8f' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        padding-right: 36px;
+        cursor: pointer;
+    }
+    
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #f0f3f8;
+    }
+    
+    .btn {
+        padding: 10px 24px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        border: none;
+        font-family: inherit;
+    }
+    
+    .btn-primary {
+        background: #3454d1;
+        color: #ffffff;
+    }
+    
+    .btn-primary:hover {
+        background: #1a3fa8;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(52, 84, 209, 0.3);
+    }
+    
+    .btn-secondary {
+        background: #f0f3f8;
+        color: #6b7a8f;
+    }
+    
+    .btn-secondary:hover {
+        background: #e4e9f0;
+        color: #1a2332;
+    }
+    
+    .btn-success {
+        background: #28a745;
+        color: #ffffff;
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .btn-success:hover {
+        background: #1e7e34;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 14px rgba(40, 167, 69, 0.3);
+    }
+    
+    .alert {
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .alert-danger {
+        background: #fce4ec;
+        color: #c62828;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .alert-success {
+        background: #e8f5e9;
+        color: #2e7d32;
+        border: 1px solid #c8e6c9;
+    }
+    
+    .help-text {
+        font-size: 12px;
+        color: #8a94a6;
+        margin-top: 4px;
+    }
+    
+    .form-card {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 24px;
+        border: 1px solid #edf0f5;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    
+    .form-card .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #f0f3f8;
+        margin-bottom: 20px;
+    }
+    
+    .form-card .card-header h4 {
+        margin: 0;
+        color: #1a2332;
+        font-weight: 600;
+    }
+    
+    .form-card .card-header .badge {
+        background: #e3f2fd;
+        color: #0d47a1;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    
+    .no-metrics-warning {
+        background: #fff3e0;
+        border: 1px solid #ffe0b2;
+        padding: 12px 16px;
+        border-radius: 10px;
+        color: #e65100;
+        margin-bottom: 16px;
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+        
+        .form-actions {
+            flex-direction: column-reverse;
+        }
+        
+        .form-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .form-card .card-header {
+            flex-direction: column;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        
+        .page-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+        }
+        
+        .page-header-right {
+            margin-left: 0 !important;
+            width: 100%;
+        }
+        
+        .page-header-right-items {
+            width: 100%;
+        }
+        
+        .page-header-right-items-wrapper {
+            width: 100%;
+            flex-direction: column;
+        }
+        
+        .page-header-right-items-wrapper .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Add Initiative</h5>
+        </div>
+
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="#">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'goals:dashboard' %}">Goals</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'goals:initiative_list' %}?topic={{ selected_topic|urlencode }}&goal={{ selected_goal|urlencode }}">Initiatives</a></li>
+            <li class="breadcrumb-item active">Add</li>
+        </ul>
+    </div>
+    
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                <button type="submit" form="initiativeForm" class="btn btn-primary" id="saveInitiativeBtn">
+                    <i class="feather-save me-2"></i>
+                    <span>Save</span>
+                </button>
+                <a href="{% url 'goals:initiative_list' %}?topic={{ selected_topic|urlencode }}&goal={{ selected_goal|urlencode }}" class="btn btn-secondary">
+                    <i class="feather-x me-2"></i>
+                    <span>Cancel</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="form-container">
+        <div class="form-card">
+            <div class="card-header">
+                <h4>
+                    <i class="fas fa-plus-circle me-2" style="color: #3454d1;"></i>
+                    Create New Initiative
+                </h4>
+                {% if selected_goal %}
+                <span class="badge">
+                    <i class="fas fa-bullseye me-1"></i>
+                    {{ selected_goal }}
+                </span>
+                {% endif %}
+            </div>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %} alert-dismissible fade show">
+                        {{ message }}
+                        <button class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            {% if not has_metrics %}
+            <div class="no-metrics-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                No metrics found for the selected goal. Please select a goal with associated metrics.
+            </div>
+            {% endif %}
+            
+            <form method="POST" id="initiativeForm" action="{% url 'goals:initiative_create' %}">
+                {% csrf_token %}
+                <input type="hidden" name="selected_topic" value="{{ selected_topic }}">
+                <input type="hidden" name="selected_goal" value="{{ selected_goal }}">
+                
+                <!-- Initiative Name -->
+                <div class="form-group">
+                    <label for="initiative_name">
+                        Initiative <span class="required">*</span>
+                    </label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="initiative_name" 
+                           name="initiative_name" 
+                           required
+                           placeholder="Enter initiative name">
+                </div>
+                
+                <!-- Associated KPI -->
+                <div class="form-group">
+                    <label for="kpi">
+                        Associated KPI / Metrics <span class="required">*</span>
+                    </label>
+                    <select class="form-control" id="kpi" name="kpi" required {% if not goal_metrics %}disabled{% endif %}>
+                        <option value="">Select KPI</option>
+                        {% for metric in goal_metrics %}
+                            <option value="{{ metric.name }}" data-unit="{{ metric.unit }}" data-topic="{{ metric.topic }}" data-goal="{{ metric.goal }}">
+                                {{ metric.name }} ({{ metric.unit }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <div class="help-text">
+                        <i class="fas fa-info-circle me-1"></i>
+                        KPIs are fetched specifically from the selected goal: <strong>{{ selected_goal }}</strong>
+                    </div>
+                    <input type="hidden" id="kpi_unit" name="kpi_unit" value="">
+                </div>
+                
+                <!-- Assigned To -->
+                <div class="form-group">
+                    <label for="assigned_to">
+                        Assigned To <span class="required">*</span>
+                    </label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="assigned_to" 
+                           name="assigned_to" 
+                           required
+                           placeholder="Enter person or department assigned">
+                    <div class="help-text">Person or department responsible for this initiative</div>
+                </div>
+                
+                <!-- Due Date -->
+                <div class="form-group">
+                    <label for="due_date">
+                        Due Date <span class="required">*</span>
+                    </label>
+                    <input type="date" 
+                           class="form-control" 
+                           id="due_date" 
+                           name="due_date" 
+                           required>
+                </div>
+                
+                <!-- Description -->
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea class="form-control" 
+                              id="description" 
+                              name="description" 
+                              placeholder="Enter initiative description"
+                              rows="4"></textarea>
+                </div>
+                
+                <!-- Add Initiative Button at the end of the card -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-success" id="addInitiativeBtn">
+                        <i class="feather-plus"></i> Add Initiative
+                    </button>
+                    <a href="{% url 'goals:initiative_list' %}?topic={{ selected_topic|urlencode }}&goal={{ selected_goal|urlencode }}" class="btn btn-secondary">
+                        <i class="feather-x"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('initiativeForm');
+    const inputs = form.querySelectorAll('input[required], select[required]');
+    const kpiSelect = document.getElementById('kpi');
+    const kpiUnitHidden = document.getElementById('kpi_unit');
+    
+    // Set KPI unit when KPI is selected
+    kpiSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const unit = selectedOption.getAttribute('data-unit');
+        if (unit) {
+            kpiUnitHidden.value = unit;
+        }
+    });
+    
+    // Form validation on submit
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        inputs.forEach(input => {
+            if (!input.disabled && input.hasAttribute('required') && !input.value) {
+                input.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                input.classList.remove('is-invalid');
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            alert('Please fill in all required fields.');
+        } else {
+            const submitBtn = document.getElementById('addInitiativeBtn');
+            const saveBtn = document.getElementById('saveInitiativeBtn');
+            submitBtn.disabled = true;
+            saveBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="feather-loader fa-spin me-2"></i> Adding...';
+            saveBtn.innerHTML = '<i class="feather-loader fa-spin me-2"></i> Saving...';
+        }
+    });
+    
+    // Remove invalid class on input
+    inputs.forEach(input => {
+        input.addEventListener('input', function() {
+            if (this.value) {
+                this.classList.remove('is-invalid');
+            }
+        });
+        input.addEventListener('change', function() {
+            if (this.value) {
+                this.classList.remove('is-invalid');
+            }
+        });
+    });
+    
+    // Set minimum date for due date to today
+    const dueDateInput = document.getElementById('due_date');
+    if (dueDateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dueDateInput.setAttribute('min', today);
+    }
+});
+</script>
+
+{% endblock %}

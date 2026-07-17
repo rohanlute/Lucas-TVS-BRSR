@@ -522,6 +522,64 @@
             min-height: 300px;
         }
     }
+   /* ===== View Initiative Button ===== */
+#viewInitiativeBtn {
+    padding: 10px 22px;
+    background: #3454d1;
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+#viewInitiativeBtn:hover {
+    background: #1a3fa8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(52, 84, 209, 0.3);
+    color: #ffffff;
+    text-decoration: none;
+}
+
+#viewInitiativeBtn i {
+    font-size: 16px;
+}
+
+/* ===== Responsive adjustments ===== */
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    
+    .page-header-right {
+        margin-left: 0 !important;
+        width: 100%;
+    }
+    
+    .page-header-right-items {
+        width: 100%;
+    }
+    
+    .page-header-right-items-wrapper {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    #viewInitiativeBtn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
 </style>
 {% endblock %}
 
@@ -537,8 +595,17 @@
             <li class="breadcrumb-item active">{{ material_topic }}</li>
         </ul>
     </div>
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                <a href="{% url 'goals:initiative_list' %}?topic={{ material_topic|urlencode }}&goal={{ selected_goal|urlencode }}" 
+                   class="btn btn-primary" id="viewInitiativeBtn">
+                    <i class="fas fa-rocket"></i> View Initiative
+                </a>
+            </div>
+        </div>
+    </div>
 </div>
-
 <div class="gd-page">
 
     <!-- Top Toolbar -->

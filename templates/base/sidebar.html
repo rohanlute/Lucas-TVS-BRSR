@@ -172,11 +172,11 @@
                                 Email
                             </a>
                         </li>
-                        <li class="nxl-item">
+                        {% comment %} <li class="nxl-item">
                             <a class="nxl-link" href="{% url 'goals:dashboard' %}">
                                 Goals
                             </a>
-                        </li>
+                        </li> {% endcomment %}
                         {% if request.user.is_super_admin or request.user.is_superuser or request.user.role and request.user.role.role_code == 'ADMIN' %}
                         <li class="nxl-item">
                             <a class="nxl-link" href="{% url 'calculator:unit_category_list' %}">
@@ -189,6 +189,12 @@
                     </ul>
                 </li>
             </ul>
+             <li class="nxl-item">
+                <a class="nxl-link" href="{% url 'goals:dashboard' %}">
+                    <i class="fas fa-bullseye"></i> 
+                    Goals
+                </a>
+            </li>
         </div>
     </div>
 </nav>
