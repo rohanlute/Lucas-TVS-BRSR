@@ -10,7 +10,7 @@ from apps.accounts.models import Department
 from apps.organizations.models import ApprovalConfigurationTemplate, FinancialYear, Plant
 from apps.organizations.workflow_configuration_engine import WorkflowConfigurationEngine
 from .forms import BRSRAssignmentForm
-from .models import Assignment, BRSRPrinciple, BRSRQuestion, BRSRSection, QuestionResponse
+from .models import Assignment, AssignmentReviewer, BRSRPrinciple, BRSRQuestion, BRSRSection, QuestionResponse
 
 
 User = get_user_model()
@@ -46,6 +46,12 @@ def _workflow_template_queryset():
         .prefetch_related("stages", "stages__role", "stages__escalation_role")
         .order_by("company__company_name", "name")
     )
+
+
+def _workflow_stage_by_type(template, stage_type):
+    if not template or not stage_type:
+        return None
+    return template.stages.filter(stage_type=stage_type).order_by("level").first()
 
 
 def _workflow_entry_stage(template):
@@ -122,10 +128,53 @@ def _workflow_assignees_for_stage(plant, stage, current_user=None):
         queryset = queryset.filter(company_id=plant_company_id)
     if current_user:
         queryset = queryset.exclude(pk=current_user.pk)
-    return queryset.distinct()
+    queryset = queryset.distinct()
+    if queryset.exists() or not stage or not stage.role_id:
+        return queryset
+
+    fallback = (
+        User.objects.filter(
+            is_active=True,
+            role_id=stage.role_id,
+        )
+        .select_related("role", "department")
+        .order_by("full_name", "username")
+    )
+    if plant_company_id:
+        fallback = fallback.filter(company_id=plant_company_id)
+    if current_user:
+        fallback = fallback.exclude(pk=current_user.pk)
+    fallback = fallback.distinct()
+    if fallback.exists() or not stage or stage.stage_type != "review":
+        return fallback
+
+    company_users = (
+        User.objects.filter(
+            is_active=True,
+            company_id=plant_company_id,
+        )
+        .select_related("role", "department")
+        .order_by("full_name", "username")
+    )
+    if current_user:
+        company_users = company_users.exclude(pk=current_user.pk)
+    return company_users.distinct()
 
 
-def _first_workflow_assignee_for_stage(plant, stage, current_user=None):
+def _reviewer_links_for_assignment(assignment):
+    if not assignment:
+        return []
+    return [link.reviewer for link in assignment.reviewer_links.select_related("reviewer_content_type").all() if link.reviewer]
+
+
+def _first_workflow_assignee_for_stage(plant, stage, current_user=None, assignment=None):
+    if assignment and stage and stage.stage_type == "review":
+        assigned_reviewers = _reviewer_links_for_assignment(assignment)
+        eligible_reviewers = _workflow_assignees_for_stage(plant, stage, current_user=current_user)
+        for reviewer in assigned_reviewers:
+            if reviewer and eligible_reviewers.filter(pk=reviewer.pk).exists():
+                return reviewer
+
     assignee = _workflow_assignees_for_stage(plant, stage, current_user=current_user).first()
     if stage and stage.role_id and assignee is None:
         raise ValueError(f"No eligible assignee found for stage '{stage.label}'.")
@@ -146,6 +195,18 @@ def _resolve_brsr_assignee(plant, template, selected_assignee=None, current_user
         return default_assignee
 
     raise ValueError("No eligible assignee matches the first stage of the configured BRSR workflow.")
+
+
+def _resolve_brsr_reviewer(plant, template, selected_reviewer=None, current_user=None):
+    review_stage = _workflow_stage_by_type(template, "review")
+    if not review_stage or not review_stage.role_id:
+        return selected_reviewer
+
+    eligible = _workflow_assignees_for_stage(plant, review_stage, current_user=current_user)
+    if selected_reviewer and eligible.filter(pk=selected_reviewer.pk).exists():
+        return selected_reviewer
+
+    return eligible.first()
 
 
 def _advance_assignment_to_entry_stage(assignment, actor=None):
@@ -544,6 +605,16 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
             "No eligible assignee matches the first stage of the configured BRSR workflow."
         )
 
+    reviewer = _resolve_brsr_reviewer(
+        plant,
+        workflow_template,
+        selected_reviewer=cleaned_data.get("reviewer"),
+        current_user=user,
+    )
+    review_stage = _workflow_stage_by_type(workflow_template, "review")
+    if review_stage and reviewer is None:
+        raise ValueError("No eligible reviewer matches the review stage of the configured BRSR workflow.")
+
     user_ct = ContentType.objects.get_for_model(User)
     assigner = cleaned_data.get("assigner") or user
     assignment = Assignment.objects.create(
@@ -562,6 +633,12 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
         notes=cleaned_data.get("notes"),
     )
     assignment.questions.set(question_queryset)
+    if reviewer is not None:
+        AssignmentReviewer.objects.create(
+            assignment=assignment,
+            reviewer_content_type=user_ct,
+            reviewer_object_id=reviewer.pk,
+        )
     for question in question_queryset:
         QuestionResponse.objects.get_or_create(
             assignment=assignment,

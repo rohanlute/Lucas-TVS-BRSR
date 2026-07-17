@@ -6,7 +6,7 @@ from apps.accounts.models import Department
 from apps.accounts.models.role import Role
 from apps.accounts.models.user import User
 from apps.brsr.api_views import QuestionApproveAPIView, QuestionRejectAPIView, QuestionReviewCommentAPIView, QuestionSaveAPIView, QuestionSubmitAPIView
-from apps.brsr.models import Assignment, BRSRQuestion, BRSRSection, QuestionResponse
+from apps.brsr.models import Assignment, AssignmentReviewer, BRSRQuestion, BRSRSection, QuestionResponse
 from apps.organizations.models import ApprovalConfigurationStage, ApprovalConfigurationTemplate, Plant
 from apps.organizations.workflow_configuration_engine import WorkflowConfigurationEngine
 from apps.companies.models import City, Company, Country, State
@@ -138,6 +138,11 @@ class BRSRWorkflowAPITests(TestCase):
             assigner_object_id=self.assigner.id,
             assignee_content_type=ContentType.objects.get_for_model(User),
             assignee_object_id=self.data_user.id,
+        )
+        AssignmentReviewer.objects.create(
+            assignment=assignment,
+            reviewer_content_type=ContentType.objects.get_for_model(User),
+            reviewer_object_id=self.reviewer.id,
         )
         assignment.questions.add(self.question)
         QuestionResponse.objects.create(
@@ -295,9 +300,12 @@ class BRSRWorkflowAPITests(TestCase):
         response = QuestionReviewCommentAPIView.as_view()(request, question_id=self.question.question_id)
         self.assertEqual(response.status_code, 200)
 
+        assignment.refresh_from_db()
         response_row = QuestionResponse.objects.get(assignment=assignment, question=self.question)
         self.assertEqual(response_row.review_remark, "Looks good")
         self.assertEqual(response_row.status, "submitted")
+        self.assertEqual(assignment.workflow_stage_type, "approval")
+        self.assertEqual(assignment.workflow_task.current_assignee_object_id, self.approver.id)
 
     def test_final_approval_locks_editing_after_approval(self):
         assignment = self._create_assignment("4")

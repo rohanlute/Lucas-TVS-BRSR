@@ -27,6 +27,11 @@ class BRSRAssignmentForm(forms.Form):
         queryset=User.objects.none(),
         widget=forms.Select(attrs={"class": "form-select"}),
     )
+    reviewer = forms.ModelChoiceField(
+        queryset=User.objects.none(),
+        required=False,
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
     data_collection_frequency = forms.ChoiceField(
         choices=Assignment.FREQUENCY_CHOICES,
         required=False,
@@ -63,6 +68,7 @@ class BRSRAssignmentForm(forms.Form):
         self.fields["plant"].queryset = plant_queryset or Plant.objects.filter(is_active=True)
         self.fields["assigner"].queryset = user_queryset or User.objects.filter(is_active=True)
         self.fields["assignee"].queryset = user_queryset or User.objects.filter(is_active=True)
+        self.fields["reviewer"].queryset = user_queryset or User.objects.filter(is_active=True)
         # parent_assignment removed from the form — parent assignment delegation
         # is not used in the current workflow.
         self.fields["question_ids"].queryset = question_queryset or BRSRQuestion.objects.none()

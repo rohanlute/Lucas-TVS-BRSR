@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
@@ -19,13 +20,16 @@ from .views import (
     _get_section_principle,
     _company_scope_plants,
     _plant_assignees,
+    _workflow_assignees_for_stage,
     _pdf_questions_queryset,
     _question_metadata,
     _question_queryset,
     _question_status,
     _create_brsr_assignment,
     _workflow_entry_stage,
+    _workflow_stage_by_type,
     _resolve_brsr_assignee,
+    _resolve_brsr_reviewer,
     _resolve_brsr_workflow_template,
     _serialize_workflow_task,
     _workflow_counts,
@@ -266,9 +270,10 @@ class AssignmentOptionsAPIView(APIView):
         plant = get_object_or_404(_company_scope_plants(request.user), pk=plant_id)
         workflow_template = _resolve_brsr_workflow_template(request.user, plant)
         workflow_stage = _workflow_entry_stage(workflow_template) if workflow_template else None
+        review_stage = _workflow_stage_by_type(workflow_template, "review") if workflow_template else None
 
         if workflow_stage and workflow_stage.role_id:
-            assignees = _plant_assignees(plant, current_user=request.user).filter(role_id=workflow_stage.role_id)
+            assignees = _workflow_assignees_for_stage(plant, workflow_stage, current_user=request.user)
             try:
                 default_assignee = _resolve_brsr_assignee(plant, workflow_template, current_user=request.user)
             except ValueError:
@@ -279,13 +284,28 @@ class AssignmentOptionsAPIView(APIView):
             assignees = _plant_assignees(plant, current_user=request.user)
             default_assignee = _default_assignee_for_context(request.user, plant)
 
+        if review_stage and review_stage.role_id:
+            reviewers = _workflow_assignees_for_stage(plant, review_stage, current_user=request.user)
+            try:
+                default_reviewer = _resolve_brsr_reviewer(plant, workflow_template, current_user=request.user)
+            except ValueError:
+                default_reviewer = None
+            reviewer_role_codes = [review_stage.role.role_code] if review_stage.role_id else []
+        else:
+            reviewers = User.objects.none()
+            default_reviewer = None
+            reviewer_role_codes = []
+
         return Response(
             {
                 "plant": {"id": plant.id, "name": plant.name, "code": plant.code},
                 "scope": _get_assignment_scope(request.user),
                 "assignees": [_serialize_user(item) for item in assignees],
                 "default_assignee": _serialize_user(default_assignee) if default_assignee else None,
+                "reviewers": [_serialize_user(item) for item in reviewers],
+                "default_reviewer": _serialize_user(default_reviewer) if default_reviewer else None,
                 "target_role_codes": target_role_codes,
+                "reviewer_role_codes": reviewer_role_codes,
             }
         )
 
@@ -369,18 +389,31 @@ class QuestionSubmitAPIView(APIView):
             )
         response.answered_by_content_type = ContentType.objects.get_for_model(User)
         response.answered_by_object_id = request.user.id
-        response.submit(request.user)
-
         task = assignment.workflow_task
         next_stage = task.current_stage.next_stage() if task and task.current_stage_id else None
         next_assignee = None
         if next_stage:
             try:
-                next_assignee = _first_workflow_assignee_for_stage(assignment.plant, next_stage, current_user=request.user)
+                next_assignee = _first_workflow_assignee_for_stage(
+                    assignment.plant,
+                    next_stage,
+                    current_user=request.user,
+                    assignment=assignment,
+                )
             except ValueError as exc:
                 return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
-        WorkflowConfigurationEngine.approve(task, request.user, next_assignee=next_assignee)
-        response.refresh_from_db()
+        with transaction.atomic():
+            response.submit(request.user)
+            if next_stage and next_stage.stage_type == "review":
+                WorkflowConfigurationEngine.advance_to_next_stage(
+                    task,
+                    request.user,
+                    remark="Submitted for review.",
+                    next_assignee=next_assignee,
+                )
+            else:
+                WorkflowConfigurationEngine.approve(task, request.user, next_assignee=next_assignee)
+            response.refresh_from_db()
         return Response(
             {
                 "status": response.status,
@@ -406,7 +439,12 @@ class QuestionApproveAPIView(APIView):
         next_assignee = None
         if next_stage:
             try:
-                next_assignee = _first_workflow_assignee_for_stage(assignment.plant, next_stage, current_user=request.user)
+                next_assignee = _first_workflow_assignee_for_stage(
+                    assignment.plant,
+                    next_stage,
+                    current_user=request.user,
+                    assignment=assignment,
+                )
             except ValueError as exc:
                 return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
         WorkflowConfigurationEngine.approve(task, request.user, next_assignee=next_assignee)
@@ -464,12 +502,34 @@ class QuestionReviewCommentAPIView(APIView):
         task_info = _serialize_task_for_user(task, request.user)
         if not task_info or not task_info.get("can_act", False):
             return Response({"detail": "You don't have permission to update this review comment."}, status=status.HTTP_403_FORBIDDEN)
+        if not remark:
+            return Response({"detail": "Reviewer comment is required before moving this stage forward."}, status=status.HTTP_400_BAD_REQUEST)
 
         response = get_object_or_404(QuestionResponse, assignment=assignment, question=question)
         response.review_remark = remark
         response.reviewed_by = request.user
         response.reviewed_at = timezone.now()
-        response.save(update_fields=["review_remark", "reviewed_by", "reviewed_at", "updated_at"])
+        next_stage = task.current_stage.next_stage() if task.current_stage_id else None
+        next_assignee = None
+        if next_stage:
+            try:
+                next_assignee = _first_workflow_assignee_for_stage(
+                    assignment.plant,
+                    next_stage,
+                    current_user=request.user,
+                    assignment=assignment,
+                )
+            except ValueError as exc:
+                return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        with transaction.atomic():
+            response.save(update_fields=["review_remark", "reviewed_by", "reviewed_at", "updated_at"])
+            if next_stage:
+                WorkflowConfigurationEngine.advance_to_next_stage(
+                    task,
+                    request.user,
+                    remark=remark,
+                    next_assignee=next_assignee,
+                )
         response.refresh_from_db()
         return Response(
             {

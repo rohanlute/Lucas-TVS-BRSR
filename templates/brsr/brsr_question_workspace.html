@@ -822,6 +822,10 @@
             <select class="workspace-select" name="assignee" id="assignmentAssignee"></select>
           </div>
           <div>
+            <label class="tool-label">Reviewer</label>
+            <select class="workspace-select" name="reviewer" id="assignmentReviewer"></select>
+          </div>
+          <div>
             <label class="tool-label">Due Date</label>
             <input class="workspace-input" type="date" name="due_date" id="assignmentDueDate">
           </div>
@@ -1709,6 +1713,7 @@
     const assignerDisplay = document.getElementById('assignmentAssignerDisplay');
     const assignerHidden = document.getElementById('assignmentAssigner');
     const assigneeSelect = document.getElementById('assignmentAssignee');
+    const reviewerSelect = document.getElementById('assignmentReviewer');
 
     plantSelect.innerHTML = workspace.plants.map((plant) => `<option value="${plant.id}">${escapeHtml(plant.name)} (${escapeHtml(plant.code)})</option>`).join('');
     fySelect.innerHTML = workspace.financial_years.map((fy) => `<option value="${escapeHtml(fy.value)}">${escapeHtml(fy.label)}</option>`).join('');
@@ -1720,6 +1725,7 @@
     }
 
     assigneeSelect.innerHTML = '<option value="">Loading assignees...</option>';
+    reviewerSelect.innerHTML = '<option value="">Loading reviewers...</option>';
 
     if (workspace.plants.length) {
       plantSelect.value = workspace.plants[0].id.toString();
@@ -1733,10 +1739,12 @@
   async function loadAssignmentTargets() {
     const plantSelect = document.getElementById('assignmentPlant');
     const assigneeSelect = document.getElementById('assignmentAssignee');
+    const reviewerSelect = document.getElementById('assignmentReviewer');
     const plantId = plantSelect.value;
 
     if (!plantId) {
       assigneeSelect.innerHTML = '<option value="">Select Plant First</option>';
+      reviewerSelect.innerHTML = '<option value="">Select Plant First</option>';
       return;
     }
 
@@ -1749,6 +1757,8 @@
 
       const assignees = payload.assignees || [];
       const defaultAssignee = payload.default_assignee || null;
+      const reviewers = payload.reviewers || [];
+      const defaultReviewer = payload.default_reviewer || null;
 
       assigneeSelect.innerHTML = assignees.length
         ? ['<option value="">Select Assign To</option>']
@@ -1756,13 +1766,24 @@
             .join('')
         : '<option value="">No eligible assignee found</option>';
 
+      reviewerSelect.innerHTML = reviewers.length
+        ? ['<option value="">Select Reviewer</option>']
+            .concat(reviewers.map((item) => `<option value="${item.id}">${escapeHtml(item.name)}${item.department_name ? ` (${escapeHtml(item.department_name)})` : ''}</option>`))
+            .join('')
+        : '<option value="">No eligible reviewer found</option>';
+
       const matchedAssignee = defaultAssignee || assignees[0] || null;
       if (matchedAssignee) {
         assigneeSelect.value = matchedAssignee.id.toString();
       }
+      const matchedReviewer = defaultReviewer || reviewers[0] || null;
+      if (matchedReviewer) {
+        reviewerSelect.value = matchedReviewer.id.toString();
+      }
     } catch (error) {
       console.error('Error loading assignees:', error);
       assigneeSelect.innerHTML = '<option value="">Error loading assignees</option>';
+      reviewerSelect.innerHTML = '<option value="">Error loading reviewers</option>';
     }
   }
 
@@ -1818,6 +1839,7 @@
       priority: document.getElementById('assignmentPriority').value,
       assigner: document.getElementById('assignmentAssigner').value,
       assignee: document.getElementById('assignmentAssignee').value,
+      reviewer: document.getElementById('assignmentReviewer').value,
       due_date: document.getElementById('assignmentDueDate').value,
       notes: document.getElementById('assignmentNotes').value,
     };
