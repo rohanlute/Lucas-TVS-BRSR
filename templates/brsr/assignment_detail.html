@@ -386,24 +386,84 @@
     background:#fff;
   }
 
-  .response-json{
-    margin:0;
-    padding:14px;
-    background:#1e293b;
-    color:#e2e8f0;
-    border-radius:0 0 14px 14px;
-    font-family:'Cascadia Mono','Consolas','Courier New',monospace;
-    font-size:13px;
-    line-height:1.65;
-    white-space:pre-wrap;
-    word-break:break-word;
-    overflow:auto;
-  }
-
   .no-response{
     padding:14px;
     color:var(--muted);
     font-style:italic;
+  }
+
+  .data-table-container{
+    width:100%;
+    overflow-x:auto;
+    padding:0 14px 14px;
+  }
+
+  .data-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    overflow:hidden;
+  }
+
+  .data-table th{
+    background:#f8fafc;
+    color:var(--ink);
+    font-weight:700;
+    padding:10px 14px;
+    text-align:left;
+    border-bottom:2px solid var(--border);
+    white-space:nowrap;
+  }
+
+  .data-table td{
+    padding:10px 14px;
+    border-bottom:1px solid var(--border);
+    color:var(--ink-soft);
+  }
+
+  .data-table tr:last-child td{
+    border-bottom:none;
+  }
+
+  .data-table tr:hover td{
+    background:#f8faff;
+  }
+
+  .kv-container{
+    padding:10px 14px 14px;
+    display:grid;
+    gap:8px;
+  }
+
+  .kv-row{
+    display:grid;
+    grid-template-columns:200px 1fr;
+    gap:12px;
+    padding:6px 0;
+    border-bottom:1px solid var(--border);
+  }
+
+  .kv-row:last-child{
+    border-bottom:none;
+  }
+
+  .kv-key{
+    font-weight:700;
+    color:var(--ink-soft);
+  }
+
+  .kv-value{
+    color:var(--ink);
+    word-break:break-word;
+  }
+
+  .sub-section-title{
+    font-weight:700;
+    color:var(--brand);
+    padding:8px 0 4px;
+    font-size:14px;
   }
 
   .review-remark{
@@ -509,9 +569,9 @@
   }
 
   .btn-action.primary{
-    background:var(--ink);
+    background:var(--brand);
     color:#fff;
-    box-shadow:0 10px 18px rgba(28,44,73,.12);
+    box-shadow:0 10px 18px rgba(37,99,235,.2);
   }
 
   .btn-action.reject{
@@ -613,6 +673,20 @@
     .btn-action{
       width:100%;
     }
+
+    .data-table{
+      font-size:12px;
+    }
+
+    .data-table th,
+    .data-table td{
+      padding:8px 10px;
+    }
+
+    .kv-row{
+      grid-template-columns:1fr;
+      gap:4px;
+    }
   }
 </style>
 {% endblock %}
@@ -632,10 +706,10 @@
     <section class="hero-card">
       <div class="hero-card-inner">
         <div>
-          <h2 class="hero-title">Review the submitted BRSR responses without editing the source data.</h2>
+          <h2 class="hero-title">Review the submitted BRSR responses</h2>
           <p class="hero-copy">
-            This view mirrors the workspace presentation, but the fields are locked for approvers.
-            You can inspect each response, review the submitted JSON payloads, and approve or reject individual questions.
+            This view displays the submitted responses in read-only format. You can inspect each response
+            and approve or reject individual questions.
           </p>
           <div class="hero-pills">
             <span class="pill brand">{{ assignment.workflow_stage|default:"Review" }}</span>
@@ -651,22 +725,22 @@
           <div class="stat-card">
             <p class="stat-label">Approved</p>
             <p class="stat-value">{{ status_counts.approved }}</p>
-            <div class="stat-note">Responses already cleared in this assignment</div>
+            <div class="stat-note">Responses already cleared</div>
           </div>
           <div class="stat-card">
             <p class="stat-label">Rejected</p>
             <p class="stat-value">{{ status_counts.rejected }}</p>
-            <div class="stat-note">Responses sent back for revision</div>
+            <div class="stat-note">Sent back for revision</div>
           </div>
           <div class="stat-card">
             <p class="stat-label">Draft</p>
             <p class="stat-value">{{ status_counts.draft }}</p>
-            <div class="stat-note">Not yet reviewed or submitted</div>
+            <div class="stat-note">Not yet reviewed</div>
           </div>
           <div class="stat-card">
             <p class="stat-label">Total</p>
             <p class="stat-value">{{ question_count }}</p>
-            <div class="stat-note">All questions in the assignment</div>
+            <div class="stat-note">All questions</div>
           </div>
         </div>
       </div>
@@ -719,7 +793,6 @@
                       <div>
                         <h3 class="question-title">{{ question.title }}</h3>
                         <p class="question-meta">
-                          {{ question.question_type|title }}
                           {% if question.answered_by %}
                             &bull; Answered by {{ question.answered_by }}
                           {% endif %}
@@ -734,18 +807,24 @@
 
                   <div class="question-content">
                     <div class="response-box">
-  <span class="response-label">Response</span>
-  {% if question.has_response %}
-    {% if question.response_value %}
-      <div class="response-body response-value">{{ question.response_value|linebreaksbr }}</div>
-    {% endif %}
-    {% if question.response_json_pretty %}
-      <pre class="response-json">{{ question.response_json_pretty }}</pre>
-    {% endif %}
-  {% else %}
-    <div class="no-response">No response submitted yet</div>
-  {% endif %}
-</div>
+                      <span class="response-label">Response</span>
+                      {% if question.has_response %}
+                        {% if question.response_data_formatted %}
+                          <!-- Display as formatted data (tables or key-value) -->
+                          {{ question.response_data_formatted|safe }}
+                        {% elif question.response_value %}
+                          <div class="response-body response-value">{{ question.response_value|linebreaksbr }}</div>
+                        {% elif question.response_json %}
+                          <div class="response-body response-value">
+                            <pre style="margin:0;padding:0;background:transparent;font-family:monospace;font-size:13px;white-space:pre-wrap;word-break:break-word;">{{ question.response_json|json_script:"response-json"|safe }}</pre>
+                          </div>
+                        {% else %}
+                          <div class="no-response">No response data available</div>
+                        {% endif %}
+                      {% else %}
+                        <div class="no-response">No response submitted yet</div>
+                      {% endif %}
+                    </div>
 
                     {% if question.review_remark %}
                       <div class="review-remark">
@@ -797,11 +876,11 @@
                         </div>
                       </div>
                     {% elif question.status == 'approved' %}
-                      <div class="footer-note approved">This response is already approved.</div>
+                      <div class="footer-note approved">✅ This response is already approved.</div>
                     {% elif question.status == 'rejected' %}
-                      <div class="footer-note rejected">This response has been rejected and returned for correction.</div>
+                      <div class="footer-note rejected">❌ This response has been rejected and returned for correction.</div>
                     {% else %}
-                      <div class="footer-note locked">No approval action is available for this question in the current workflow stage.</div>
+                      <div class="footer-note locked">🔒 No approval action is available for this question in the current workflow stage.</div>
                     {% endif %}
                   </div>
                 </article>

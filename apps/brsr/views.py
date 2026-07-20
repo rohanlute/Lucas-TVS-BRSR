@@ -685,6 +685,60 @@ def _serialize_task_for_user(task, user):
         "can_act": can_act,
     }
 
+def _format_response_data(response_json):
+    """Format response JSON as HTML for display."""
+    if not response_json:
+        return ""
+    
+    html_parts = []
+    
+    # Check if it's the trainingAwareness structure
+    if isinstance(response_json, dict) and 'trainingAwareness' in response_json:
+        data = response_json['trainingAwareness']
+        if isinstance(data, list) and data and isinstance(data[0], dict):
+            headers = list(data[0].keys())
+            html_parts.append('<div class="data-table-container">')
+            html_parts.append('<table class="data-table">')
+            html_parts.append('<thead><tr><th>#</th>')
+            for header in headers:
+                html_parts.append(f'<th>{header}</th>')
+            html_parts.append('</tr></thead>')
+            html_parts.append('<tbody>')
+            for idx, row in enumerate(data, 1):
+                html_parts.append('<tr>')
+                html_parts.append(f'<td>{idx}</td>')
+                for header in headers:
+                    value = row.get(header, "—")
+                    html_parts.append(f'<td>{value}</td>')
+                html_parts.append('</tr>')
+            html_parts.append('</tbody>')
+            html_parts.append('</table>')
+            html_parts.append('</div>')
+            return "".join(html_parts)
+    
+    # Handle other JSON structures as key-value pairs
+    if isinstance(response_json, dict):
+        html_parts.append('<div class="kv-container">')
+        for key, value in response_json.items():
+            if isinstance(value, list):
+                html_parts.append(f'<div class="sub-section-title">{key}</div>')
+                for idx, item in enumerate(value, 1):
+                    if isinstance(item, dict):
+                        html_parts.append(f'<div class="kv-row"><span class="kv-key">Entry {idx}</span>')
+                        html_parts.append('<span class="kv-value">')
+                        for sub_key, sub_value in item.items():
+                            html_parts.append(f'{sub_key}: {sub_value}<br>')
+                        html_parts.append('</span></div>')
+                    else:
+                        html_parts.append(f'<div class="kv-row"><span class="kv-key">{idx}</span><span class="kv-value">{item}</span></div>')
+            else:
+                html_parts.append(f'<div class="kv-row"><span class="kv-key">{key}</span><span class="kv-value">{value}</span></div>')
+        html_parts.append('</div>')
+        return "".join(html_parts)
+    
+    # Fallback: return as string
+    return f'<div class="response-body response-value">{json.dumps(response_json, indent=2)}</div>'
+
 class BRSRDashboardView(LoginRequiredMixin, TemplateView):
     login_url = "accounts:login"
     template_name = "brsr/brsr_list.html"
@@ -885,6 +939,7 @@ class AssignmentDetailView(LoginRequiredMixin, TemplateView):
             response_value = ""
             response_json = {}
             response_json_pretty = ""
+            response_data_formatted = ""
             has_response = False
             answered_by = ""
             
@@ -899,6 +954,8 @@ class AssignmentDetailView(LoginRequiredMixin, TemplateView):
                     has_response = True
                     # Format JSON for display
                     response_json_pretty = self._format_json_for_display(response.response_json)
+                    # Format as HTML for display
+                    response_data_formatted = _format_response_data(response.response_json)
                 
                 # Get answered by
                 if response.answered_by:
@@ -915,6 +972,7 @@ class AssignmentDetailView(LoginRequiredMixin, TemplateView):
                 "response_value": response_value,
                 "response_json": response_json,
                 "response_json_pretty": response_json_pretty,
+                "response_data_formatted": response_data_formatted,
                 "has_response": has_response,
                 "answered_by": answered_by,
                 "review_remark": response.review_remark if response else "",
@@ -962,7 +1020,6 @@ class AssignmentDetailView(LoginRequiredMixin, TemplateView):
         if not json_data:
             return ""
         
-        import json
         try:
             # If it's already a dict/list, convert to formatted string
             if isinstance(json_data, (dict, list)):
@@ -978,60 +1035,11 @@ class AssignmentDetailView(LoginRequiredMixin, TemplateView):
         except Exception:
             return str(json_data)
 
-    def _format_json_as_table(self, json_data):
-        """Format JSON data as a table-like structure for better readability."""
-        if not json_data:
-            return ""
-        
-        if isinstance(json_data, dict):
-            lines = []
-            for key, value in json_data.items():
-                if isinstance(value, list) and value and isinstance(value[0], dict):
-                    # This is a list of objects - format as table
-                    lines.append(f"\n{key}:")
-                    headers = list(value[0].keys())
-                    # Create header row
-                    lines.append("  " + " | ".join(headers))
-                    lines.append("  " + "-" * 50)
-                    for item in value:
-                        row = []
-                        for header in headers:
-                            row.append(str(item.get(header, "")))
-                        lines.append("  " + " | ".join(row))
-                elif isinstance(value, list):
-                    lines.append(f"\n{key}:")
-                    for idx, item in enumerate(value, 1):
-                        if isinstance(item, dict):
-                            lines.append(f"  Entry {idx}:")
-                            for sub_key, sub_value in item.items():
-                                lines.append(f"    {sub_key}: {sub_value}")
-                        else:
-                            lines.append(f"  {idx}. {item}")
-                elif isinstance(value, dict):
-                    lines.append(f"\n{key}:")
-                    for sub_key, sub_value in value.items():
-                        lines.append(f"  {sub_key}: {sub_value}")
-                else:
-                    lines.append(f"{key}: {value}")
-            return "\n".join(lines)
-        
-        if isinstance(json_data, list):
-            lines = []
-            for idx, item in enumerate(json_data, 1):
-                if isinstance(item, dict):
-                    lines.append(f"Entry {idx}:")
-                    for key, value in item.items():
-                        lines.append(f"  {key}: {value}")
-                else:
-                    lines.append(f"{idx}. {item}")
-            return "\n".join(lines)
-        
-        return str(json_data)
-
     def _group_questions(self, questions):
         """Group questions by sub_section or section."""
         groups = {}
         for question in questions:
+            # Try to get sub_section from the question data
             key = question.get("sub_section", "Questions") or "Questions"
             if key not in groups:
                 groups[key] = {
@@ -1039,6 +1047,11 @@ class AssignmentDetailView(LoginRequiredMixin, TemplateView):
                     "questions": []
                 }
             groups[key]["questions"].append(question)
+        
+        # If there are no groups with a meaningful name, use a default
+        if not groups or (len(groups) == 1 and "Questions" in groups):
+            return [{"label": "Submitted Responses", "questions": questions}]
+        
         return list(groups.values())
 
     def _can_act_on_question(self, assignment, response, user):
