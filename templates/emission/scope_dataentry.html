@@ -828,6 +828,224 @@
         .scope-value { font-size: 1.6rem; }
         .scope-card .card-body { padding: 1.25rem; }
     }
+
+    /* ---- Selected state for scope cards ---- */
+    .scope-card {
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+
+    /* Default selected for Scope 1 (light green) */
+    .scope-1.selected {
+        border: 2px solid #b0ddc1;
+        background: #f0fdf4;  /* light green */
+        box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.15);
+    }
+
+    .scope-2.selected {
+        border: 2px solid #a0b3db;
+        background: #eff6ff;  /* light blue */
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+    }
+
+    .scope-3.selected {
+        border: 2px solid #d97706;
+        background: #fffbeb;  /* light amber */
+        box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.15);
+    }
+
+    /* Remove the hover transform when selected (optional) */
+    .scope-card.selected:hover {
+        transform: none;
+    }
+
+    /* ===== Modern Toast Notifications ===== */
+    .toast-container {
+        position: fixed;
+        top: 90px;
+        right: -60px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-width: 420px;
+        width: 100%;
+        pointer-events: none;
+    }
+
+    .toast {
+        pointer-events: auto;
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 0px 20px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border: 1px solid rgba(0, 0, 0, 0.04);
+        backdrop-filter: blur(4px);
+        animation: toastSlideIn 0.35s cubic-bezier(0.21, 1.02, 0.73, 1);
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Colored left accent bar */
+    .toast::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 5px;
+        border-radius: 16px 0 0 16px;
+    }
+
+    .toast.error::before {
+        background: linear-gradient(180deg, #f87171, #dc2626);
+    }
+    .toast.success::before {
+        background: linear-gradient(180deg, #6ee7b7, #16a34a);
+    }
+    .toast.warning::before {
+        background: linear-gradient(180deg, #fbbf24, #d97706);
+    }
+
+    /* Toast icon */
+    .toast .toast-icon {
+        font-size: 22px;
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.04);
+        font-weight: 700;
+        line-height: 1;
+        margin-top: 2px;
+    }
+
+    .toast.error .toast-icon {
+        color: #dc2626;
+        background: #fef2f2;
+    }
+    .toast.success .toast-icon {
+        color: #16a34a;
+        background: #f0fdf4;
+    }
+    .toast.warning .toast-icon {
+        color: #d97706;
+        background: #fffbeb;
+    }
+
+    /* Toast body text */
+    .toast .toast-body {
+        flex: 1;
+        font-size: 14px;
+        line-height: 1.5;
+        color: #1e293b;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+        padding-right: 4px;
+    }
+
+    /* Close button */
+    .toast .toast-close {
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        color: #94a3b8;
+        padding: 0 4px;
+        line-height: 1;
+        transition: color 0.15s ease;
+        flex-shrink: 0;
+        margin-left: auto;
+    }
+    .toast .toast-close:hover {
+        color: #475569;
+    }
+
+    /* ---- Auto-dismiss progress bar (optional) ---- */
+    .toast .toast-progress {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        background: rgba(0, 0, 0, 0.06);
+        width: 100%;
+        border-radius: 0 0 16px 16px;
+        overflow: hidden;
+    }
+
+    .toast .toast-progress-bar {
+        height: 100%;
+        width: 100%;
+        background: linear-gradient(90deg, #e2e8f0, #cbd5e1);
+        border-radius: 0 0 16px 16px;
+        animation: toastShrink 5s linear forwards;
+    }
+
+    .toast.success .toast-progress-bar {
+        background: linear-gradient(90deg, #86efac, #22c55e);
+    }
+    .toast.error .toast-progress-bar {
+        background: linear-gradient(90deg, #fca5a5, #ef4444);
+    }
+    .toast.warning .toast-progress-bar {
+        background: linear-gradient(90deg, #fcd34d, #f59e0b);
+    }
+
+    @keyframes toastShrink {
+        from { width: 100%; }
+        to { width: 0%; }
+    }
+
+    @keyframes toastSlideIn {
+        from {
+            opacity: 0;
+            transform: translateX(40px) scale(0.96);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+        }
+    }
+
+    @keyframes toastSlideOut {
+        from {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+        }
+        to {
+            opacity: 0;
+            transform: translateX(30px) scale(0.96);
+        }
+    }
+
+    /* When a toast is removed, we apply this class via JS */
+    .toast.removing {
+        animation: toastSlideOut 0.3s ease forwards;
+    }
+    .swal2-popup.swal2-toast {
+        width: 320px !important;
+        min-height: 60px !important;
+        padding: 12px 16px !important;
+        border-radius: 10px !important;
+        font-size: 14px !important;
+    }
+
+    .swal2-toast .swal2-title {
+        font-size: 15px !important;
+        margin: 0 !important;
+    }
+
+    .swal2-toast .swal2-icon {
+        margin: 0 10px 0 0 !important;
+        transform: scale(0.8);
+    }
 </style>
 {% endblock %}
 
@@ -849,7 +1067,7 @@
     <div class="row g-4 mb-4">
         <!-- Scope 1 -->
         <div class="col-xl-4 col-md-6">
-            <div class="card scope-card scope-1 stretch stretch-full">
+            <div class="card scope-card scope-1 selected stretch stretch-full" data-scope="S1">
                 <div class="card-body">
                     <div class="d-flex align-items-start justify-content-between">
                         <div>
@@ -876,7 +1094,7 @@
 
         <!-- Scope 2 -->
         <div class="col-xl-4 col-md-6">
-            <div class="card scope-card scope-2 stretch stretch-full">
+            <div class="card scope-card scope-2 stretch stretch-full" data-scope="S2">
                 <div class="card-body">
                     <div class="d-flex align-items-start justify-content-between">
                         <div>
@@ -903,7 +1121,7 @@
 
         <!-- Scope 3 -->
         <div class="col-xl-4 col-md-6">
-            <div class="card scope-card scope-3 stretch stretch-full">
+            <div class="card scope-card scope-3 stretch stretch-full" data-scope="S3">
                 <div class="card-body">
                     <div class="d-flex align-items-start justify-content-between">
                         <div>
@@ -936,8 +1154,8 @@
             <div class="sidebar-head">
                 <div class="brand-row">
                     <div>
-                        <h3>{{ scope.name }}</h3>
-                        <small>{{ scope.description }}</small>
+                        <h3 id="scopeTitle">{{ scope.name }}</h3>
+                        <small id="scopeDescription">{{ scope.description }}</small>
                     </div>
                 </div>
             </div>
@@ -946,6 +1164,7 @@
                 <!-- ===== EMISSION SOURCES (top) ===== -->
                 <div class="nav-group">
                     <div class="nav-group-head">EMISSION SOURCES</div>
+                    <div id="categoryList">
                     {% for category in categories %}
 
                         <div class="question-item category-item {% if forloop.first %}active{% endif %}"
@@ -955,6 +1174,7 @@
                         </div>
 
                     {% endfor %}
+                    </div>
                 </div>
 
                 <!-- ===== "What is Scope 1?" NOTE (bottom) ===== -->
@@ -1643,110 +1863,18 @@
                                 </div>
 
 
-                                <!-- Validation Summary -->
-                                <div class="card border-0 shadow-sm mb-4"
-                                    style="border-radius: var(--radius);">
-
-                                    <div class="card-header bg-transparent">
-
-                                        <h5
-                                            class="fw-bold mb-0"
-                                            style="color:var(--ink);"
-                                        >
-                                            Validation Summary
-                                        </h5>
-
-                                    </div>
-
-                                    <div class="card-body">
-
-                                        <div
-                                            id="validationList"
-                                            class="row g-3"
-                                        >
-
-                                            <div class="col-md-4">
-
-                                                <div
-                                                    class="p-3 rounded-3"
-                                                    style="background:#fef2f2;border:1px solid #fecaca;"
-                                                >
-
-                                                    <div
-                                                        class="fw-bold text-danger"
-                                                    >
-                                                        Company
-                                                    </div>
-
-                                                    <small class="text-muted">
-                                                        Not Selected
-                                                    </small>
-
-                                                </div>
-
-                                            </div>
-
-                                            <div class="col-md-4">
-
-                                                <div
-                                                    class="p-3 rounded-3"
-                                                    style="background:#fef2f2;border:1px solid #fecaca;"
-                                                >
-
-                                                    <div
-                                                        class="fw-bold text-danger"
-                                                    >
-                                                        Plant
-                                                    </div>
-
-                                                    <small class="text-muted">
-                                                        Not Selected
-                                                    </small>
-
-                                                </div>
-
-                                            </div>
-
-                                            <div class="col-md-4">
-
-                                                <div
-                                                    class="p-3 rounded-3"
-                                                    style="background:#fef2f2;border:1px solid #fecaca;"
-                                                >
-
-                                                    <div
-                                                        class="fw-bold text-danger"
-                                                    >
-                                                        Activities
-                                                    </div>
-
-                                                    <small class="text-muted">
-                                                        No Data
-                                                    </small>
-
-                                                </div>
-
-                                            </div>
-
-                                        </div>
-
-                                    </div>
-
-                                </div>
-
-
                                 <!-- Activity Summary -->
                                 <div class="card border-0 shadow-sm mb-4"
                                     style="border-radius: var(--radius);">
 
                                     <div class="card-header bg-transparent">
 
-                                        <h5
-                                            class="fw-bold mb-0"
-                                            style="color:var(--ink);"
-                                        >
+                                        <h5 class="fw-bold mb-0" style="color:var(--ink);">
                                             Activity-wise Emission Summary
                                         </h5>
+                                        <button id="viewTransactionsBtn" class="btn btn-brsr secondary btn-sm" style="padding: 6px 16px; font-size: 12px;">
+                                            <i class="feather-eye"></i> View
+                                        </button>
 
                                     </div>
 
@@ -1799,6 +1927,9 @@
                                 <div class="d-flex gap-3">
                                     <button class="btn btn-brsr success" style="padding: 10px 30px;">Submit for Review</button>
                                     <button id="saveDraft" class="btn btn-brsr secondary" style="padding: 10px 30px;">Save Draft</button>
+                                    <button id="assignTaskBtn" class="btn btn-brsr primary" style="padding: 10px 30px;">
+                                        <i class="feather-user-plus"></i> Assign Task
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1810,283 +1941,406 @@
 </div>
 
 <!-- ===== MODAL (static) ===== -->
-<div class="modal-backdrop-brsr" id="assignModal">
+<!-- ===== ASSIGN TASK MODAL ===== -->
+<div class="modal-backdrop-brsr" id="assignScopeModal">
     <div class="modal-card">
         <div class="modal-head">
-            <h3>Create Assignment</h3>
-            <button type="button" class="btn-brsr secondary">Close</button>
+            <h3><i class="feather-user-plus"></i> Assign Scope Data Entry</h3>
+            <button type="button" class="btn-brsr secondary" id="closeAssignScopeModal">Close</button>
         </div>
         <div class="modal-body">
-            <form>
-                <div class="assignment-grid">
-                    <div>
-                        <label class="tool-label">Plant</label>
-                        <select class="workspace-select">
-                            <option value="1">Mumbai Plant (MUM-01)</option>
-                            <option value="2" selected>Pune Plant (PUN-02)</option>
-                            <option value="3">Bangalore Plant (BLR-03)</option>
+            <form id="assignScopeForm">
+                <div class="row g-3">
+                    <!-- Assignee -->
+                    <div class="col-md-6">
+                        <label class="tool-label">Assign To</label>
+                        <select class="workspace-select" id="assigneeSelect" required>
+                            <option value="">Select User</option>
+                            <!-- Populate via JavaScript or from context -->
                         </select>
                     </div>
-                    <div>
-                        <label class="tool-label">Financial Year</label>
-                        <select class="workspace-select">
-                            <option value="2024-25">2024–25</option>
-                            <option value="2025-26" selected>2025–26</option>
-                            <option value="2026-27">2026–27</option>
-                        </select>
+                    <!-- Due Date -->
+                    <div class="col-md-6">
+                        <label class="tool-label">Due Date</label>
+                        <input class="workspace-input" type="date" id="dueDateInput" required>
                     </div>
-                    <div>
-                        <label class="tool-label">Submission Frequency</label>
-                        <select class="workspace-select">
-                            <option value="quarterly">Quarterly</option>
-                            <option value="half_yearly">Half Yearly</option>
-                            <option value="annual" selected>Annual</option>
-                        </select>
-                    </div>
-                    <div>
+                    <!-- Priority -->
+                    <div class="col-md-6">
                         <label class="tool-label">Priority</label>
-                        <select class="workspace-select">
+                        <select class="workspace-select" id="prioritySelect">
                             <option value="low">Low</option>
                             <option value="medium" selected>Medium</option>
                             <option value="high">High</option>
                             <option value="urgent">Urgent</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="tool-label">Assigner</label>
-                        <input class="workspace-input" type="text" value="Admin User (admin@company.com)" readonly>
-                    </div>
-                    <div>
-                        <label class="tool-label">Assign To</label>
-                        <select class="workspace-select">
-                            <option value="">Select Assign To</option>
-                            <option value="101" selected>Rahul Sharma (Plant Admin)</option>
-                            <option value="102">Priya Patel (Compliance)</option>
-                            <option value="103">Amit Kumar (Quality)</option>
+                    <!-- Frequency -->
+                    <div class="col-md-6">
+                        <label class="tool-label">Frequency</label>
+                        <select class="workspace-select" id="frequencySelect">   <!-- ← changed id -->
+                            <option value="monthly">Monthly</option>
+                            <option value="quarterly">Quarterly</option>
+                            <option value="half_yearly">Half Yearly</option>
+                            <option value="yearly">Yearly</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="tool-label">Due Date</label>
-                        <input class="workspace-input" type="date" value="2026-12-31">
-                    </div>
-                    <div class="full">
+                    <!-- Notes -->
+                    <div class="col-12">
                         <label class="tool-label">Notes</label>
-                        <textarea class="workspace-textarea" rows="3" placeholder="Assignment notes">Please complete all questions under Principle 2 before the deadline.</textarea>
+                        <textarea class="workspace-textarea" rows="3" id="assignNotes" placeholder="Add instructions for the assignee..."></textarea>
                     </div>
-                    <div class="full">
-                        <label class="tool-label">Selected Questions</label>
-                        <ul class="selected-list">
-                            <li>1.1. Corporate identity number <small>(q101)</small></li>
-                            <li>1.3. Year of incorporation <small>(q103)</small></li>
-                            <li>2.1. Product safety certification <small>(q201)</small></li>
-                        </ul>
+                    <!-- Current scope summary (readonly) -->
+                    <div class="col-12">
+                        <label class="tool-label">Assigned Scope</label>
+                        <div class="p-3 bg-light rounded-3" style="border:1px solid var(--border);">
+                            <strong>Scope:</strong> <span id="assignScopeName">{{ scope.name }}</span><br>
+                            <strong>Company:</strong> <span id="assignCompanyName">-</span><br>
+                            <strong>Plant:</strong> <span id="assignPlantName">-</span><br>
+                            <strong>Financial Year:</strong> <span id="assignFY">-</span><br>
+                            <strong>Financial Month:</strong> <span id="assignMonth">-</span><br>
+                            <strong>Category:</strong> <span id="assignCategory">-</span>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn-brsr secondary">Cancel</button>
-                    <button type="submit" class="btn-brsr primary">Create Assignment</button>
+                    <button type="button" class="btn-brsr secondary" id="cancelAssignScope">Cancel</button>
+                    <button type="submit" class="btn-brsr primary">Assign Task</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+<!-- ===== VIEW TRANSACTIONS MODAL ===== -->
+<div class="modal-backdrop-brsr" id="viewTransactionsModal">
+    <div class="modal-card" style="max-width: 900px;">
+        <div class="modal-head">
+            <h3><i class="feather-list"></i> All Transactions</h3>
+            <button type="button" class="btn-brsr secondary" id="closeViewTransactionsModal">Close</button>
+        </div>
+        <div class="modal-body" style="max-height: 70vh; overflow-y: auto; padding: 0;">
+
+            <!-- Summary by Source -->
+            <div style="padding: 12px 16px; border-bottom: 1px solid var(--border);">
+                <h6 class="fw-bold mb-2" style="color: var(--ink);">Summary by Source</h6>
+                <div class="table-container" style="border: none; border-radius: 0; margin-bottom: 0;">
+                    <table class="data-table" style="min-width: 500px; width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Source</th>
+                                <th>Total Quantity</th>
+                                <th>Unit</th>
+                                <th>Total Emission (tCO₂e)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="viewSummaryBody">
+                            <tr><td colspan="4" class="text-center text-muted">No data</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Detailed Transactions -->
+            <div style="padding: 12px 16px;">
+                <h6 class="fw-bold mb-2" style="color: var(--ink);">Detailed Transactions</h6>
+                <div class="table-container" style="border: none; border-radius: 0;">
+                    <table class="data-table" style="min-width: 700px; width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Activity</th>
+                                <th>Source</th>
+                                <th>Quantity</th>
+                                <th>Unit</th>
+                                <th>Emission Factor</th>
+                                <th>Total Emission</th>
+                            </tr>
+                        </thead>
+                        <tbody id="viewDetailBody">
+                            <tr><td colspan="6" class="text-center text-muted">No data</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+        <div class="modal-actions" style="padding: 12px 20px; border-top: 1px solid var(--border);">
+            <button type="button" class="btn-brsr secondary" id="closeViewTransactionsModalFooter">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast container -->
+<div id="toastContainer" class="toast-container"></div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 
+// Scope card selection
+document.querySelectorAll(".scope-card").forEach(function(card){
+
+    card.addEventListener("click", function(){
+
+        document
+            .querySelectorAll(".scope-card")
+            .forEach(c => c.classList.remove("selected"));
+
+        this.classList.add("selected");
+
+        const scope = this.dataset.scope;
+
+        fetch(`/emission/api/scope-categories/?scope=${scope}`)
+
+        .then(res => res.json())
+
+        .then(data => {
+
+            if(!data.success)
+                return;
+
+            // Scope Name
+            document.getElementById("scopeTitle").innerHTML =
+                data.scope;
+
+            // Scope Description
+            document.getElementById("scopeDescription").innerHTML =
+                data.description;
+
+            // Categories
+            let html = "";
+
+            data.categories.forEach(function(category){
+
+                html += `
+                    <div
+                        class="question-item category-item"
+                        data-category-id="${category.id}">
+
+                        <span class="question-dot todo"></span>
+
+                        ${category.name}
+
+                    </div>
+                `;
+
+            });
+
+            document.getElementById("categoryList").innerHTML = html;
+
+            // Select the first category automatically
+            const firstCategory = document.querySelector("#categoryList .category-item");
+
+            if (firstCategory) {
+
+                firstCategory.classList.add("active");
+
+                // Trigger click automatically
+                firstCategory.click();
+
+            }
+
+        });
+
+    });
+
+});
 
 
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("click", function (e) {
 
-    const categories = document.querySelectorAll(".category-item");
+    const category = e.target.closest(".category-item");
 
-    categories.forEach(function (category) {
+    if (!category) {
+        return;
+    }
 
-        category.addEventListener("click", function () {
+    // -----------------------------
+    // Active Category
+    // -----------------------------
+    document.querySelectorAll(".category-item").forEach(function (item) {
+        item.classList.remove("active");
+    });
 
-            // ---- 1. Update active state ----
-            categories.forEach(c => c.classList.remove('active'));
-            this.classList.add('active');
+    category.classList.add("active");
 
-            // ---- 2. Fetch activities for this category ----
-            const categoryId = this.dataset.categoryId;
+    // -----------------------------
+    // Category ID
+    // -----------------------------
+    const categoryId = category.dataset.categoryId;
 
-            fetch(`/emission/api/category-activities/?category_id=${categoryId}`)
-                .then(response => response.json())
-                .then(data => {
-                    const tbody = document.getElementById("activityTableBody");
-                    tbody.innerHTML = "";
+    // -----------------------------
+    // Fetch Activities
+    // -----------------------------
+    fetch(`/emission/api/category-activities/?category_id=${categoryId}`)
+        .then(response => response.json())
+        .then(data => {
 
-                    data.activities.forEach(function(activity){
+            const tbody = document.getElementById("activityTableBody");
+            tbody.innerHTML = "";
 
-                        if(activity.sources.length === 0){
+            data.activities.forEach(function (activity) {
 
-                            tbody.innerHTML += `
+                if (activity.sources.length === 0) {
 
-                                <tr
-                                    data-activity="${activity.id}"
-                                    data-unit="${activity.base_unit_id}"
-                                    data-source=""
+                    tbody.innerHTML += `
+
+                        <tr
+                            data-activity="${activity.id}"
+                            data-unit="${activity.base_unit_id}"
+                            data-source=""
+                        >
+
+                            <td>${activity.name}</td>
+
+                            <td>
+                                <span class="text-danger">
+                                    No Source Available
+                                </span>
+                            </td>
+
+                            <td>
+                                <input
+                                    type="number"
+                                    class="workspace-input quantity"
+                                    placeholder="0"
                                 >
+                            </td>
 
-                                    <td>${activity.name}</td>
+                            <td>${activity.unit}</td>
 
-                                    <td>
-                                        <span class="text-danger">
-                                            No Source Available
-                                        </span>
-                                    </td>
+                            <td>
+                                <input
+                                    class="workspace-input factor"
+                                    readonly
+                                >
+                            </td>
 
-                                    <td>
-                                        <input
-                                            type="number"
-                                            class="workspace-input quantity"
-                                            placeholder="0"
-                                        >
-                                    </td>
+                            <td>
+                                <input
+                                    class="workspace-input total"
+                                    readonly
+                                >
+                            </td>
 
-                                    <td>${activity.unit}</td>
+                            <td></td>
 
-                                    <td>
-                                        <input
-                                            class="workspace-input factor"
-                                            readonly
-                                        >
-                                    </td>
+                        </tr>
 
-                                    <td>
-                                        <input
-                                            class="workspace-input total"
-                                            readonly
-                                        >
-                                    </td>
+                    `;
 
-                                    <td></td>
+                } else {
 
-                                </tr>
+                    activity.sources.forEach(function (source) {
 
-                            `;
+                        tbody.innerHTML += `
 
-                        }
+                            <tr
+                                data-activity="${activity.id}"
+                                data-source="${source.id}"
+                                data-unit="${activity.base_unit_id}"
+                            >
 
-                        else{
+                                <td>${activity.name}</td>
 
-                            activity.sources.forEach(function(source){
+                                <td>${source.name}</td>
 
-                                tbody.innerHTML += `
+                                <td>
 
-                                    <tr
-                                        data-activity="${activity.id}"
-                                        data-source="${source.id}"
-                                        data-unit="${activity.base_unit_id}"
+                                    <input
+                                        type="number"
+                                        class="workspace-input quantity"
+                                        placeholder="0"
                                     >
 
-                                        <td>${activity.name}</td>
+                                </td>
 
-                                        <td>
-                                            ${source.name}
-                                        </td>
+                                <td>${activity.unit}</td>
 
-                                        <td>
+                                <td>
 
-                                            <input
-                                                type="number"
-                                                class="workspace-input quantity"
-                                                placeholder="0"
-                                            >
+                                    <input
+                                        class="workspace-input factor"
+                                        readonly
+                                    >
 
-                                        </td>
+                                </td>
 
-                                        <td>${activity.unit}</td>
+                                <td>
 
-                                        <td>
+                                    <input
+                                        class="workspace-input total"
+                                        readonly
+                                    >
 
-                                            <input
-                                                class="workspace-input factor"
-                                                readonly
-                                            >
+                                </td>
 
-                                        </td>
+                                <td>
 
-                                        <td>
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-outline-danger remove-row"
+                                        disabled
+                                    >
+                                        <i class="feather-trash"></i>
+                                    </button>
 
-                                            <input
-                                                class="workspace-input total"
-                                                readonly
-                                            >
+                                </td>
 
-                                        </td>
+                            </tr>
 
-                                        <td>
+                        `;
 
-                                            <button
-                                                type="button"
-                                                class="btn btn-sm btn-outline-danger remove-row"
-                                                disabled
-                                            >
-                                                <i class="feather-trash"></i>
-                                            </button>
+                    });
 
-                                        </td>
+                }
 
-                                    </tr>
+            });
 
-                                `;
+            // -----------------------------
+            // Load Emission Factors
+            // -----------------------------
+            document.querySelectorAll("#activityTableBody tr").forEach(function (row) {
 
-                            });
+                const activityId = row.dataset.activity;
+
+                fetch(`/emission/api/activity-factor/?activity_id=${activityId}`)
+                    .then(response => response.json())
+                    .then(result => {
+
+                        if (result.success) {
+
+                            row.querySelector(".factor").value = result.factor;
 
                         }
 
                     });
 
-                    // =========================================
-                    // Fetch factor & calculate total
-                    // =========================================
-                    document.querySelectorAll("#activityTableBody tr").forEach(function(row){
+                row.querySelector(".quantity").addEventListener("input", function () {
 
-                        const activityId = row.dataset.activity;
+                    const qty = parseFloat(this.value) || 0;
 
-                        // Load factor immediately
-                        fetch(`/emission/api/activity-factor/?activity_id=${activityId}`)
-                            .then(response => response.json())
-                            .then(result => {
+                    const factor = parseFloat(
+                        row.querySelector(".factor").value
+                    ) || 0;
 
-                                if(result.success){
+                    row.querySelector(".total").value =
+                        (qty * factor).toFixed(4);
 
-                                    row.querySelector(".factor").value = result.factor;
+                    updateReviewSummary();
 
-                                }
-
-                            });
-
-                        // Calculate total on quantity change
-                        row.querySelector(".quantity").addEventListener("input", function(){
-
-                            const qty = parseFloat(this.value) || 0;
-
-                            const factor = parseFloat(
-                                row.querySelector(".factor").value
-                            ) || 0;
-
-                            row.querySelector(".total").value =
-                                (qty * factor).toFixed(4);
-
-                        });
-
-                    });
-
-
-
-                    // After populating, reload any saved transactions
-                    loadTransactions();
-                    setTimeout(function () {
-                        updateReviewSummary();
-                    }, 300);
                 });
+
+            });
+
+            loadTransactions();
+
+            setTimeout(function () {
+                updateReviewSummary();
+            }, 300);
+
         });
-    });
+
 });
 
 // ==============================================
@@ -2125,6 +2379,9 @@ const csrftoken = getCookie("csrftoken");
 // Save Draft
 // ==============================================
 document.getElementById("saveDraft").addEventListener("click", function () {
+    console.log("Save Draft button clicked");
+    const container = document.getElementById('toastContainer');
+    console.log("container:", container); 
 
     // -----------------------------
     // Context Information
@@ -2138,22 +2395,19 @@ document.getElementById("saveDraft").addEventListener("click", function () {
     // Validation
     // -----------------------------
     if (!company) {
-        alert("Please select Company.");
+        showToast("Please select a Company.", "error");
         return;
     }
-
     if (!plant) {
-        alert("Please select Plant.");
+        showToast("Please select a Plant.", "error");
         return;
     }
-
     if (!financialYear) {
-        alert("Please select Financial Year.");
+        showToast("Please select a Financial Year.", "error");
         return;
     }
-
     if (!financialMonth) {
-        alert("Please select Financial Month.");
+        showToast("Please select a Financial Month.", "error");
         return;
     }
 
@@ -2164,9 +2418,7 @@ document.getElementById("saveDraft").addEventListener("click", function () {
 
     document.querySelectorAll("#activityTableBody tr").forEach(function (row) {
 
-        const quantity = parseFloat(
-            row.querySelector(".quantity").value
-        ) || 0;
+        const quantity = parseFloat(row.querySelector(".quantity").value) || 0;
 
         // Ignore empty rows
         if (quantity <= 0) {
@@ -2190,29 +2442,10 @@ document.getElementById("saveDraft").addEventListener("click", function () {
         });
 
     });
-    console.log(rows);
-
-    // -----------------------------
-    // Check if any activity entered
-    // -----------------------------
     if (rows.length === 0) {
-
-        alert("Please enter at least one quantity.");
-
+        showToast("Please enter at least one quantity.", "warning");
         return;
     }
-
-    console.log("Saving Data...");
-
-    console.log({
-
-        company: company,
-        plant: plant,
-        financial_year: financialYear,
-        financial_month: financialMonth,
-        rows: rows,
-
-    });
 
     // -----------------------------
     // Save to Django
@@ -2248,29 +2481,15 @@ document.getElementById("saveDraft").addEventListener("click", function () {
     .then(response => response.json())
 
     .then(result => {
-
         if (result.success) {
-
-            alert(result.message);
-
-            console.log(result);
-
+            showToast(result.message, "success");
         } else {
-
-            alert(result.message);
-
-            console.log(result);
-
+            showToast(result.message || "Something went wrong.", "error");
         }
-
     })
-
     .catch(error => {
-
         console.error(error);
-
-        alert("Something went wrong while saving.");
-
+        showToast("Network error. Please try again.", "error");
     });
 
 });
@@ -2637,6 +2856,312 @@ if(tbody.innerHTML === ""){
 }
 
 }
+
+
+
+// =============================================
+// MODERN TOAST SYSTEM (with debug overrides)
+// =============================================
+function showToast(message, type = 'error') {
+    const container = document.getElementById('toastContainer');
+    if (!container) {
+        console.error('Toast container not found!');
+        return;
+    }
+
+    // ---- Force container to be visible ----
+    container.style.display = 'flex';
+    container.style.visibility = 'visible';
+    container.style.opacity = '1';
+
+    const icons = {
+        error: '✖',
+        success: '✔',
+        warning: '⚠'
+    };
+    const icon = icons[type] || icons.error;
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <span class="toast-icon ${type}">${icon}</span>
+        <span class="toast-body">${message}</span>
+        <button class="toast-close">&times;</button>
+        <div class="toast-progress"><div class="toast-progress-bar"></div></div>
+    `;
+
+    // ---- Force toast to be visible (override any CSS) ----
+    toast.style.display = 'flex';
+    toast.style.visibility = 'visible';
+    toast.style.opacity = '1';
+    toast.style.position = 'relative';  // or keep default
+    toast.style.zIndex = '99999';
+    // (Optional) add a red border for debugging – remove after it works
+    // toast.style.border = '3px solid red';
+
+    container.appendChild(toast);
+
+    const timer = setTimeout(() => {
+        removeToast(toast);
+    }, 5000);
+
+    toast.querySelector('.toast-close').addEventListener('click', function() {
+        clearTimeout(timer);
+        removeToast(toast);
+    });
+}
+
+function removeToast(toast) {
+    toast.classList.add('removing');
+    setTimeout(() => {
+        if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 300);
+}
+
+
+// =============================================
+// ASSIGN TASK MODAL
+// =============================================
+const assignBtn = document.getElementById('assignTaskBtn');
+const assignModal = document.getElementById('assignScopeModal');
+const closeAssignBtn = document.getElementById('closeAssignScopeModal');
+const cancelAssignBtn = document.getElementById('cancelAssignScope');
+const assignForm = document.getElementById('assignScopeForm');
+
+// ---------- Open modal ----------
+assignBtn.addEventListener('click', function() {
+    // Populate summary fields with current selections
+    const company = document.getElementById('company');
+    const plant = document.getElementById('plant');
+    const fy = document.getElementById('financialYear');
+    const month = document.getElementById('financialMonth');
+    const activeCategory = document.querySelector('.category-item.active');
+
+    document.getElementById('assignCompanyName').textContent =
+        company.options[company.selectedIndex]?.text || '-';
+    document.getElementById('assignPlantName').textContent =
+        plant.options[plant.selectedIndex]?.text || '-';
+    document.getElementById('assignFY').textContent =
+        fy.options[fy.selectedIndex]?.text || '-';
+    document.getElementById('assignMonth').textContent =
+        month.options[month.selectedIndex]?.text || '-';
+    document.getElementById('assignCategory').textContent =
+        activeCategory ? activeCategory.innerText.trim() : '-';
+
+    // Populate assignee dropdown (replace with real data from your backend)
+    const select = document.getElementById('assigneeSelect');
+    select.innerHTML = '<option value="">Select User</option>';
+
+    // Example static users – replace with fetch from your users API
+    const users = [
+        { id: 1, name: 'Rahul Sharma' },
+        { id: 2, name: 'Priya Patel' },
+        { id: 3, name: 'Amit Kumar' }
+    ];
+    users.forEach(user => {
+        const opt = document.createElement('option');
+        opt.value = user.id;
+        opt.textContent = user.name;
+        select.appendChild(opt);
+    });
+
+    // Set default due date to +7 days
+    const today = new Date();
+    const dueDate = new Date(today);
+    dueDate.setDate(today.getDate() + 7);
+    document.getElementById('dueDateInput').value = dueDate.toISOString().split('T')[0];
+
+    // Show modal
+    assignModal.classList.add('active');
+});
+
+// ---------- Close modal ----------
+function closeAssignModal() {
+    assignModal.classList.remove('active');
+}
+closeAssignBtn.addEventListener('click', closeAssignModal);
+cancelAssignBtn.addEventListener('click', closeAssignModal);
+assignModal.addEventListener('click', function(e) {
+    if (e.target === this) closeAssignModal();
+});
+
+// ---------- Form submission ----------
+assignForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const assignee = document.getElementById('assigneeSelect').value;
+    const dueDate = document.getElementById('dueDateInput').value;
+    const priority = document.getElementById('prioritySelect').value;
+    const frequency = document.getElementById('frequencySelect').value;   // now unique
+    const notes = document.getElementById('assignNotes').value;
+
+    // Validations
+    if (!assignee) {
+        showToast('Please select an assignee.', 'error');
+        return;
+    }
+    if (!dueDate) {
+        showToast('Please select a due date.', 'error');
+        return;
+    }
+
+    // Build payload
+    const payload = {
+        scope_id: '{{ scope.id }}',
+        company: document.getElementById('company').value,
+        plant: document.getElementById('plant').value,
+        financial_year: document.getElementById('financialYear').value,
+        financial_month: document.getElementById('financialMonth').value,
+        category: document.querySelector('.category-item.active')?.innerText.trim() || '',
+        assignee: assignee,
+        due_date: dueDate,
+        priority: priority,
+        frequency: frequency,      // added
+        notes: notes
+    };
+
+    // Send to backend
+    fetch('/emission/api/assign-scope/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrftoken,
+        },
+        body: JSON.stringify(payload),
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showToast('Task assigned successfully!', 'success');
+            closeAssignModal();
+            // Optionally reset the form
+            assignForm.reset();
+        } else {
+            showToast(result.message || 'Assignment failed.', 'error');
+        }
+    })
+    .catch(error => {
+        console.error(error);
+        showToast('Network error. Please try again.', 'error');
+    });
+});
+
+
+
+// =============================================
+// VIEW TRANSACTIONS MODAL
+// =============================================
+const viewBtn = document.getElementById('viewTransactionsBtn');
+const viewModal = document.getElementById('viewTransactionsModal');
+const viewCloseBtns = document.querySelectorAll('#closeViewTransactionsModal, #closeViewTransactionsModalFooter');
+const viewBody = document.getElementById('viewTransactionsBody');
+
+// Function to populate the modal table with current rows
+// =============================================
+// POPULATE VIEW TRANSACTIONS MODAL (NEW)
+// =============================================
+function populateViewModal() {
+    const rows = document.querySelectorAll('#activityTableBody tr');
+    const summaryBody = document.getElementById('viewSummaryBody');
+    const detailBody = document.getElementById('viewDetailBody');
+
+    // --- 1. Build detail rows and collect summary data ---
+    let detailHtml = '';
+    const sourceMap = {}; // key: source name, value: { totalQty, totalEmission, unit }
+
+    if (rows.length === 0) {
+        summaryBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">No data entered yet.</td></tr>`;
+        detailBody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">No data entered yet.</td></tr>`;
+        return;
+    }
+
+    rows.forEach(row => {
+        const activity = row.cells[0]?.innerText.trim() || '';
+        const source = row.cells[1]?.innerText.trim() || '';
+        const quantityInput = row.querySelector('.quantity');
+        const unit = row.cells[3]?.innerText.trim() || '';
+        const factorInput = row.querySelector('.factor');
+        const totalInput = row.querySelector('.total');
+
+        const quantity = parseFloat(quantityInput?.value) || 0;
+        const factor = factorInput?.value || '0';
+        const total = parseFloat(totalInput?.value) || 0;
+
+        // Detail row (show all rows)
+        detailHtml += `
+            <tr>
+                <td>${activity}</td>
+                <td>${source}</td>
+                <td>${quantity}</td>
+                <td>${unit}</td>
+                <td>${factor}</td>
+                <td>${total.toFixed(4)}</td>
+            </tr>
+        `;
+
+        // Aggregate by source
+        if (source) {
+            if (!sourceMap[source]) {
+                sourceMap[source] = { totalQty: 0, totalEmission: 0, unit: unit };
+            }
+            sourceMap[source].totalQty += quantity;
+            sourceMap[source].totalEmission += total;
+        }
+    });
+
+    // --- 2. Build summary rows ---
+    let summaryHtml = '';
+    const sourceKeys = Object.keys(sourceMap);
+    if (sourceKeys.length === 0) {
+        summaryHtml = `<tr><td colspan="4" class="text-center text-muted">No data with quantity > 0.</td></tr>`;
+    } else {
+        sourceKeys.forEach(src => {
+            const data = sourceMap[src];
+            summaryHtml += `
+                <tr>
+                    <td><strong>${src}</strong></td>
+                    <td>${data.totalQty.toFixed(2)}</td>
+                    <td>${data.unit}</td>
+                    <td>${data.totalEmission.toFixed(4)}</td>
+                </tr>
+            `;
+        });
+        // Grand total row
+        let grandQty = 0, grandEm = 0;
+        sourceKeys.forEach(src => {
+            grandQty += sourceMap[src].totalQty;
+            grandEm += sourceMap[src].totalEmission;
+        });
+        summaryHtml += `
+            <tr style="font-weight: 700; background: #f8fafc;">
+                <td><strong>GRAND TOTAL</strong></td>
+                <td>${grandQty.toFixed(2)}</td>
+                <td></td>
+                <td>${grandEm.toFixed(4)}</td>
+            </tr>
+        `;
+    }
+
+    // --- 3. Insert into DOM ---
+    summaryBody.innerHTML = summaryHtml;
+    detailBody.innerHTML = detailHtml;
+}
+
+
+// Open modal
+viewBtn.addEventListener('click', function() {
+    populateViewModal();
+    viewModal.classList.add('active');
+});
+
+// Close modal functions
+function closeViewModal() {
+    viewModal.classList.remove('active');
+}
+viewCloseBtns.forEach(btn => btn.addEventListener('click', closeViewModal));
+viewModal.addEventListener('click', function(e) {
+    if (e.target === this) closeViewModal();
+});
 </script>
 
 {% endblock %}

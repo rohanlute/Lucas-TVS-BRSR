@@ -20,6 +20,7 @@ from .views import (
     ActivityFactorView,
     SaveEmissionTransactionsView,
     LoadEmissionTransactionsView,
+    ScopeCategoriesView,
 )
 
 app_name = "emission"
@@ -35,6 +36,7 @@ urlpatterns = [
     path("api/activity-factor/",ActivityFactorView.as_view(),name="activity-factor"),
     path("api/save-transactions/",SaveEmissionTransactionsView.as_view(),name="save-transactions"),
     path("api/load-transactions/",LoadEmissionTransactionsView.as_view(),name="load-transactions"),
+    path("api/scope-categories/",ScopeCategoriesView.as_view(),name="scope_categories"),
     
     
     # ===== TASK LIST =====
