@@ -1,0 +1,1972 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Initiatives{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Add to your extra_css section */
+.modal {
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+}
+
+.modal-backdrop {
+    display: none !important;
+}
+
+body.modal-open {
+    overflow: hidden;
+}
+    .initiative-list-page .page-header-right-items-wrapper {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+    
+    /* Stats Bar */
+    .stats-bar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 12px;
+        background: #ffffff;
+        padding: 16px 20px;
+        border-radius: 12px;
+        border: 1px solid #edf0f5;
+        margin-bottom: 20px;
+    }
+    
+    .stats-bar .stat-item {
+        text-align: center;
+    }
+    
+    .stats-bar .stat-item .label {
+        display: block;
+        font-size: 11px;
+        color: #8a94a6;
+        text-transform: uppercase;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    
+    .stats-bar .stat-item .value {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a2332;
+    }
+    
+    .stats-bar .stat-item .value.primary { color: #3454d1; }
+    .stats-bar .stat-item .value.success { color: #28a745; }
+    .stats-bar .stat-item .value.warning { color: #ff9f43; }
+    .stats-bar .stat-item .value.danger { color: #dc3545; }
+    
+    /* Filter Section */
+    .filter-section {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        background: #ffffff;
+        padding: 16px 20px;
+        border-radius: 12px;
+        border: 1px solid #edf0f5;
+        margin-bottom: 20px;
+    }
+    
+    .filter-section select {
+        padding: 8px 14px;
+        border: 1px solid #e4e9f0;
+        border-radius: 8px;
+        font-size: 13px;
+        color: #1a2332;
+        background: #ffffff;
+        min-width: 140px;
+        font-family: inherit;
+        transition: all 0.2s ease;
+    }
+    
+    .filter-section select:focus {
+        border-color: #3454d1;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(52, 84, 209, 0.08);
+    }
+    
+    .filter-section .clear-filters {
+        padding: 8px 16px;
+        background: #f0f3f8;
+        color: #6b7a8f;
+        border: none;
+        border-radius: 8px;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: inherit;
+        text-decoration: none;
+    }
+    
+    .filter-section .clear-filters:hover {
+        background: #e4e9f0;
+        color: #1a2332;
+    }
+    
+    /* Material Topic Container */
+    .material-topic-container {
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #edf0f5;
+        margin-bottom: 24px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        transition: all 0.3s ease;
+    }
+    
+    .material-topic-container:hover {
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+    
+    .material-topic-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 24px;
+        background: linear-gradient(135deg, #f8faff 0%, #f0f4ff 100%);
+        border-bottom: 1px solid #edf0f5;
+    }
+    
+    .material-topic-header .topic-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .material-topic-header .topic-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 16px;
+    }
+    
+    .material-topic-header .topic-icon.energy { background: #3454d1; }
+    .material-topic-header .topic-icon.emissions { background: #28a745; }
+    .material-topic-header .topic-icon.procurement { background: #ff9f43; }
+    .material-topic-header .topic-icon.transport { background: #6c5ce7; }
+    .material-topic-header .topic-icon.waste { background: #e17055; }
+    .material-topic-header .topic-icon.social { background: #00b894; }
+    .material-topic-header .topic-icon.environment { background: #00b894; }
+    .material-topic-header .topic-icon.default { background: #6b7a8f; }
+    
+    .material-topic-header .topic-name {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1a2332;
+    }
+    
+    .material-topic-header .topic-stats {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        font-size: 13px;
+        color: #6b7a8f;
+    }
+    
+    .material-topic-header .topic-stats span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .material-topic-header .topic-stats .count {
+        font-weight: 600;
+        color: #1a2332;
+    }
+    
+    .material-topic-body {
+        padding: 16px 24px 24px 24px;
+    }
+    
+    /* Goal Section inside Topic */
+    .goal-section {
+        margin-bottom: 24px;
+    }
+    
+    .goal-section:last-child {
+        margin-bottom: 0;
+    }
+    
+    .goal-section .goal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 16px;
+        background: #f8faff;
+        border-radius: 10px;
+        border-left: 4px solid #3454d1;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .goal-section .goal-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .goal-section .goal-name {
+        font-size: 15px;
+        font-weight: 600;
+        color: #1a2332;
+    }
+    
+    .goal-section .goal-badge {
+        font-size: 11px;
+        background: #e3f2fd;
+        color: #0d47a1;
+        padding: 2px 12px;
+        border-radius: 12px;
+        font-weight: 500;
+    }
+    
+    .goal-section .goal-metrics {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    .goal-section .goal-metrics .metric-tag {
+        font-size: 11px;
+        background: #e8edff;
+        color: #3454d1;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .goal-section .goal-metrics .metric-tag i {
+        font-size: 10px;
+    }
+    
+    /* ===== ENHANCED INITIATIVE CARDS ===== */
+    .initiative-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 20px;
+    }
+    
+    .initiative-card {
+        background: #ffffff;
+        border-radius: 14px;
+        border: 1px solid #edf0f5;
+        padding: 0;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        cursor: pointer;
+    }
+    
+    .initiative-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #3454d1, #6c8cff);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: 5;
+    }
+    
+    .initiative-card:hover::before {
+        opacity: 1;
+    }
+    
+    .initiative-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(52, 84, 209, 0.12);
+        border-color: #3454d1;
+    }
+    
+    /* Click overlay */
+    .initiative-card .card-click-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 2;
+        cursor: pointer;
+    }
+    
+    /* Ensure content is above click overlay */
+    .initiative-card .card-top,
+    .initiative-card .card-body,
+    .initiative-card .card-footer {
+        position: relative;
+        z-index: 3;
+    }
+    
+    /* Card actions above click overlay */
+    .initiative-card .card-actions {
+        position: relative;
+        z-index: 10;
+    }
+    
+    .initiative-card .card-actions .action-btn {
+        position: relative;
+        z-index: 11;
+    }
+    
+    /* Card Top Section with Status */
+    .initiative-card .card-top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        padding: 16px 20px 12px 20px;
+        gap: 12px;
+    }
+    
+    .initiative-card .card-title-wrapper {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .initiative-card .card-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #1a2332;
+        margin: 0;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    
+    .initiative-card .card-title .title-icon {
+        color: #3454d1;
+        margin-right: 6px;
+        font-size: 13px;
+    }
+    
+    .initiative-card .card-status {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 20px;
+        white-space: nowrap;
+        flex-shrink: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .initiative-card .card-status .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    
+    .initiative-card .card-status.planning {
+        background: #fff3e0;
+        color: #e65100;
+    }
+    .initiative-card .card-status.planning .status-dot { background: #e65100; }
+    
+    .initiative-card .card-status.in-progress {
+        background: #e3f2fd;
+        color: #0d47a1;
+    }
+    .initiative-card .card-status.in-progress .status-dot { background: #0d47a1; }
+    
+    .initiative-card .card-status.completed {
+        background: #e8f5e9;
+        color: #1b5e20;
+    }
+    .initiative-card .card-status.completed .status-dot { background: #1b5e20; }
+    
+    .initiative-card .card-status.on-hold {
+        background: #fce4ec;
+        color: #b71c1c;
+    }
+    .initiative-card .card-status.on-hold .status-dot { background: #b71c1c; }
+    
+    /* Card Body */
+    .initiative-card .card-body {
+        padding: 0 20px 12px 20px;
+    }
+    
+    /* KPI Badge */
+    .initiative-card .card-kpi {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #e8edff;
+        padding: 3px 12px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 500;
+        color: #3454d1;
+        margin-bottom: 8px;
+    }
+    
+    .initiative-card .card-kpi i {
+        font-size: 10px;
+    }
+    
+    .initiative-card .card-kpi .kpi-unit {
+        font-weight: 400;
+        color: #6b7a8f;
+        font-size: 10px;
+    }
+    
+    /* Description */
+    .initiative-card .card-description {
+        font-size: 13px;
+        color: #6b7a8f;
+        line-height: 1.5;
+        margin-bottom: 10px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        min-height: 36px;
+    }
+    
+    /* Progress Section */
+    .initiative-card .progress-section {
+        margin-bottom: 10px;
+    }
+    
+    .initiative-card .progress-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: 11px;
+        color: #8a94a6;
+        margin-bottom: 4px;
+    }
+    
+    .initiative-card .progress-label .progress-value {
+        font-weight: 600;
+        color: #1a2332;
+    }
+    
+    .initiative-card .progress-bar-container {
+        width: 100%;
+        height: 4px;
+        background: #f0f3f8;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .initiative-card .progress-bar-container .progress-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .initiative-card .progress-bar-container .progress-fill.green {
+        background: linear-gradient(90deg, #28a745, #34ce57);
+    }
+    
+    .initiative-card .progress-bar-container .progress-fill.orange {
+        background: linear-gradient(90deg, #ff9f43, #ffc107);
+    }
+    
+    .initiative-card .progress-bar-container .progress-fill.red {
+        background: linear-gradient(90deg, #dc3545, #ff6b6b);
+    }
+    
+    /* Card Footer / Meta */
+    .initiative-card .card-footer {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 20px;
+        background: #fafbff;
+        border-top: 1px solid #f0f3f8;
+        gap: 8px;
+    }
+    
+    .initiative-card .card-meta {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        font-size: 11px;
+        color: #8a94a6;
+    }
+    
+    .initiative-card .card-meta span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .initiative-card .card-meta i {
+        font-size: 12px;
+        color: #aab3c5;
+    }
+    
+    .initiative-card .card-meta .meta-highlight {
+        color: #3454d1;
+        font-weight: 500;
+    }
+    
+    /* Card Actions */
+    .initiative-card .card-actions {
+        display: flex;
+        gap: 2px;
+    }
+    
+    .initiative-card .card-actions .action-btn {
+        width: 28px;
+        height: 28px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        border: none;
+        background: transparent;
+        color: #8a94a6;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 13px;
+    }
+    
+    .initiative-card .card-actions .action-btn:hover {
+        background: #f0f3f8;
+        color: #1a2332;
+    }
+    
+    .initiative-card .card-actions .action-btn.danger:hover {
+        background: #fce4ec;
+        color: #dc3545;
+    }
+    
+    /* Priority Badge */
+    .initiative-card .priority-badge {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 10px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .initiative-card .priority-badge.high {
+        background: #fce4ec;
+        color: #c62828;
+    }
+    
+    .initiative-card .priority-badge.medium {
+        background: #fff3e0;
+        color: #e65100;
+    }
+    
+    .initiative-card .priority-badge.low {
+        background: #e8f5e9;
+        color: #1b5e20;
+    }
+    
+    /* No Initiatives */
+    .no-initiatives {
+        text-align: center;
+        padding: 60px 20px;
+        color: #8a94a6;
+        background: #ffffff;
+        border-radius: 16px;
+        border: 1px solid #edf0f5;
+    }
+    
+    .no-initiatives i {
+        font-size: 48px;
+        color: #d0d8e4;
+        margin-bottom: 16px;
+        display: block;
+    }
+    
+    .no-initiatives h4 {
+        color: #1a2332;
+        margin-bottom: 8px;
+    }
+    
+    /* Pagination */
+    .pagination-container {
+        margin-top: 24px;
+        display: flex;
+        justify-content: center;
+    }
+    
+    .pagination {
+        display: flex;
+        gap: 4px;
+        list-style: none;
+        padding: 0;
+    }
+    
+    .pagination li {
+        display: inline;
+    }
+    
+    .pagination li a,
+    .pagination li span {
+        display: inline-block;
+        padding: 8px 14px;
+        border: 1px solid #e4e9f0;
+        border-radius: 8px;
+        color: #1a2332;
+        text-decoration: none;
+        font-size: 13px;
+        transition: all 0.2s ease;
+    }
+    
+    .pagination li a:hover {
+        background: #f0f3f8;
+        border-color: #dde4f5;
+    }
+    
+    .pagination li.active span {
+        background: #3454d1;
+        color: #ffffff;
+        border-color: #3454d1;
+    }
+    
+    .pagination li.disabled span {
+        color: #9aa5b5;
+        cursor: not-allowed;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .page-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+        }
+        
+        .page-header-right {
+            margin-left: 0 !important;
+            width: 100%;
+        }
+        
+        .page-header-right-items {
+            width: 100%;
+        }
+        
+        .page-header-right-items-wrapper {
+            width: 100%;
+            flex-direction: column;
+        }
+        
+        .page-header-right-items-wrapper form {
+            width: 100%;
+        }
+        
+        .page-header-right-items-wrapper .input-group {
+            width: 100% !important;
+        }
+        
+        .page-header-right-items-wrapper .btn {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .stats-bar {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .filter-section {
+            flex-direction: column;
+        }
+        
+        .filter-section select {
+            width: 100%;
+            min-width: unset;
+        }
+        
+        .material-topic-header {
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .material-topic-header .topic-stats {
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .initiative-cards-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .goal-header {
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .goal-section .goal-metrics {
+            margin-top: 4px;
+        }
+        
+        .initiative-card .card-footer {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+        }
+        
+        .initiative-card .card-actions {
+            justify-content: flex-end;
+        }
+    }
+    
+    /* Modal Styles */
+    .modal {
+        background: rgba(0, 0, 0, 0.5);
+    }
+    
+    .modal-backdrop {
+        display: none !important;
+    }
+    
+    .modal-dialog {
+        margin: 1.75rem auto;
+        max-width: 800px;
+    }
+    
+    .modal-content {
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        background: #ffffff;
+    }
+    
+    .modal-header {
+        border-bottom: 1px solid #f0f3f8;
+        padding: 20px 24px;
+    }
+    
+    .modal-header .modal-title {
+        font-weight: 600;
+        color: #1a2332;
+    }
+    
+    .modal-body {
+        padding: 24px;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+    
+    .modal-footer {
+        border-top: 1px solid #f0f3f8;
+        padding: 16px 24px;
+    }
+    
+    .modal .form-group {
+        margin-bottom: 18px;
+    }
+    
+    .modal .form-group label {
+        font-weight: 600;
+        color: #1a2332;
+        margin-bottom: 6px;
+        display: block;
+        font-size: 13px;
+    }
+    
+    .modal .form-group label .required {
+        color: #dc3545;
+    }
+    
+    .modal .form-control {
+        border: 1px solid #e4e9f0;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 14px;
+        color: #1a2332;
+        transition: all 0.2s ease;
+        width: 100%;
+        font-family: inherit;
+        background: #ffffff;
+    }
+    
+    .modal .form-control:focus {
+        border-color: #3454d1;
+        box-shadow: 0 0 0 3px rgba(52, 84, 209, 0.08);
+        outline: none;
+    }
+    
+    .modal .form-control.is-invalid {
+        border-color: #dc3545;
+    }
+    
+    .modal select.form-control {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7a8f' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        padding-right: 36px;
+        cursor: pointer;
+    }
+    
+    .modal .help-text {
+        font-size: 12px;
+        color: #8a94a6;
+        margin-top: 4px;
+    }
+    
+    .modal .no-metrics-warning {
+        background: #fff3e0;
+        border: 1px solid #ffe0b2;
+        padding: 12px 16px;
+        border-radius: 10px;
+        color: #e65100;
+        margin-bottom: 16px;
+    }
+    
+    .modal .alert {
+        padding: 12px 16px;
+        border-radius: 10px;
+        margin-bottom: 16px;
+    }
+    
+    .modal .alert-danger {
+        background: #fce4ec;
+        color: #c62828;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .modal .alert-success {
+        background: #e8f5e9;
+        color: #2e7d32;
+        border: 1px solid #c8e6c9;
+    }
+    
+    @media (max-width: 768px) {
+        .modal-dialog {
+            margin: 10px;
+        }
+        
+        .modal-body {
+            max-height: 60vh;
+        }
+    }
+    .goal-card {
+        background: #ffffff;
+        border-radius: 14px;
+        border: 1px solid #edf0f5;
+        padding: 20px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    
+    .goal-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #3454d1, #6c8cff);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .goal-card:hover::before {
+        opacity: 1;
+    }
+    
+    .goal-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(52, 84, 209, 0.12);
+        border-color: #3454d1;
+    }
+    
+    .goal-card .goal-card-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 12px;
+    }
+    
+    .goal-card .goal-card-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1a2332;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .goal-card .goal-card-title .goal-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: #e8edff;
+        color: #3454d1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+    
+    .goal-card .goal-card-badge {
+        font-size: 12px;
+        padding: 4px 14px;
+        border-radius: 20px;
+        background: #e3f2fd;
+        color: #0d47a1;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+    
+    .goal-card .goal-card-body {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+        margin: 12px 0;
+    }
+    
+    .goal-card .goal-stat {
+        background: #f8faff;
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: 1px solid #f0f3f8;
+    }
+    
+    .goal-card .goal-stat .stat-label {
+        font-size: 10px;
+        color: #8a94a6;
+        text-transform: uppercase;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        margin-bottom: 2px;
+    }
+    
+    .goal-card .goal-stat .stat-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1a2332;
+    }
+    
+    .goal-card .goal-stat .stat-value .stat-unit {
+        font-size: 12px;
+        font-weight: 400;
+        color: #8a94a6;
+    }
+    
+    .goal-card .goal-card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 12px;
+        border-top: 1px solid #f0f3f8;
+        margin-top: 4px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .goal-card .goal-metrics {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    .goal-card .goal-metrics .metric-tag {
+        font-size: 11px;
+        background: #e8edff;
+        color: #3454d1;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .goal-card .goal-actions {
+        display: flex;
+        gap: 4px;
+    }
+    
+    .goal-card .goal-actions .action-btn {
+        padding: 4px 12px;
+        border: none;
+        border-radius: 6px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: #f0f3f8;
+        color: #6b7a8f;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .goal-card .goal-actions .action-btn:hover {
+        background: #e4e9f0;
+        color: #1a2332;
+    }
+    
+    .goal-card .goal-actions .action-btn.primary {
+        background: #3454d1;
+        color: #fff;
+    }
+    
+    .goal-card .goal-actions .action-btn.primary:hover {
+        background: #2a45b8;
+    }
+    
+    .goal-card .goal-actions .action-btn.danger {
+        background: #fce4ec;
+        color: #dc3545;
+    }
+    
+    .goal-card .goal-actions .action-btn.danger:hover {
+        background: #f8d7da;
+        color: #c62828;
+    }
+    
+    /* Goal Cards Grid */
+    .goal-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 20px;
+    }
+    
+    /* Initiative count badge on topic header */
+    .topic-init-count {
+        background: #3454d1;
+        color: #fff;
+        padding: 2px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        margin-left: 8px;
+    }
+    
+    /* Toast Container */
+    #toastContainer {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-width: 400px;
+        width: 100%;
+    }
+    
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .goal-cards-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .goal-card .goal-card-body {
+            grid-template-columns: 1fr 1fr;
+        }
+        
+        #toastContainer {
+            top: 10px;
+            right: 10px;
+            left: 10px;
+            max-width: none;
+            width: auto;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Initiatives</h5>
+        </div>
+
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="#">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'goals:dashboard' %}">Goals</a></li>
+            <li class="breadcrumb-item active">Initiatives</li>
+        </ul>
+    </div>
+
+    <div class="page-header-right ms-auto">
+        <div class="page-header-right-items">
+            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                <form method="GET" class="d-flex">
+                    <div class="input-group" style="width:280px;">
+                        <span class="input-group-text">
+                            <i class="feather-search"></i>
+                        </span>
+                        <input type="text"
+                               class="form-control"
+                               name="search"
+                               placeholder="Search Initiative..."
+                               value="{{ search_query }}">
+                        {% if selected_topic %}
+                        <input type="hidden" name="topic" value="{{ selected_topic }}">
+                        {% endif %}
+                        {% if selected_goal %}
+                        <input type="hidden" name="goal" value="{{ selected_goal }}">
+                        {% endif %}
+                    </div>
+                </form>
+
+                <button class="btn btn-primary" onclick="openModalWithTopic('{{ selected_topic|default:'' }}', '{{ selected_goal|default:'' }}')">
+                    <i class="feather-plus me-2"></i>
+                    <span>Add Initiative</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="main-content initiative-list-page">
+
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %} alert-dismissible fade show">
+            {{ message }}
+            <button class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Stats Bar -->
+    <div class="stats-bar">
+        <div class="stat-item">
+            <span class="label">Total</span>
+            <span class="value primary">{{ total_initiatives|default:0 }}</span>
+        </div>
+        <div class="stat-item">
+            <span class="label">In Progress</span>
+            <span class="value warning">{{ in_progress_count|default:0 }}</span>
+        </div>
+        <div class="stat-item">
+            <span class="label">Completed</span>
+            <span class="value success">{{ completed_count|default:0 }}</span>
+        </div>
+        <div class="stat-item">
+            <span class="label">Planning</span>
+            <span class="value">{{ planning_count|default:0 }}</span>
+        </div>
+    </div>
+
+   <!-- Filter Section -->
+<div class="filter-section">
+    <form method="GET" class="d-flex gap-2 flex-wrap align-items-center w-100">
+        {% if selected_topic %}
+        <input type="hidden" name="topic" value="{{ selected_topic }}">
+        {% endif %}
+        {% if selected_goal %}
+        <input type="hidden" name="goal" value="{{ selected_goal }}">
+        {% endif %}
+        {% if selected_kpi %}
+        <input type="hidden" name="kpi" value="{{ selected_kpi }}">
+        {% endif %}
+        {% if search_query %}
+        <input type="hidden" name="search" value="{{ search_query }}">
+        {% endif %}
+        
+        <!-- Show active KPI filter -->
+        {% if selected_kpi %}
+        <div style="background: #e8edff; padding: 6px 14px; border-radius: 20px; color: #3454d1; font-size: 13px; display: inline-flex; align-items: center; gap: 8px;">
+            <i class="fas fa-filter"></i>
+            KPI: <strong>{{ selected_kpi }}</strong>
+            <a href="{% url 'goals:initiative_list' %}{% if selected_topic %}?topic={{ selected_topic|urlencode }}{% if selected_goal %}&goal={{ selected_goal|urlencode }}{% endif %}{% endif %}" style="color: #dc3545; text-decoration: none;">
+                <i class="fas fa-times-circle"></i>
+            </a>
+        </div>
+        {% endif %}
+        
+        <select name="plant" onchange="this.form.submit()">
+            <option value="">All Plants</option>
+            {% for plant in all_plants %}
+                <option value="{{ plant }}" {% if plant == selected_plant %}selected{% endif %}>
+                    {{ plant }}
+                </option>
+            {% endfor %}
+        </select>
+        
+        <select name="status" onchange="this.form.submit()">
+            <option value="">All Status</option>
+            {% for status in all_statuses %}
+                <option value="{{ status }}" {% if status == selected_status %}selected{% endif %}>
+                    {{ status }}
+                </option>
+            {% endfor %}
+        </select>
+        
+        {% if selected_plant or selected_status or search_query or selected_kpi %}
+           <a href="#" onclick="clearAllFilters(); return false;" class="clear-filters">
+    <i class="feather-x"></i> Clear Filters
+</a>
+        {% endif %}
+    </form>
+</div>
+
+    <!-- Initiatives Grouped by Material Topic -->
+    {% if grouped_initiatives %}
+        {% for group in grouped_initiatives %}
+        <div class="material-topic-container">
+            <!-- Material Topic Header -->
+            <div class="material-topic-header">
+                <div class="topic-left">
+                    <div class="topic-icon {{ group.icon_class|default:'default' }}">
+                        <i class="fas {{ group.icon }}"></i>
+                    </div>
+                    <span class="topic-name">{{ group.material_topic }}</span>
+                    <span class="topic-init-count">{{ group.total_initiatives }} initiatives</span>
+                </div>
+                <div class="topic-stats">
+                    <span>
+                        <i class="fas fa-flag"></i>
+                        KPIs: <span class="count">{{ group.kpis|length }}</span>
+                    </span>
+                    <span>
+                        <i class="fas fa-tasks"></i>
+                        Total: <span class="count">{{ group.total_initiatives }}</span>
+                    </span>
+                </div>
+            </div>
+            
+            <!-- KPIs as Cards -->
+            <div class="material-topic-body">
+                <div class="goal-cards-grid">
+                    {% for kpi_data in group.kpis %}  
+                    <div class="goal-card" data-topic="{{ group.material_topic }}" data-kpi="{{ kpi_data.kpi_name }}" onclick="viewGoalDetail('{{ group.material_topic }}', '{{ kpi_data.kpi_name }}', event)">
+                        <!-- KPI Card Header -->
+                        <div class="goal-card-header">
+                            <div>
+                                <h5 class="goal-card-title">
+                                    <span class="goal-icon">
+                                        <i class="fas fa-chart-bar"></i>
+                                    </span>
+                                    {{ kpi_data.kpi_name }}
+                                </h5>
+                                <!-- Show Goal name below KPI -->
+                                <div style="font-size: 13px; color: #6b7a8f; margin-top: 4px; padding-left: 42px;">
+                                    <i class="fas fa-bullseye" style="color: #3454d1; margin-right: 6px;"></i>
+                                    Goal: <strong style="color: #1a2332;">{{ kpi_data.goal_name|default:'' }}</strong>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span class="goal-card-badge">
+                                    <i class="fas fa-tasks me-1"></i>
+                                    {{ kpi_data.initiatives|length }} initiatives
+                                </span>
+                                <!-- Delete Card Button -->
+                                <button class="action-btn danger" onclick="event.stopPropagation(); deleteKpiCard('{{ group.material_topic }}', '{{ kpi_data.kpi_name }}', event)" 
+                                        title="Delete all initiatives in this KPI">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- KPI Stats (showing initiative metrics) -->
+                        <div class="goal-card-body">
+                            {% with initiatives=kpi_data.initiatives %}
+                                {% if initiatives %}
+                                    {% with first_init=initiatives|first %}
+                                        <div class="goal-stat">
+                                            <div class="stat-label">KPI</div>
+                                            <div class="stat-value">{{ first_init.kpi }} <span class="stat-unit">{{ first_init.kpi_unit|default:'' }}</span></div>
+                                        </div>
+                                    {% endwith %}
+                                    
+                                    <!-- Show initiative stats -->
+                                    <div class="goal-stat">
+                                        <div class="stat-label">In Progress</div>
+                                        <div class="stat-value">
+                                            {% with count=0 %}
+                                                {% for init in initiatives %}
+                                                    {% if init.status == 'In Progress' %}
+                                                        {% with count=count|add:1 %}{% endwith %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                                {{ count }}
+                                            {% endwith %}
+                                        </div>
+                                    </div>
+                                    <div class="goal-stat">
+                                        <div class="stat-label">Completed</div>
+                                        <div class="stat-value">
+                                            {% with count=0 %}
+                                                {% for init in initiatives %}
+                                                    {% if init.status == 'Completed' %}
+                                                        {% with count=count|add:1 %}{% endwith %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                                {{ count }}
+                                            {% endwith %}
+                                        </div>
+                                    </div>
+                                    <div class="goal-stat">
+                                        <div class="stat-label">Planning</div>
+                                        <div class="stat-value">
+                                            {% with count=0 %}
+                                                {% for init in initiatives %}
+                                                    {% if init.status == 'Planning' %}
+                                                        {% with count=count|add:1 %}{% endwith %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                                {{ count }}
+                                            {% endwith %}
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="goal-stat" style="grid-column: 1 / -1;">
+                                        <div class="stat-label">Status</div>
+                                        <div class="stat-value" style="font-size: 14px; color: #8a94a6;">No initiatives yet</div>
+                                    </div>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                        
+                        <!-- KPI Footer with Actions -->
+                        <div class="goal-card-footer">
+                            <div class="goal-actions">
+                                <button class="action-btn primary" onclick="event.stopPropagation(); openModalWithTopic('{{ group.material_topic }}', '{{ kpi_data.kpi_name }}', event)">
+                                    <i class="feather-plus"></i> Add Initiative
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: #8a94a6; font-size: 14px;">
+                        <i class="feather-inbox" style="font-size: 36px; display: block; margin-bottom: 12px;"></i>
+                        No KPIs found for this topic.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <!-- No Initiatives -->
+        <div class="no-initiatives">
+            <i class="feather-inbox"></i>
+            <h4>No Initiatives Found</h4>
+            <p>Click the "Add Initiative" button to create your first initiative.</p>
+        </div>
+    {% endif %}
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="pagination-container">
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+            <li>
+                <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_plant %}&plant={{ selected_plant }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_topic %}&topic={{ selected_topic|urlencode }}{% endif %}{% if selected_goal %}&goal={{ selected_goal|urlencode }}{% endif %}">
+                    Previous
+                </a>
+            </li>
+            {% else %}
+            <li class="disabled"><span>Previous</span></li>
+            {% endif %}
+
+            <li class="active">
+                <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            </li>
+
+            {% if page_obj.has_next %}
+            <li>
+                <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if selected_plant %}&plant={{ selected_plant }}{% endif %}{% if selected_status %}&status={{ selected_status }}{% endif %}{% if selected_topic %}&topic={{ selected_topic|urlencode }}{% endif %}{% if selected_goal %}&goal={{ selected_goal|urlencode }}{% endif %}">
+                    Next
+                </a>
+            </li>
+            {% else %}
+            <li class="disabled"><span>Next</span></li>
+            {% endif %}
+        </ul>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- Add Initiative Modal -->
+<div id="addInitiativeModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; overflow-y: auto;">
+    <div class="modal-dialog modal-lg" style="position: relative; width: auto; margin: 1.75rem auto; pointer-events: none; max-width: 800px;">
+        <div class="modal-content" style="position: relative; display: flex; flex-direction: column; width: 100%; pointer-events: auto; background: #fff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid #f0f3f8;">
+                <h5 class="modal-title" style="font-weight: 600; color: #1a2332; margin: 0;">
+                    <i class="fas fa-plus-circle me-2" style="color: #3454d1;"></i>
+                    Add New Initiative
+                </h5>
+                <button type="button" class="btn-close" onclick="closeModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #8a94a6;">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 24px; max-height: 70vh; overflow-y: auto; flex: 1 1 auto;">
+                <div id="modalMessages"></div>
+                
+                {% if not has_metrics %}
+                <div class="no-metrics-warning" style="background: #fff3e0; border: 1px solid #ffe0b2; padding: 12px 16px; border-radius: 10px; color: #e65100; margin-bottom: 16px;">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    No metrics found for the selected goal. Please select a goal with associated metrics.
+                </div>
+                {% endif %}
+                <form method="POST" id="initiativeForm" action="{% url 'goals:initiative_create' %}">
+                {% csrf_token %}
+                <input type="hidden" name="selected_topic" value="{{ selected_topic }}">
+                <input type="hidden" name="selected_goal" value="{{ selected_goal }}">
+                    
+                    <div class="form-group" style="margin-bottom: 18px;">
+                        <label for="initiative_name_modal" style="font-weight: 600; color: #1a2332; margin-bottom: 6px; display: block; font-size: 13px;">
+                            Initiative <span class="required" style="color: #dc3545;">*</span>
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="initiative_name_modal" 
+                               name="initiative_name" 
+                               required
+                               placeholder="Enter initiative name"
+                               style="border: 1px solid #e4e9f0; border-radius: 10px; padding: 10px 14px; font-size: 14px; color: #1a2332; transition: all 0.2s ease; width: 100%; font-family: inherit;">
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 18px;">
+                        <label for="kpi_modal" style="font-weight: 600; color: #1a2332; margin-bottom: 6px; display: block; font-size: 13px;">
+                            Associated KPI / Metrics <span class="required" style="color: #dc3545;">*</span>
+                        </label>
+                        <select class="form-control" id="kpi_modal" name="kpi" required {% if not goal_metrics %}disabled{% endif %} style="border: 1px solid #e4e9f0; border-radius: 10px; padding: 10px 14px; font-size: 14px; color: #1a2332; transition: all 0.2s ease; width: 100%; font-family: inherit; appearance: none; background-image: url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 12 12\'%3E%3Cpath fill=\'%236b7a8f\' d=\'M6 8L1 3h10z\'/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; cursor: pointer;">
+                            <option value="">Select KPI</option>
+                            {% for metric in goal_metrics %}
+                                <option value="{{ metric.name }}" data-unit="{{ metric.unit }}" data-topic="{{ metric.topic }}" data-goal="{{ metric.goal }}">
+                                    {{ metric.name }} ({{ metric.unit }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="help-text" style="font-size: 12px; color: #8a94a6; margin-top: 4px;">
+                            <i class="fas fa-info-circle me-1"></i>
+                            KPIs are fetched specifically from the selected goal: <strong>{{ selected_goal }}</strong>
+                        </div>
+                        <input type="hidden" id="kpi_unit_modal" name="kpi_unit" value="">
+                    </div>
+                    
+                    <!-- REMOVED PLANT NAME FIELD -->
+                    
+                    <div class="form-group" style="margin-bottom: 18px;">
+                        <label for="assigned_to_modal" style="font-weight: 600; color: #1a2332; margin-bottom: 6px; display: block; font-size: 13px;">
+                            Assigned To <span class="required" style="color: #dc3545;">*</span>
+                        </label>
+                        <select class="form-control" id="assigned_to_modal" name="assigned_to" required style="border: 1px solid #e4e9f0; border-radius: 10px; padding: 10px 14px; font-size: 14px; color: #1a2332; transition: all 0.2s ease; width: 100%; font-family: inherit; appearance: none; background-image: url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 12 12\'%3E%3Cpath fill=\'%236b7a8f\' d=\'M6 8L1 3h10z\'/%3E%3C/svg%3E'); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; cursor: pointer;">
+                            <option value="">Select Assignee</option>
+                            <option value="Rohan Lute">Rohan Lute</option>
+                            <option value="Divya Sharma">Divya Sharma</option>
+                            <option value="Samarth Bhagane">Samarth Bhagane</option>
+                        </select>
+                        <div class="help-text" style="font-size: 12px; color: #8a94a6; margin-top: 4px;">Select the person responsible for this initiative</div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 18px;">
+                        <label for="due_date_modal" style="font-weight: 600; color: #1a2332; margin-bottom: 6px; display: block; font-size: 13px;">
+                            Due Date <span class="required" style="color: #dc3545;">*</span>
+                        </label>
+                        <input type="date" 
+                               class="form-control" 
+                               id="due_date_modal" 
+                               name="due_date" 
+                               required
+                               style="border: 1px solid #e4e9f0; border-radius: 10px; padding: 10px 14px; font-size: 14px; color: #1a2332; transition: all 0.2s ease; width: 100%; font-family: inherit;">
+                    </div>
+                    
+                    <div class="form-group" style="margin-bottom: 18px;">
+                        <label for="description_modal" style="font-weight: 600; color: #1a2332; margin-bottom: 6px; display: block; font-size: 13px;">Description</label>
+                        <textarea class="form-control" 
+                                  id="description_modal" 
+                                  name="description" 
+                                  placeholder="Enter initiative description"
+                                  rows="3"
+                                  style="border: 1px solid #e4e9f0; border-radius: 10px; padding: 10px 14px; font-size: 14px; color: #1a2332; transition: all 0.2s ease; width: 100%; font-family: inherit;"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer" style="display: flex; align-items: center; justify-content: flex-end; padding: 16px 24px; border-top: 1px solid #f0f3f8;">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()" style="padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; border: none; font-family: inherit; background: #f0f3f8; color: #6b7a8f;">
+                    <i class="feather-x me-2"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-primary" id="submitInitiativeBtn" style="padding: 10px 24px; border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; border: none; font-family: inherit; background: #3454d1; color: #ffffff;">
+                    <i class="feather-plus me-2"></i> Add Initiative
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ===== OPEN MODAL WITH TOPIC =====
+function openModalWithTopic(topic, goal, event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    console.log('🔍 Opening modal with topic:', topic, 'goal:', goal);
+    
+    // Set the hidden fields
+    const topicField = document.querySelector('input[name="selected_topic"]');
+    const goalField = document.querySelector('input[name="selected_goal"]');
+    
+    if (topicField) {
+        topicField.value = topic || '';
+        console.log('📌 Set selected_topic to:', topicField.value);
+    }
+    if (goalField) {
+        goalField.value = goal || '';
+        console.log('📌 Set selected_goal to:', goalField.value);
+    }
+    
+    // Open the modal
+    openModal();
+}
+
+// ===== VIEW GOAL DETAIL - Navigate to Detail Page =====
+function viewGoalDetail(topic, kpi, event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    console.log('🎯 Navigating to detail for KPI:', kpi, 'in topic:', topic);
+    
+    // Navigate to the detail page for this specific material topic
+    if (topic && topic.trim() !== '' && topic.trim() !== 'None' && topic.trim() !== 'undefined') {
+        const encodedTopic = encodeURIComponent(topic.trim());
+        // Pass KPI as a parameter to the detail page
+        let url = '/goals/initiatives/detail/' + encodedTopic + '/';
+        if (kpi && kpi.trim() !== '' && kpi.trim() !== 'None' && kpi.trim() !== 'undefined') {
+            url += '?kpi=' + encodeURIComponent(kpi.trim());
+        }
+        console.log('📍 Navigating to URL:', url);
+        window.location.href = url;
+    } else {
+        alert('Topic information not available.');
+    }
+}
+
+// ===== MODAL FUNCTIONS =====
+function openModal() {
+    const modal = document.getElementById('addInitiativeModal');
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+    const modal = document.getElementById('addInitiativeModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+    
+    const form = document.getElementById('initiativeForm');
+    form.reset();
+    document.getElementById('modalMessages').innerHTML = '';
+    document.getElementById('submitInitiativeBtn').disabled = false;
+    document.getElementById('submitInitiativeBtn').innerHTML = '<i class="feather-plus me-2"></i> Add Initiative';
+    
+    form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+    form.querySelectorAll('.help-text.text-danger').forEach(el => el.remove());
+}
+
+// ===== DELETE INITIATIVE =====
+function deleteInitiative(id, name, event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    if (confirm('Are you sure you want to delete initiative "' + name + '"?')) {
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+        fetch("{% url 'goals:initiative_delete' 0 %}".replace('0', id), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken ? csrfToken.value : '',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.message || 'Failed to delete initiative.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while deleting the initiative.');
+        });
+    }
+}
+
+// ===== DELETE KPI CARD =====
+function deleteKpiCard(topic, kpiName, event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    
+    // Find the KPI card
+    const card = event ? event.target.closest('.goal-card') : null;
+    if (!card) {
+        showToast('Card not found.', 'error');
+        return;
+    }
+    
+    // Get the initiative count from the badge
+    const badge = card.querySelector('.goal-card-badge');
+    const countText = badge ? badge.textContent.trim() : '0';
+    const count = parseInt(countText.replace(/[^0-9]/g, '')) || 0;
+    
+    // Confirm deletion
+    if (count === 0) {
+        showToast('No initiatives to delete for "' + kpiName + '".', 'error');
+        return;
+    }
+    
+    if (!confirm('Are you sure you want to delete ALL ' + count + ' initiative(s) for "' + kpiName + '"?\n\nThis action cannot be undone.')) {
+        return;
+    }
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    
+    // Show loading state on the delete button
+    const btn = event ? event.target.closest('.action-btn') : null;
+    const originalHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+    }
+    
+    // Send request to delete all initiatives for this KPI
+    fetch("{% url 'goals:delete_kpi_initiatives' %}", {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken ? csrfToken.value : '',
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            topic: topic,
+            kpi: kpiName
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('All ' + count + ' initiative(s) for "' + kpiName + '" deleted successfully!', 'success');
+            
+            // Animate and remove the card
+            card.style.transition = 'all 0.3s ease';
+            card.style.transform = 'scale(0.8)';
+            card.style.opacity = '0';
+            
+            setTimeout(() => {
+                // Get the parent container
+                const container = card.parentElement;
+                
+                // Remove the card
+                card.remove();
+                
+                // Update total count
+                updateTotalCount();
+                
+                // If no cards left in this container, show empty message
+                if (container && container.children.length === 0) {
+                    container.innerHTML = `
+                        <div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: #8a94a6; font-size: 14px;">
+                            <i class="feather-inbox" style="font-size: 36px; display: block; margin-bottom: 12px;"></i>
+                            No KPIs found for this topic.
+                        </div>
+                    `;
+                } else {
+                    // Update the topic total
+                    updateTopicTotal(topic);
+                }
+                
+                // Restore button
+                if (btn) {
+                    btn.innerHTML = originalHtml || '<i class="fas fa-trash-alt"></i>';
+                    btn.disabled = false;
+                }
+            }, 300);
+        } else {
+            showToast(data.message || 'Failed to delete initiatives.', 'error');
+            if (btn) {
+                btn.innerHTML = originalHtml || '<i class="fas fa-trash-alt"></i>';
+                btn.disabled = false;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred while deleting the initiatives.', 'error');
+        if (btn) {
+            btn.innerHTML = originalHtml || '<i class="fas fa-trash-alt"></i>';
+            btn.disabled = false;
+        }
+    });
+}
+
+// ===== UPDATE TOTAL COUNT =====
+function updateTotalCount() {
+    const totalElement = document.querySelector('.stats-bar .stat-item:first-child .value');
+    if (!totalElement) return;
+    
+    // Count all initiatives from all cards
+    const cards = document.querySelectorAll('.goal-card');
+    let total = 0;
+    cards.forEach(card => {
+        const badge = card.querySelector('.goal-card-badge');
+        if (badge) {
+            const count = parseInt(badge.textContent.replace(/[^0-9]/g, ''));
+            if (!isNaN(count)) total += count;
+        }
+    });
+    
+    totalElement.textContent = total;
+}
+
+// ===== UPDATE TOPIC TOTAL =====
+function updateTopicTotal(topic) {
+    // Find all topic containers
+    const containers = document.querySelectorAll('.material-topic-container');
+    containers.forEach(container => {
+        const header = container.querySelector('.material-topic-header');
+        if (header) {
+            const nameElement = header.querySelector('.topic-name');
+            if (nameElement && nameElement.textContent.trim() === topic) {
+                // Count cards in this container
+                const cards = container.querySelectorAll('.goal-card');
+                let total = 0;
+                cards.forEach(card => {
+                    const badge = card.querySelector('.goal-card-badge');
+                    if (badge) {
+                        const count = parseInt(badge.textContent.replace(/[^0-9]/g, ''));
+                        if (!isNaN(count)) total += count;
+                    }
+                });
+                
+                // Update the total in the header
+                const totalSpan = header.querySelector('.topic-stats .count:last-child');
+                if (totalSpan) {
+                    totalSpan.textContent = total;
+                }
+                
+                // Update the initiatives count badge
+                const countBadge = header.querySelector('.topic-init-count');
+                if (countBadge) {
+                    countBadge.textContent = total + ' initiatives';
+                }
+            }
+        }
+    });
+}
+
+// ===== SHOW TOAST MESSAGE =====
+function showToast(message, type) {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toastContainer';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Create toast
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        background: ${type === 'success' ? '#e8f5e9' : '#fce4ec'};
+        color: ${type === 'success' ? '#2e7d32' : '#c62828'};
+        padding: 14px 20px;
+        border-radius: 10px;
+        border: 1px solid ${type === 'success' ? '#c8e6c9' : '#f5c6cb'};
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        animation: slideInRight 0.5s ease;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        margin-bottom: 10px;
+    `;
+    toast.innerHTML = `
+        <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+        <span>${message}</span>
+        <button onclick="this.parentElement.remove()" style="background: none; border: none; font-size: 18px; cursor: pointer; color: inherit; margin-left: auto;">
+            &times;
+        </button>
+    `;
+    
+    toastContainer.appendChild(toast);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.5s ease';
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, 500);
+        }
+    }, 5000);
+}
+
+// ===== CLOSE MODAL ON OUTSIDE CLICK =====
+document.getElementById('addInitiativeModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeModal();
+    }
+});
+
+// ===== CLOSE MODAL ON ESCAPE KEY =====
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('addInitiativeModal');
+        if (modal.style.display === 'block') {
+            closeModal();
+        }
+    }
+});
+
+// ===== DOM CONTENT LOADED =====
+document.addEventListener('DOMContentLoaded', function() {
+    const kpiSelect = document.getElementById('kpi_modal');
+    const kpiUnitHidden = document.getElementById('kpi_unit_modal');
+    const submitBtn = document.getElementById('submitInitiativeBtn');
+    const form = document.getElementById('initiativeForm');
+    const modalMessages = document.getElementById('modalMessages');
+    
+    // ===== SET KPI UNIT ON KPI SELECT =====
+    kpiSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const unit = selectedOption.getAttribute('data-unit');
+        if (unit) {
+            kpiUnitHidden.value = unit;
+        }
+    });
+    
+    // ===== SET MIN DATE FOR DUE DATE =====
+    const dueDateInput = document.getElementById('due_date_modal');
+    if (dueDateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dueDateInput.setAttribute('min', today);
+    }
+    
+    // ===== FORM SUBMISSION =====
+    submitBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        modalMessages.innerHTML = '';
+        
+        // Validate required fields
+        const requiredFields = form.querySelectorAll('[required]');
+        let isValid = true;
+        
+        requiredFields.forEach(field => {
+            if (!field.disabled && !field.value) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        if (!isValid) {
+            showToast('Please fill in all required fields.', 'error');
+            return;
+        }
+        
+        // Disable button and show loading
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="feather-loader fa-spin me-2"></i> Adding...';
+        
+        const formData = new FormData(form);
+        
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(data.message || 'Initiative added successfully!', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showToast(data.message || 'Failed to add initiative.', 'error');
+                if (data.errors) {
+                    for (const [field, errors] of Object.entries(data.errors)) {
+                        const fieldElement = document.querySelector(`[name="${field}"]`);
+                        if (fieldElement) {
+                            fieldElement.classList.add('is-invalid');
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'text-danger help-text';
+                            errorDiv.textContent = errors.join(', ');
+                            fieldElement.parentNode.appendChild(errorDiv);
+                        }
+                    }
+                }
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="feather-plus me-2"></i> Add Initiative';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('An error occurred while adding the initiative.', 'error');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="feather-plus me-2"></i> Add Initiative';
+        });
+    });
+});
+
+// ===== CLEAR ALL FILTERS =====
+function clearAllFilters() {
+    // Get current URL
+    const url = new URL(window.location.href);
+    // Remove all filter parameters
+    url.searchParams.delete('kpi');
+    url.searchParams.delete('topic');
+    url.searchParams.delete('goal');
+    url.searchParams.delete('plant');
+    url.searchParams.delete('status');
+    url.searchParams.delete('search');
+    // Navigate to the clean URL
+    window.location.href = url.toString();
+}
+</script>
+
+{% endblock %}
