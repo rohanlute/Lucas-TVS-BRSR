@@ -152,7 +152,48 @@ class BRSRWorkflowAPITests(TestCase):
         )
         return assignment
 
-    def test_data_entry_submit_advances_through_final_approval(self):
+    def test_assignment_can_be_created_without_reviewer(self):
+        assignment = Assignment.objects.create(
+            plant=self.plant,
+            section=self.section,
+            financial_year="2025-2026",
+            workflow_template=self.template,
+            assigner_content_type=ContentType.objects.get_for_model(User),
+            assigner_object_id=self.assigner.id,
+            assignee_content_type=ContentType.objects.get_for_model(User),
+            assignee_object_id=self.data_user.id,
+        )
+        assignment.questions.add(self.question)
+        QuestionResponse.objects.create(
+            assignment=assignment,
+            question=self.question,
+            response_value="Initial draft",
+        )
+
+        request = self.factory.put(
+            "/fake-save/",
+            {"assignment_id": assignment.id, "response_value": "Draft response"},
+            format="json",
+        )
+        force_authenticate(request, user=self.data_user)
+        response = QuestionSaveAPIView.as_view()(request, question_id=self.question.question_id)
+        self.assertEqual(response.status_code, 200)
+
+        request = self.factory.post(
+            "/fake-submit/",
+            {"assignment_id": assignment.id},
+            format="json",
+        )
+        force_authenticate(request, user=self.data_user)
+        response = QuestionSubmitAPIView.as_view()(request, question_id=self.question.question_id)
+        self.assertEqual(response.status_code, 200)
+
+        assignment.refresh_from_db()
+        self.assertEqual(assignment.workflow_stage_type, "approval")
+        self.assertEqual(assignment.workflow_task.current_assignee_object_id, self.approver.id)
+        self.assertEqual(assignment.reviewer_links.count(), 0)
+
+    def test_data_entry_submit_skips_comment_only_reviewer_stage(self):
         assignment = self._create_assignment()
 
         request = self.factory.put(
@@ -178,19 +219,6 @@ class BRSRWorkflowAPITests(TestCase):
         )
         force_authenticate(request, user=self.data_user)
         response = QuestionSubmitAPIView.as_view()(request, question_id=self.question.question_id)
-        self.assertEqual(response.status_code, 200)
-
-        assignment.refresh_from_db()
-        self.assertEqual(assignment.workflow_stage_type, "review")
-        self.assertEqual(assignment.workflow_task.current_assignee_object_id, self.reviewer.id)
-
-        request = self.factory.post(
-            "/fake-approve/",
-            {"assignment_id": assignment.id},
-            format="json",
-        )
-        force_authenticate(request, user=self.reviewer)
-        response = QuestionApproveAPIView.as_view()(request, question_id=self.question.question_id)
         self.assertEqual(response.status_code, 200)
 
         assignment.refresh_from_db()
@@ -261,7 +289,7 @@ class BRSRWorkflowAPITests(TestCase):
             {"assignment_id": assignment.id, "remark": "Need fixes"},
             format="json",
         )
-        force_authenticate(request, user=self.reviewer)
+        force_authenticate(request, user=self.approver)
         response = QuestionRejectAPIView.as_view()(request, question_id=self.question.question_id)
         self.assertEqual(response.status_code, 200)
 
@@ -270,7 +298,7 @@ class BRSRWorkflowAPITests(TestCase):
         self.assertEqual(assignment.workflow_task.current_assignee_object_id, self.data_user.id)
         self.assertTrue(assignment.workflow_task.is_returned)
 
-    def test_review_comment_can_be_saved_during_review_stage(self):
+    def test_review_comment_can_be_saved_by_assigned_reviewer(self):
         assignment = self._create_assignment("3")
 
         request = self.factory.put(
@@ -307,6 +335,15 @@ class BRSRWorkflowAPITests(TestCase):
         self.assertEqual(assignment.workflow_stage_type, "approval")
         self.assertEqual(assignment.workflow_task.current_assignee_object_id, self.approver.id)
 
+        request = self.factory.post(
+            "/fake-comment-denied/",
+            {"assignment_id": assignment.id, "remark": "Not allowed"},
+            format="json",
+        )
+        force_authenticate(request, user=self.approver)
+        response = QuestionReviewCommentAPIView.as_view()(request, question_id=self.question.question_id)
+        self.assertEqual(response.status_code, 403)
+
     def test_final_approval_locks_editing_after_approval(self):
         assignment = self._create_assignment("4")
 
@@ -328,7 +365,7 @@ class BRSRWorkflowAPITests(TestCase):
         response = QuestionSubmitAPIView.as_view()(request, question_id=self.question.question_id)
         self.assertEqual(response.status_code, 200)
 
-        for user in [self.reviewer, self.approver, self.head]:
+        for user in [self.approver, self.head]:
             request = self.factory.post(
                 "/fake-approve/",
                 {"assignment_id": assignment.id},

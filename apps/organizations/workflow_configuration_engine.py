@@ -105,6 +105,19 @@ class WorkflowConfigurationEngine:
         return cls._move_to_stage(task, user, next_stage, remark=remark, next_assignee=next_assignee, action="approve")
 
     @classmethod
+    def advance_skipping_stage_types(cls, task, user, skip_stage_types=None, remark="", next_assignee=None):
+        """
+        Advance to the next non-skipped stage in a single hop.
+        This is useful when a workflow contains an optional, comment-only stage
+        that should not block progression, such as a reviewer note stage.
+        """
+        skip_stage_types = set(skip_stage_types or [])
+        next_stage = task.current_stage.next_stage() if task.current_stage_id else None
+        while next_stage and next_stage.stage_type in skip_stage_types:
+            next_stage = next_stage.next_stage()
+        return cls._move_to_stage(task, user, next_stage, remark=remark, next_assignee=next_assignee, action="approve")
+
+    @classmethod
     def reject(cls, task, user, remark, return_to_stage=None, return_to_assignee=None):
         stage = task.current_stage
         if not stage.can_reject:

@@ -169,6 +169,18 @@ def _reviewer_links_for_assignment(assignment):
     return [link.reviewer for link in assignment.reviewer_links.select_related("reviewer_content_type").all() if link.reviewer]
 
 
+def _assigned_reviewer_ids_for_assignment(assignment):
+    if not assignment:
+        return []
+    return [link.reviewer_object_id for link in assignment.reviewer_links.all() if link.reviewer_object_id]
+
+
+def _is_assigned_reviewer(user, assignment):
+    if not user or not getattr(user, "is_authenticated", False) or not assignment:
+        return False
+    return user.id in _assigned_reviewer_ids_for_assignment(assignment)
+
+
 def _first_workflow_assignee_for_stage(plant, stage, current_user=None, assignment=None):
     if assignment and stage and stage.stage_type == "review":
         assigned_reviewers = _reviewer_links_for_assignment(assignment)
@@ -208,7 +220,14 @@ def _resolve_brsr_reviewer(plant, template, selected_reviewer=None, current_user
     if selected_reviewer and eligible.filter(pk=selected_reviewer.pk).exists():
         return selected_reviewer
 
-    return eligible.first()
+    return None
+
+
+def _next_non_review_stage(stage):
+    next_stage = stage.next_stage() if stage else None
+    while next_stage and next_stage.stage_type == "review":
+        next_stage = next_stage.next_stage()
+    return next_stage
 
 
 def _advance_assignment_to_entry_stage(assignment, actor=None):
@@ -262,7 +281,12 @@ def _approval_stage_queryset(user):
         "questions__section",
         "questions__principle",
     )
-    return [assignment for assignment in assignments if assignment.workflow_stage_type and _is_approval_stage(assignment.workflow_stage_type)]
+    actionable = []
+    for assignment in assignments:
+        _ensure_assignment_workflow_task(assignment, current_user=user)
+        if assignment.workflow_stage_type and _is_approval_stage(assignment.workflow_stage_type):
+            actionable.append(assignment)
+    return actionable
 
 
 def _serialize_workflow_task(task):
@@ -286,6 +310,25 @@ def _ensure_assignment_workflow_task(assignment, current_user=None):
     if assignment.workflow_task:
         task = assignment.workflow_task
         _advance_assignment_to_entry_stage(assignment, actor=current_user)
+        if task.current_stage_id and task.current_stage.stage_type == "review":
+            next_stage = _next_non_review_stage(task.current_stage)
+            if next_stage:
+                try:
+                    next_assignee = _first_workflow_assignee_for_stage(
+                        assignment.plant,
+                        next_stage,
+                        current_user=current_user,
+                        assignment=assignment,
+                    )
+                except ValueError:
+                    next_assignee = None
+                WorkflowConfigurationEngine.advance_skipping_stage_types(
+                    task,
+                    assignment.assigner or current_user or assignment.assignee,
+                    skip_stage_types={"review"},
+                    remark="Auto-advanced past comment-only reviewer stage.",
+                    next_assignee=next_assignee,
+                )
         return task
     template = assignment.workflow_template
     if not template:
@@ -295,12 +338,30 @@ def _ensure_assignment_workflow_task(assignment, current_user=None):
             assignment.save(update_fields=["workflow_template", "updated_at"])
     if not template or not template.first_stage:
         return None
-    from apps.organizations.workflow_configuration_engine import WorkflowConfigurationEngine
     first_assignee = assignment.assignee or current_user
     if first_assignee is None:
         return None
     task = WorkflowConfigurationEngine.start(template, assignment, first_assignee)
     _advance_assignment_to_entry_stage(assignment, actor=current_user)
+    if task.current_stage_id and task.current_stage.stage_type == "review":
+        next_stage = _next_non_review_stage(task.current_stage)
+        if next_stage:
+            try:
+                next_assignee = _first_workflow_assignee_for_stage(
+                    assignment.plant,
+                    next_stage,
+                    current_user=current_user,
+                    assignment=assignment,
+                )
+            except ValueError:
+                next_assignee = None
+            WorkflowConfigurationEngine.advance_skipping_stage_types(
+                task,
+                assignment.assigner or current_user or assignment.assignee,
+                skip_stage_types={"review"},
+                remark="Auto-advanced past comment-only reviewer stage.",
+                next_assignee=next_assignee,
+            )
     return task
 
 def _get_section_principle(section_code=None, principle_slug=None):
@@ -613,9 +674,6 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
         selected_reviewer=cleaned_data.get("reviewer"),
         current_user=user,
     )
-    review_stage = _workflow_stage_by_type(workflow_template, "review")
-    if review_stage and reviewer is None:
-        raise ValueError("No eligible reviewer matches the review stage of the configured BRSR workflow.")
 
     user_ct = ContentType.objects.get_for_model(User)
     assigner = cleaned_data.get("assigner") or user
@@ -672,6 +730,9 @@ def _serialize_task_for_user(task, user):
             or (current_user_role_id and current_stage_role_id and current_user_role_id == current_stage_role_id)
         )
     )
+    if task.current_stage_id and task.current_stage.stage_type == "review":
+        assignment = getattr(task.target, "assignment", None) or (task.target if isinstance(task.target, Assignment) else None)
+        can_act = _is_assigned_reviewer(user, assignment)
     
     return {
         "id": task.id,
@@ -1200,6 +1261,7 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
         context["question_detail_api_url"] = reverse("brsr:question_detail_api", kwargs={"question_id": "__question__"})
         context["question_save_api_url"] = reverse("brsr:question_save_api", kwargs={"question_id": "__question__"})
         context["question_submit_api_url"] = reverse("brsr:question_submit_api", kwargs={"question_id": "__question__"})
+        context["question_comment_api_url"] = reverse("brsr:question_comment_api", kwargs={"question_id": "__question__"})
         context["question_approve_api_url"] = reverse("brsr:question_approve_api", kwargs={"question_id": "__question__"})
         context["question_reject_api_url"] = reverse("brsr:question_reject_api", kwargs={"question_id": "__question__"})
         context["assignment_create_api_url"] = reverse("brsr:assignment_create_api")
@@ -1246,6 +1308,7 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
                         "question_detail_api_url": reverse("brsr:question_detail_api", kwargs={"question_id": "__question__"}),
                         "question_save_api_url": reverse("brsr:question_save_api", kwargs={"question_id": "__question__"}),
                         "question_submit_api_url": reverse("brsr:question_submit_api", kwargs={"question_id": "__question__"}),
+                        "question_comment_api_url": reverse("brsr:question_comment_api", kwargs={"question_id": "__question__"}),
                         "question_approve_api_url": reverse("brsr:question_approve_api", kwargs={"question_id": "__question__"}),
                         "question_reject_api_url": reverse("brsr:question_reject_api", kwargs={"question_id": "__question__"}),
                         "assignment_create_api_url": reverse("brsr:assignment_create_api"),
@@ -1274,6 +1337,7 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
                 "question_detail_api_url": reverse("brsr:question_detail_api", kwargs={"question_id": "__question__"}),
                 "question_save_api_url": reverse("brsr:question_save_api", kwargs={"question_id": "__question__"}),
                 "question_submit_api_url": reverse("brsr:question_submit_api", kwargs={"question_id": "__question__"}),
+                "question_comment_api_url": reverse("brsr:question_comment_api", kwargs={"question_id": "__question__"}),
                 "question_approve_api_url": reverse("brsr:question_approve_api", kwargs={"question_id": "__question__"}),
                 "question_reject_api_url": reverse("brsr:question_reject_api", kwargs={"question_id": "__question__"}),
                 "assignment_create_api_url": reverse("brsr:assignment_create_api"),

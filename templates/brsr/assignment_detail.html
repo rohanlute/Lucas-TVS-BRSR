@@ -474,6 +474,24 @@
     color:#92400e;
   }
 
+  .review-comment-box{
+    padding:14px 16px;
+    border-radius:14px;
+    background:#fff7ed;
+    border:1px solid #fdba74;
+    color:#9a3412;
+  }
+
+  .review-comment-box .label{
+    display:block;
+    margin-bottom:8px;
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:#9a3412;
+  }
+
   .review-remark .label{
     display:block;
     margin-bottom:6px;
@@ -606,6 +624,15 @@
 
   .footer-note.locked{
     color:#6b7280;
+  }
+
+  .no-review-comments{
+    padding:14px 16px;
+    border-radius:14px;
+    border:1px dashed var(--border-strong);
+    color:var(--muted);
+    background:#fafcff;
+    font-style:italic;
   }
 
   .empty-state{
@@ -826,12 +853,16 @@
                       {% endif %}
                     </div>
 
-                    {% if question.review_remark %}
-                      <div class="review-remark">
-                        <span class="label">Reviewer Remark</span>
-                        {{ question.review_remark|linebreaksbr }}
-                      </div>
-                    {% endif %}
+                    <div class="review-comment-box">
+                      <span class="label">Reviewer Comment</span>
+                      {% if question.review_remark %}
+                        <div class="review-remark">
+                          {{ question.review_remark|linebreaksbr }}
+                        </div>
+                      {% else %}
+                        <div class="no-review-comments">No comments were added for this question.</div>
+                      {% endif %}
+                    </div>
 
                     <div class="response-meta">
                       {% if question.submitted_by %}

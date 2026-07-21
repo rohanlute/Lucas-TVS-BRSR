@@ -426,6 +426,25 @@
     opacity:.92;
   }
 
+  .review-comment-box{
+    margin-top:14px;
+    padding:14px;
+    border:1px solid #fed7aa;
+    border-radius:14px;
+    background:#fffaf3;
+  }
+
+  .review-comment-box .review-comment-input{
+    min-height:90px;
+    margin-top:8px;
+  }
+
+  .review-comment-box .review-comment-meta{
+    margin-top:8px;
+    font-size:12px;
+    color:var(--muted);
+  }
+
   .question-container.active .question-content{
     display:block;
   }
@@ -1335,12 +1354,13 @@
     const currentAssignment = state.workspace?.current_assignment || {};
     const currentStageType = currentAssignment.workflow_stage_type || question.workflow_stage_type || '';
     const canAct = currentAssignment.can_act ?? question.can_act ?? false;
+    const isReviewerView = Boolean(currentAssignment.is_assigned_reviewer && !currentAssignment.is_completed);
     const canSave = canAct && ['question_assignment', 'data_entry'].includes(currentStageType);
     const canSubmit = canAct && currentStageType === 'data_entry';
-    const isLocked = question.is_editable === false;
+    const isLocked = question.is_editable === false || isReviewerView;
     
     let actionButtons = '';
-    if (canSave) {
+    if (canSave && !isReviewerView) {
       actionButtons = `
         <div class="table-actions">
           <button type="button" class="btn-brsr secondary js-save-question">Save Draft</button>
@@ -1348,12 +1368,27 @@
         </div>
       `;
     }
+
+    const reviewerCommentBlock = isReviewerView ? `
+      <div class="review-comment-box">
+        <span class="review-label">Reviewer Comment</span>
+        <textarea
+          class="workspace-textarea review-comment-input js-review-comment-input"
+          data-question-id="${escapeHtml(qId)}"
+          placeholder="Add a comment for this question"
+        >${escapeHtml(question.review_remark || '')}</textarea>
+        <div class="review-comment-meta">Only the reviewer selected in workflow configuration can add or edit this comment.</div>
+        <div class="table-actions">
+          <button type="button" class="btn-brsr secondary js-save-review-comment" data-question-id="${escapeHtml(qId)}">Save Comment</button>
+        </div>
+      </div>
+    ` : '';
     
     return `
       <div class="question-container ${selected}" id="question-${escapeHtml(qId)}" data-question-id="${escapeHtml(qId)}">
         <div class="question-header">
           <div class="question-header-left">
-            <input type="checkbox" class="question-checkbox js-question-select" data-question-id="${escapeHtml(qId)}">
+            ${isReviewerView ? '' : `<input type="checkbox" class="question-checkbox js-question-select" data-question-id="${escapeHtml(qId)}">`}
             <div>
               <h3 class="question-title"><span class="question-number">${escapeHtml(question.question_number)}.</span>${escapeHtml(question.title)}</h3>
             </div>
@@ -1365,6 +1400,7 @@
             ${renderQuestionInput(question, isLocked)}
             ${actionButtons}
           </fieldset>
+          ${reviewerCommentBlock}
         </div>
       </div>
     `;
@@ -1431,8 +1467,10 @@
 
       const saveBtn = card.querySelector('.js-save-question');
       const submitBtn = card.querySelector('.js-submit-question');
+      const saveCommentBtn = card.querySelector('.js-save-review-comment');
       if (saveBtn) saveBtn.addEventListener('click', () => saveQuestion(questionId));
       if (submitBtn) submitBtn.addEventListener('click', () => submitQuestion(questionId));
+      if (saveCommentBtn) saveCommentBtn.addEventListener('click', () => saveReviewComment(questionId));
 
       const table = card.querySelector('.data-table');
       if (table) {
@@ -1706,6 +1744,53 @@
     }
   }
 
+  async function saveReviewComment(questionId) {
+    const currentAssignment = state.workspace?.current_assignment || {};
+    if (!currentAssignment.is_assigned_reviewer) {
+      alert('Only the selected reviewer can add comments for this assignment.');
+      return;
+    }
+
+    const textarea = document.querySelector(`.js-review-comment-input[data-question-id="${CSS.escape(questionId)}"]`);
+    const remark = textarea ? textarea.value.trim() : '';
+    if (!remark) {
+      alert('Please enter a reviewer comment before saving.');
+      if (textarea) textarea.focus();
+      return;
+    }
+
+    const assignmentId = currentAssignment.id || state.assignmentId;
+    if (!assignmentId) {
+      alert('No assignment found for this question.');
+      return;
+    }
+
+    try {
+      const response = await fetch(apiUrl(API_COMMENT, questionId), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({
+          assignment_id: assignmentId,
+          remark,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        alert(data.detail || 'Unable to save the reviewer comment.');
+        return;
+      }
+
+      await loadWorkspace(state.sectionCode, state.principleSlug, state.questionId, state.assignmentId);
+    } catch (error) {
+      console.error('Error saving reviewer comment:', error);
+      alert('An error occurred while saving the reviewer comment.');
+    }
+  }
+
   function fillAssignmentOptions(workspace) {
     const plantSelect = document.getElementById('assignmentPlant');
     const fySelect = document.getElementById('assignmentFinancialYear');
@@ -1776,7 +1861,7 @@
       if (matchedAssignee) {
         assigneeSelect.value = matchedAssignee.id.toString();
       }
-      const matchedReviewer = defaultReviewer || reviewers[0] || null;
+      const matchedReviewer = defaultReviewer || null;
       if (matchedReviewer) {
         reviewerSelect.value = matchedReviewer.id.toString();
       }
