@@ -70,6 +70,14 @@ CONVERSION_DATA = {
             {'name': 'British Thermal Unit', 'symbol': 'Btu', 'icon': '🔥', 'conversion_factor': 0.000947817, 'is_base_unit': False},
             {'name': 'Therm', 'symbol': 'therm', 'icon': '🔥', 'conversion_factor': 0.000009478, 'is_base_unit': False},
             {'name': 'Electronvolt', 'symbol': 'eV', 'icon': '⚛️', 'conversion_factor': 6241500000.0, 'is_base_unit': False},  # 6.2415e+18 converted
+            {'name': 'Gigajoule', 'symbol': 'GJ', 'icon': '⚡', 'conversion_factor': 0.000000001, 'is_base_unit': False},
+        ]
+    },
+    'cooling': {
+        'name': 'Cooling',
+        'icon': '❄️',
+        'units': [
+            {'name': 'Ton of Refrigeration Hour', 'symbol': 'TRh', 'icon': '❄️', 'conversion_factor': 1.0, 'is_base_unit': True},
         ]
     },
     'temperature': {
@@ -124,7 +132,8 @@ CONVERSION_DATA = {
             {'name': 'Millisecond', 'symbol': 'ms', 'icon': '⏱️', 'conversion_factor': 1000.0, 'is_base_unit': False},
             {'name': 'Microsecond', 'symbol': 'µs', 'icon': '⏱️', 'conversion_factor': 1000000.0, 'is_base_unit': False},
         ]
-    }
+    },
+
 }
 
 
@@ -139,9 +148,11 @@ class Command(BaseCommand):
         # Delete existing data
         count = Unit.objects.count()
         if count > 0:
-            self.stdout.write(f'Deleting {count} existing units...')
-            Unit.objects.all().delete()
-            self.stdout.write(self.style.SUCCESS('✓ Existing data cleared.'))
+            self.stdout.write(
+                self.style.WARNING(
+                    f'{count} units already exist. Existing units will be updated or reused.'
+                )
+            )
         
         self.stdout.write('\n' + '-' * 40)
         self.stdout.write('Creating new conversion data...')
