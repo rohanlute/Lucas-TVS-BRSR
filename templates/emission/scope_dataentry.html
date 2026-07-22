@@ -1050,6 +1050,22 @@
 {% endblock %}
 
 {% block content %}
+<input type="hidden" id="assignmentId" value="{{ assignment.id|default:'' }}">
+<input type="hidden" id="selectedScopeId" value="{{ scope.id }}">
+<input type="hidden" id="isAssignmentLocked" value="{% if is_assignment_locked %}1{% else %}0{% endif %}">
+{% if is_assignment_locked %}
+<div class="alert alert-success mb-3">
+    <strong>Assignment Submitted.</strong>
+    This workspace is now read-only and is waiting for reviewer approval.
+</div>
+{% endif %}
+
+{% if assignment.review_comments %}
+<div class="alert alert-danger mb-3">
+    <strong>Reviewer Comments</strong><br>
+    {{ assignment.review_comments }}
+</div>
+{% endif %}
 <div class="page-header">
     <div class="page-header-left d-flex align-items-center">
         <div class="page-header-title">
@@ -1294,9 +1310,14 @@
                                             [ Company ] <span class="text-danger">*</span>
                                         </label>
 
-                                        <select id="company" class="workspace-select">
+                                        <select id="company" class="workspace-select" {% if assignment %}disabled{% endif %}>
                                             {% for company in companies %}
-                                                <option value="{{ company.id }}" {% if forloop.first %}selected{% endif %}>
+                                                <option value="{{ company.id }}"
+                                                    {% if assignment %}
+                                                        {% if company.id == assignment.company.id %}selected{% endif %}
+                                                    {% else %}
+                                                        {% if forloop.first %}selected{% endif %}
+                                                    {% endif %}>
                                                     {{ company.company_name }}
                                                 </option>
                                             {% endfor %}
@@ -1310,15 +1331,14 @@
                                             [ Plant ] <span class="text-danger">*</span>
                                         </label>
 
-                                        <select id="plant" class="workspace-select">
-                                            <option value="">Select Plant</option>
+                                        <select id="plant" class="workspace-select" {% if assignment %}disabled{% endif %}>
+                                            <option value="ALL">All Plants</option>
                                             {% for plant in plants %}
-                                                <option
-                                                    value="{{ plant.id }}"
+                                                <option value="{{ plant.id }}"
                                                     data-country="{{ plant.country.name|default:'' }}"
                                                     data-state="{{ plant.state.name|default:'' }}"
                                                     data-city="{{ plant.city.name|default:'' }}"
-                                                >
+                                                    {% if assignment and plant.id == assignment.plant.id %}selected{% endif %}>
                                                     {{ plant.name }}
                                                 </option>
                                             {% endfor %}
@@ -1331,16 +1351,16 @@
                                             [ Financial Year ] <span class="text-danger">*</span>
                                         </label>
 
-                                        <select id="financialYear" class="workspace-select">
+                                        <select id="financialYear" class="workspace-select" {% if assignment %}disabled{% endif %}>
                                             <option value="">Select Financial Year</option>
 
                                             {% for fy in financial_years %}
-                                                <option
-                                                    value="{{ fy.id }}"
-                                                    {% if current_financial_year and fy.id == current_financial_year.id %}
-                                                        selected
-                                                    {% endif %}
-                                                >
+                                                <option value="{{ fy.id }}"
+                                                    {% if assignment %}
+                                                        {% if fy.id == assignment.financial_year.id %}selected{% endif %}
+                                                    {% else %}
+                                                        {% if current_financial_year and fy.id == current_financial_year.id %}selected{% endif %}
+                                                    {% endif %}>
                                                     {{ fy.financial_year }}
                                                 </option>
                                             {% endfor %}
@@ -1353,16 +1373,16 @@
                                             [ Financial Month ] <span class="text-danger">*</span>
                                         </label>
 
-                                        <select id="financialMonth" class="workspace-select">
+                                        <select id="financialMonth" class="workspace-select" {% if assignment %}disabled{% endif %}>
                                             <option value="">Select Month</option>
 
                                             {% for month in financial_months %}
-                                                <option
-                                                    value="{{ month.id }}"
-                                                    {% if current_financial_month and month.id == current_financial_month.id %}
-                                                        selected
-                                                    {% endif %}
-                                                >
+                                                <option value="{{ month.id }}"
+                                                    {% if assignment %}
+                                                        {% if month.id == assignment.financial_month.id %}selected{% endif %}
+                                                    {% else %}
+                                                        {% if current_financial_month and month.id == current_financial_month.id %}selected{% endif %}
+                                                    {% endif %}>
                                                     {{ month.month_name }}
                                                 </option>
                                             {% endfor %}
@@ -1528,6 +1548,9 @@
                                     <table class="data-table" style="min-width: 600px;">
                                         <thead>
                                             <tr>
+                                                <th style="width:40px;">
+                                                    <input type="checkbox" id="selectAllActivities">
+                                                </th>
                                                 <th>ACTIVITY</th>
                                                 <th>SOURCE</th>
                                                 <th>QUANTITY</th>
@@ -1925,11 +1948,30 @@
 
                                 <!-- Action Buttons -->
                                 <div class="d-flex gap-3">
-                                    <button class="btn btn-brsr success" style="padding: 10px 30px;">Submit for Review</button>
-                                    <button id="saveDraft" class="btn btn-brsr secondary" style="padding: 10px 30px;">Save Draft</button>
-                                    <button id="assignTaskBtn" class="btn btn-brsr primary" style="padding: 10px 30px;">
-                                        <i class="feather-user-plus"></i> Assign Task
-                                    </button>
+                                    {% if is_review_mode %}
+                                        <button id="approveAssignmentBtn" class="btn btn-success">
+                                            <i class="feather-check"></i>
+                                            Approve
+                                        </button>
+                                        <button id="rejectAssignmentBtn" class="btn btn-danger">
+                                            <i class="feather-x"></i>
+                                            Reject
+                                        </button>
+                                    {% else %}
+                                        {% if assignment %}
+                                            <button id="submitAssignment" class="btn btn-brsr success" style="padding: 10px 30px;">
+                                                Submit for Review
+                                            </button>
+                                        {% else %}
+                                            <button id="assignTaskBtn" class="btn btn-brsr primary" style="padding: 10px 30px;">
+                                                <i class="feather-user-plus"></i>
+                                                Assign Task
+                                            </button>
+                                        {% endif %}
+                                        <button id="saveDraft" class="btn btn-brsr secondary"style="padding: 10px 30px;">
+                                            Save Draft
+                                        </button>
+                                    {% endif %}
                                 </div>
                             </div>
                         </div>
@@ -1951,6 +1993,19 @@
         <div class="modal-body">
             <form id="assignScopeForm">
                 <div class="row g-3">
+                    <!-- Plant -->
+                    <div class="col-md-6">
+                        <label class="tool-label">Plant <span class="text-danger">*</span></label>
+
+                        <select class="workspace-select" id="assignPlantSelect" required>
+                            <option value="">Select Plant</option>
+                            {% for plant in plants %}
+                                <option value="{{ plant.id }}">
+                                    {{ plant.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
                     <!-- Assignee -->
                     <div class="col-md-6">
                         <label class="tool-label">Assign To</label>
@@ -2089,6 +2144,14 @@ document.querySelectorAll(".scope-card").forEach(function(card){
 
         const scope = this.dataset.scope;
 
+        const scopeId = {
+            "S1": 1,
+            "S2": 2,
+            "S3": 3
+        };
+
+        document.getElementById("selectedScopeId").value = scopeId[scope];
+
         fetch(`/emission/api/scope-categories/?scope=${scope}`)
 
         .then(res => res.json())
@@ -2167,12 +2230,19 @@ document.addEventListener("click", function (e) {
     // -----------------------------
     // Category ID
     // -----------------------------
+    const assignmentId = document.getElementById("assignmentId").value;
     const categoryId = category.dataset.categoryId;
 
     // -----------------------------
     // Fetch Activities
     // -----------------------------
-    fetch(`/emission/api/category-activities/?category_id=${categoryId}`)
+    let url = `/emission/api/category-activities/?category_id=${categoryId}`;
+
+    if (assignmentId) {
+        url += `&assignment=${assignmentId}`;
+    }
+
+    fetch(url)
         .then(response => response.json())
         .then(data => {
 
@@ -2180,121 +2250,35 @@ document.addEventListener("click", function (e) {
             tbody.innerHTML = "";
 
             data.activities.forEach(function (activity) {
-
                 if (activity.sources.length === 0) {
-
                     tbody.innerHTML += `
-
-                        <tr
-                            data-activity="${activity.id}"
-                            data-unit="${activity.base_unit_id}"
-                            data-source=""
-                        >
-
+                        <tr data-activity="${activity.id}" data-unit="${activity.base_unit_id}" data-source="">
+                            <td><input type="checkbox" class="activity-checkbox"></td>
                             <td>${activity.name}</td>
-
-                            <td>
-                                <span class="text-danger">
-                                    No Source Available
-                                </span>
-                            </td>
-
-                            <td>
-                                <input
-                                    type="number"
-                                    class="workspace-input quantity"
-                                    placeholder="0"
-                                >
-                            </td>
-
+                            <td><span class="text-danger">No Source Available</span></td>
+                            <td><input type="number" class="workspace-input quantity" placeholder="0"></td>
                             <td>${activity.unit}</td>
-
-                            <td>
-                                <input
-                                    class="workspace-input factor"
-                                    readonly
-                                >
-                            </td>
-
-                            <td>
-                                <input
-                                    class="workspace-input total"
-                                    readonly
-                                >
-                            </td>
-
+                            <td><input class="workspace-input factor" readonly></td>
+                            <td><input class="workspace-input total" readonly></td>
                             <td></td>
-
                         </tr>
-
                     `;
-
                 } else {
-
                     activity.sources.forEach(function (source) {
-
                         tbody.innerHTML += `
-
-                            <tr
-                                data-activity="${activity.id}"
-                                data-source="${source.id}"
-                                data-unit="${activity.base_unit_id}"
-                            >
-
+                            <tr data-activity="${activity.id}" data-source="${source.id}" data-unit="${activity.base_unit_id}">
+                                <td><input type="checkbox" class="activity-checkbox"></td>
                                 <td>${activity.name}</td>
-
                                 <td>${source.name}</td>
-
-                                <td>
-
-                                    <input
-                                        type="number"
-                                        class="workspace-input quantity"
-                                        placeholder="0"
-                                    >
-
-                                </td>
-
+                                <td><input type="number" class="workspace-input quantity" placeholder="0"></td>
                                 <td>${activity.unit}</td>
-
-                                <td>
-
-                                    <input
-                                        class="workspace-input factor"
-                                        readonly
-                                    >
-
-                                </td>
-
-                                <td>
-
-                                    <input
-                                        class="workspace-input total"
-                                        readonly
-                                    >
-
-                                </td>
-
-                                <td>
-
-                                    <button
-                                        type="button"
-                                        class="btn btn-sm btn-outline-danger remove-row"
-                                        disabled
-                                    >
-                                        <i class="feather-trash"></i>
-                                    </button>
-
-                                </td>
-
+                                <td><input class="workspace-input factor" readonly></td>
+                                <td><input class="workspace-input total" readonly></td>
+                                <td><button type="button" class="btn btn-sm btn-outline-danger remove-row" disabled><i class="feather-trash"></i></button></td>
                             </tr>
-
                         `;
-
                     });
-
                 }
-
             });
 
             // -----------------------------
@@ -2378,122 +2362,323 @@ const csrftoken = getCookie("csrftoken");
 // ==============================================
 // Save Draft
 // ==============================================
-document.getElementById("saveDraft").addEventListener("click", function () {
-    console.log("Save Draft button clicked");
-    const container = document.getElementById('toastContainer');
-    console.log("container:", container); 
 
-    // -----------------------------
-    // Context Information
-    // -----------------------------
-    const company = document.getElementById("company").value;
-    const plant = document.getElementById("plant").value;
-    const financialYear = document.getElementById("financialYear").value;
-    const financialMonth = document.getElementById("financialMonth").value;
+const saveDraftBtn = document.getElementById("saveDraft");
 
-    // -----------------------------
-    // Validation
-    // -----------------------------
-    if (!company) {
-        showToast("Please select a Company.", "error");
-        return;
+    if (saveDraftBtn) {
+
+        saveDraftBtn.addEventListener("click", function () {
+
+            console.log("Save Draft button clicked");
+            const container = document.getElementById('toastContainer');
+            console.log("container:", container); 
+
+            // -----------------------------
+            // Context Information
+            // -----------------------------
+            const company = document.getElementById("company").value;
+            const plant = document.getElementById("plant").value;
+            const financialYear = document.getElementById("financialYear").value;
+            const financialMonth = document.getElementById("financialMonth").value;
+            const assignmentId = document.getElementById("assignmentId").value;
+
+            // -----------------------------
+            // Validation
+            // -----------------------------
+            if (!company) {
+                showToast("Please select a Company.", "error");
+                return;
+            }
+            if (!plant) {
+                showToast("Please select a Plant.", "error");
+                return;
+            }
+            if (!financialYear) {
+                showToast("Please select a Financial Year.", "error");
+                return;
+            }
+            if (!financialMonth) {
+                showToast("Please select a Financial Month.", "error");
+                return;
+            }
+
+            // -----------------------------
+            // Collect Activities
+            // -----------------------------
+            const rows = [];
+
+            document.querySelectorAll("#activityTableBody tr").forEach(function (row) {
+
+                const quantity = parseFloat(row.querySelector(".quantity").value) || 0;
+
+                // Ignore empty rows
+                if (quantity <= 0) {
+                    return;
+                }
+
+                rows.push({
+
+                    activity: parseInt(row.dataset.activity),
+
+                    source: parseInt(row.dataset.source),
+
+                    unit: parseInt(row.dataset.unit),
+
+                    quantity: quantity,
+
+                    factor: parseFloat(row.querySelector(".factor").value) || 0,
+
+                    total: parseFloat(row.querySelector(".total").value) || 0,
+
+                });
+
+            });
+            if (rows.length === 0) {
+                showToast("Please enter at least one quantity.", "warning");
+                return;
+            }
+
+            // -----------------------------
+            // Save to Django
+            // -----------------------------
+            fetch("/emission/api/save-transactions/", {
+
+                method: "POST",
+
+                headers: {
+
+                    "Content-Type": "application/json",
+
+                    "X-CSRFToken": csrftoken,
+
+                },
+
+                body: JSON.stringify({
+
+                    company: company,
+
+                    plant: plant,
+
+                    financial_year: financialYear,
+
+                    financial_month: financialMonth,
+
+                    assignment: assignmentId || null,
+
+                    rows: rows,
+
+                }),
+
+            })
+
+            .then(response => response.json())
+
+            .then(result => {
+                if (result.success) {
+                    showToast(result.message, "success");
+                    lockWorkspace();
+                } else {
+                    showToast(result.message || "Something went wrong.", "error");
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                showToast("Network error. Please try again.", "error");
+            });
+        }); 
     }
-    if (!plant) {
-        showToast("Please select a Plant.", "error");
-        return;
-    }
-    if (!financialYear) {
-        showToast("Please select a Financial Year.", "error");
-        return;
-    }
-    if (!financialMonth) {
-        showToast("Please select a Financial Month.", "error");
-        return;
-    }
 
-    // -----------------------------
-    // Collect Activities
-    // -----------------------------
-    const rows = [];
 
-    document.querySelectorAll("#activityTableBody tr").forEach(function (row) {
+const submitBtn = document.getElementById("submitAssignment");
 
-        const quantity = parseFloat(row.querySelector(".quantity").value) || 0;
+if (submitBtn) {
 
-        // Ignore empty rows
-        if (quantity <= 0) {
+    submitBtn.addEventListener("click", function () {
+
+        const assignmentId = document.getElementById("assignmentId").value;
+
+        if (!assignmentId) {
+            showToast("Assignment not found.", "error");
             return;
         }
 
-        rows.push({
+        fetch("/emission/api/submit-assignment/", {
 
-            activity: parseInt(row.dataset.activity),
+            method: "POST",
 
-            source: parseInt(row.dataset.source),
+            headers: {
 
-            unit: parseInt(row.dataset.unit),
+                "Content-Type": "application/json",
 
-            quantity: quantity,
+                "X-CSRFToken": csrftoken,
 
-            factor: parseFloat(row.querySelector(".factor").value) || 0,
+            },
 
-            total: parseFloat(row.querySelector(".total").value) || 0,
+            body: JSON.stringify({
+
+                assignment: assignmentId,
+
+            }),
+
+        })
+
+        .then(response => response.json())
+
+        .then(result => {
+
+            if (result.success) {
+
+                showToast(result.message, "success");
+
+            } else {
+
+                showToast(result.message, "error");
+
+            }
+
+        })
+
+        .catch(error => {
+
+            console.error(error);
+
+            showToast("Network error.", "error");
 
         });
 
     });
-    if (rows.length === 0) {
-        showToast("Please enter at least one quantity.", "warning");
-        return;
-    }
 
-    // -----------------------------
-    // Save to Django
-    // -----------------------------
-    fetch("/emission/api/save-transactions/", {
+}
 
-        method: "POST",
 
-        headers: {
 
-            "Content-Type": "application/json",
+const approveBtn = document.getElementById("approveAssignmentBtn");
 
-            "X-CSRFToken": csrftoken,
+if (approveBtn) {
 
-        },
+    approveBtn.addEventListener("click", function () {
 
-        body: JSON.stringify({
+        const assignmentId = document.getElementById("assignmentId").value;
 
-            company: company,
-
-            plant: plant,
-
-            financial_year: financialYear,
-
-            financial_month: financialMonth,
-
-            rows: rows,
-
-        }),
-
-    })
-
-    .then(response => response.json())
-
-    .then(result => {
-        if (result.success) {
-            showToast(result.message, "success");
-        } else {
-            showToast(result.message || "Something went wrong.", "error");
+        if (!assignmentId) {
+            showToast("Assignment not found.", "error");
+            return;
         }
-    })
-    .catch(error => {
-        console.error(error);
-        showToast("Network error. Please try again.", "error");
+
+        fetch("/emission/api/approve-assignment/", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrftoken,
+            },
+
+            body: JSON.stringify({
+                assignment: assignmentId,
+            }),
+
+        })
+        .then(response => response.json())
+        .then(result => {
+
+            if (result.success) {
+
+                showToast(result.message, "success");
+
+                setTimeout(function () {
+                    location.reload();
+                }, 1000);
+
+            } else {
+
+                showToast(result.message, "error");
+
+            }
+
+        })
+        .catch(error => {
+
+            console.error(error);
+
+            showToast("Network error.", "error");
+
+        });
+
     });
 
-});
+}
 
+
+const rejectBtn = document.getElementById("rejectAssignmentBtn");
+
+if (rejectBtn) {
+
+    rejectBtn.addEventListener("click", function () {
+
+        const assignmentId = document.getElementById("assignmentId").value;
+
+        if (!assignmentId) {
+            showToast("Assignment not found.", "error");
+            return;
+        }
+
+        const remarks = prompt("Enter rejection remarks:");
+
+        if (!remarks) {
+            showToast("Remarks are required.", "warning");
+            return;
+        }
+
+        fetch("/emission/api/reject-assignment/", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrftoken,
+            },
+
+            body: JSON.stringify({
+                assignment: assignmentId,
+                remarks: remarks,
+            }),
+
+        })
+
+        .then(response => response.json())
+
+        .then(result => {
+
+            if (result.success) {
+
+                showToast(result.message, "success");
+
+                setTimeout(function () {
+
+                    location.reload();
+
+                }, 1000);
+
+            } else {
+
+                showToast(result.message, "error");
+
+            }
+
+        })
+
+        .catch(error => {
+
+            console.error(error);
+
+            showToast("Network error.", "error");
+
+        });
+
+    });
+
+}
 
 document.getElementById("plant").addEventListener("change", function () {
 
@@ -2511,15 +2696,24 @@ document.getElementById("plant").addEventListener("change", function () {
 });
 
 
+function clearTransactionRows() {
+    document.querySelectorAll("#activityTableBody tr").forEach(function(row){
+        row.querySelector(".quantity").value = "";
+        row.querySelector(".factor").value = "";
+        row.querySelector(".total").value = "";
+    });
+}
 
 
 
 function loadTransactions() {
-    console.log("loadTransactions() called");
+    clearTransactionRows();
+
     const company = document.getElementById("company").value;
     const plant = document.getElementById("plant").value;
     const financialYear = document.getElementById("financialYear").value;
     const financialMonth = document.getElementById("financialMonth").value;
+    const assignmentId = document.getElementById("assignmentId").value;
 
     console.log({
         company,
@@ -2537,11 +2731,17 @@ function loadTransactions() {
         return;
     }
 
-    fetch(
+    let url =
+        `/emission/api/load-transactions/?company=${company}` +
+        `&plant=${plant}` +
+        `&financial_year=${financialYear}` +
+        `&financial_month=${financialMonth}`;
 
-        `/emission/api/load-transactions/?company=${company}&plant=${plant}&financial_year=${financialYear}&financial_month=${financialMonth}`
+    if (assignmentId) {
+        url += `&assignment=${assignmentId}`;
+    }
 
-    )
+    fetch(url)
 
     .then(response => response.json())
 
@@ -2633,8 +2833,40 @@ window.addEventListener("load", function () {
 
     },300);
 
+    const isAssignmentLocked =
+        document.getElementById("isAssignmentLocked").value === "1";
+
+    if (isAssignmentLocked) {
+        lockWorkspace();
+    }
+
 });
 
+// =============================================
+// Lock Workspace
+// =============================================
+function lockWorkspace() {
+
+    $("input:not([type='hidden'])").prop("disabled", true);
+
+    $("select").prop("disabled", true);
+
+    $("textarea").prop("disabled", true);
+
+    $("#saveDraft").prop("disabled", true);
+
+    $("#submitAssignment").prop("disabled", true);
+
+    $(".remove-row").prop("disabled", true);
+
+    $("#assignTaskBtn").prop("disabled", true);
+
+    $("#viewTransactionsBtn").prop("disabled", false);
+
+    $("#approveAssignmentBtn").prop("disabled", false);
+
+    $("#rejectAssignmentBtn").prop("disabled", false);
+}
 
 // =============================================
 // Review Summary
@@ -2774,89 +3006,85 @@ function updateReviewSummary() {
 
 
     // =====================================
-// Activity-wise Summary
-// =====================================
-const tbody = document.getElementById(
-    "reviewActivitySummary"
-);
+    // Activity-wise Summary
+    // =====================================
+    const tbody = document.getElementById(
+        "reviewActivitySummary"
+    );
 
-tbody.innerHTML = "";
+    tbody.innerHTML = "";
 
-document.querySelectorAll("#activityTableBody tr")
-.forEach(function(row){
+    document.querySelectorAll("#activityTableBody tr")
+    .forEach(function(row){
 
-    const qty = parseFloat(
-        row.querySelector(".quantity").value
-    ) || 0;
-
-    if(qty <= 0){
-        return;
-    }
-
-    const activity =
-        row.cells[0].innerText.trim();
-
-    const source =
-        row.cells[1].innerText.trim();
-
-    const unit =
-        row.cells[3].innerText.trim();
-
-    const emission =
-        parseFloat(
-            row.querySelector(".total").value
+        const qty = parseFloat(
+            row.querySelector(".quantity").value
         ) || 0;
 
-    tbody.innerHTML += `
+        if(qty <= 0){
+            return;
+        }
 
-        <tr>
+        // ---- CORRECTED INDICES ----
+        const activity = row.cells[1].innerText.trim();  // was [0]
+        const source   = row.cells[2].innerText.trim();  // was [1]
+        const unit     = row.cells[4].innerText.trim();  // was [3]
+        // ---------------------------
 
-            <td>${activity}</td>
+        const emission =
+            parseFloat(
+                row.querySelector(".total").value
+            ) || 0;
 
-            <td>${source}</td>
+        tbody.innerHTML += `
 
-            <td class="text-end">
+            <tr>
 
-                ${qty.toFixed(2)} ${unit}
+                <td>${activity}</td>
 
-            </td>
+                <td>${source}</td>
 
-            <td class="text-end fw-bold">
+                <td class="text-end">
 
-                ${emission.toFixed(4)} tCO₂e
+                    ${qty.toFixed(2)} ${unit}
 
-            </td>
+                </td>
 
-        </tr>
+                <td class="text-end fw-bold">
 
-    `;
+                    ${emission.toFixed(4)} tCO₂e
 
-});
+                </td>
+
+            </tr>
+
+        `;
+
+    });
 
 
-if(tbody.innerHTML === ""){
+    if(tbody.innerHTML === ""){
 
-    tbody.innerHTML = `
+        tbody.innerHTML = `
 
-        <tr>
+            <tr>
 
-            <td
-                colspan="4"
-                class="text-center text-muted"
-            >
+                <td
+                    colspan="4"
+                    class="text-center text-muted"
+                >
 
-                No Data Entered
+                    No Data Entered
 
-            </td>
+                </td>
 
-        </tr>
+            </tr>
 
-    `;
+        `;
+
+    }
 
 }
-
-}
-
 
 
 // =============================================
@@ -2928,123 +3156,212 @@ const closeAssignBtn = document.getElementById('closeAssignScopeModal');
 const cancelAssignBtn = document.getElementById('cancelAssignScope');
 const assignForm = document.getElementById('assignScopeForm');
 
-// ---------- Open modal ----------
-assignBtn.addEventListener('click', function() {
-    // Populate summary fields with current selections
-    const company = document.getElementById('company');
-    const plant = document.getElementById('plant');
-    const fy = document.getElementById('financialYear');
-    const month = document.getElementById('financialMonth');
-    const activeCategory = document.querySelector('.category-item.active');
 
-    document.getElementById('assignCompanyName').textContent =
-        company.options[company.selectedIndex]?.text || '-';
-    document.getElementById('assignPlantName').textContent =
-        plant.options[plant.selectedIndex]?.text || '-';
-    document.getElementById('assignFY').textContent =
-        fy.options[fy.selectedIndex]?.text || '-';
-    document.getElementById('assignMonth').textContent =
-        month.options[month.selectedIndex]?.text || '-';
-    document.getElementById('assignCategory').textContent =
-        activeCategory ? activeCategory.innerText.trim() : '-';
+// =============================================
+// Load Users Based on Selected Plant
+// =============================================
+const assignPlantSelect = document.getElementById("assignPlantSelect");
 
-    // Populate assignee dropdown (replace with real data from your backend)
-    const select = document.getElementById('assigneeSelect');
-    select.innerHTML = '<option value="">Select User</option>';
+    if (assignPlantSelect) {
 
-    // Example static users – replace with fetch from your users API
-    const users = [
-        { id: 1, name: 'Rahul Sharma' },
-        { id: 2, name: 'Priya Patel' },
-        { id: 3, name: 'Amit Kumar' }
-    ];
-    users.forEach(user => {
-        const opt = document.createElement('option');
-        opt.value = user.id;
-        opt.textContent = user.name;
-        select.appendChild(opt);
+        assignPlantSelect.addEventListener("change", function () {
+
+            const plantId = this.value;
+
+            const assignee = document.getElementById("assigneeSelect");
+
+            assignee.innerHTML = '<option value="">Select User</option>';
+
+            if (!plantId) {
+                return;
+            }
+
+            fetch(`/emission/api/plant-users/?plant_id=${plantId}`)
+                .then(response => response.json())
+                .then(result => {
+
+                    if (!result.success) {
+                        return;
+                    }
+
+                    result.users.forEach(function (user) {
+
+                        assignee.innerHTML += `
+                            <option value="${user.id}">
+                                ${user.name} (${user.employee_code})
+                            </option>
+                        `;
+
+                    });
+
+                });
+                
     });
 
-    // Set default due date to +7 days
-    const today = new Date();
-    const dueDate = new Date(today);
-    dueDate.setDate(today.getDate() + 7);
-    document.getElementById('dueDateInput').value = dueDate.toISOString().split('T')[0];
+}
 
-    // Show modal
-    assignModal.classList.add('active');
-});
+
+
+if (assignBtn) {
+
+    assignBtn.addEventListener("click", function () {
+
+        const company = document.getElementById("company");
+        const plant = document.getElementById("plant");
+        const fy = document.getElementById("financialYear");
+        const month = document.getElementById("financialMonth");
+        const activeCategory = document.querySelector(".category-item.active");
+
+        document.getElementById("assignCompanyName").textContent =
+            company.options[company.selectedIndex]?.text || "-";
+
+        document.getElementById("assignPlantName").textContent =
+            plant.options[plant.selectedIndex]?.text || "-";
+
+        document.getElementById("assignFY").textContent =
+            fy.options[fy.selectedIndex]?.text || "-";
+
+        document.getElementById("assignMonth").textContent =
+            month.options[month.selectedIndex]?.text || "-";
+
+        document.getElementById("assignCategory").textContent =
+            activeCategory ? activeCategory.innerText.trim() : "-";
+
+        document.getElementById("assignPlantSelect").value = plant.value;
+
+        document.getElementById("assignPlantSelect")
+            .dispatchEvent(new Event("change"));
+
+        const today = new Date();
+        today.setDate(today.getDate() + 7);
+
+        document.getElementById("dueDateInput").value =
+            today.toISOString().split("T")[0];
+
+        assignModal.classList.add("active");
+
+    });
+
+}
 
 // ---------- Close modal ----------
 function closeAssignModal() {
     assignModal.classList.remove('active');
 }
-closeAssignBtn.addEventListener('click', closeAssignModal);
-cancelAssignBtn.addEventListener('click', closeAssignModal);
-assignModal.addEventListener('click', function(e) {
-    if (e.target === this) closeAssignModal();
-});
+if (closeAssignBtn) {
+    closeAssignBtn.addEventListener('click', closeAssignModal);
+}
+
+if (cancelAssignBtn) {
+    cancelAssignBtn.addEventListener('click', closeAssignModal);
+}
+
+if (assignModal) {
+    assignModal.addEventListener('click', function(e) {
+        if (e.target === this) closeAssignModal();
+    });
+}
 
 // ---------- Form submission ----------
-assignForm.addEventListener('submit', function(e) {
-    e.preventDefault();
+if (assignForm) {
 
-    const assignee = document.getElementById('assigneeSelect').value;
-    const dueDate = document.getElementById('dueDateInput').value;
-    const priority = document.getElementById('prioritySelect').value;
-    const frequency = document.getElementById('frequencySelect').value;   // now unique
-    const notes = document.getElementById('assignNotes').value;
+    assignForm.addEventListener('submit', function(e) {
+        e.preventDefault();
 
-    // Validations
-    if (!assignee) {
-        showToast('Please select an assignee.', 'error');
-        return;
-    }
-    if (!dueDate) {
-        showToast('Please select a due date.', 'error');
-        return;
-    }
+        const activeCategory = document.querySelector(".category-item.active");
 
-    // Build payload
-    const payload = {
-        scope_id: '{{ scope.id }}',
-        company: document.getElementById('company').value,
-        plant: document.getElementById('plant').value,
-        financial_year: document.getElementById('financialYear').value,
-        financial_month: document.getElementById('financialMonth').value,
-        category: document.querySelector('.category-item.active')?.innerText.trim() || '',
-        assignee: assignee,
-        due_date: dueDate,
-        priority: priority,
-        frequency: frequency,      // added
-        notes: notes
-    };
+        const assignee = document.getElementById('assigneeSelect').value;
+        const dueDate = document.getElementById('dueDateInput').value;
+        const priority = document.getElementById('prioritySelect').value;
+        const frequency = document.getElementById('frequencySelect').value;   // now unique
+        const notes = document.getElementById('assignNotes').value;
 
-    // Send to backend
-    fetch('/emission/api/assign-scope/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': csrftoken,
-        },
-        body: JSON.stringify(payload),
-    })
-    .then(response => response.json())
-    .then(result => {
-        if (result.success) {
-            showToast('Task assigned successfully!', 'success');
-            closeAssignModal();
-            // Optionally reset the form
-            assignForm.reset();
-        } else {
-            showToast(result.message || 'Assignment failed.', 'error');
+        // Validations
+        if (!assignee) {
+            showToast('Please select an assignee.', 'error');
+            return;
         }
-    })
-    .catch(error => {
-        console.error(error);
-        showToast('Network error. Please try again.', 'error');
+        if (!dueDate) {
+            showToast('Please select a due date.', 'error');
+            return;
+        }
+
+        // Build payload
+        const sourceIds = [];
+
+        document.querySelectorAll("#activityTableBody tr").forEach(function(row){
+
+            const checkbox = row.querySelector(".activity-checkbox");
+
+            if (
+                checkbox &&
+                checkbox.checked &&
+                row.dataset.source
+            ){
+                sourceIds.push(parseInt(row.dataset.source));
+            }
+
+        });
+
+        console.log(sourceIds);
+
+        const payload = {
+
+            scope_id: document.getElementById("selectedScopeId").value,
+
+            source_ids: sourceIds,
+
+            company: document.getElementById("company").value,
+
+            plant: document.getElementById("assignPlantSelect").value,
+
+            financial_year: document.getElementById("financialYear").value,
+
+            financial_month: document.getElementById("financialMonth").value,
+
+            category_id: activeCategory
+                ? activeCategory.dataset.categoryId
+                : "",
+
+            assignee: assignee,
+
+            due_date: dueDate,
+
+            priority: priority.toUpperCase(),
+
+            frequency: frequency.toUpperCase(),
+
+            notes: notes
+
+        };
+
+        console.log(payload);
+        // Send to backend
+        fetch('/emission/api/assignment/save/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify(payload),
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                showToast('Task assigned successfully!', 'success');
+                closeAssignModal();
+                // Optionally reset the form
+                assignForm.reset();
+            } else {
+                showToast(result.message || 'Assignment failed.', 'error');
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            showToast('Network error. Please try again.', 'error');
+        });
     });
-});
+}
 
 
 
@@ -3076,10 +3393,10 @@ function populateViewModal() {
     }
 
     rows.forEach(row => {
-        const activity = row.cells[0]?.innerText.trim() || '';
-        const source = row.cells[1]?.innerText.trim() || '';
+        const activity = row.cells[1]?.innerText.trim() || '';
+        const source = row.cells[2]?.innerText.trim() || '';
         const quantityInput = row.querySelector('.quantity');
-        const unit = row.cells[3]?.innerText.trim() || '';
+        const unit = row.cells[4]?.innerText.trim() || '';
         const factorInput = row.querySelector('.factor');
         const totalInput = row.querySelector('.total');
 
@@ -3149,10 +3466,12 @@ function populateViewModal() {
 
 
 // Open modal
-viewBtn.addEventListener('click', function() {
-    populateViewModal();
-    viewModal.classList.add('active');
-});
+if (viewBtn) {
+    viewBtn.addEventListener('click', function() {
+        populateViewModal();
+        viewModal.classList.add('active');
+    });
+}
 
 // Close modal functions
 function closeViewModal() {
@@ -3162,6 +3481,19 @@ viewCloseBtns.forEach(btn => btn.addEventListener('click', closeViewModal));
 viewModal.addEventListener('click', function(e) {
     if (e.target === this) closeViewModal();
 });
+
+
+
+
+const selectAllActivities = document.getElementById("selectAllActivities");
+
+if (selectAllActivities) {
+    selectAllActivities.addEventListener("change", function () {
+        const checked = this.checked;
+        document.querySelectorAll(".activity-checkbox")
+            .forEach(cb => cb.checked = checked);
+    });
+}
 </script>
 
 {% endblock %}

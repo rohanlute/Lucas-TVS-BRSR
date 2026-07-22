@@ -1,8 +1,15 @@
 from django.db import models
 from apps.calculator.models import Unit
-from ..companies.models import Company
+from apps.companies.models import Company
 from config import settings
-from ..organizations.models import FinancialYear,FinancialMonth,Plant
+from apps.organizations.models import (
+    ApprovalConfigurationTask,
+    FinancialYear,
+    FinancialMonth,
+    Plant,
+    ApprovalConfigurationTemplate,
+    ApprovalConfigurationTask,
+)
 from decimal import Decimal
 from django.utils import timezone
 
@@ -200,7 +207,178 @@ class EmissionFactor(models.Model):
             f"{self.unit.symbol} | "
             f"{self.emission_factor}"
         )
-    
+
+
+class EmissionAssignment(models.Model):
+
+    PRIORITY_CHOICES = [
+        ("LOW", "Low"),
+        ("MEDIUM", "Medium"),
+        ("HIGH", "High"),
+        ("URGENT", "Urgent"),
+    ]
+
+    STATUS_CHOICES = [
+        ("DRAFT", "Draft"),
+        ("ASSIGNED", "Assigned"),
+        ("IN_PROGRESS", "In Progress"),
+        ("SUBMITTED", "Submitted"),
+        ("APPROVED", "Approved"),
+        ("REJECTED", "Rejected"),
+    ]
+
+    assignment_code = models.CharField(
+        max_length=30,
+        unique=True,
+    )
+
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.PROTECT,
+        related_name="emission_assignments"
+    )
+
+    plant = models.ForeignKey(
+        Plant,
+        on_delete=models.PROTECT,
+        related_name="emission_assignments"
+    )
+
+    financial_year = models.ForeignKey(
+        FinancialYear,
+        on_delete=models.PROTECT,
+        related_name="emission_assignments"
+    )
+
+    financial_month = models.ForeignKey(
+        FinancialMonth,
+        on_delete=models.PROTECT,
+        related_name="emission_assignments"
+    )
+
+    scope = models.ForeignKey(
+        EmissionScope,
+        on_delete=models.PROTECT,
+        related_name="assignments"
+    )
+
+    workflow_template = models.ForeignKey(
+        ApprovalConfigurationTemplate,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="emission_assignments",
+    )
+
+    workflow_task = models.OneToOneField(
+        ApprovalConfigurationTask,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="emission_assignment",
+    )
+
+    assigner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="created_emission_assignments"
+    )
+
+    assignee = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="assigned_emission_assignments"
+    )
+
+    due_date = models.DateField(
+        null=True,
+        blank=True,
+    )
+
+    priority = models.CharField(
+        max_length=20,
+        choices=PRIORITY_CHOICES,
+        default="MEDIUM",
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="DRAFT",
+    )
+
+    notes = models.TextField(
+        blank=True,
+    )
+
+    review_comments = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    class Meta:
+
+        db_table = "env_emission_assignment"
+
+        ordering = [
+            "-financial_year",
+            "financial_month",
+            "plant",
+        ]
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "company",
+                    "plant",
+                    "financial_year",
+                    "financial_month",
+                    "scope",
+                ],
+                name="uq_env_emission_assignment"
+            )
+        ]
+
+    @property
+    def workflow_stage(self):
+        if self.workflow_task and self.workflow_task.current_stage:
+            return self.workflow_task.current_stage.label
+        return ""
+
+
+    @property
+    def workflow_stage_type(self):
+        if self.workflow_task and self.workflow_task.current_stage:
+            return self.workflow_task.current_stage.stage_type
+        return ""
+
+
+    @property
+    def overall_status(self):
+        if self.workflow_task:
+            if self.workflow_task.is_completed:
+                return "Completed"
+
+        return self.status
+
+
+    @property
+    def is_overdue(self):
+        if self.due_date:
+            return timezone.now().date() > self.due_date
+
+        return False
+
+    def __str__(self):
+        return self.assignment_code
 
 
 
@@ -241,6 +419,14 @@ class EmissionTransaction(models.Model):
         FinancialMonth,
         on_delete=models.PROTECT,
         related_name="emission_transactions"
+    )
+
+    assignment = models.ForeignKey(
+        EmissionAssignment,
+        on_delete=models.CASCADE,
+        related_name="transactions",
+        null=True,
+        blank=True,
     )
 
     activity = models.ForeignKey(
@@ -358,10 +544,7 @@ class EmissionTransaction(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=[
-                    "company",
-                    "plant",
-                    "financial_year",
-                    "financial_month",
+                    "assignment",
                     "activity",
                     "source",
                 ],
@@ -415,10 +598,38 @@ class EmissionTransaction(models.Model):
     def __str__(self):
 
         return (
-            f"{self.company.company_name} | "
-            f"{self.plant.name} | "
-            f"{self.financial_year} | "
-            f"{self.financial_month.month_name} | "
-            f"{self.activity.name}"
+            f"{self.assignment.assignment_code} | "
+            f"{self.activity.name} | "
+            f"{self.source.source_name}"
         )
+
+
+
+class EmissionAssignmentSource(models.Model):
+
+    assignment = models.ForeignKey(
+        EmissionAssignment,
+        on_delete=models.CASCADE,
+        related_name="assignment_sources",
+    )
+
+    source = models.ForeignKey(
+        "EmissionSource",
+        on_delete=models.PROTECT,
+        related_name="assignment_sources",
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    class Meta:
+        unique_together = (
+            "assignment",
+            "source",
+        )
+
+    def __str__(self):
+        return f"{self.assignment.assignment_code} - {self.source.source_name}"
+
 

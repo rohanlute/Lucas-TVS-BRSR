@@ -1,32 +1,27 @@
 from django.urls import path
+
+from .api_views import ApproveAssignmentView, RejectAssignmentView
 from .views import (
+    EmissionAssignmentDashboardView,
     EmissionsDashboardView, 
     EmissionsDashboardDataView,
+    PlantUsersAPIView,
+    SaveEmissionAssignmentAPIView,
     ScopeDashboardView,
-    TaskListView,
-    TaskFilterView,
-    TaskToggleView,
-    TaskExportView,
-    AdministratorAssignmentsView,
-    CreateAssignmentView,
-    GetDepartmentsByPlantView,
-    CreateAssignmentSubmitView,
     ESGDisclosureView,
-    EmissionTransactionListView,
-    EmissionTransactionDeleteView,
-    EmissionTransactionUpdateView,
-    EmissionTransactionCreateView,
     CategoryActivitiesView,
     ActivityFactorView,
     SaveEmissionTransactionsView,
     LoadEmissionTransactionsView,
     ScopeCategoriesView,
+    EmissionAssignmentDetailView,
+    SubmitAssignmentView,
 )
 
 app_name = "emission"
 
 urlpatterns = [
-    # ===== DASHBOARD =====
+    # ===== Analytical DASHBOARD =====
     path("", EmissionsDashboardView.as_view(), name="dashboard"),
     path("api/data/", EmissionsDashboardDataView.as_view(), name="dashboard-data"),
 
@@ -37,26 +32,18 @@ urlpatterns = [
     path("api/save-transactions/",SaveEmissionTransactionsView.as_view(),name="save-transactions"),
     path("api/load-transactions/",LoadEmissionTransactionsView.as_view(),name="load-transactions"),
     path("api/scope-categories/",ScopeCategoriesView.as_view(),name="scope_categories"),
+    path("api/plant-users/",PlantUsersAPIView.as_view(),name="plant_users"),
     
-    
-    # ===== TASK LIST =====
-    path("tasks/", TaskListView.as_view(), name="task-list"),
-    path("api/tasks/filter/", TaskFilterView.as_view(), name="task-filter"),
-    path("api/tasks/toggle/", TaskToggleView.as_view(), name="task-toggle"),
-    path("tasks/export/", TaskExportView.as_view(), name="task-export"),
-    
-    #======ASSIGNMENT=====
-    path("administrator/", AdministratorAssignmentsView.as_view(), name="administrator-assignments"),
-    path("administrator/create/", CreateAssignmentView.as_view(), name="create-assignment"),
-    path("api/departments/", GetDepartmentsByPlantView.as_view(), name="get-departments"),
-    path("api/assignment/create/", CreateAssignmentSubmitView.as_view(), name="create-assignment-submit"),
     
     #=====report====
     path("esg/", ESGDisclosureView.as_view(), name="esg-disclosure"),
+
+    #====== Correct Working Use ASSIGNMENT=====
+    path("assignments/",EmissionAssignmentDashboardView.as_view(),name="assignment_dashboard"),
+    path("api/assignment/save/",SaveEmissionAssignmentAPIView.as_view(),name="save-emission-assignment"),
+    path("api/submit-assignment/",SubmitAssignmentView.as_view(),name="submit_assignment"),
+    path("assignments/<int:assignment_id>/",EmissionAssignmentDetailView.as_view(),name="assignment_detail"),
+    path("api/approve-assignment/",ApproveAssignmentView.as_view(),name="approve_assignment"),
+    path("api/reject-assignment/",RejectAssignmentView.as_view(),name="reject_assignment"),
     
-    
-    path("transactions/",EmissionTransactionListView.as_view(),name="transaction_list",),
-    path("transactions/create/",EmissionTransactionCreateView.as_view(),name="transaction_create",),
-    path("transactions/<int:pk>/edit/",EmissionTransactionUpdateView.as_view(),name="transaction_update",),
-    path("transactions/<int:pk>/delete/",EmissionTransactionDeleteView.as_view(),name="transaction_delete",),
 ]
