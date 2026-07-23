@@ -12,6 +12,8 @@ from .models import EmissionTransaction
 from .forms import EmissionTransactionForm
 from .models import EmissionAssignment,EmissionTransaction
 from django.shortcuts import get_object_or_404
+from apps.notifications.services import NotificationService
+from apps.notifications.models import Notification
 
 
 class EmissionsDashboardView(TemplateView):
@@ -307,6 +309,11 @@ class SaveEmissionAssignmentAPIView(APIView):
                     source_id=source_id,
 
                 )
+
+            # ----------------------------------------
+            # Create Notification
+            # ----------------------------------------
+            NotificationService.notify(event="ASSIGN_SCOPE",assignment=assignment,sender=request.user,)
 
             return Response(
                 {

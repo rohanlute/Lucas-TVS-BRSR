@@ -563,7 +563,11 @@
                 <div class="dropdown nxl-h-item">
                     <a class="nxl-head-link me-3" data-bs-toggle="dropdown" href="#" role="button" data-bs-auto-close="outside">
                         <i class="feather-bell"></i>
-                        <span class="badge bg-danger nxl-h-badge">3</span>
+                        {% if navbar_notification_count %}
+                            <span class="badge bg-danger nxl-h-badge">
+                                {{ navbar_notification_count }}
+                            </span>
+                        {% endif %}
                     </a>
                     <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-notifications-menu">
                         <div class="d-flex justify-content-between align-items-center notifications-head">
@@ -573,53 +577,59 @@
                                 <span>Make as Read</span>
                             </a>
                         </div>
+                        {% for notification in navbar_notifications %}
                         <div class="notifications-item">
-                            <img src="{% static 'images/avatar/2.png' %}" alt="" class="rounded me-3 border" />
+                            <img src="{% static 'images/avatar/1.png' %}"
+                                class="rounded me-3 border">
                             <div class="notifications-desc">
-                                <a href="javascript:void(0);" class="font-body text-truncate-2-line"> <span class="fw-semibold text-dark">Malanie Hanvey</span> We should talk about that at lunch!</a>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div class="notifications-date text-muted border-bottom border-bottom-dashed">2 minutes ago</div>
-                                    <div class="d-flex align-items-center float-end gap-2">
-                                        <a href="javascript:void(0);" class="d-block wd-8 ht-8 rounded-circle bg-gray-300" data-bs-toggle="tooltip" title="Make as Read"></a>
-                                        <a href="javascript:void(0);" class="text-danger" data-bs-toggle="tooltip" title="Remove">
-                                            <i class="feather-x fs-12"></i>
-                                        </a>
+
+                                <a href="{{ notification.action_url }}"
+                                class="font-body text-truncate-2-line">
+
+                                    <div class="fw-semibold text-dark">
+                                        📋 {{ notification.title }}
                                     </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="notifications-item">
-                            <img src="{% static 'images/avatar/3.png' %}" alt="" class="rounded me-3 border" />
-                            <div class="notifications-desc">
-                                <a href="javascript:void(0);" class="font-body text-truncate-2-line"> <span class="fw-semibold text-dark">Valentine Maton</span> You can download the latest invoices now.</a>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div class="notifications-date text-muted border-bottom border-bottom-dashed">36 minutes ago</div>
-                                    <div class="d-flex align-items-center float-end gap-2">
-                                        <a href="javascript:void(0);" class="d-block wd-8 ht-8 rounded-circle bg-gray-300" data-bs-toggle="tooltip" title="Make as Read"></a>
-                                        <a href="javascript:void(0);" class="text-danger" data-bs-toggle="tooltip" title="Remove">
-                                            <i class="feather-x fs-12"></i>
-                                        </a>
+
+                                    <div class="small text-primary">
+                                        {{ notification.get_module_display }}
+                                        •
+                                        {{ notification.get_notification_type_display }}
                                     </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="notifications-item">
-                            <img src="{% static 'images/avatar/4.png' %}" alt="" class="rounded me-3 border" />
-                            <div class="notifications-desc">
-                                <a href="javascript:void(0);" class="font-body text-truncate-2-line"> <span class="fw-semibold text-dark">Archie Cantones</span> Don't forget to pickup Jeremy after school!</a>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div class="notifications-date text-muted border-bottom border-bottom-dashed">53 minutes ago</div>
-                                    <div class="d-flex align-items-center float-end gap-2">
-                                        <a href="javascript:void(0);" class="d-block wd-8 ht-8 rounded-circle bg-gray-300" data-bs-toggle="tooltip" title="Make as Read"></a>
-                                        <a href="javascript:void(0);" class="text-danger" data-bs-toggle="tooltip" title="Remove">
-                                            <i class="feather-x fs-12"></i>
-                                        </a>
+
+                                    <div class="small text-muted">
+                                        {{ notification.message }}
                                     </div>
+
+                                </a>
+
+                                <div class="d-flex justify-content-between align-items-center mt-1">
+
+                                    <small class="text-muted">
+                                        {{ notification.created_at|timesince }} ago
+                                    </small>
+
+                                    {% if not notification.is_read %}
+                                        <span class="badge bg-success">New</span>
+                                    {% endif %}
+
                                 </div>
+
                             </div>
+
                         </div>
+
+                        {% empty %}
+
+                        <div class="text-center py-4 text-muted">
+                            No Notifications
+                        </div>
+
+                        {% endfor %}
                         <div class="text-center notifications-footer">
-                            <a href="javascript:void(0);" class="fs-13 fw-semibold text-dark">Alls Notifications</a>
+                            <a href="{% url 'notifications:notification_list' %}"
+                            class="fs-13 fw-semibold text-dark">
+                                View All Notifications
+                            </a>
                         </div>
                     </div>
                 </div>
