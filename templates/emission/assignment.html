@@ -4,397 +4,572 @@
 {% block title %}Assignment Dashboard{% endblock %}
 
 {% block extra_css %}
-<style>
-  :root{
-    --ink:#1f2a44;
-    --muted:#64748b;
-    --surface:#ffffff;
-    --bg:#f4f7fb;
-    --border:#e2e8f0;
-    --brand:#1d4ed8;
-    --brand-soft:#eaf2ff;
-    --success:#16a34a;
-    --success-soft:#e8f8ef;
-    --warn:#d97706;
-    --warn-soft:#fff6e8;
-    --danger:#dc2626;
-    --danger-soft:#fdecec;
-    --shadow:0 20px 45px rgba(15,23,42,.08);
-  }
+    <style>
+        /* ── root tokens (keep colors, shrink sizing) ── */
+        :root {
+            --ink: #1f2a44;
+            --muted: #64748b;
+            --surface: #ffffff;
+            --bg: #f4f7fb;
+            --border: #e2e8f0;
+            --brand: #1d4ed8;
+            --brand-soft: #eaf2ff;
+            --success: #16a34a;
+            --success-soft: #e8f8ef;
+            --warn: #d97706;
+            --warn-soft: #fff6e8;
+            --danger: #dc2626;
+            --danger-soft: #fdecec;
+            --shadow: 0 8px 28px rgba(15, 23, 42, .07);
+        }
 
-  .assignment-dashboard-page{
-    min-height:100vh;
-    padding:24px 30px 36px;
-    background:
-      radial-gradient(circle at top left, rgba(29,78,216,.08), transparent 26%),
-      radial-gradient(circle at top right, rgba(22,163,74,.08), transparent 22%),
-      var(--bg);
-  }
+        /* ── page container ── */
+        .assignment-dashboard-page {
+            min-height: 100vh;
+            padding: 18px 22px 28px;
+            background:
+                radial-gradient(circle at top left, rgba(29, 78, 216, .07), transparent 24%),
+                radial-gradient(circle at top right, rgba(22, 163, 74, .07), transparent 20%),
+                var(--bg);
+        }
 
-  .dashboard-header{
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-start;
-    gap:16px;
-    margin-bottom:22px;
-  }
+        /* ── header ── */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
 
-  .dashboard-title h1{
-    margin:0;
-    font-size:28px;
-    font-weight:800;
-    color:var(--ink);
-  }
+        .dashboard-title h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--ink);
+        }
 
-  .dashboard-title p{
-    margin:6px 0 0;
-    color:var(--muted);
-    font-size:13px;
-  }
+        .dashboard-title p {
+            margin: 2px 0 0;
+            color: var(--muted);
+            font-size: 12px;
+        }
 
-  .header-actions{
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-  }
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
 
-  .btn-soft,
-  .btn-primary-link{
-    display:inline-flex;
-    align-items:center;
-    gap:8px;
-    border-radius:12px;
-    padding:11px 16px;
-    font-size:13px;
-    font-weight:700;
-    text-decoration:none;
-  }
+        .btn-soft,
+        .btn-primary-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: background .15s, box-shadow .15s;
+        }
 
-  .btn-soft{
-    background:#fff;
-    color:var(--ink);
-    border:1px solid var(--border);
-  }
+        .btn-soft {
+            background: #fff;
+            color: var(--ink);
+            border: 1px solid var(--border);
+        }
 
-  .btn-primary-link{
-    background:var(--brand);
-    color:#fff;
-    border:1px solid var(--brand);
-  }
+        .btn-soft:hover {
+            background: #f1f5f9;
+        }
 
-  .stats-grid{
-    display:grid;
-    grid-template-columns:repeat(4,minmax(0,1fr));
-    gap:16px;
-    margin-bottom:22px;
-  }
+        .btn-primary-link {
+            background: var(--brand);
+            color: #fff;
+            border: 1px solid var(--brand);
+        }
 
-  .stat-card{
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:18px;
-    padding:18px;
-    box-shadow:var(--shadow);
-  }
+        .btn-primary-link:hover {
+            background: #1a3fa8;
+            border-color: #1a3fa8;
+            color: #fff;
+        }
 
-  .stat-label{
-    font-size:12px;
-    font-weight:800;
-    letter-spacing:.08em;
-    text-transform:uppercase;
-    color:var(--muted);
-    margin-bottom:10px;
-  }
+        /* ── stats grid ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
 
-  .stat-value{
-    font-size:28px;
-    font-weight:800;
-    color:var(--ink);
-    line-height:1;
-  }
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 12px 16px;
+            box-shadow: var(--shadow);
+        }
 
-  .stat-note{
-    margin-top:8px;
-    font-size:13px;
-    color:var(--muted);
-  }
+        .stat-label {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .07em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
 
-  .assignment-list{
-    display:grid;
-    gap:16px;
-  }
+        .stat-value {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--ink);
+            line-height: 1.2;
+        }
 
-  .assignment-card{
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:20px;
-    padding:20px;
-    box-shadow:var(--shadow);
-  }
+        .stat-note {
+            margin-top: 4px;
+            font-size: 11px;
+            color: var(--muted);
+        }
 
-  .assignment-card-head{
-    display:flex;
-    justify-content:space-between;
-    gap:12px;
-    flex-wrap:wrap;
-    margin-bottom:16px;
-  }
+        /* ── assignment list ── */
+        .assignment-list {
+            display: grid;
+            gap: 12px;
+        }
 
-  .assignment-meta h3{
-    margin:0;
-    font-size:20px;
-    font-weight:800;
-    color:var(--ink);
-  }
+        /* ── card ── */
+        .assignment-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
 
-  .assignment-meta p{
-    margin:6px 0 0;
-    color:var(--muted);
-    font-size:13px;
-  }
+        /* ── card head (clickable toggle) ── */
+        .assignment-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: background 0.15s;
+            user-select: none;
+        }
 
-  .pill-row{
-    display:flex;
-    gap:8px;
-    flex-wrap:wrap;
-    align-items:flex-start;
-  }
+        .assignment-card-head:hover {
+            background: #f8fafc;
+        }
 
-  .pill{
-    display:inline-flex;
-    align-items:center;
-    border-radius:999px;
-    padding:6px 10px;
-    font-size:11px;
-    font-weight:700;
-    letter-spacing:.03em;
-    text-transform:uppercase;
-  }
+        .assignment-meta h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--ink);
+        }
 
-  .pill.brand{background:var(--brand-soft);color:var(--brand);}
-  .pill.success{background:var(--success-soft);color:var(--success);}
-  .pill.warn{background:var(--warn-soft);color:var(--warn);}
-  .pill.danger{background:var(--danger-soft);color:var(--danger);}
-  .pill.muted{background:#eef2f7;color:var(--muted);}
+        .assignment-meta p {
+            margin: 2px 0 0;
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.4;
+        }
 
-  .assignment-grid{
-    display:grid;
-    grid-template-columns:1.25fr .85fr;
-    gap:16px;
-  }
+        .pill-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
 
-  .question-box,
-  .assignment-summary-box{
-    border:1px solid var(--border);
-    border-radius:16px;
-    padding:16px;
-    background:#fbfdff;
-  }
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 4px 8px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .03em;
+            text-transform: uppercase;
+        }
 
-  .section-label{
-    display:block;
-    margin-bottom:10px;
-    font-size:11px;
-    font-weight:800;
-    letter-spacing:.08em;
-    text-transform:uppercase;
-    color:var(--muted);
-  }
+        .pill.brand {
+            background: var(--brand-soft);
+            color: var(--brand);
+        }
+        .pill.success {
+            background: var(--success-soft);
+            color: var(--success);
+        }
+        .pill.warn {
+            background: var(--warn-soft);
+            color: var(--warn);
+        }
+        .pill.danger {
+            background: var(--danger-soft);
+            color: var(--danger);
+        }
+        .pill.muted {
+            background: #eef2f7;
+            color: var(--muted);
+        }
 
-  .question-list{
-    list-style:none;
-    padding:0;
-    margin:0;
-    display:grid;
-    gap:10px;
-  }
+        /* toggle chevron */
+        .toggle-icon {
+            transition: transform 0.25s ease;
+            font-size: 14px;
+            color: var(--muted);
+            margin-left: 4px;
+        }
 
-  .question-item{
-    display:flex;
-    justify-content:space-between;
-    gap:12px;
-    align-items:flex-start;
-    padding:12px 14px;
-    background:#fff;
-    border:1px solid var(--border);
-    border-radius:12px;
-  }
+        .toggle-icon.rotated {
+            transform: rotate(180deg);
+        }
 
-  .question-item strong{
-    display:block;
-    color:var(--ink);
-    font-size:13px;
-    margin-bottom:4px;
-  }
+        /* ── collapsible body ── */
+        .assignment-card-body {
+            padding: 0 16px 16px;
+        }
 
-  .question-item small{
-    color:var(--muted);
-    font-size:12px;
-  }
+        .assignment-grid {
+            display: grid;
+            grid-template-columns: 1.3fr .85fr;
+            gap: 12px;
+        }
 
-  .status-chip{
-    flex-shrink:0;
-    padding:6px 10px;
-    border-radius:999px;
-    font-size:11px;
-    font-weight:800;
-    text-transform:uppercase;
-    letter-spacing:.04em;
-  }
+        .question-box,
+        .assignment-summary-box {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px 14px;
+            background: #fbfdff;
+        }
 
-  .status-chip.completed{background:var(--success-soft);color:var(--success);}
-  .status-chip.in_progress{background:var(--warn-soft);color:var(--warn);}
-  .status-chip.needs_revision{background:var(--danger-soft);color:var(--danger);}
-  .status-chip.pending{background:#eef2f7;color:var(--muted);}
-  .status-chip.draft{background:#eef2f7;color:var(--muted);}
-  .status-chip.approved{background:var(--success-soft);color:var(--success);}
-  .status-chip.submitted{background:var(--warn-soft);color:var(--warn);}
-  .status-chip.resubmitted{background:var(--warn-soft);color:var(--warn);}
-  .status-chip.rejected{background:var(--danger-soft);color:var(--danger);}
+        .section-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .07em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
 
-  .empty-state{
-    background:var(--surface);
-    border:1px dashed var(--border);
-    border-radius:18px;
-    padding:40px 24px;
-    text-align:center;
-    color:var(--muted);
-    box-shadow:var(--shadow);
-  }
+        .question-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            gap: 6px;
+        }
 
-  .empty-state h3{
-    margin:0 0 8px;
-    font-size:20px;
-    color:var(--ink);
-  }
+        .question-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            align-items: flex-start;
+            padding: 8px 10px;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
 
-  @media (max-width: 1200px){
-    .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
-    .assignment-grid{grid-template-columns:1fr;}
-  }
+        .question-item strong {
+            display: block;
+            color: var(--ink);
+            font-size: 12px;
+            margin-bottom: 1px;
+        }
 
-  @media (max-width: 768px){
-    .assignment-dashboard-page{padding:16px;}
-    .dashboard-header{flex-direction:column;}
-    .stats-grid{grid-template-columns:1fr;}
-    .assignment-card-head{flex-direction:column;}
-  }
-</style>
+        .question-item small {
+            color: var(--muted);
+            font-size: 10px;
+        }
+
+        /* summary details */
+        .assignment-summary-box .mb-3 {
+            margin-bottom: 6px;
+        }
+
+        .assignment-summary-box .fw-semibold {
+            font-weight: 700;
+            font-size: 11px;
+            color: var(--ink);
+        }
+
+        .assignment-summary-box .text-muted {
+            color: var(--muted);
+            font-size: 11px;
+            line-height: 1.4;
+        }
+
+        .assignment-summary-box .text-dark {
+            color: var(--ink);
+        }
+
+        .assignment-summary-box .btn-primary-link {
+            margin-top: 6px;
+            width: 100%;
+            justify-content: center;
+            padding: 7px 12px;
+            font-size: 11px;
+            border-radius: 8px;
+        }
+
+        /* ── empty state ── */
+        .empty-state {
+            background: var(--surface);
+            border: 1px dashed var(--border);
+            border-radius: 16px;
+            padding: 28px 20px;
+            text-align: center;
+            color: var(--muted);
+            box-shadow: var(--shadow);
+        }
+
+        .empty-state h3 {
+            margin: 0 0 4px;
+            font-size: 18px;
+            color: var(--ink);
+        }
+
+        .empty-state p {
+            margin: 0;
+            font-size: 13px;
+        }
+
+        /* ── responsive ── */
+        @media (max-width: 1200px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .assignment-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .assignment-dashboard-page {
+                padding: 12px;
+            }
+            .dashboard-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .assignment-card-head {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .assignment-grid {
+                grid-template-columns: 1fr;
+            }
+            .assignment-card-body {
+                padding: 0 12px 12px;
+            }
+        }
+
+        /* utilities */
+        .w-100 {
+            width: 100%;
+        }
+        .justify-content-center {
+            justify-content: center;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
-<div class="assignment-dashboard-page">
-  <div class="dashboard-header">
-    <div class="dashboard-title">
-      <h1>Assignment Dashboard</h1>
-      <p>Assignments visible to the logged-in user based on plant, department, and direct user scope.</p>
-    </div>
-    <div class="header-actions">
-      <a class="btn-soft" href="{% url 'brsr:brsr_list' %}">BRSR Home</a>
-      <a class="btn-primary-link" href="{% url 'brsr:question_workspace' %}">Open Workspace</a>
-    </div>
-  </div>
+    <div class="assignment-dashboard-page">
 
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-label">Total Assignments</div>
-      <div class="stat-value">{{ assignment_count }}</div>
-      <div class="stat-note">Scope: {{ assignment_scope|upper }}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Open</div>
-      <div class="stat-value">{{ open_count }}</div>
-      <div class="stat-note">Waiting for submission or review</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Completed</div>
-      <div class="stat-value">{{ completed_count }}</div>
-      <div class="stat-note">Assignments fully approved</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Overdue</div>
-      <div class="stat-value">{{ overdue_count }}</div>
-      <div class="stat-note">Past due date and still open</div>
-    </div>
-  </div>
-
-  {% if assignments %}
-  <div class="assignment-list">
-    {% for assignment in assignments %}
-    <article class="assignment-card">
-      <div class="assignment-card-head">
-        <div class="assignment-meta">
-          <h3>{{ assignment.assignment_id }}</h3>
-          <p>{{ assignment.plant }} · {{ assignment.section }}{% if assignment.principle %} · {{ assignment.principle }}{% endif %}</p>
-        </div>
-        <div class="pill-row">
-          <span class="pill brand">{{ assignment.assignee_type|default:"user" }}</span>
-          <span class="pill {% if assignment.overall_status == 'completed' %}success{% elif assignment.overall_status == 'needs_revision' %}danger{% elif assignment.overall_status == 'in_progress' %}warn{% else %}muted{% endif %}">{{ assignment.overall_status|default:"pending" }}</span>
-          {% if assignment.is_overdue %}
-          <span class="pill danger">Overdue</span>
-          {% endif %}
-        </div>
-      </div>
-
-      <div class="assignment-grid">
-        <div class="question-box">
-          <span class="section-label">Assigned Questions</span>
-          <ul class="question-list">
-            {% for question in assignment.questions %}
-            <li class="question-item">
-              <div>
-                <strong>{{ question.number }}. {{ question.title }}</strong>
-                <small>{{ question.question_id }} · {{ question.section_code }}</small>
-              </div>
-              <span class="status-chip {{ question.status|default:'pending' }}">{{ question.status|default:"pending" }}</span>
-            </li>
-            {% endfor %}
-          </ul>
+        <!-- header -->
+        <div class="dashboard-header">
+            <div class="dashboard-title">
+                <h1>Assignment Dashboard</h1>
+                <p>Assignments visible to the logged-in user based on plant, department, and direct user scope.</p>
+            </div>
+            <div class="header-actions">
+                <a class="btn-soft" href="{% url 'brsr:brsr_list' %}">BRSR Home</a>
+                <a class="btn-primary-link" href="{% url 'brsr:question_workspace' %}">Open Workspace</a>
+            </div>
         </div>
 
-        <div class="assignment-summary-box">
-          <span class="section-label">Assignment Details</span>
-          <div class="mb-3">
-            <div class="fw-semibold text-dark">Assigned To</div>
-            <div class="text-muted">{{ assignment.assignee }}</div>
-          </div>
-          <div class="mb-3">
-            <div class="fw-semibold text-dark">Assigned By</div>
-            <div class="text-muted">{{ assignment.assigner }}</div>
-          </div>
-          <div class="mb-3">
-            <div class="fw-semibold text-dark">Financial Year</div>
-            <div class="text-muted">{{ assignment.financial_year }}</div>
-          </div>
-          <div class="mb-3">
-            <div class="fw-semibold text-dark">Workflow Template</div>
-            <div class="text-muted">{{ assignment.workflow_template|default:"-" }}</div>
-          </div>
-          <div class="mb-3">
-            <div class="fw-semibold text-dark">Current Stage</div>
-            <div class="text-muted">{{ assignment.workflow_stage|default:"-" }}</div>
-          </div>
-          <div class="mb-3">
-            <div class="fw-semibold text-dark">Due Date</div>
-            <div class="text-muted">{{ assignment.due_date|default:"-" }}</div>
-          </div>
-          <div class="mb-3">
-            <div class="fw-semibold text-dark">Questions</div>
-            <div class="text-muted">{{ assignment.question_count }}</div>
-          </div>
-          {% if assignment.workspace_url %}
-          <a class="btn-primary-link w-100 justify-content-center" href="{{ assignment.workspace_url }}">Open Workspace</a>
-          {% endif %}
+        <!-- stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Assignments</div>
+                <div class="stat-value">{{ assignment_count }}</div>
+                <div class="stat-note">Scope: {{ assignment_scope|upper }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Open</div>
+                <div class="stat-value">{{ open_count }}</div>
+                <div class="stat-note">Waiting for submission or review</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Completed</div>
+                <div class="stat-value">{{ completed_count }}</div>
+                <div class="stat-note">Assignments fully approved</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Overdue</div>
+                <div class="stat-value">{{ overdue_count }}</div>
+                <div class="stat-note">Past due date and still open</div>
+            </div>
         </div>
-      </div>
-    </article>
-    {% endfor %}
-  </div>
-  {% else %}
-  <div class="empty-state">
-    <h3>No assignments found</h3>
-    <p>There are no assignments available for your current login and scope yet.</p>
-  </div>
-  {% endif %}
-</div>
+
+        <!-- assignment list -->
+        {% if assignments %}
+            <div class="assignment-list">
+                {% for assignment in assignments %}
+                    <article class="assignment-card">
+
+                        <!-- clickable header -->
+                        <div class="assignment-card-head"
+                             data-bs-toggle="collapse"
+                             data-bs-target="#collapse-{{ forloop.counter }}"
+                             aria-expanded="false"
+                             aria-controls="collapse-{{ forloop.counter }}"
+                             role="button">
+                            <div class="assignment-meta">
+                                <h3>{{ assignment.assignment_code }}</h3>
+                                <p>
+                                    {{ assignment.company.company_name }}<br>
+                                    {{ assignment.plant.name }}<br>
+                                    {{ assignment.scope.name }}{% if assignment.principle %} · {{ assignment.principle }}{% endif %}
+                                </p>
+                            </div>
+                            <div class="pill-row">
+                                <span class="pill brand">{{ assignment.assignee_type|default:"user" }}</span>
+                                <span class="pill
+                                    {% if assignment.status == 'APPROVED' %}
+                                        success
+                                    {% elif assignment.status == 'REJECTED' %}
+                                        danger
+                                    {% elif assignment.status == 'SUBMITTED' %}
+                                        warn
+                                    {% elif assignment.status == 'IN_PROGRESS' %}
+                                        brand
+                                    {% else %}
+                                        muted
+                                    {% endif %}">
+                                    {{ assignment.get_status_display }}
+                                </span>
+                                {% if assignment.is_overdue %}
+                                    <span class="pill danger">Overdue</span>
+                                {% endif %}
+                                <span class="toggle-icon" id="icon-{{ forloop.counter }}">▼</span>
+                            </div>
+                        </div>
+
+                        <!-- collapsible body -->
+                        <div class="collapse assignment-card-body" id="collapse-{{ forloop.counter }}">
+                            <div class="assignment-grid">
+
+                                <!-- left: questions -->
+                                <div class="question-box">
+                                    <span class="section-label">Assigned Questions</span>
+                                    <ul class="question-list">
+                                        {% for item in assignment.assignment_sources.all %}
+                                            <li class="question-item">
+                                                <div>
+                                                    <strong>{{ item.source.source_name }}</strong>
+                                                    <small>{{ item.source.activity.name }}</small>
+                                                </div>
+                                            </li>
+                                        {% empty %}
+                                            <li class="question-item">
+                                                <div>
+                                                    <strong>No Sources Assigned</strong>
+                                                </div>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+
+                                <!-- right: details -->
+                                <div class="assignment-summary-box">
+                                    <span class="section-label">Assignment Details</span>
+
+                                    <div class="mb-3">
+                                        <div class="fw-semibold text-dark">Assigned To</div>
+                                        <div class="text-muted">{{ assignment.assignee }}</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="fw-semibold text-dark">Assigned By</div>
+                                        <div class="text-muted">{{ assignment.assigner }}</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="fw-semibold text-dark">Financial Year</div>
+                                        <div class="text-muted">{{ assignment.financial_year.financial_year }}</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="fw-semibold text-dark">Financial Month</div>
+                                        <div class="text-muted">{{ assignment.financial_month.month_name }}</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="fw-semibold text-dark">Workflow Template</div>
+                                        <div class="text-muted">{{ assignment.workflow_template|default:"-" }}</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="fw-semibold text-dark">Current Stage</div>
+                                        <div class="text-muted">{{ assignment.workflow_stage|default:"-" }}</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="fw-semibold text-dark">Due Date</div>
+                                        <div class="text-muted">{{ assignment.due_date|default:"-" }}</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="fw-semibold text-dark">Priority</div>
+                                        <div class="text-muted">{{ assignment.priority }}</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="fw-semibold text-dark">Notes</div>
+                                        <div class="text-muted">{{ assignment.notes|default:"-" }}</div>
+                                    </div>
+
+                                    <a class="btn-primary-link" href="{% url 'emission:scope_dataentry' %}?assignment={{ assignment.id }}">
+                                        Open Workspace
+                                    </a>
+                                </div>
+
+                            </div><!-- /assignment-grid -->
+                        </div><!-- /collapse -->
+
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <h3>No assignments found</h3>
+                <p>There are no assignments available for your current login and scope yet.</p>
+            </div>
+        {% endif %}
+
+    </div>
+
+    <!-- optional: rotate chevron on toggle (if Bootstrap's show.bs.collapse events not used) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // For each collapse element, listen to show/hide events to rotate icon
+            var collapses = document.querySelectorAll('.collapse');
+            collapses.forEach(function(collapse) {
+                collapse.addEventListener('show.bs.collapse', function() {
+                    var icon = document.getElementById('icon-' + this.id.split('-')[1]);
+                    if (icon) icon.classList.add('rotated');
+                });
+                collapse.addEventListener('hide.bs.collapse', function() {
+                    var icon = document.getElementById('icon-' + this.id.split('-')[1]);
+                    if (icon) icon.classList.remove('rotated');
+                });
+            });
+        });
+    </script>
 {% endblock %}

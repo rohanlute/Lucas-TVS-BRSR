@@ -1,6 +1,6 @@
 from django import forms
 
-from .models import EmissionTransaction
+from .models import EmissionAssignment, EmissionTransaction
 
 
 class EmissionTransactionForm(forms.ModelForm):
@@ -116,3 +116,22 @@ class EmissionTransactionForm(forms.ModelForm):
                 )
 
         return cleaned_data
+    
+
+
+class EmissionAssignmentForm(forms.ModelForm):
+
+    class Meta:
+        model = EmissionAssignment
+
+        fields = [
+            "company",
+            "plant",
+            "financial_year",
+            "financial_month",
+            "scope",
+            "assignee",
+            "due_date",
+            "priority",
+            "notes",
+        ]

@@ -30,10 +30,12 @@
                         <span class="nxl-micon"><i class="feather-airplay"></i></span>
                         <span class="nxl-mtext">Dashboards</span><span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
                     </a>
+                    {% if request.user.is_super_admin or request.user.is_superuser %}
                     <ul class="nxl-submenu">
                         <li class="nxl-item"><a class="nxl-link" href="index.html">CRM</a></li>
                         <li class="nxl-item"><a class="nxl-link" href="analytics.html">Analytics</a></li>
                     </ul>
+                    {% endif %}
                 </li>
                 {% if request.user|has_perm:'ACCESS_COMPANY_MODULE' %}
                 <li class="nxl-item nxl-hasmenu">
@@ -57,11 +59,13 @@
                         {% if request.user.is_super_admin or request.user.is_superuser or request.user.role and request.user.role.role_code == 'COMPANYADMIN' %}<li class="nxl-item"><a class="nxl-link" href="{% url 'accounts:role_list' %}">Role &amp; Permission</a></li>{% endif %}
                         <li class="nxl-item"><a class="nxl-link" href="{% url 'accounts:department_list' %}">Departments</a></li>
                         <li class="nxl-item"><a class="nxl-link" href="{% url 'organizations:plant_list' %}">Plants Management</a></li>
+                        {% if request.user.is_super_admin or request.user.is_superuser %}
                         <li class="nxl-item"><a class="nxl-link" href="{% url 'organizations:financial_year_list' %}">
                                 Financial Year
                         </a>
                         </li>
                         <li class="nxl-item"><a class="nxl-link" href="{% url 'organizations:workflow_configuration_template_list' %}">Workflow Configurations</a></li>
+                        {% endif %}
                         
                     </ul>
                 </li>
@@ -120,24 +124,14 @@
                                 <span class="nxl-text">Scope Data Entry</span>
                             </a>
                         </li>
-                        <li class="nxl-item">
-                            <a class="nxl-link" href="{% url 'emission:task-list' %}">
-                                <span class="nxl-text">Task List</span>
-                            </a>
-                        </li>
                        <li class="nxl-item">
-                        <a class="nxl-link" href="{% url 'emission:administrator-assignments' %}">
+                        <a class="nxl-link" href="{% url 'emission:assignment_dashboard' %}">
                             <span class="nxl-text">Assignment</span>
                         </a>
                     </li>
                     <li class="nxl-item">
                         <a class="nxl-link" href="{% url 'emission:esg-disclosure' %}">
                             <span class="nxl-text">Report</span>
-                        </a>
-                    </li>
-                    <li class="nxl-item">
-                        <a class="nxl-link" href="{% url 'emission:transaction_list' %}">
-                               Transaction List
                         </a>
                     </li>
                     </ul>
@@ -155,6 +149,7 @@
                     </a>
 
                     <ul class="nxl-submenu">
+                        {% if request.user.is_super_admin or request.user.is_superuser %}
                         <li class="nxl-item">
                             <a class="nxl-link" href="{% url 'notifications:notification_list' %}">
                                 Notifications
@@ -172,6 +167,7 @@
                                 Email
                             </a>
                         </li>
+                        {% endif %}
                         {% comment %} <li class="nxl-item">
                             <a class="nxl-link" href="{% url 'goals:dashboard' %}">
                                 Goals
