@@ -633,6 +633,9 @@ class InitiativeListView(LoginRequiredMixin, TemplateView):
         selected_goal = self.request.GET.get('goal', '')
         selected_kpi = self.request.GET.get('kpi', '')
         
+        # Calculate TOTAL before filtering
+        total_all_initiatives = len(session_initiatives)
+        
         # Filter initiatives
         filtered_initiatives = session_initiatives.copy()
         
@@ -682,7 +685,8 @@ class InitiativeListView(LoginRequiredMixin, TemplateView):
         for initiative in filtered_initiatives:
             topic = initiative.get('topic', 'Uncategorized')
             kpi = initiative.get('kpi', 'Uncategorized KPI')
-            goal = initiative.get('goal', 'Uncategorized Goal')  # <-- GET GOAL
+            goal = initiative.get('goal', 'Uncategorized Goal')
+            status = initiative.get('status', '')
             
             if topic not in topic_map:
                 topic_map[topic] = {
@@ -698,11 +702,26 @@ class InitiativeListView(LoginRequiredMixin, TemplateView):
                 topic_map[topic]['kpis'][kpi] = {
                     'kpi_name': kpi,
                     'kpi_unit': initiative.get('kpi_unit', ''),
-                    'goal_name': goal,  # <-- ADD GOAL NAME HERE
-                    'initiatives': []
+                    'goal_name': goal,
+                    'initiatives': [],
+                    'total_count': 0,           # ✅ ADD THIS
+                    'in_progress_count': 0,     # ✅ ADD THIS
+                    'completed_count': 0,       # ✅ ADD THIS
+                    'planning_count': 0         # ✅ ADD THIS
                 }
             
+            # Add initiative and update counts
             topic_map[topic]['kpis'][kpi]['initiatives'].append(initiative)
+            topic_map[topic]['kpis'][kpi]['total_count'] += 1
+            
+            # Update status counts
+            if status == 'In Progress':
+                topic_map[topic]['kpis'][kpi]['in_progress_count'] += 1
+            elif status == 'Completed':
+                topic_map[topic]['kpis'][kpi]['completed_count'] += 1
+            elif status == 'Planning':
+                topic_map[topic]['kpis'][kpi]['planning_count'] += 1
+            
             topic_map[topic]['total_initiatives'] += 1
         
         # Convert to list
@@ -730,7 +749,7 @@ class InitiativeListView(LoginRequiredMixin, TemplateView):
         all_statuses = ['Planning', 'In Progress', 'Completed', 'On Hold']
         
         # Calculate stats
-        total = len(filtered_initiatives)
+        total_filtered = len(filtered_initiatives)
         in_progress = len([i for i in filtered_initiatives if i.get('status') == 'In Progress'])
         completed = len([i for i in filtered_initiatives if i.get('status') == 'Completed'])
         planning = len([i for i in filtered_initiatives if i.get('status') == 'Planning'])
@@ -753,7 +772,8 @@ class InitiativeListView(LoginRequiredMixin, TemplateView):
             'selected_topic': selected_topic,
             'selected_goal': selected_goal,
             'selected_kpi': selected_kpi,
-            'total_initiatives': total,
+            'total_all_initiatives': total_all_initiatives,
+            'total_initiatives': total_filtered,
             'in_progress_count': in_progress,
             'completed_count': completed,
             'planning_count': planning,
@@ -1216,7 +1236,7 @@ class InitiativeDetailView(LoginRequiredMixin, TemplateView):
         
         context.update({
             'material_topic': material_topic,
-            'grouped_by_kpi': grouped_by_kpi,  # Changed from grouped_initiatives
+            'grouped_by_kpi': grouped_by_kpi,  
             'topic_initiatives': topic_initiatives,
             'total_initiatives': total_initiatives,
             'total_kpis': total_kpis,

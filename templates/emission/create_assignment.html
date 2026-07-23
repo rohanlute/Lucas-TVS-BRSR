@@ -124,6 +124,23 @@
     margin-top: 2px;
   }
 
+  .form-group .error-text {
+    font-size: 12px;
+    color: #ef4444;
+    margin-top: 2px;
+    display: none;
+  }
+
+  .form-group.has-error select,
+  .form-group.has-error input {
+    border-color: #ef4444;
+    background: #fef2f2;
+  }
+
+  .form-group.has-error .error-text {
+    display: block;
+  }
+
   /* ===== FORM ACTIONS ===== */
   .form-actions {
     display: flex;
@@ -236,83 +253,115 @@
       justify-content: center;
     }
   }
+
+  /* Loading spinner for select */
+  .loading-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #eef2f6;
+    border-top-color: #2563eb;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    margin-right: 8px;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Success animation for the button */
+  .btn-primary.success {
+    background: #22c07a;
+  }
+
+  .btn-primary.success:hover {
+    background: #16a34a;
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-  <!-- PAGE HEADER -->
- <div class="page-header">
-    <div class="page-header-left d-flex align-items-center">
-      <div class="page-header-title">
-        <h5 class="m-b-10">Assignment</h5>
-      </div>
-
-      <ul class="breadcrumb">
-        <li class="breadcrumb-item"><a href="#">Home</a></li>
-        <li class="breadcrumb-item">
-          <a href="{% url 'emission:dashboard' %}">Emission</a>
-        </li>
-        <li class="breadcrumb-item active">Assignment</li>
-      </ul>
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">Assignment</h5>
     </div>
-     <div class="page-header-right ms-auto">
-      <div class="page-header-right-items">
-        <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
-         {% comment %} <button class="btn-add" onclick="addAssignment()">
-        <i class="fas fa-plus"></i> New Assignment
-      </button> {% endcomment %}
-        </div>
-      </div>
-    </div> 
+
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a href="#">Home</a></li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'emission:dashboard' %}">Emission</a>
+      </li>
+      <li class="breadcrumb-item active">Create Assignment</li>
+    </ul>
   </div>
+  <div class="page-header-right ms-auto">
+    <div class="page-header-right-items">
+      <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+        <button class="btn btn-outline-secondary" onclick="cancelAssignment()">
+          <i class="fas fa-arrow-left me-2"></i> Back to List
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="create-assignment-page">
   <!-- FORM -->
   <div class="form-container">
-    <div class="form-title">Assignment Details</div>
+    <div class="form-title">
+      <i class="fas fa-tasks me-2" style="color: #2563eb;"></i>
+      Assignment Details
+    </div>
     
     <form id="assignmentForm" onsubmit="return false;">
       {% csrf_token %}
       
       <!-- Row 1: Plant, Department, Scope -->
       <div class="form-row">
-        <div class="form-group">
+        <div class="form-group" id="plantGroup">
           <label for="plant">Plant / Location <span class="required">*</span></label>
-          <select id="plant" name="plant" onchange="getDepartments()" required>
+          <select id="plant" name="plant" required>
             <option value="">Select Plant</option>
             {% for plant in plants %}
-            <option value="{{ plant.id }}">{{ plant.name }}</option>
+            <option value="{{ plant.id }}" data-name="{{ plant.name }}">{{ plant.name }}</option>
             {% endfor %}
           </select>
+          <span class="error-text">Please select a plant</span>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="departmentGroup">
           <label for="department">Department <span class="required">*</span></label>
-          <select id="department" name="department" required>
+          <select id="department" name="department" required disabled>
             <option value="">Select Department</option>
           </select>
+          <span class="error-text">Please select a department</span>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="scopeGroup">
           <label for="scope">Scope <span class="required">*</span></label>
-          <select id="scope" name="scope" onchange="updateActivities()" required>
+          <select id="scope" name="scope" required>
             <option value="">Select Scope</option>
-            <option value="Scope 1">Scope 1</option>
-            <option value="Scope 2">Scope 2</option>
-            <option value="Scope 3">Scope 3</option>
+            {% for scope in scopes %}
+            <option value="{{ scope.id }}" data-code="{{ scope.code }}">{{ scope.name }}</option>
+            {% endfor %}
           </select>
+          <span class="error-text">Please select a scope</span>
         </div>
       </div>
 
-      <!-- Row 2: Activity, Frequency -->
+      <!-- Row 2: Category, Frequency -->
       <div class="form-row two-col">
-        <div class="form-group">
-          <label for="activity">Activity <span class="required">*</span></label>
-          <select id="activity" name="activity" required>
-            <option value="">Select Activity</option>
+        <div class="form-group" id="categoryGroup">
+          <label for="category">Category <span class="required">*</span></label>
+          <select id="category" name="category" required disabled>
+            <option value="">Select Category</option>
           </select>
+          <span class="error-text">Please select a category</span>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="frequencyGroup">
           <label for="frequency">Frequency <span class="required">*</span></label>
           <select id="frequency" name="frequency" required>
             <option value="">Select Frequency</option>
@@ -320,40 +369,53 @@
             <option value="{{ freq }}">{{ freq }}</option>
             {% endfor %}
           </select>
+          <span class="error-text">Please select a frequency</span>
         </div>
       </div>
 
       <!-- Row 3: Assignee, Reviewer, Due Day -->
       <div class="form-row">
-        <div class="form-group">
+        <div class="form-group" id="assigneeGroup">
           <label for="assignee">Assignee <span class="required">*</span></label>
           <select id="assignee" name="assignee" required>
             <option value="">Select Assignee</option>
             {% for person in people %}
-            <option value="{{ person }}">{{ person }}</option>
+            <option value="{{ person.id }}">{{ person.full_name }} ({{ person.employee_code }})</option>
             {% endfor %}
           </select>
+          <span class="error-text">Please select an assignee</span>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="reviewerGroup">
           <label for="reviewer">Reviewer <span class="required">*</span></label>
           <select id="reviewer" name="reviewer" required>
             <option value="">Select Reviewer</option>
             {% for person in people %}
-            <option value="{{ person }}">{{ person }}</option>
+            <option value="{{ person.id }}">{{ person.full_name }} ({{ person.employee_code }})</option>
             {% endfor %}
           </select>
+          <span class="error-text">Please select a reviewer</span>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="dueDayGroup">
           <label for="due_day">Due Day of Month <span class="required">*</span></label>
-          <input type="number" id="due_day" name="due_day" min="1" max="31" required>
+          <input type="number" id="due_day" name="due_day" min="1" max="31" placeholder="e.g., 15" required>
+          <span class="error-text">Please enter a valid day (1-31)</span>
+          <span class="help-text">The day of the month when this assignment is due</span>
+        </div>
+      </div>
+
+      <!-- Row 4: Additional Notes -->
+      <div class="form-row">
+        <div class="form-group" style="grid-column: 1 / -1;">
+          <label for="notes">Notes</label>
+          <textarea id="notes" name="notes" rows="3" placeholder="Add any additional notes or instructions..." style="padding: 10px 14px; border: 2px solid #eef2f6; border-radius: 10px; font-size: 13px; color: #1a2332; background: white; transition: all 0.2s ease; outline: none; width: 100%; resize: vertical; font-family: inherit;"></textarea>
         </div>
       </div>
 
       <!-- Form Actions -->
       <div class="form-actions">
-        <button type="button" class="btn-primary" onclick="submitAssignment()">
+        <button type="button" class="btn-primary" id="submitBtn" onclick="submitAssignment()">
           <i class="fas fa-plus"></i> Create &amp; Generate Tasks
         </button>
         <button type="button" class="btn-secondary" onclick="cancelAssignment()">
@@ -365,7 +427,9 @@
 </div>
 
 <script>
-// ===== CSRF TOKEN =====
+// =============================================
+// CSRF TOKEN
+// =============================================
 function getCookie(name) {
   let cookieValue = null;
   if (document.cookie && document.cookie !== '') {
@@ -383,40 +447,65 @@ function getCookie(name) {
 
 const csrftoken = getCookie('csrftoken');
 
-// ===== SCOPE ACTIVITIES =====
-const scopeActivities = {
-  'Scope 1': [
-    'Diesel Consumption',
-    'Petrol Consumption',
-    'LPG Consumption',
-    'Natural Gas',
-    'DG Set Diesel',
-    'Refrigerant Leakage',
-    'Company Vehicles'
-  ],
-  'Scope 2': [
-    'Purchased Electricity',
-    'Purchased Steam',
-    'Purchased Cooling',
-    'Renewable Electricity'
-  ],
-  'Scope 3': [
-    'Business Travel',
-    'Employee Commuting',
-    'Waste Disposal',
-    'Purchased Goods',
-    'Transportation',
-    'Water Consumption',
-    'Capital Goods',
-    'Investments'
-  ]
-};
+// =============================================
+// DOM READY
+// =============================================
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('✅ Create Assignment form loaded');
+  
+  // Initialize event listeners
+  setupEventListeners();
+  
+  // Set default due day to 15
+  document.getElementById('due_day').value = 15;
+});
 
-// ===== GET DEPARTMENTS BY PLANT =====
+// =============================================
+// SETUP EVENT LISTENERS
+// =============================================
+function setupEventListeners() {
+  // Plant change -> load departments
+  document.getElementById('plant').addEventListener('change', function() {
+    clearError(this);
+    getDepartments();
+  });
+
+  // Scope change -> load categories
+  document.getElementById('scope').addEventListener('change', function() {
+    clearError(this);
+    getCategories();
+  });
+
+  // Clear errors on input change
+  document.querySelectorAll('select, input, textarea').forEach(function(element) {
+    element.addEventListener('change', function() {
+      clearError(this);
+    });
+    element.addEventListener('input', function() {
+      clearError(this);
+    });
+  });
+
+  // Validate due day on input
+  document.getElementById('due_day').addEventListener('input', function() {
+    const val = parseInt(this.value);
+    if (val < 1 || val > 31 || isNaN(val)) {
+      this.parentElement.classList.add('has-error');
+    } else {
+      this.parentElement.classList.remove('has-error');
+    }
+  });
+}
+
+// =============================================
+// GET DEPARTMENTS BY PLANT
+// =============================================
 function getDepartments() {
   const plantId = document.getElementById('plant').value;
   const departmentSelect = document.getElementById('department');
+  const departmentGroup = document.getElementById('departmentGroup');
   
+  // Show loading state
   departmentSelect.innerHTML = '<option value="">Loading...</option>';
   departmentSelect.disabled = true;
   
@@ -427,80 +516,166 @@ function getDepartments() {
   }
   
   fetch(`{% url 'emission:get-departments' %}?plant_id=${plantId}`)
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
     .then(data => {
       departmentSelect.innerHTML = '<option value="">Select Department</option>';
-      data.departments.forEach(function(dept) {
-        const option = document.createElement('option');
-        option.value = dept.id;
-        option.textContent = dept.name;
-        departmentSelect.appendChild(option);
-      });
-      departmentSelect.disabled = false;
+      if (data.departments && data.departments.length > 0) {
+        data.departments.forEach(function(dept) {
+          const option = document.createElement('option');
+          option.value = dept.id;
+          option.textContent = dept.name;
+          departmentSelect.appendChild(option);
+        });
+        departmentSelect.disabled = false;
+        departmentGroup.classList.remove('has-error');
+      } else {
+        departmentSelect.innerHTML = '<option value="">No departments available</option>';
+        departmentSelect.disabled = false;
+      }
     })
     .catch(error => {
       console.error('Error fetching departments:', error);
       departmentSelect.innerHTML = '<option value="">Error loading departments</option>';
       departmentSelect.disabled = false;
+      showToast('Failed to load departments. Please try again.', 'error');
     });
 }
 
-// ===== UPDATE ACTIVITIES BASED ON SCOPE =====
-function updateActivities() {
-  const scope = document.getElementById('scope').value;
-  const activitySelect = document.getElementById('activity');
+// =============================================
+// GET CATEGORIES BY SCOPE
+// =============================================
+function getCategories() {
+  const scopeId = document.getElementById('scope').value;
+  const categorySelect = document.getElementById('category');
+  const categoryGroup = document.getElementById('categoryGroup');
   
-  activitySelect.innerHTML = '<option value="">Select Activity</option>';
+  // Show loading state
+  categorySelect.innerHTML = '<option value="">Loading...</option>';
+  categorySelect.disabled = true;
   
-  if (scope && scopeActivities[scope]) {
-    scopeActivities[scope].forEach(function(activity) {
-      const option = document.createElement('option');
-      option.value = activity;
-      option.textContent = activity;
-      activitySelect.appendChild(option);
+  if (!scopeId) {
+    categorySelect.innerHTML = '<option value="">Select Category</option>';
+    categorySelect.disabled = false;
+    return;
+  }
+  
+  fetch(`/emission/api/scope-categories/?scope_id=${scopeId}`)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    })
+    .then(data => {
+      categorySelect.innerHTML = '<option value="">Select Category</option>';
+      if (data.categories && data.categories.length > 0) {
+        data.categories.forEach(function(category) {
+          const option = document.createElement('option');
+          option.value = category.id;
+          option.textContent = category.name;
+          categorySelect.appendChild(option);
+        });
+        categorySelect.disabled = false;
+        categoryGroup.classList.remove('has-error');
+      } else {
+        categorySelect.innerHTML = '<option value="">No categories available</option>';
+        categorySelect.disabled = false;
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching categories:', error);
+      categorySelect.innerHTML = '<option value="">Error loading categories</option>';
+      categorySelect.disabled = false;
+      showToast('Failed to load categories. Please try again.', 'error');
     });
+}
+
+// =============================================
+// VALIDATE FORM
+// =============================================
+function validateForm() {
+  let isValid = true;
+  const requiredFields = ['plant', 'department', 'scope', 'category', 'frequency', 'assignee', 'reviewer', 'due_day'];
+  
+  requiredFields.forEach(function(fieldId) {
+    const element = document.getElementById(fieldId);
+    const group = element.closest('.form-group');
+    
+    if (!element.value || (element.tagName === 'INPUT' && element.type === 'number' && parseInt(element.value) < 1)) {
+      group.classList.add('has-error');
+      isValid = false;
+    } else {
+      group.classList.remove('has-error');
+    }
+  });
+  
+  // Additional due day validation
+  const dueDay = parseInt(document.getElementById('due_day').value);
+  if (isNaN(dueDay) || dueDay < 1 || dueDay > 31) {
+    document.getElementById('dueDayGroup').classList.add('has-error');
+    isValid = false;
+  }
+  
+  if (!isValid) {
+    // Scroll to first error
+    const firstError = document.querySelector('.form-group.has-error');
+    if (firstError) {
+      firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+  
+  return isValid;
+}
+
+// =============================================
+// CLEAR ERROR
+// =============================================
+function clearError(element) {
+  const group = element.closest('.form-group');
+  if (group) {
+    group.classList.remove('has-error');
   }
 }
 
-// ===== SUBMIT ASSIGNMENT =====
+// =============================================
+// SUBMIT ASSIGNMENT
+// =============================================
 function submitAssignment() {
-  const form = document.getElementById('assignmentForm');
+  // Validate form
+  if (!validateForm()) {
+    showToast('Please fill in all required fields correctly', 'error');
+    return;
+  }
+  
+  // Get selected options text
+  const plantSelect = document.getElementById('plant');
+  const departmentSelect = document.getElementById('department');
+  const scopeSelect = document.getElementById('scope');
+  const categorySelect = document.getElementById('category');
+  
   const formData = {
-    plant: document.getElementById('plant').value,
-    plant_name: document.getElementById('plant').options[document.getElementById('plant').selectedIndex]?.text || '',
-    department: document.getElementById('department').value,
-    department_name: document.getElementById('department').options[document.getElementById('department').selectedIndex]?.text || '',
-    scope: document.getElementById('scope').value,
-    activity: document.getElementById('activity').value,
+    plant: plantSelect.value,
+    department: departmentSelect.value,
+    scope: scopeSelect.value,
+    category: categorySelect.value,
     frequency: document.getElementById('frequency').value,
     assignee: document.getElementById('assignee').value,
     reviewer: document.getElementById('reviewer').value,
     due_day: document.getElementById('due_day').value,
+    notes: document.getElementById('notes').value,
   };
   
-  // Validate required fields
-  const requiredFields = ['plant', 'department', 'scope', 'activity', 'frequency', 'assignee', 'reviewer', 'due_day'];
-  let isValid = true;
-  
-  requiredFields.forEach(function(field) {
-    const element = document.getElementById(field);
-    if (!element.value) {
-      element.style.borderColor = '#ef4444';
-      isValid = false;
-    } else {
-      element.style.borderColor = '#eef2f6';
-    }
-  });
-  
-  if (!isValid) {
-    showToast('Please fill in all required fields', 'error');
-    return;
-  }
+  console.log('📤 Submitting assignment:', formData);
   
   // Show loading state
-  const submitBtn = document.querySelector('.btn-primary');
+  const submitBtn = document.getElementById('submitBtn');
   const originalText = submitBtn.innerHTML;
-  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+  submitBtn.innerHTML = '<span class="loading-spinner"></span> Creating...';
   submitBtn.disabled = true;
   
   // Submit to server
@@ -512,17 +687,29 @@ function submitAssignment() {
     },
     body: JSON.stringify(formData)
   })
-  .then(response => response.json())
+  .then(response => {
+    if (!response.ok) {
+      return response.json().then(data => {
+        throw new Error(data.message || 'Server error');
+      });
+    }
+    return response.json();
+  })
   .then(data => {
     submitBtn.innerHTML = originalText;
     submitBtn.disabled = false;
     
     if (data.success) {
-      showToast('Assignment created successfully!', 'success');
-      // Redirect to assignments list after 1.5 seconds
+      // Show success state
+      submitBtn.classList.add('success');
+      submitBtn.innerHTML = '<i class="fas fa-check"></i> Created Successfully!';
+      
+      showToast(data.message || 'Assignment created successfully!', 'success');
+      
+      // Redirect after 2 seconds
       setTimeout(function() {
         window.location.href = `{% url 'emission:administrator-assignments' %}`;
-      }, 1500);
+      }, 2000);
     } else {
       showToast(data.message || 'Failed to create assignment', 'error');
     }
@@ -530,20 +717,25 @@ function submitAssignment() {
   .catch(error => {
     submitBtn.innerHTML = originalText;
     submitBtn.disabled = false;
-    showToast('Error creating assignment', 'error');
+    showToast(error.message || 'Error creating assignment. Please try again.', 'error');
     console.error('Error:', error);
   });
 }
 
-// ===== CANCEL =====
+// =============================================
+// CANCEL
+// =============================================
 function cancelAssignment() {
   if (confirm('Are you sure you want to cancel? Any unsaved data will be lost.')) {
     window.location.href = `{% url 'emission:administrator-assignments' %}`;
   }
 }
 
-// ===== TOAST NOTIFICATION =====
+// =============================================
+// TOAST NOTIFICATION
+// =============================================
 function showToast(message, type) {
+  // Remove existing toasts
   const existingToasts = document.querySelectorAll('.custom-toast');
   existingToasts.forEach(function(toast) { toast.remove(); });
 
@@ -552,6 +744,7 @@ function showToast(message, type) {
 
   let bgColor = '#22c07a';
   let icon = 'fa-check-circle';
+  
   if (type === 'error') {
     bgColor = '#ef4444';
     icon = 'fa-exclamation-circle';
@@ -564,25 +757,45 @@ function showToast(message, type) {
   }
 
   toastContainer.innerHTML = `
-    <div class="d-flex align-items-center p-3 rounded" style="background: ${bgColor}; color: white;">
+    <div class="d-flex align-items-center p-3 rounded" style="background: ${bgColor}; color: white; border-radius: 12px;">
       <i class="fas ${icon} me-3" style="font-size: 18px;"></i>
-      <div class="flex-grow-1" style="font-size: 14px; font-weight: 500;">${message}</div>
+      <div class="flex-grow-1" style="font-size: 14px; font-weight: 500; word-break: break-word;">${message}</div>
       <button type="button" class="btn-close btn-close-white" onclick="this.closest('.custom-toast').remove()" aria-label="Close"></button>
     </div>
   `;
 
   document.body.appendChild(toastContainer);
 
+  // Auto dismiss after 4 seconds
   setTimeout(function() {
     if (toastContainer.parentNode) {
       toastContainer.style.transition = 'all 0.3s ease';
       toastContainer.style.opacity = '0';
       toastContainer.style.transform = 'translateX(50px)';
-      setTimeout(function() { toastContainer.remove(); }, 300);
+      setTimeout(function() { 
+        if (toastContainer.parentNode) {
+          toastContainer.remove(); 
+        }
+      }, 300);
     }
-  }, 3000);
+  }, 4000);
 }
 
-console.log('✅ Create Assignment form loaded');
+// =============================================
+// KEYBOARD SHORTCUTS
+// =============================================
+document.addEventListener('keydown', function(e) {
+  // Ctrl+Enter to submit
+  if (e.ctrlKey && e.key === 'Enter') {
+    e.preventDefault();
+    submitAssignment();
+  }
+  // Escape to cancel
+  if (e.key === 'Escape') {
+    // Don't auto-cancel, let user decide
+  }
+});
+
+console.log('✅ Create Assignment JavaScript loaded');
 </script>
 {% endblock %}

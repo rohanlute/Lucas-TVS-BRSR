@@ -631,11 +631,7 @@
                                     <div class="goal-subtitle">
                                         <i class="fas fa-bullseye"></i>
                                         Goal: <strong>{{ first_goal.goal_name }}</strong>
-                                        {% if kpi_data.goals|length > 1 %}
-                                            <span style="color: #8a94a6; font-size: 12px;">
-                                                (+{{ kpi_data.goals|length|add:"-1" }} more goals)
-                                            </span>
-                                        {% endif %}
+                                    
                                     </div>
                                 {% endif %}
                             {% endwith %}
@@ -798,10 +794,7 @@
                                             </span>
                                         </div>
                                     </div>
-                                    <div class="detail-item">
-                                        <div class="detail-label">Plant</div>
-                                        <div class="detail-value">{{ initiative.plant }}</div>
-                                    </div>
+                                    
                                     <div class="detail-item">
                                         <div class="detail-label">Assigned To</div>
                                         <div class="detail-value">{{ initiative.assigned_to }}</div>
@@ -810,14 +803,7 @@
                                         <div class="detail-label">Due Date</div>
                                         <div class="detail-value">{{ initiative.due_date|date:"F d, Y"|default:initiative.due_date }}</div>
                                     </div>
-                                    <div class="detail-item">
-                                        <div class="detail-label">Priority</div>
-                                        <div class="detail-value">
-                                            <span class="priority-badge" style="padding: 2px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; background: {% if initiative.priority == 'High' %}#fce4ec; color: #c62828{% elif initiative.priority == 'Low' %}#e8f5e9; color: #1b5e20{% else %}#fff3e0; color: #e65100{% endif %};">
-                                                {{ initiative.priority|default:'Medium' }}
-                                            </span>
-                                        </div>
-                                    </div>
+                                    
                                     <div class="detail-item" style="grid-column: 1 / -1;">
                                         <div class="detail-label">Created</div>
                                         <div class="detail-value">{{ initiative.created_at|default:"N/A" }}</div>
@@ -832,12 +818,7 @@
                                 </div>
                                 {% endif %}
                                 
-                                {% if initiative.metric_description %}
-                                <div class="description-section" style="margin-top: 8px;">
-                                    <div class="desc-label">Metric Description</div>
-                                    <div class="desc-text">{{ initiative.metric_description }}</div>
-                                </div>
-                                {% endif %}
+                                
                             </div>
                         </div>
                     </div>

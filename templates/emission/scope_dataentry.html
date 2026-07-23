@@ -1046,6 +1046,52 @@
         margin: 0 10px 0 0 !important;
         transform: scale(0.8);
     }
+
+    /* Read-only input styling */
+    input:disabled,
+    select:disabled,
+    textarea:disabled {
+        background-color: #f3f4f6 !important;
+        color: #6b7280 !important;
+        cursor: not-allowed !important;
+        opacity: 0.8;
+    }
+
+    /* Read-only banner */
+    #readOnlyBanner {
+        border-left: 4px solid #2563eb;
+        background-color: #eff6ff;
+        border-radius: 8px;
+        padding: 12px 16px;
+    }
+
+    /* Disabled button styling */
+    .btn-brsr:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    input:disabled,
+    select:disabled,
+    textarea:disabled {
+        background-color: #f3f4f6 !important;
+        color: #6b7280 !important;
+        cursor: not-allowed !important;
+        opacity: 0.8;
+    }
+
+    /* Read-only banner */
+    #readOnlyBanner {
+        border-left: 4px solid #2563eb;
+        background-color: #eff6ff;
+        border-radius: 8px;
+        padding: 12px 16px;
+    }
+
+    /* Disabled button styling */
+    .btn-brsr:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
 </style>
 {% endblock %}
 
@@ -1182,13 +1228,11 @@
                     <div class="nav-group-head">EMISSION SOURCES</div>
                     <div id="categoryList">
                     {% for category in categories %}
-
                         <div class="question-item category-item {% if forloop.first %}active{% endif %}"
                             data-category-id="{{ category.id }}">
                             <span class="question-dot todo"></span>
                             {{ category.name }}
                         </div>
-
                     {% endfor %}
                     </div>
                 </div>
@@ -1212,12 +1256,10 @@
             </div>
         </aside>
 
-        
         <!-- ===== MAIN ===== -->
         <main class="brsr-main">
             <div class="main-panel">
                 <div class="panel-body">
-                    
                     <!-- ======================================== -->
                     <!-- CARD 1: IMPORT DATA FROM EXCEL TEMPLATE  -->
                     <!-- ======================================== -->
@@ -1240,7 +1282,7 @@
                                             </div>
                                             <h5 class="fw-bold">1. Download Template</h5>
                                             <p class="text-muted small">Get our latest Excel template with all emission source sheets.</p>
-                                            <button class="btn btn-brsr primary w-100 mt-2">Download Template</button>
+                                            <button id="downloadTemplateBtn" class="btn btn-brsr primary w-100 mt-2">Download Template</button>
                                         </div>
                                     </div>
                                 </div>
@@ -1266,7 +1308,8 @@
                                             </div>
                                             <h5 class="fw-bold">3. Upload &amp; Import</h5>
                                             <p class="text-muted small">Upload filled Excel and we import for automatic calculation.</p>
-                                            <button class="btn btn-brsr success w-100 mt-2">Upload File</button>
+                                            <button id="uploadTemplateBtn" class="btn btn-brsr success w-100 mt-2">Upload File</button>
+<input type="file" id="uploadTemplateInput" accept=".xlsx" style="display:none;">
                                         </div>
                                     </div>
                                 </div>
@@ -1293,225 +1336,184 @@
                     </div>
 
                     <!-- ======================================== -->
-                    <!-- CARD 2: CONTEXT INFORMATION              -->
-                    <!-- ======================================== -->
-                    <div class="card border-0 shadow-sm mb-4" style="border-radius: var(--radius);">
-                        <div class="card-header bg-transparent d-flex justify-content-between align-items-center" style="cursor: pointer; padding: 1rem 1.25rem;" data-bs-toggle="collapse" data-bs-target="#contextAccordion" aria-expanded="true" aria-controls="contextAccordion">
-                            <h4 class="fw-bold mb-0" style="color: var(--ink);">CONTEXT INFORMATION</h4>
-                            <span class="badge bg-light text-muted"><i class="feather-chevron-down" id="contextIcon"></i></span>
-                        </div>
-                        <div id="contextAccordion" class="collapse show">
-                            <div class="card-body">
-                                <div class="row g-3">
+<!-- ======================================== -->
+<!-- CARD 2: CONTEXT INFORMATION              -->
+<!-- ======================================== -->
+<div class="card border-0 shadow-sm mb-4" style="border-radius: var(--radius);">
+    <div class="card-header bg-transparent d-flex justify-content-between align-items-center" style="cursor: pointer; padding: 1rem 1.25rem;" data-bs-toggle="collapse" data-bs-target="#contextAccordion" aria-expanded="true" aria-controls="contextAccordion">
+        <h4 class="fw-bold mb-0" style="color: var(--ink);">CONTEXT INFORMATION</h4>
+        <span class="badge bg-light text-muted"><i class="feather-chevron-down" id="contextIcon"></i></span>
+    </div>
+    <div id="contextAccordion" class="collapse show">
+        <div class="card-body">
+            <div class="row g-3">
+                <!-- Company - EDITABLE (no disabled) -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                        [ Company ] <span class="text-danger">*</span>
+                    </label>
+                    <select id="company" class="workspace-select">
+                        {% for company in companies %}
+                            <option value="{{ company.id }}"
+                                {% if assignment %}
+                                    {% if company.id == assignment.company.id %}selected{% endif %}
+                                {% else %}
+                                    {% if forloop.first %}selected{% endif %}
+                                {% endif %}>
+                                {{ company.company_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-                                    <!-- Company -->
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                                            [ Company ] <span class="text-danger">*</span>
-                                        </label>
+                <!-- Plant - EDITABLE (no disabled) -->
+                <div class="col-md-8">
+                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                        [ Plant ] <span class="text-danger">*</span>
+                    </label>
+                    <select id="plant" class="workspace-select">
+                        <option value="ALL">All Plants</option>
+                        {% for plant in plants %}
+                            <option value="{{ plant.id }}"
+                                data-country="{{ plant.country.name|default:'' }}"
+                                data-state="{{ plant.state.name|default:'' }}"
+                                data-city="{{ plant.city.name|default:'' }}"
+                                {% if assignment and plant.id == assignment.plant.id %}selected{% endif %}>
+                                {{ plant.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-                                        <select id="company" class="workspace-select" {% if assignment %}disabled{% endif %}>
-                                            {% for company in companies %}
-                                                <option value="{{ company.id }}"
-                                                    {% if assignment %}
-                                                        {% if company.id == assignment.company.id %}selected{% endif %}
-                                                    {% else %}
-                                                        {% if forloop.first %}selected{% endif %}
-                                                    {% endif %}>
-                                                    {{ company.company_name }}
-                                                </option>
-                                            {% endfor %}
+                <!-- Financial Year - EDITABLE (no disabled) -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                        [ Financial Year ] <span class="text-danger">*</span>
+                    </label>
+                    <select id="financialYear" class="workspace-select">
+                        <option value="">Select Financial Year</option>
+                        {% for fy in financial_years %}
+                            <option value="{{ fy.id }}"
+                                {% if assignment %}
+                                    {% if fy.id == assignment.financial_year.id %}selected{% endif %}
+                                {% else %}
+                                    {% if current_financial_year and fy.id == current_financial_year.id %}selected{% endif %}
+                                {% endif %}>
+                                {{ fy.financial_year }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-                                        </select>
-                                    </div>
+                <!-- Financial Month - EDITABLE (no disabled) -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                        [ Financial Month ] <span class="text-danger">*</span>
+                    </label>
+                    <select id="financialMonth" class="workspace-select">
+                        <option value="">Select Month</option>
+                        {% for month in financial_months %}
+                            <option value="{{ month.id }}"
+                                {% if assignment %}
+                                    {% if month.id == assignment.financial_month.id %}selected{% endif %}
+                                {% else %}
+                                    {% if current_financial_month and month.id == current_financial_month.id %}selected{% endif %}
+                                {% endif %}>
+                                {{ month.month_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-                                    <!-- Plant -->
-                                    <div class="col-md-8">
-                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                                            [ Plant ] <span class="text-danger">*</span>
-                                        </label>
+                <!-- Country - EDITABLE -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                        [ Country ]
+                    </label>
+                    <input id="country" class="workspace-input" placeholder="Enter country" value="{{ assignment.country|default:'' }}">
+                </div>
 
-                                        <select id="plant" class="workspace-select" {% if assignment %}disabled{% endif %}>
-                                            <option value="ALL">All Plants</option>
-                                            {% for plant in plants %}
-                                                <option value="{{ plant.id }}"
-                                                    data-country="{{ plant.country.name|default:'' }}"
-                                                    data-state="{{ plant.state.name|default:'' }}"
-                                                    data-city="{{ plant.city.name|default:'' }}"
-                                                    {% if assignment and plant.id == assignment.plant.id %}selected{% endif %}>
-                                                    {{ plant.name }}
-                                                </option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
+                <!-- State - EDITABLE -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                        [ State ]
+                    </label>
+                    <input id="state" class="workspace-input" placeholder="Enter state" value="{{ assignment.state|default:'' }}">
+                </div>
 
-                                    <!-- Financial Year -->
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                                            [ Financial Year ] <span class="text-danger">*</span>
-                                        </label>
+                <!-- City - EDITABLE -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                        [ City ]
+                    </label>
+                    <input id="city" class="workspace-input" placeholder="Enter city" value="{{ assignment.city|default:'' }}">
+                </div>
 
-                                        <select id="financialYear" class="workspace-select" {% if assignment %}disabled{% endif %}>
-                                            <option value="">Select Financial Year</option>
+                <!-- Base Year - EDITABLE -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                        [ Base Year ]
+                    </label>
+                    <input id="baseYear" class="workspace-input" type="text" placeholder="Example : 2021-22" value="{{ assignment.base_year|default:'' }}">
+                </div>
 
-                                            {% for fy in financial_years %}
-                                                <option value="{{ fy.id }}"
-                                                    {% if assignment %}
-                                                        {% if fy.id == assignment.financial_year.id %}selected{% endif %}
-                                                    {% else %}
-                                                        {% if current_financial_year and fy.id == current_financial_year.id %}selected{% endif %}
-                                                    {% endif %}>
-                                                    {{ fy.financial_year }}
-                                                </option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
+                <!-- Reporting Frequency - EDITABLE -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                        [ Reporting Frequency ]
+                    </label>
+                    <select id="frequency" class="workspace-select">
+                        <option value="MONTHLY" {% if assignment and assignment.frequency == 'MONTHLY' %}selected{% endif %}>Monthly</option>
+                        <option value="QUARTERLY" {% if assignment and assignment.frequency == 'QUARTERLY' %}selected{% endif %}>Quarterly</option>
+                        <option value="HALF_YEARLY" {% if assignment and assignment.frequency == 'HALF_YEARLY' %}selected{% endif %}>Half Yearly</option>
+                        <option value="ANNUALLY" {% if assignment and assignment.frequency == 'ANNUALLY' %}selected{% endif %}>Annually</option>
+                    </select>
+                </div>
 
-                                    <!-- Financial Month -->
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                                            [ Financial Month ] <span class="text-danger">*</span>
-                                        </label>
+                <!-- Consolidation - EDITABLE -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                        [ Consolidation Approach ]
+                    </label>
+                    <select id="consolidation" class="workspace-select">
+                        <option {% if assignment and assignment.consolidation == 'Operational Control' %}selected{% endif %}>Operational Control</option>
+                        <option {% if assignment and assignment.consolidation == 'Financial Control' %}selected{% endif %}>Financial Control</option>
+                        <option {% if assignment and assignment.consolidation == 'Equity Share' %}selected{% endif %}>Equity Share</option>
+                    </select>
+                </div>
 
-                                        <select id="financialMonth" class="workspace-select" {% if assignment %}disabled{% endif %}>
-                                            <option value="">Select Month</option>
+                <!-- Reporting Standard - EDITABLE -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                        [ Reporting Standard ]
+                    </label>
+                    <input id="reportingStandard" class="workspace-input" value="GHG Protocol">
+                </div>
 
-                                            {% for month in financial_months %}
-                                                <option value="{{ month.id }}"
-                                                    {% if assignment %}
-                                                        {% if month.id == assignment.financial_month.id %}selected{% endif %}
-                                                    {% else %}
-                                                        {% if current_financial_month and month.id == current_financial_month.id %}selected{% endif %}
-                                                    {% endif %}>
-                                                    {{ month.month_name }}
-                                                </option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
+                <!-- Data Collection Method - EDITABLE (no disabled) -->
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                        [ Data Collection Method ]
+                    </label>
+                    <select id="collectionMethod" class="workspace-select">
+                        <option value="MANUAL" {% if not assignment or assignment.collection_method != 'EXCEL' %}selected{% endif %}>Manual Entry</option>
+                        <option value="EXCEL" {% if assignment and assignment.collection_method == 'EXCEL' %}selected{% endif %}>Excel Import</option>
+                        <option value="API">API Integration</option>
+                    </select>
+                </div>
 
-                                    <!-- Country -->
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                                            [ Country ]
-                                        </label>
+                <!-- Recalculation Context - EDITABLE -->
+                <div class="col-12">
+                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                        [ Recalculation Context ]
+                    </label>
+                    <textarea id="recalculationContext" class="workspace-textarea" rows="2" placeholder="Enter recalculation context...">{{ assignment.recalculation_context|default:'' }}</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-                                        <input
-                                            id="country"
-                                            class="workspace-input"
-                                            readonly
-                                        >
-                                    </div>
-
-                                    <!-- State -->
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                                            [ State ]
-                                        </label>
-
-                                        <input
-                                            id="state"
-                                            class="workspace-input"
-                                            readonly
-                                        >
-                                    </div>
-
-                                    <!-- City -->
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                                            [ City ]
-                                        </label>
-
-                                        <input
-                                            id="city"
-                                            class="workspace-input"
-                                            readonly
-                                        >
-                                    </div>
-
-                                    <!-- Base Year -->
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                                            [ Base Year ]
-                                        </label>
-
-                                        <input
-                                            id="baseYear"
-                                            class="workspace-input"
-                                            type="text"
-                                            placeholder="Example : 2021-22"
-                                        >
-                                    </div>
-
-                                    <!-- Reporting Frequency -->
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                                            [ Reporting Frequency ]
-                                        </label>
-
-                                        <select id="frequency" class="workspace-select">
-                                            <option value="MONTHLY">Monthly</option>
-                                            <option value="QUARTERLY">Quarterly</option>
-                                            <option value="HALF_YEARLY">Half Yearly</option>
-                                            <option value="ANNUALLY">Annually</option>
-                                        </select>
-                                    </div>
-
-                                    <!-- Consolidation -->
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                                            [ Consolidation Approach ]
-                                        </label>
-
-                                        <select id="consolidation" class="workspace-select">
-                                            <option>Operational Control</option>
-                                            <option>Financial Control</option>
-                                            <option>Equity Share</option>
-                                        </select>
-                                    </div>
-
-                                    <!-- Reporting Standard -->
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                                            [ Reporting Standard ]
-                                        </label>
-
-                                        <input
-                                            class="workspace-input"
-                                            value="GHG Protocol"
-                                            readonly
-                                        >
-                                    </div>
-
-                                    <!-- Data Collection Method -->
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                                            [ Data Collection Method ]
-                                        </label>
-
-                                        <select id="collectionMethod" class="workspace-select">
-                                            <option value="MANUAL">Manual Entry</option>
-                                            <option value="EXCEL">Excel Import</option>
-                                            <option value="API">API Integration</option>
-                                        </select>
-                                    </div>
-
-                                    <!-- Recalculation Context -->
-                                    <div class="col-12">
-                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                                            [ Recalculation Context ]
-                                        </label>
-
-                                        <textarea
-                                            id="recalculationContext"
-                                            class="workspace-textarea"
-                                            rows="2"
-                                        ></textarea>
-                                    </div>
-
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     <!-- ===== SECOND ACCORDION: EMISSION SOURCES DATA ENTRY ===== -->
                     <div class="card border-0 shadow-sm mb-4" style="border-radius: var(--radius);">
                         <div class="card-header bg-transparent d-flex justify-content-between align-items-center" style="cursor: pointer; padding: 1rem 1.25rem;" data-bs-toggle="collapse" data-bs-target="#emissionAccordion" aria-expanded="false" aria-controls="emissionAccordion">
@@ -1520,9 +1522,9 @@
                         </div>
                         <div id="emissionAccordion" class="collapse">
                             <div class="card-body">
-                                <!-- Mobile Combustion -->
+                                <!-- Dynamic Category Name - FIXED -->
                                 <div class="mb-4">
-                                    <h5 class="fw-bold" style="color: var(--ink);">Mobile Combustion</h5>
+                                    <h5 class="fw-bold" id="categoryHeading" style="color: var(--ink);">Select a category</h5>
                                     <p class="text-muted" style="font-size: 14px;">— Enter activity data below. Emission factors are auto-applied.</p>
                                 </div>
 
@@ -1560,52 +1562,6 @@
                                                 <th>ACTION</th>
                                             </tr>
                                         </thead>
-                                        <!-- <tbody>
-                                            <tr>
-                                                <td>
-                                                    <select class="workspace-select" style="min-width: 140px;">
-                                                        <option value="">Select type</option>
-                                                        <option value="diesel" selected>Diesel</option>
-                                                        <option value="petrol">Petrol</option>
-                                                        <option value="cng">CNG</option>
-                                                        <option value="lpg">LPG</option>
-                                                    </select>
-                                                </td>
-                                                <td><input class="workspace-input" type="number" value="100" placeholder="0.00" style="min-width: 80px;"></td>
-                                                <td>
-                                                    <select class="workspace-select" style="min-width: 80px;">
-                                                        <option value="litres" selected>litres</option>
-                                                        <option value="kg">kg</option>
-                                                        <option value="m3">m³</option>
-                                                    </select>
-                                                </td>
-                                                <td><input class="workspace-input" type="text" value="0.002674" readonly style="background: #f1f5f9; min-width: 100px;"></td>
-                                                <td><input class="workspace-input" type="text" value="0.2674" readonly style="background: #f1f5f9; min-width: 100px;"></td>
-                                                <td><button type="button" class="btn-brsr secondary btn-sm" style="padding: 4px 8px;">−</button></td>
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <select class="workspace-select" style="min-width: 140px;">
-                                                        <option value="">Select type</option>
-                                                        <option value="diesel">Diesel</option>
-                                                        <option value="petrol" selected>Petrol</option>
-                                                        <option value="cng">CNG</option>
-                                                        <option value="lpg">LPG</option>
-                                                    </select>
-                                                </td>
-                                                <td><input class="workspace-input" type="number" value="50" placeholder="0.00" style="min-width: 80px;"></td>
-                                                <td>
-                                                    <select class="workspace-select" style="min-width: 80px;">
-                                                        <option value="litres" selected>litres</option>
-                                                        <option value="kg">kg</option>
-                                                        <option value="m3">m³</option>
-                                                    </select>
-                                                </td>
-                                                <td><input class="workspace-input" type="text" value="0.001711" readonly style="background: #f1f5f9; min-width: 100px;"></td>
-                                                <td><input class="workspace-input" type="text" value="0.0856" readonly style="background: #f1f5f9; min-width: 100px;"></td>
-                                                <td><button type="button" class="btn-brsr secondary btn-sm" style="padding: 4px 8px;">−</button></td>
-                                            </tr>
-                                        </tbody> -->
                                         <tbody id="activityTableBody">
                                         </tbody>
                                     </table>
@@ -1613,53 +1569,9 @@
                                 <div class="mt-2">
                                     <button type="button" class="btn-brsr secondary"><i class="feather-plus me-1"></i> Add Activity Row</button>
                                 </div>
-
                             </div>
                         </div>
                     </div>
-                    <!-- ===== END SECOND ACCORDION ===== -->
-                    <!-- If needed only selected company do required -->
-                     <!-- ===== THIRD ACCORDION: BIOGENIC CO₂ EMISSIONS ===== -->
-                    {% comment %} <div class="card border-0 shadow-sm mb-4" style="border-radius: var(--radius);">
-                        <div class="card-header bg-transparent d-flex justify-content-between align-items-center" style="cursor: pointer; padding: 1rem 1.25rem;" data-bs-toggle="collapse" data-bs-target="#biogenicAccordion" aria-expanded="false" aria-controls="biogenicAccordion">
-                            <h4 class="fw-bold mb-0" style="color: var(--ink);">BIOGENIC CO₂ EMISSIONS</h4>
-                            <span class="badge bg-light text-muted"><i class="feather-chevron-down"></i></span>
-                        </div>
-                        <div id="biogenicAccordion" class="collapse">
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    <!-- Fuel Type -->
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold" style="font-size: 13px; color: var(--ink-soft);">Fuel Type</label>
-                                        <select class="workspace-select">
-                                            <option value="">Select Fuel Type</option>
-                                            <option value="biomass">Biomass</option>
-                                            <option value="wood">Wood</option>
-                                            <option value="biofuel">Biofuel</option>
-                                        </select>
-                                    </div>
-                                    <!-- Quantity -->
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold" style="font-size: 13px; color: var(--ink-soft);">Quantity</label>
-                                        <input class="workspace-input" type="number" placeholder="Enter quantity" value="100">
-                                    </div>
-                                    <!-- Emission Factor (read‑only) -->
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold" style="font-size: 13px; color: var(--ink-soft);">Emission Factor</label>
-                                        <input class="workspace-input" type="text" value="0.000000 kgCO₂e/kg" readonly style="background: #f1f5f9;">
-                                    </div>
-                                    <!-- Auto-Calculated Biogenic CO₂ -->
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-semibold" style="font-size: 13px; color: var(--ink-soft);">Auto-Calculated Biogenic CO₂</label>
-                                        <input class="workspace-input" type="text" value="0.00 tCO₂e" readonly style="background: #f1f5f9; font-weight: 700; color: var(--success);">
-                                    </div>
-                                </div>
-                                <div class="mt-3 p-3 bg-light rounded-3" style="background: #f8fafc !important; border: 1px solid var(--border);">
-                                    <p class="mb-0 text-muted" style="font-size: 14px;"><i class="feather-info me-1"></i> Reported separately per GHG Protocol</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>  {% endcomment %}
 
                     <!-- ===== FOURTH ACCORDION: REVIEW & SUBMIT ===== -->
                     <div class="card border-0 shadow-sm mb-4" style="border-radius: var(--radius);">
@@ -1669,293 +1581,106 @@
                         </div>
                         <div id="reviewAccordion" class="collapse">
                             <div class="card-body">
-
                                 <!-- Summary Grid -->
                                 <div class="row g-3 mb-4">
-
-                                    <!-- Company -->
                                     <div class="col-md-3">
-                                        <label class="form-label fw-semibold"
-                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
-                                            Company
-                                        </label>
-
-                                        <p id="reviewCompany"
-                                            class="fw-semibold"
-                                            style="color:var(--ink);">
-                                            -
-                                        </p>
+                                        <label class="form-label fw-semibold" style="font-size:12px;color:var(--muted);text-transform:uppercase;">Company</label>
+                                        <p id="reviewCompany" class="fw-semibold" style="color:var(--ink);">-</p>
                                     </div>
-
-                                    <!-- Plant -->
                                     <div class="col-md-3">
-                                        <label class="form-label fw-semibold"
-                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
-                                            Plant
-                                        </label>
-
-                                        <p id="reviewPlant"
-                                            class="fw-semibold"
-                                            style="color:var(--ink);">
-                                            -
-                                        </p>
+                                        <label class="form-label fw-semibold" style="font-size:12px;color:var(--muted);text-transform:uppercase;">Plant</label>
+                                        <p id="reviewPlant" class="fw-semibold" style="color:var(--ink);">-</p>
                                     </div>
-
-                                    <!-- Scope -->
                                     <div class="col-md-3">
-                                        <label class="form-label fw-semibold"
-                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
-                                            Scope
-                                        </label>
-
-                                        <p id="reviewScope"
-                                            class="fw-semibold"
-                                            style="color:var(--ink);">
-                                            {{ scope.name }}
-                                        </p>
+                                        <label class="form-label fw-semibold" style="font-size:12px;color:var(--muted);text-transform:uppercase;">Scope</label>
+                                        <p id="reviewScope" class="fw-semibold" style="color:var(--ink);">{{ scope.name }}</p>
                                     </div>
-
-                                    <!-- Category -->
                                     <div class="col-md-3">
-                                        <label class="form-label fw-semibold"
-                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
-                                            Category
-                                        </label>
-
-                                        <p id="reviewCategory"
-                                            class="fw-semibold"
-                                            style="color:var(--ink);">
-                                            -
-                                        </p>
+                                        <label class="form-label fw-semibold" style="font-size:12px;color:var(--muted);text-transform:uppercase;">Category</label>
+                                        <p id="reviewCategory" class="fw-semibold" style="color:var(--ink);">-</p>
                                     </div>
-
-                                    <!-- Financial Year -->
                                     <div class="col-md-3">
-                                        <label class="form-label fw-semibold"
-                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
-                                            Financial Year
-                                        </label>
-
-                                        <p id="reviewFinancialYear"
-                                            class="fw-semibold"
-                                            style="color:var(--ink);">
-                                            -
-                                        </p>
+                                        <label class="form-label fw-semibold" style="font-size:12px;color:var(--muted);text-transform:uppercase;">Financial Year</label>
+                                        <p id="reviewFinancialYear" class="fw-semibold" style="color:var(--ink);">-</p>
                                     </div>
-
-                                    <!-- Financial Month -->
                                     <div class="col-md-3">
-                                        <label class="form-label fw-semibold"
-                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
-                                            Financial Month
-                                        </label>
-
-                                        <p id="reviewFinancialMonth"
-                                            class="fw-semibold"
-                                            style="color:var(--ink);">
-                                            -
-                                        </p>
+                                        <label class="form-label fw-semibold" style="font-size:12px;color:var(--muted);text-transform:uppercase;">Financial Month</label>
+                                        <p id="reviewFinancialMonth" class="fw-semibold" style="color:var(--ink);">-</p>
                                     </div>
-
-                                    <!-- Frequency -->
                                     <div class="col-md-3">
-                                        <label class="form-label fw-semibold"
-                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
-                                            Reporting Frequency
-                                        </label>
-
-                                        <p id="reviewFrequency"
-                                            class="fw-semibold"
-                                            style="color:var(--ink);">
-                                            -
-                                        </p>
+                                        <label class="form-label fw-semibold" style="font-size:12px;color:var(--muted);text-transform:uppercase;">Reporting Frequency</label>
+                                        <p id="reviewFrequency" class="fw-semibold" style="color:var(--ink);">-</p>
                                     </div>
-
-                                    <!-- Status -->
                                     <div class="col-md-3">
-                                        <label class="form-label fw-semibold"
-                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
-                                            Status
-                                        </label>
-
-                                        <p id="reviewStatus"
-                                            class="fw-bold text-warning">
-                                            Draft
-                                        </p>
+                                        <label class="form-label fw-semibold" style="font-size:12px;color:var(--muted);text-transform:uppercase;">Status</label>
+                                        <p id="reviewStatus" class="fw-bold text-warning">Draft</p>
                                     </div>
-
-                                    <!-- Activities -->
                                     <div class="col-md-3">
-                                        <label class="form-label fw-semibold"
-                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
-                                            Activities Entered
-                                        </label>
-
-                                        <p id="reviewActivities"
-                                            class="fw-bold text-primary">
-                                            0
-                                        </p>
+                                        <label class="form-label fw-semibold" style="font-size:12px;color:var(--muted);text-transform:uppercase;">Activities Entered</label>
+                                        <p id="reviewActivities" class="fw-bold text-primary">0</p>
                                     </div>
-
-                                    <!-- Sources -->
                                     <div class="col-md-3">
-                                        <label class="form-label fw-semibold"
-                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
-                                            Sources Used
-                                        </label>
-
-                                        <p id="reviewSources"
-                                            class="fw-bold text-success">
-                                            0
-                                        </p>
+                                        <label class="form-label fw-semibold" style="font-size:12px;color:var(--muted);text-transform:uppercase;">Sources Used</label>
+                                        <p id="reviewSources" class="fw-bold text-success">0</p>
                                     </div>
-
-                                    <!-- Quantity -->
                                     <div class="col-md-3">
-                                        <label class="form-label fw-semibold"
-                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
-                                            Total Quantity
-                                        </label>
-
-                                        <p id="reviewQuantity"
-                                            class="fw-bold"
-                                            style="color:var(--brand);">
-                                            0.0000
-                                        </p>
+                                        <label class="form-label fw-semibold" style="font-size:12px;color:var(--muted);text-transform:uppercase;">Total Quantity</label>
+                                        <p id="reviewQuantity" class="fw-bold" style="color:var(--brand);">0.0000</p>
                                     </div>
-
-                                    <!-- Total Emission -->
                                     <div class="col-md-3">
-                                        <label class="form-label fw-semibold"
-                                            style="font-size:12px;color:var(--muted);text-transform:uppercase;">
-                                            Total Emission
-                                        </label>
-
-                                        <p id="reviewEmission"
-                                            class="fw-bold"
-                                            style="color:var(--success);">
-                                            0.0000 tCO₂e
-                                        </p>
+                                        <label class="form-label fw-semibold" style="font-size:12px;color:var(--muted);text-transform:uppercase;">Total Emission</label>
+                                        <p id="reviewEmission" class="fw-bold" style="color:var(--success);">0.0000 tCO₂e</p>
                                     </div>
-
                                 </div>
 
                                 <!-- Total Emissions -->
-                                {% comment %} <div class="p-4 mb-4 rounded-3" style="background: var(--brand-bg); border: 1px solid var(--brand);">
+                                <div class="p-4 mb-4 rounded-3" style="background: var(--brand-bg); border: 1px solid var(--brand);">
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <span class="fw-semibold" style="font-size: 16px; color: var(--brand);">Total Scope 1 Emissions — Mobile Combustion</span>
-                                        <span class="fw-bold" style="font-size: 24px; color: var(--brand);">0.0000 tCO₂e</span>
-                                    </div>
-                                </div> {% endcomment %}
-
-                                <!-- Total Emissions -->
-                                <div class="p-4 mb-4 rounded-3"
-                                    style="background: var(--brand-bg); border: 1px solid var(--brand);">
-
-                                    <div class="d-flex justify-content-between align-items-center">
-
                                         <div>
-
-                                            <div
-                                                class="fw-semibold"
-                                                style="font-size:16px;color:var(--brand);"
-                                            >
-                                                Total Scope Emissions
-                                            </div>
-
-                                            <div
-                                                id="reviewEmissionCategory"
-                                                class="text-muted"
-                                                style="font-size:13px;"
-                                            >
-                                                -
-                                            </div>
-
+                                            <div class="fw-semibold" style="font-size:16px;color:var(--brand);">Total Scope Emissions</div>
+                                            <div id="reviewEmissionCategory" class="text-muted" style="font-size:13px;">-</div>
                                         </div>
-
-                                        <div
-                                            id="reviewTotalEmission"
-                                            class="fw-bold"
-                                            style="font-size:28px;color:var(--brand);"
-                                        >
-                                            0.0000 tCO₂e
-                                        </div>
-
+                                        <div id="reviewTotalEmission" class="fw-bold" style="font-size:28px;color:var(--brand);">0.0000 tCO₂e</div>
                                     </div>
-
                                 </div>
-
 
                                 <!-- Activity Summary -->
-                                <div class="card border-0 shadow-sm mb-4"
-                                    style="border-radius: var(--radius);">
-
+                                <div class="card border-0 shadow-sm mb-4" style="border-radius: var(--radius);">
                                     <div class="card-header bg-transparent">
-
-                                        <h5 class="fw-bold mb-0" style="color:var(--ink);">
-                                            Activity-wise Emission Summary
-                                        </h5>
+                                        <h5 class="fw-bold mb-0" style="color:var(--ink);">Activity-wise Emission Summary</h5>
                                         <button id="viewTransactionsBtn" class="btn btn-brsr secondary btn-sm" style="padding: 6px 16px; font-size: 12px;">
                                             <i class="feather-eye"></i> View
                                         </button>
-
                                     </div>
-
                                     <div class="card-body p-0">
-
                                         <div class="table-responsive">
-
                                             <table class="table table-bordered mb-0">
-
                                                 <thead class="table-light">
-
                                                     <tr>
-
                                                         <th>Activity</th>
-
                                                         <th>Source</th>
-
                                                         <th class="text-end">Quantity</th>
-
                                                         <th class="text-end">Emission</th>
-
                                                     </tr>
-
                                                 </thead>
-
                                                 <tbody id="reviewActivitySummary">
-
                                                     <tr>
-
-                                                        <td colspan="4"
-                                                            class="text-center text-muted">
-
-                                                            No Data Entered
-
-                                                        </td>
-
+                                                        <td colspan="4" class="text-center text-muted">No Data Entered</td>
                                                     </tr>
-
                                                 </tbody>
-
                                             </table>
-
                                         </div>
-
                                     </div>
-
                                 </div>
 
                                 <!-- Action Buttons -->
                                 <div class="d-flex gap-3">
                                     {% if is_review_mode %}
                                         <button id="approveAssignmentBtn" class="btn btn-success">
-                                            <i class="feather-check"></i>
-                                            Approve
+                                            <i class="feather-check"></i> Approve
                                         </button>
                                         <button id="rejectAssignmentBtn" class="btn btn-danger">
-                                            <i class="feather-x"></i>
-                                            Reject
+                                            <i class="feather-x"></i> Reject
                                         </button>
                                     {% else %}
                                         {% if assignment %}
@@ -1964,11 +1689,10 @@
                                             </button>
                                         {% else %}
                                             <button id="assignTaskBtn" class="btn btn-brsr primary" style="padding: 10px 30px;">
-                                                <i class="feather-user-plus"></i>
-                                                Assign Task
+                                                <i class="feather-user-plus"></i> Assign Task
                                             </button>
                                         {% endif %}
-                                        <button id="saveDraft" class="btn btn-brsr secondary"style="padding: 10px 30px;">
+                                        <button id="saveDraft" class="btn btn-brsr secondary" style="padding: 10px 30px;">
                                             Save Draft
                                         </button>
                                     {% endif %}
@@ -1982,7 +1706,6 @@
     </div>
 </div>
 
-<!-- ===== MODAL (static) ===== -->
 <!-- ===== ASSIGN TASK MODAL ===== -->
 <div class="modal-backdrop-brsr" id="assignScopeModal">
     <div class="modal-card">
@@ -1993,33 +1716,25 @@
         <div class="modal-body">
             <form id="assignScopeForm">
                 <div class="row g-3">
-                    <!-- Plant -->
                     <div class="col-md-6">
                         <label class="tool-label">Plant <span class="text-danger">*</span></label>
-
                         <select class="workspace-select" id="assignPlantSelect" required>
                             <option value="">Select Plant</option>
                             {% for plant in plants %}
-                                <option value="{{ plant.id }}">
-                                    {{ plant.name }}
-                                </option>
+                                <option value="{{ plant.id }}">{{ plant.name }}</option>
                             {% endfor %}
                         </select>
                     </div>
-                    <!-- Assignee -->
                     <div class="col-md-6">
                         <label class="tool-label">Assign To</label>
                         <select class="workspace-select" id="assigneeSelect" required>
                             <option value="">Select User</option>
-                            <!-- Populate via JavaScript or from context -->
                         </select>
                     </div>
-                    <!-- Due Date -->
                     <div class="col-md-6">
                         <label class="tool-label">Due Date</label>
                         <input class="workspace-input" type="date" id="dueDateInput" required>
                     </div>
-                    <!-- Priority -->
                     <div class="col-md-6">
                         <label class="tool-label">Priority</label>
                         <select class="workspace-select" id="prioritySelect">
@@ -2029,22 +1744,19 @@
                             <option value="urgent">Urgent</option>
                         </select>
                     </div>
-                    <!-- Frequency -->
                     <div class="col-md-6">
                         <label class="tool-label">Frequency</label>
-                        <select class="workspace-select" id="frequencySelect">   <!-- ← changed id -->
+                        <select class="workspace-select" id="frequencySelect">
                             <option value="monthly">Monthly</option>
                             <option value="quarterly">Quarterly</option>
                             <option value="half_yearly">Half Yearly</option>
                             <option value="yearly">Yearly</option>
                         </select>
                     </div>
-                    <!-- Notes -->
                     <div class="col-12">
                         <label class="tool-label">Notes</label>
                         <textarea class="workspace-textarea" rows="3" id="assignNotes" placeholder="Add instructions for the assignee..."></textarea>
                     </div>
-                    <!-- Current scope summary (readonly) -->
                     <div class="col-12">
                         <label class="tool-label">Assigned Scope</label>
                         <div class="p-3 bg-light rounded-3" style="border:1px solid var(--border);">
@@ -2074,8 +1786,6 @@
             <button type="button" class="btn-brsr secondary" id="closeViewTransactionsModal">Close</button>
         </div>
         <div class="modal-body" style="max-height: 70vh; overflow-y: auto; padding: 0;">
-
-            <!-- Summary by Source -->
             <div style="padding: 12px 16px; border-bottom: 1px solid var(--border);">
                 <h6 class="fw-bold mb-2" style="color: var(--ink);">Summary by Source</h6>
                 <div class="table-container" style="border: none; border-radius: 0; margin-bottom: 0;">
@@ -2094,8 +1804,6 @@
                     </table>
                 </div>
             </div>
-
-            <!-- Detailed Transactions -->
             <div style="padding: 12px 16px;">
                 <h6 class="fw-bold mb-2" style="color: var(--ink);">Detailed Transactions</h6>
                 <div class="table-container" style="border: none; border-radius: 0;">
@@ -2116,7 +1824,6 @@
                     </table>
                 </div>
             </div>
-
         </div>
         <div class="modal-actions" style="padding: 12px 20px; border-top: 1px solid var(--border);">
             <button type="button" class="btn-brsr secondary" id="closeViewTransactionsModalFooter">Close</button>
@@ -2128,10 +1835,18 @@
 <div id="toastContainer" class="toast-container"></div>
 {% endblock %}
 
+
 {% block extra_js %}
 <script>
+// =============================================
+// GLOBAL STATE
+// =============================================
+let pendingUploadData = null;
+window.isImportedFromExcel = false;
 
-// Scope card selection
+// =============================================
+// SCOPE SELECTION WITH AUTO-LOAD FIRST CATEGORY
+// =============================================
 document.querySelectorAll(".scope-card").forEach(function(card){
 
     card.addEventListener("click", function(){
@@ -2152,22 +1867,29 @@ document.querySelectorAll(".scope-card").forEach(function(card){
 
         document.getElementById("selectedScopeId").value = scopeId[scope];
 
+        // Show loading state
+        document.getElementById("scopeTitle").innerHTML = "Loading...";
+        document.getElementById("scopeDescription").innerHTML = "Please wait...";
+
         fetch(`/emission/api/scope-categories/?scope=${scope}`)
 
         .then(res => res.json())
 
         .then(data => {
 
-            if(!data.success)
+            if(!data.success) {
+                showToast("Failed to load categories.", "error");
                 return;
+            }
 
             // Scope Name
-            document.getElementById("scopeTitle").innerHTML =
-                data.scope;
+            document.getElementById("scopeTitle").innerHTML = data.scope;
 
             // Scope Description
-            document.getElementById("scopeDescription").innerHTML =
-                data.description;
+            document.getElementById("scopeDescription").innerHTML = data.description;
+
+            // Update review scope
+            document.getElementById("reviewScope").innerText = data.scope;
 
             // Categories
             let html = "";
@@ -2190,31 +1912,58 @@ document.querySelectorAll(".scope-card").forEach(function(card){
 
             document.getElementById("categoryList").innerHTML = html;
 
-            // Select the first category automatically
+            // =============================================
+            // AUTO-SELECT AND LOAD FIRST CATEGORY
+            // =============================================
             const firstCategory = document.querySelector("#categoryList .category-item");
 
             if (firstCategory) {
 
+                // Remove active from any existing
+                document.querySelectorAll(".category-item").forEach(function(item) {
+                    item.classList.remove("active");
+                });
+
+                // Add active to first
                 firstCategory.classList.add("active");
 
-                // Trigger click automatically
-                firstCategory.click();
+                // DIRECTLY LOAD THE CATEGORY DATA
+                loadCategoryData(firstCategory);
 
+            } else {
+                // No categories found
+                document.getElementById("activityTableBody").innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">
+                            No categories found for this scope.
+                        </td>
+                    </tr>
+                `;
             }
 
+        })
+        .catch(error => {
+            console.error("Error loading scope:", error);
+            showToast("Error loading scope data.", "error");
         });
 
     });
 
 });
 
-
-
+// =============================================
+// CATEGORY CLICK HANDLER
+// =============================================
 document.addEventListener("click", function (e) {
 
     const category = e.target.closest(".category-item");
 
     if (!category) {
+        return;
+    }
+
+    // Prevent if already active (to avoid duplicate loads)
+    if (category.classList.contains("active")) {
         return;
     }
 
@@ -2227,11 +1976,44 @@ document.addEventListener("click", function (e) {
 
     category.classList.add("active");
 
+    loadCategoryData(category);
+
+});
+
+// =============================================
+// FUNCTION TO LOAD CATEGORY DATA
+// =============================================
+function loadCategoryData(category) {
+
     // -----------------------------
     // Category ID
     // -----------------------------
     const assignmentId = document.getElementById("assignmentId").value;
     const categoryId = category.dataset.categoryId;
+
+    // Get the category name correctly
+    const categoryName = category.textContent.trim();
+    
+    // Update category heading in the emission sources section
+    const categoryHeading = document.getElementById("categoryHeading");
+    if (categoryHeading) {
+        categoryHeading.textContent = categoryName;
+    }
+    
+    // Update review category IMMEDIATELY
+    document.getElementById("reviewCategory").innerText = categoryName;
+    document.getElementById("reviewEmissionCategory").innerText = categoryName;
+
+    // Show loading in table
+    const tbody = document.getElementById("activityTableBody");
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="8" class="text-center text-muted">
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                Loading activities...
+            </td>
+        </tr>
+    `;
 
     // -----------------------------
     // Fetch Activities
@@ -2246,40 +2028,49 @@ document.addEventListener("click", function (e) {
         .then(response => response.json())
         .then(data => {
 
-            const tbody = document.getElementById("activityTableBody");
             tbody.innerHTML = "";
 
-            data.activities.forEach(function (activity) {
-                if (activity.sources.length === 0) {
-                    tbody.innerHTML += `
-                        <tr data-activity="${activity.id}" data-unit="${activity.base_unit_id}" data-source="">
-                            <td><input type="checkbox" class="activity-checkbox"></td>
-                            <td>${activity.name}</td>
-                            <td><span class="text-danger">No Source Available</span></td>
-                            <td><input type="number" class="workspace-input quantity" placeholder="0"></td>
-                            <td>${activity.unit}</td>
-                            <td><input class="workspace-input factor" readonly></td>
-                            <td><input class="workspace-input total" readonly></td>
-                            <td></td>
-                        </tr>
-                    `;
-                } else {
-                    activity.sources.forEach(function (source) {
+            if (data.activities && data.activities.length > 0) {
+                data.activities.forEach(function (activity) {
+                    if (activity.sources.length === 0) {
                         tbody.innerHTML += `
-                            <tr data-activity="${activity.id}" data-source="${source.id}" data-unit="${activity.base_unit_id}">
+                            <tr data-activity="${activity.id}" data-unit="${activity.base_unit_id}" data-source="">
                                 <td><input type="checkbox" class="activity-checkbox"></td>
                                 <td>${activity.name}</td>
-                                <td>${source.name}</td>
+                                <td><span class="text-danger">No Source Available</span></td>
                                 <td><input type="number" class="workspace-input quantity" placeholder="0"></td>
                                 <td>${activity.unit}</td>
                                 <td><input class="workspace-input factor" readonly></td>
                                 <td><input class="workspace-input total" readonly></td>
-                                <td><button type="button" class="btn btn-sm btn-outline-danger remove-row" disabled><i class="feather-trash"></i></button></td>
+                                <td></td>
                             </tr>
                         `;
-                    });
-                }
-            });
+                    } else {
+                        activity.sources.forEach(function (source) {
+                            tbody.innerHTML += `
+                                <tr data-activity="${activity.id}" data-source="${source.id}" data-unit="${activity.base_unit_id}">
+                                    <td><input type="checkbox" class="activity-checkbox"></td>
+                                    <td>${activity.name}</td>
+                                    <td>${source.name}</td>
+                                    <td><input type="number" class="workspace-input quantity" placeholder="0"></td>
+                                    <td>${activity.unit}</td>
+                                    <td><input class="workspace-input factor" readonly></td>
+                                    <td><input class="workspace-input total" readonly></td>
+                                    <td><button type="button" class="btn btn-sm btn-outline-danger remove-row" disabled><i class="feather-trash"></i></button></td>
+                                </tr>
+                            `;
+                        });
+                    }
+                });
+            } else {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center text-muted">
+                            No activities found for this category.
+                        </td>
+                    </tr>
+                `;
+            }
 
             // -----------------------------
             // Load Emission Factors
@@ -2288,44 +2079,77 @@ document.addEventListener("click", function (e) {
 
                 const activityId = row.dataset.activity;
 
-                fetch(`/emission/api/activity-factor/?activity_id=${activityId}`)
-                    .then(response => response.json())
-                    .then(result => {
+                if (activityId) {
+                    fetch(`/emission/api/activity-factor/?activity_id=${activityId}`)
+                        .then(response => response.json())
+                        .then(result => {
 
-                        if (result.success) {
+                            if (result.success) {
+                                const factorInput = row.querySelector(".factor");
+                                if (factorInput) {
+                                    factorInput.value = result.factor;
+                                }
+                            }
 
-                            row.querySelector(".factor").value = result.factor;
+                        })
+                        .catch(error => {
+                            console.error("Error loading factor:", error);
+                        });
+                }
 
-                        }
-
-                    });
-
-                row.querySelector(".quantity").addEventListener("input", function () {
-
-                    const qty = parseFloat(this.value) || 0;
-
-                    const factor = parseFloat(
-                        row.querySelector(".factor").value
-                    ) || 0;
-
-                    row.querySelector(".total").value =
-                        (qty * factor).toFixed(4);
-
-                    updateReviewSummary();
-
-                });
+                const quantityInput = row.querySelector(".quantity");
+                if (quantityInput) {
+                    // Remove existing event listeners
+                    quantityInput.removeEventListener("input", handleQuantityInput);
+                    // Add new event listener
+                    quantityInput.addEventListener("input", handleQuantityInput);
+                }
 
             });
 
+            // Load existing transactions if any
             loadTransactions();
+            
+            // FILL UPLOADED ROWS FOR THIS CATEGORY
+            applyUploadedRows();
 
+            // Update review summary after data is loaded
             setTimeout(function () {
                 updateReviewSummary();
             }, 300);
 
+        })
+        .catch(error => {
+            console.error("Error loading category data:", error);
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center text-danger">
+                        Error loading activities. Please try again.
+                    </td>
+                </tr>
+            `;
+            showToast("Error loading category data.", "error");
         });
 
-});
+}
+
+// =============================================
+// HANDLE QUANTITY INPUT
+// =============================================
+function handleQuantityInput() {
+    const row = this.closest("tr");
+    if (!row) return;
+
+    const qty = parseFloat(this.value) || 0;
+    const factor = parseFloat(row.querySelector(".factor").value) || 0;
+    const totalInput = row.querySelector(".total");
+    
+    if (totalInput) {
+        totalInput.value = (qty * factor).toFixed(4);
+    }
+
+    updateReviewSummary();
+}
 
 // ==============================================
 // Get CSRF Token
@@ -2358,137 +2182,674 @@ function getCookie(name) {
 
 const csrftoken = getCookie("csrftoken");
 
+// =============================================
+// APPLY UPLOADED ROWS (with read-only mode)
+// =============================================
+function applyUploadedRows() {
+    if (!pendingUploadData || !pendingUploadData.rows) return;
+
+    const activeCategory = document.querySelector(".category-item.active");
+    const activeCategoryId = activeCategory ? activeCategory.dataset.categoryId : null;
+
+    pendingUploadData.rows
+        .filter(r => String(r.category_id) === String(activeCategoryId))
+        .forEach(function (r) {
+            const sourceAttr = r.source_id ?? "";
+            const row = document.querySelector(
+                `tr[data-activity="${r.activity_id}"][data-source="${sourceAttr}"]`
+            );
+            if (!row) return;
+
+            const qtyInput = row.querySelector(".quantity");
+            const factorInput = row.querySelector(".factor");
+            const totalInput = row.querySelector(".total");
+
+            if (qtyInput) {
+                qtyInput.value = r.quantity;
+                // Make it read-only if imported from Excel
+                if (window.isImportedFromExcel) {
+                    qtyInput.disabled = true;
+                    qtyInput.style.backgroundColor = "#f3f4f6";
+                    qtyInput.style.cursor = "not-allowed";
+                    qtyInput.style.opacity = "0.8";
+                }
+            }
+            if (factorInput) {
+                factorInput.value = r.factor;
+                factorInput.style.backgroundColor = "#f3f4f6";
+            }
+            if (totalInput) {
+                totalInput.value = r.total.toFixed(4);
+                totalInput.style.backgroundColor = "#f3f4f6";
+            }
+        });
+
+    updateReviewSummary();
+}
+
+// =============================================
+// MAKE ALL INPUTS READ-ONLY (UPDATED for selective editing)
+// =============================================
+function makeAllInputsReadOnly(isReadOnly) {
+    // Disable/enable all quantity inputs
+    document.querySelectorAll(".quantity").forEach(function(input) {
+        input.disabled = isReadOnly;
+        if (isReadOnly) {
+            input.style.backgroundColor = "#f3f4f6";
+            input.style.cursor = "not-allowed";
+            input.style.opacity = "0.8";
+        } else {
+            input.style.backgroundColor = "";
+            input.style.cursor = "";
+            input.style.opacity = "1";
+        }
+    });
+
+    // Disable/enable all add/remove buttons
+    document.querySelectorAll(".btn-brsr.secondary, .remove-row").forEach(function(btn) {
+        btn.disabled = isReadOnly;
+        if (isReadOnly) {
+            btn.style.opacity = "0.6";
+            btn.style.cursor = "not-allowed";
+        } else {
+            btn.style.opacity = "1";
+            btn.style.cursor = "pointer";
+        }
+    });
+
+    // =============================================
+    // FIELDS THAT SHOULD BE DISABLED ONLY WHEN EXCEL IS IMPORTED
+    // =============================================
+    const fieldsToDisableOnImport = ['company', 'plant', 'financialYear', 'financialMonth', 'collectionMethod'];
+    fieldsToDisableOnImport.forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.disabled = isReadOnly;
+            if (isReadOnly) {
+                el.style.backgroundColor = "#f3f4f6";
+                el.style.cursor = "not-allowed";
+                el.style.opacity = "0.8";
+            } else {
+                el.style.backgroundColor = "";
+                el.style.cursor = "";
+                el.style.opacity = "1";
+            }
+        }
+    });
+
+    // =============================================
+    // FIELDS THAT SHOULD ALWAYS BE EDITABLE
+    // =============================================
+    const alwaysEditableFields = [
+        'country', 
+        'state', 
+        'city', 
+        'baseYear', 
+        'frequency',
+        'consolidation',
+        'reportingStandard', 
+        'recalculationContext'
+    ];
+    alwaysEditableFields.forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.disabled = false;
+            el.style.backgroundColor = "";
+            el.style.cursor = "";
+            el.style.opacity = "1";
+            el.style.color = "";
+            el.removeAttribute('readonly');
+        }
+    });
+
+    // Show/hide read-only banner
+    let banner = document.getElementById('readOnlyBanner');
+    if (isReadOnly) {
+        if (!banner) {
+            banner = document.createElement('div');
+            banner.id = 'readOnlyBanner';
+            banner.className = 'alert alert-info mb-3';
+            banner.innerHTML = `
+                <strong><i class="feather-file"></i> Excel Import Mode</strong><br>
+                Click "Save" to persist the data.
+            `;
+            const mainContent = document.querySelector('.main-content');
+            if (mainContent) {
+                mainContent.insertBefore(banner, mainContent.firstChild);
+            }
+        }
+        banner.style.display = 'block';
+    } else {
+        if (banner) {
+            banner.style.display = 'none';
+        }
+    }
+}
+
+// =============================================
+// WINDOW LOAD - Simply make all fields editable
+// =============================================
+window.addEventListener("load", function () {
+
+    // Make all fields editable by default
+    makeAllInputsReadOnly(false);
+
+    // Load transactions if available
+    loadTransactions();
+
+    setTimeout(function(){
+
+        updateReviewSummary();
+
+    },300);
+
+    const isAssignmentLocked =
+        document.getElementById("isAssignmentLocked").value === "1";
+
+    if (isAssignmentLocked) {
+        lockWorkspace();
+    }
+
+    // =============================================
+    // AUTO-LOAD FIRST CATEGORY ON PAGE LOAD
+    // =============================================
+    setTimeout(function() {
+        const firstCategory = document.querySelector("#categoryList .category-item");
+        if (firstCategory) {
+            // Add active class
+            firstCategory.classList.add("active");
+            
+            // Load the data directly
+            loadCategoryData(firstCategory);
+        }
+    }, 500);
+
+});
+
+// =============================================
+// SWITCH TO MANUAL ENTRY MODE
+// =============================================
+function switchToManualMode() {
+    // Clear the pending upload data
+    pendingUploadData = null;
+    window.isImportedFromExcel = false;
+
+    // Clear all quantity inputs and make them editable
+    document.querySelectorAll(".quantity").forEach(function(input) {
+        input.value = "";
+        input.disabled = false;
+        input.style.backgroundColor = "";
+        input.style.cursor = "";
+        input.style.opacity = "1";
+    });
+
+    // Enable all add/remove buttons
+    document.querySelectorAll(".btn-brsr.secondary, .remove-row").forEach(function(btn) {
+        btn.disabled = false;
+        btn.style.opacity = "1";
+        btn.style.cursor = "pointer";
+    });
+
+    // Set Data Collection Method to MANUAL and disable it (non-editable)
+    const collectionMethod = document.getElementById("collectionMethod");
+    if (collectionMethod) {
+        collectionMethod.value = "MANUAL";
+        collectionMethod.disabled = true;
+        collectionMethod.style.backgroundColor = "#f3f4f6";
+        collectionMethod.style.cursor = "not-allowed";
+        collectionMethod.style.opacity = "0.8";
+    }
+
+    // Make all fields editable (but non-editable fields stay disabled)
+    makeAllInputsReadOnly(false);
+
+    // Clear the read-only banner
+    const banner = document.getElementById('readOnlyBanner');
+    if (banner) {
+        banner.style.display = 'none';
+    }
+
+    // Update review summary
+    updateReviewSummary();
+
+    showToast("Switched to Manual Entry mode. All fields are now editable.", "success");
+}
+
+// =============================================
+// DOWNLOAD TEMPLATE
+// =============================================
+const downloadTemplateBtn = document.getElementById("downloadTemplateBtn");
+
+if (downloadTemplateBtn) {
+    downloadTemplateBtn.addEventListener("click", function () {
+
+        const selectedScope = document.querySelector(".scope-card.selected");
+        const scopeCode = selectedScope ? selectedScope.dataset.scope : "S1";
+        const assignmentId = document.getElementById("assignmentId").value;
+
+        let url = `/emission/api/scope-template/download/?scope=${scopeCode}`;
+        if (assignmentId) {
+            url += `&assignment=${assignmentId}`;
+        }
+
+        // Plain navigation so the browser handles the file download/save dialog.
+        window.location.href = url;
+    });
+}
+
+// =============================================
+// UPLOAD TEMPLATE - COMPLETE IMPLEMENTATION WITH READ-ONLY MODE
+// =============================================
+const uploadTemplateBtn = document.getElementById("uploadTemplateBtn");
+const uploadTemplateInput = document.getElementById("uploadTemplateInput");
+
+if (uploadTemplateBtn && uploadTemplateInput) {
+
+    uploadTemplateBtn.addEventListener("click", function () {
+        uploadTemplateInput.click();
+    });
+
+    uploadTemplateInput.addEventListener("change", function () {
+
+        const file = this.files[0];
+        if (!file) {
+            showToast("No file selected.", "warning");
+            return;
+        }
+
+        // Validate file type
+        const validTypes = [
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-excel'
+        ];
+        if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls)$/i)) {
+            showToast("Please upload a valid Excel file (.xlsx or .xls).", "error");
+            this.value = "";
+            return;
+        }
+
+        const assignmentId = document.getElementById("assignmentId").value;
+
+        const formData = new FormData();
+        formData.append("file", file);
+        if (assignmentId) {
+            formData.append("assignment", assignmentId);
+        }
+
+        showToast("Uploading and processing file...", "warning");
+
+        fetch("/emission/api/scope-template/upload/", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": csrftoken,
+            },
+            body: formData,
+        })
+        .then(async response => {
+            const text = await response.text();
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.error("Failed to parse JSON:", text);
+                throw new Error("Server returned invalid response. Please check the file format.");
+            }
+        })
+        .then(result => {
+
+            if (!result.success) {
+                showToast(result.message || "Import failed. Please check the file format.", "error");
+                return;
+            }
+
+            showToast(result.message, "success");
+
+            // --- UPDATE CONTEXT INFORMATION ---
+            // 1. Set Company (disabled - non-editable)
+            const companySelect = document.getElementById("company");
+            if (result.company_id) {
+                for (let option of companySelect.options) {
+                    if (option.value == result.company_id) {
+                        companySelect.value = result.company_id;
+                        break;
+                    }
+                }
+                companySelect.disabled = true;
+                companySelect.style.backgroundColor = "#f3f4f6";
+                companySelect.style.cursor = "not-allowed";
+                companySelect.style.opacity = "0.8";
+            }
+
+            // 2. Set Plant (disabled - non-editable)
+            const plantSelect = document.getElementById("plant");
+            if (result.plant_id) {
+                let found = false;
+                for (let option of plantSelect.options) {
+                    if (option.value == result.plant_id) {
+                        plantSelect.value = result.plant_id;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    const newOption = document.createElement("option");
+                    newOption.value = result.plant_id;
+                    newOption.textContent = result.plant_name;
+                    newOption.dataset.country = result.country || '';
+                    newOption.dataset.state = result.state || '';
+                    newOption.dataset.city = result.city || '';
+                    plantSelect.appendChild(newOption);
+                    plantSelect.value = result.plant_id;
+                }
+                plantSelect.disabled = true;
+                plantSelect.style.backgroundColor = "#f3f4f6";
+                plantSelect.style.cursor = "not-allowed";
+                plantSelect.style.opacity = "0.8";
+                
+                // Trigger plant change to update country/state/city
+                plantSelect.dispatchEvent(new Event("change"));
+            }
+
+            // 3. Set Financial Year (disabled - non-editable)
+            const fySelect = document.getElementById("financialYear");
+            if (result.financial_year_id) {
+                let found = false;
+                for (let option of fySelect.options) {
+                    if (option.value == result.financial_year_id) {
+                        fySelect.value = result.financial_year_id;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    const newOption = document.createElement("option");
+                    newOption.value = result.financial_year_id;
+                    newOption.textContent = result.financial_year;
+                    fySelect.appendChild(newOption);
+                    fySelect.value = result.financial_year_id;
+                }
+                fySelect.disabled = true;
+                fySelect.style.backgroundColor = "#f3f4f6";
+                fySelect.style.cursor = "not-allowed";
+                fySelect.style.opacity = "0.8";
+            }
+
+            // 4. Set Financial Month (disabled - non-editable)
+            const monthSelect = document.getElementById("financialMonth");
+            if (result.financial_month_id) {
+                let found = false;
+                for (let option of monthSelect.options) {
+                    if (option.value == result.financial_month_id) {
+                        monthSelect.value = result.financial_month_id;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    const newOption = document.createElement("option");
+                    newOption.value = result.financial_month_id;
+                    newOption.textContent = result.financial_month;
+                    monthSelect.appendChild(newOption);
+                    monthSelect.value = result.financial_month_id;
+                }
+                monthSelect.disabled = true;
+                monthSelect.style.backgroundColor = "#f3f4f6";
+                monthSelect.style.cursor = "not-allowed";
+                monthSelect.style.opacity = "0.8";
+            }
+
+            // 5. Set Data Collection Method to EXCEL (disabled - non-editable)
+            const collectionMethod = document.getElementById("collectionMethod");
+            if (collectionMethod) {
+                for (let option of collectionMethod.options) {
+                    if (option.value === "EXCEL") {
+                        collectionMethod.value = "EXCEL";
+                        break;
+                    }
+                }
+                collectionMethod.disabled = true;
+                collectionMethod.style.backgroundColor = "#f3f4f6";
+                collectionMethod.style.cursor = "not-allowed";
+                collectionMethod.style.opacity = "0.8";
+            }
+
+            // 6. Country, State, City - auto-filled from plant but EDITABLE
+            ['country', 'state', 'city'].forEach(function(id) {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.disabled = false;
+                    el.style.backgroundColor = "";
+                    el.style.cursor = "";
+                    el.style.opacity = "1";
+                    el.style.color = "";
+                    el.removeAttribute('readonly');
+                    if (result[id]) {
+                        el.value = result[id];
+                    }
+                }
+            });
+
+            // 7. Base Year - keep editable
+            const baseYear = document.getElementById('baseYear');
+            if (baseYear) {
+                baseYear.disabled = false;
+                baseYear.style.backgroundColor = "";
+                baseYear.style.cursor = "";
+                baseYear.style.opacity = "1";
+                baseYear.style.color = "";
+                if (result.base_year) {
+                    baseYear.value = result.base_year;
+                }
+            }
+
+            // 8. Reporting Frequency - keep editable
+            const frequency = document.getElementById('frequency');
+            if (frequency) {
+                frequency.disabled = false;
+                frequency.style.backgroundColor = "";
+                frequency.style.cursor = "";
+                frequency.style.opacity = "1";
+                frequency.style.color = "";
+            }
+
+            // 9. Consolidation - keep editable
+            const consolidation = document.getElementById('consolidation');
+            if (consolidation) {
+                consolidation.disabled = false;
+                consolidation.style.backgroundColor = "";
+                consolidation.style.cursor = "";
+                consolidation.style.opacity = "1";
+                consolidation.style.color = "";
+            }
+
+            // 10. Reporting Standard - keep editable
+            const reportingStandard = document.getElementById('reportingStandard');
+            if (reportingStandard) {
+                reportingStandard.disabled = false;
+                reportingStandard.style.backgroundColor = "";
+                reportingStandard.style.cursor = "";
+                reportingStandard.style.opacity = "1";
+                reportingStandard.style.color = "";
+            }
+
+            // 11. Recalculation Context - keep editable
+            const recalculationContext = document.getElementById('recalculationContext');
+            if (recalculationContext) {
+                recalculationContext.disabled = false;
+                recalculationContext.style.backgroundColor = "";
+                recalculationContext.style.cursor = "";
+                recalculationContext.style.opacity = "1";
+                recalculationContext.style.color = "";
+            }
+
+            // 12. UPDATE THE GRID WITH PARSED ROWS (READ-ONLY MODE)
+            pendingUploadData = result;
+            window.isImportedFromExcel = true;
+
+            // Force a reload of the current category to apply the rows
+            const activeCategory = document.querySelector(".category-item.active");
+            if (activeCategory) {
+                loadCategoryData(activeCategory);
+            }
+
+            // In case no category is active, try to apply anyway
+            setTimeout(applyUploadedRows, 400);
+
+            // Update review summary
+            setTimeout(updateReviewSummary, 500);
+
+            // --- MAKE ALL INPUTS READ-ONLY (selective) ---
+            makeAllInputsReadOnly(true);
+
+            // Show warnings if any
+            if (result.warnings && result.warnings.length > 0) {
+                result.warnings.forEach(w => showToast(w, "warning"));
+            }
+            
+            if (result.errors && result.errors.length > 0) {
+                console.warn("Import errors:", result.errors);
+                if (result.errors.length > 0) {
+                    showToast("Some rows had issues: " + result.errors[0], "warning");
+                }
+            }
+
+        })
+        .catch(error => {
+            console.error("Upload error:", error);
+            showToast(error.message || "Network error while uploading. Please try again.", "error");
+        })
+        .finally(() => {
+            uploadTemplateInput.value = ""; // allow re-selecting the same file
+        });
+    });
+}
 
 // ==============================================
 // Save Draft
 // ==============================================
-
 const saveDraftBtn = document.getElementById("saveDraft");
 
-    if (saveDraftBtn) {
+if (saveDraftBtn) {
 
-        saveDraftBtn.addEventListener("click", function () {
+    saveDraftBtn.addEventListener("click", function () {
 
-            console.log("Save Draft button clicked");
-            const container = document.getElementById('toastContainer');
-            console.log("container:", container); 
+        // -----------------------------
+        // Context Information
+        // -----------------------------
+        const company = document.getElementById("company").value;
+        const plant = document.getElementById("plant").value;
+        const financialYear = document.getElementById("financialYear").value;
+        const financialMonth = document.getElementById("financialMonth").value;
+        const assignmentId = document.getElementById("assignmentId").value;
 
-            // -----------------------------
-            // Context Information
-            // -----------------------------
-            const company = document.getElementById("company").value;
-            const plant = document.getElementById("plant").value;
-            const financialYear = document.getElementById("financialYear").value;
-            const financialMonth = document.getElementById("financialMonth").value;
-            const assignmentId = document.getElementById("assignmentId").value;
+        // -----------------------------
+        // Validation
+        // -----------------------------
+        if (!company) {
+            showToast("Please select a Company.", "error");
+            return;
+        }
+        if (!plant) {
+            showToast("Please select a Plant.", "error");
+            return;
+        }
+        if (!financialYear) {
+            showToast("Please select a Financial Year.", "error");
+            return;
+        }
+        if (!financialMonth) {
+            showToast("Please select a Financial Month.", "error");
+            return;
+        }
 
-            // -----------------------------
-            // Validation
-            // -----------------------------
-            if (!company) {
-                showToast("Please select a Company.", "error");
+        // -----------------------------
+        // Collect Activities
+        // -----------------------------
+        const rows = [];
+
+        document.querySelectorAll("#activityTableBody tr").forEach(function (row) {
+
+            const quantity = parseFloat(row.querySelector(".quantity").value) || 0;
+
+            // Ignore empty rows
+            if (quantity <= 0) {
                 return;
             }
-            if (!plant) {
-                showToast("Please select a Plant.", "error");
-                return;
-            }
-            if (!financialYear) {
-                showToast("Please select a Financial Year.", "error");
-                return;
-            }
-            if (!financialMonth) {
-                showToast("Please select a Financial Month.", "error");
-                return;
-            }
 
-            // -----------------------------
-            // Collect Activities
-            // -----------------------------
-            const rows = [];
+            rows.push({
 
-            document.querySelectorAll("#activityTableBody tr").forEach(function (row) {
+                activity: parseInt(row.dataset.activity),
 
-                const quantity = parseFloat(row.querySelector(".quantity").value) || 0;
+                source: parseInt(row.dataset.source),
 
-                // Ignore empty rows
-                if (quantity <= 0) {
-                    return;
-                }
+                unit: parseInt(row.dataset.unit),
 
-                rows.push({
+                quantity: quantity,
 
-                    activity: parseInt(row.dataset.activity),
+                factor: parseFloat(row.querySelector(".factor").value) || 0,
 
-                    source: parseInt(row.dataset.source),
-
-                    unit: parseInt(row.dataset.unit),
-
-                    quantity: quantity,
-
-                    factor: parseFloat(row.querySelector(".factor").value) || 0,
-
-                    total: parseFloat(row.querySelector(".total").value) || 0,
-
-                });
+                total: parseFloat(row.querySelector(".total").value) || 0,
 
             });
-            if (rows.length === 0) {
-                showToast("Please enter at least one quantity.", "warning");
-                return;
+
+        });
+        if (rows.length === 0) {
+            showToast("Please enter at least one quantity.", "warning");
+            return;
+        }
+
+        // -----------------------------
+        // Save to Django
+        // -----------------------------
+        fetch("/emission/api/save-transactions/", {
+
+            method: "POST",
+
+            headers: {
+
+                "Content-Type": "application/json",
+
+                "X-CSRFToken": csrftoken,
+
+            },
+
+            body: JSON.stringify({
+
+                company: company,
+
+                plant: plant,
+
+                financial_year: financialYear,
+
+                financial_month: financialMonth,
+
+                assignment: assignmentId || null,
+
+                rows: rows,
+
+            }),
+
+        })
+
+        .then(response => response.json())
+
+        .then(result => {
+            if (result.success) {
+                showToast(result.message, "success");
+                lockWorkspace();
+            } else {
+                showToast(result.message || "Something went wrong.", "error");
             }
+        })
+        .catch(error => {
+            console.error(error);
+            showToast("Network error. Please try again.", "error");
+        });
+    }); 
+}
 
-            // -----------------------------
-            // Save to Django
-            // -----------------------------
-            fetch("/emission/api/save-transactions/", {
-
-                method: "POST",
-
-                headers: {
-
-                    "Content-Type": "application/json",
-
-                    "X-CSRFToken": csrftoken,
-
-                },
-
-                body: JSON.stringify({
-
-                    company: company,
-
-                    plant: plant,
-
-                    financial_year: financialYear,
-
-                    financial_month: financialMonth,
-
-                    assignment: assignmentId || null,
-
-                    rows: rows,
-
-                }),
-
-            })
-
-            .then(response => response.json())
-
-            .then(result => {
-                if (result.success) {
-                    showToast(result.message, "success");
-                    lockWorkspace();
-                } else {
-                    showToast(result.message || "Something went wrong.", "error");
-                }
-            })
-            .catch(error => {
-                console.error(error);
-                showToast("Network error. Please try again.", "error");
-            });
-        }); 
-    }
-
-
+// =============================================
+// SUBMIT ASSIGNMENT
+// =============================================
 const submitBtn = document.getElementById("submitAssignment");
 
 if (submitBtn) {
@@ -2550,8 +2911,9 @@ if (submitBtn) {
 
 }
 
-
-
+// =============================================
+// APPROVE ASSIGNMENT
+// =============================================
 const approveBtn = document.getElementById("approveAssignmentBtn");
 
 if (approveBtn) {
@@ -2609,7 +2971,9 @@ if (approveBtn) {
 
 }
 
-
+// =============================================
+// REJECT ASSIGNMENT
+// =============================================
 const rejectBtn = document.getElementById("rejectAssignmentBtn");
 
 if (rejectBtn) {
@@ -2680,32 +3044,42 @@ if (rejectBtn) {
 
 }
 
+// =============================================
+// PLANT CHANGE HANDLER - Update Country/State/City
+// =============================================
 document.getElementById("plant").addEventListener("change", function () {
 
     const option = this.options[this.selectedIndex];
 
-    document.getElementById("country").value =
-        option.dataset.country || "";
+    // Get values from data attributes
+    const country = option.dataset.country || "";
+    const state = option.dataset.state || "";
+    const city = option.dataset.city || "";
 
-    document.getElementById("state").value =
-        option.dataset.state || "";
-
-    document.getElementById("city").value =
-        option.dataset.city || "";
-
+    // Set the values (these fields remain editable)
+    document.getElementById("country").value = country;
+    document.getElementById("state").value = state;
+    document.getElementById("city").value = city;
 });
 
-
+// =============================================
+// CLEAR TRANSACTION ROWS
+// =============================================
 function clearTransactionRows() {
     document.querySelectorAll("#activityTableBody tr").forEach(function(row){
-        row.querySelector(".quantity").value = "";
-        row.querySelector(".factor").value = "";
-        row.querySelector(".total").value = "";
+        const qtyInput = row.querySelector(".quantity");
+        const factorInput = row.querySelector(".factor");
+        const totalInput = row.querySelector(".total");
+        
+        if (qtyInput) qtyInput.value = "";
+        if (factorInput) factorInput.value = "";
+        if (totalInput) totalInput.value = "";
     });
 }
 
-
-
+// =============================================
+// LOAD TRANSACTIONS
+// =============================================
 function loadTransactions() {
     clearTransactionRows();
 
@@ -2714,13 +3088,6 @@ function loadTransactions() {
     const financialYear = document.getElementById("financialYear").value;
     const financialMonth = document.getElementById("financialMonth").value;
     const assignmentId = document.getElementById("assignmentId").value;
-
-    console.log({
-        company,
-        plant,
-        financialYear,
-        financialMonth
-    });
 
     if (
         !company ||
@@ -2764,15 +3131,13 @@ function loadTransactions() {
                 return;
             }
 
-            row.querySelector(".quantity").value = transaction.quantity;
+            const qtyInput = row.querySelector(".quantity");
+            const factorInput = row.querySelector(".factor");
+            const totalInput = row.querySelector(".total");
 
-            row.querySelector(".factor").value = transaction.factor;
-
-            row.querySelector(".quantity").value = transaction.quantity;
-
-            row.querySelector(".factor").value = transaction.factor;
-
-            row.querySelector(".total").value = transaction.total;
+            if (qtyInput) qtyInput.value = transaction.quantity;
+            if (factorInput) factorInput.value = transaction.factor;
+            if (totalInput) totalInput.value = transaction.total;
 
             updateReviewSummary();
 
@@ -2782,7 +3147,9 @@ function loadTransactions() {
 
 }
 
-
+// =============================================
+// CONTEXT CHANGE EVENT LISTENERS
+// =============================================
 document.getElementById("company").addEventListener("change", function(){
 
     loadTransactions();
@@ -2809,7 +3176,6 @@ document.getElementById("financialYear")
 
 });
 
-
 document.getElementById("financialMonth")
 .addEventListener("change", function(){
 
@@ -2822,9 +3188,15 @@ document.getElementById("financialMonth")
 document.getElementById("frequency")
 .addEventListener("change", updateReviewSummary);
 
-
+// =============================================
+// WINDOW LOAD
+// =============================================
 window.addEventListener("load", function () {
 
+    // Set default editable mode first
+    setDefaultEditableMode();
+
+    // Load transactions if available
     loadTransactions();
 
     setTimeout(function(){
@@ -2840,10 +3212,24 @@ window.addEventListener("load", function () {
         lockWorkspace();
     }
 
+    // =============================================
+    // AUTO-LOAD FIRST CATEGORY ON PAGE LOAD
+    // =============================================
+    setTimeout(function() {
+        const firstCategory = document.querySelector("#categoryList .category-item");
+        if (firstCategory) {
+            // Add active class
+            firstCategory.classList.add("active");
+            
+            // Load the data directly
+            loadCategoryData(firstCategory);
+        }
+    }, 500);
+
 });
 
 // =============================================
-// Lock Workspace
+// LOCK WORKSPACE
 // =============================================
 function lockWorkspace() {
 
@@ -2869,7 +3255,7 @@ function lockWorkspace() {
 }
 
 // =============================================
-// Review Summary
+// REVIEW SUMMARY
 // =============================================
 function updateReviewSummary() {
 
@@ -2896,32 +3282,37 @@ function updateReviewSummary() {
     // ----------------------------
     // Scope
     // ----------------------------
-    document.getElementById("reviewScope").innerText =
-        "{{ scope.name }}";
+    const scopeTitle = document.getElementById("scopeTitle");
+    if (scopeTitle) {
+        document.getElementById("reviewScope").innerText = scopeTitle.innerText;
+    }
 
 
     // ----------------------------
-    // Category
+    // Category - FIXED
     // ----------------------------
-    const activeCategory =
-        document.querySelector(".category-item.active");
-
-    document.getElementById("reviewCategory").innerText =
-        activeCategory ?
-        activeCategory.innerText.trim() :
-        "-";
-
-    document.getElementById("reviewEmissionCategory").innerText =
-        activeCategory ?
-        activeCategory.innerText.trim() :
-        "-";
+    const activeCategory = document.querySelector(".category-item.active");
+    
+    let categoryName = "-";
+    if (activeCategory) {
+        // Get the text content directly without any extra spaces
+        categoryName = activeCategory.textContent.trim();
+        
+        // Also update the category heading
+        const categoryHeading = document.getElementById("categoryHeading");
+        if (categoryHeading) {
+            categoryHeading.textContent = categoryName;
+        }
+    }
+    
+    document.getElementById("reviewCategory").innerText = categoryName;
+    document.getElementById("reviewEmissionCategory").innerText = categoryName;
 
 
     // ----------------------------
     // Financial Year
     // ----------------------------
-    const fy =
-        document.getElementById("financialYear");
+    const fy = document.getElementById("financialYear");
 
     document.getElementById("reviewFinancialYear").innerText =
         fy.value ?
@@ -2932,8 +3323,7 @@ function updateReviewSummary() {
     // ----------------------------
     // Financial Month
     // ----------------------------
-    const month =
-        document.getElementById("financialMonth");
+    const month = document.getElementById("financialMonth");
 
     document.getElementById("reviewFinancialMonth").innerText =
         month.value ?
@@ -2944,8 +3334,7 @@ function updateReviewSummary() {
     // ----------------------------
     // Frequency
     // ----------------------------
-    const frequency =
-        document.getElementById("frequency");
+    const frequency = document.getElementById("frequency");
 
     document.getElementById("reviewFrequency").innerText =
         frequency.options[frequency.selectedIndex].text;
@@ -2963,15 +3352,14 @@ function updateReviewSummary() {
     document.querySelectorAll("#activityTableBody tr")
         .forEach(function(row){
 
+            const qtyInput = row.querySelector(".quantity");
+            const totalInput = row.querySelector(".total");
+
             const qty =
-                parseFloat(
-                    row.querySelector(".quantity").value
-                ) || 0;
+                parseFloat(qtyInput ? qtyInput.value : 0) || 0;
 
             const total =
-                parseFloat(
-                    row.querySelector(".total").value
-                ) || 0;
+                parseFloat(totalInput ? totalInput.value : 0) || 0;
 
             if(qty > 0){
 
@@ -3008,87 +3396,55 @@ function updateReviewSummary() {
     // =====================================
     // Activity-wise Summary
     // =====================================
-    const tbody = document.getElementById(
-        "reviewActivitySummary"
-    );
+    const tbody = document.getElementById("reviewActivitySummary");
 
     tbody.innerHTML = "";
 
     document.querySelectorAll("#activityTableBody tr")
     .forEach(function(row){
 
-        const qty = parseFloat(
-            row.querySelector(".quantity").value
-        ) || 0;
+        const qtyInput = row.querySelector(".quantity");
+        const qty = parseFloat(qtyInput ? qtyInput.value : 0) || 0;
 
         if(qty <= 0){
             return;
         }
 
-        // ---- CORRECTED INDICES ----
-        const activity = row.cells[1].innerText.trim();  // was [0]
-        const source   = row.cells[2].innerText.trim();  // was [1]
-        const unit     = row.cells[4].innerText.trim();  // was [3]
-        // ---------------------------
+        // Get cells
+        const cells = row.querySelectorAll("td");
+        if (cells.length < 5) return;
 
-        const emission =
-            parseFloat(
-                row.querySelector(".total").value
-            ) || 0;
+        const activity = cells[1]?.innerText.trim() || '';
+        const source   = cells[2]?.innerText.trim() || '';
+        const unit     = cells[4]?.innerText.trim() || '';
+
+        const totalInput = row.querySelector(".total");
+        const emission = parseFloat(totalInput ? totalInput.value : 0) || 0;
 
         tbody.innerHTML += `
-
             <tr>
-
                 <td>${activity}</td>
-
                 <td>${source}</td>
-
-                <td class="text-end">
-
-                    ${qty.toFixed(2)} ${unit}
-
-                </td>
-
-                <td class="text-end fw-bold">
-
-                    ${emission.toFixed(4)} tCO₂e
-
-                </td>
-
+                <td class="text-end">${qty.toFixed(2)} ${unit}</td>
+                <td class="text-end fw-bold">${emission.toFixed(4)} tCO₂e</td>
             </tr>
-
         `;
 
     });
 
 
     if(tbody.innerHTML === ""){
-
         tbody.innerHTML = `
-
             <tr>
-
-                <td
-                    colspan="4"
-                    class="text-center text-muted"
-                >
-
-                    No Data Entered
-
-                </td>
-
+                <td colspan="4" class="text-center text-muted">No Data Entered</td>
             </tr>
-
         `;
-
     }
 
 }
 
-
 // =============================================
-// MODERN TOAST SYSTEM (with debug overrides)
+// MODERN TOAST SYSTEM
 // =============================================
 function showToast(message, type = 'error') {
     const container = document.getElementById('toastContainer');
@@ -3118,14 +3474,10 @@ function showToast(message, type = 'error') {
         <div class="toast-progress"><div class="toast-progress-bar"></div></div>
     `;
 
-    // ---- Force toast to be visible (override any CSS) ----
     toast.style.display = 'flex';
     toast.style.visibility = 'visible';
     toast.style.opacity = '1';
-    toast.style.position = 'relative';  // or keep default
     toast.style.zIndex = '99999';
-    // (Optional) add a red border for debugging – remove after it works
-    // toast.style.border = '3px solid red';
 
     container.appendChild(toast);
 
@@ -3146,7 +3498,6 @@ function removeToast(toast) {
     }, 300);
 }
 
-
 // =============================================
 // ASSIGN TASK MODAL
 // =============================================
@@ -3156,51 +3507,48 @@ const closeAssignBtn = document.getElementById('closeAssignScopeModal');
 const cancelAssignBtn = document.getElementById('cancelAssignScope');
 const assignForm = document.getElementById('assignScopeForm');
 
-
 // =============================================
 // Load Users Based on Selected Plant
 // =============================================
 const assignPlantSelect = document.getElementById("assignPlantSelect");
 
-    if (assignPlantSelect) {
+if (assignPlantSelect) {
 
-        assignPlantSelect.addEventListener("change", function () {
+    assignPlantSelect.addEventListener("change", function () {
 
-            const plantId = this.value;
+        const plantId = this.value;
 
-            const assignee = document.getElementById("assigneeSelect");
+        const assignee = document.getElementById("assigneeSelect");
 
-            assignee.innerHTML = '<option value="">Select User</option>';
+        assignee.innerHTML = '<option value="">Select User</option>';
 
-            if (!plantId) {
-                return;
-            }
+        if (!plantId) {
+            return;
+        }
 
-            fetch(`/emission/api/plant-users/?plant_id=${plantId}`)
-                .then(response => response.json())
-                .then(result => {
+        fetch(`/emission/api/plant-users/?plant_id=${plantId}`)
+            .then(response => response.json())
+            .then(result => {
 
-                    if (!result.success) {
-                        return;
-                    }
+                if (!result.success) {
+                    return;
+                }
 
-                    result.users.forEach(function (user) {
+                result.users.forEach(function (user) {
 
-                        assignee.innerHTML += `
-                            <option value="${user.id}">
-                                ${user.name} (${user.employee_code})
-                            </option>
-                        `;
-
-                    });
+                    assignee.innerHTML += `
+                        <option value="${user.id}">
+                            ${user.name} (${user.employee_code})
+                        </option>
+                    `;
 
                 });
-                
+
+            });
+            
     });
 
 }
-
-
 
 if (assignBtn) {
 
@@ -3273,7 +3621,7 @@ if (assignForm) {
         const assignee = document.getElementById('assigneeSelect').value;
         const dueDate = document.getElementById('dueDateInput').value;
         const priority = document.getElementById('prioritySelect').value;
-        const frequency = document.getElementById('frequencySelect').value;   // now unique
+        const frequency = document.getElementById('frequencySelect').value;
         const notes = document.getElementById('assignNotes').value;
 
         // Validations
@@ -3363,20 +3711,14 @@ if (assignForm) {
     });
 }
 
-
-
 // =============================================
 // VIEW TRANSACTIONS MODAL
 // =============================================
 const viewBtn = document.getElementById('viewTransactionsBtn');
 const viewModal = document.getElementById('viewTransactionsModal');
 const viewCloseBtns = document.querySelectorAll('#closeViewTransactionsModal, #closeViewTransactionsModalFooter');
-const viewBody = document.getElementById('viewTransactionsBody');
 
 // Function to populate the modal table with current rows
-// =============================================
-// POPULATE VIEW TRANSACTIONS MODAL (NEW)
-// =============================================
 function populateViewModal() {
     const rows = document.querySelectorAll('#activityTableBody tr');
     const summaryBody = document.getElementById('viewSummaryBody');
@@ -3393,10 +3735,13 @@ function populateViewModal() {
     }
 
     rows.forEach(row => {
-        const activity = row.cells[1]?.innerText.trim() || '';
-        const source = row.cells[2]?.innerText.trim() || '';
+        const cells = row.querySelectorAll("td");
+        if (cells.length < 5) return;
+        
+        const activity = cells[1]?.innerText.trim() || '';
+        const source = cells[2]?.innerText.trim() || '';
         const quantityInput = row.querySelector('.quantity');
-        const unit = row.cells[4]?.innerText.trim() || '';
+        const unit = cells[4]?.innerText.trim() || '';
         const factorInput = row.querySelector('.factor');
         const totalInput = row.querySelector('.total');
 
@@ -3464,7 +3809,6 @@ function populateViewModal() {
     detailBody.innerHTML = detailHtml;
 }
 
-
 // Open modal
 if (viewBtn) {
     viewBtn.addEventListener('click', function() {
@@ -3482,9 +3826,9 @@ viewModal.addEventListener('click', function(e) {
     if (e.target === this) closeViewModal();
 });
 
-
-
-
+// =============================================
+// SELECT ALL ACTIVITIES
+// =============================================
 const selectAllActivities = document.getElementById("selectAllActivities");
 
 if (selectAllActivities) {
@@ -3494,6 +3838,32 @@ if (selectAllActivities) {
             .forEach(cb => cb.checked = checked);
     });
 }
-</script>
 
+// =============================================
+// ADD MANUAL ENTRY BUTTON (Dynamic)
+// =============================================
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if manual entry button already exists
+    if (!document.getElementById('manualEntryBtn')) {
+        const actionButtons = document.querySelector('.d-flex.gap-3');
+        if (actionButtons) {
+            const manualBtn = document.createElement('button');
+            manualBtn.id = 'manualEntryBtn';
+            manualBtn.className = 'btn btn-brsr secondary';
+            manualBtn.style.padding = '10px 30px';
+            manualBtn.innerHTML = '<i class="feather-edit"></i> Switch to Manual Entry';
+            manualBtn.addEventListener('click', function() {
+                if (window.isImportedFromExcel) {
+                    if (confirm('Switching to manual entry will clear all imported data. Continue?')) {
+                        switchToManualMode();
+                    }
+                } else {
+                    showToast('Already in Manual Entry mode.', 'info');
+                }
+            });
+            actionButtons.appendChild(manualBtn);
+        }
+    }
+});
+</script>
 {% endblock %}

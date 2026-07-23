@@ -1170,7 +1170,7 @@ body.modal-open {
     <div class="stats-bar">
         <div class="stat-item">
             <span class="label">Total</span>
-            <span class="value primary">{{ total_initiatives|default:0 }}</span>
+            <span class="value primary">{{ total_all_initiatives|default:0 }}</span>
         </div>
         <div class="stat-item">
             <span class="label">In Progress</span>
@@ -1250,7 +1250,7 @@ body.modal-open {
                         <i class="fas {{ group.icon }}"></i>
                     </div>
                     <span class="topic-name">{{ group.material_topic }}</span>
-                    <span class="topic-init-count">{{ group.total_initiatives }} initiatives</span>
+                    {% comment %} <span class="topic-init-count">{{ group.total_initiatives }} initiatives</span> {% endcomment %}
                 </div>
                 <div class="topic-stats">
                     <span>
@@ -1267,7 +1267,7 @@ body.modal-open {
             <!-- KPIs as Cards -->
             <div class="material-topic-body">
                 <div class="goal-cards-grid">
-                    {% for kpi_data in group.kpis %}  
+                    {% for kpi_data in group.kpis %}
                     <div class="goal-card" data-topic="{{ group.material_topic }}" data-kpi="{{ kpi_data.kpi_name }}" onclick="viewGoalDetail('{{ group.material_topic }}', '{{ kpi_data.kpi_name }}', event)">
                         <!-- KPI Card Header -->
                         <div class="goal-card-header">
@@ -1287,7 +1287,7 @@ body.modal-open {
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <span class="goal-card-badge">
                                     <i class="fas fa-tasks me-1"></i>
-                                    {{ kpi_data.initiatives|length }} initiatives
+                                    {{ kpi_data.total_count }} initiatives
                                 </span>
                                 <!-- Delete Card Button -->
                                 <button class="action-btn danger" onclick="event.stopPropagation(); deleteKpiCard('{{ group.material_topic }}', '{{ kpi_data.kpi_name }}', event)" 
@@ -1308,45 +1308,18 @@ body.modal-open {
                                         </div>
                                     {% endwith %}
                                     
-                                    <!-- Show initiative stats -->
+                                    <!-- Use pre-calculated counts from view -->
                                     <div class="goal-stat">
                                         <div class="stat-label">In Progress</div>
-                                        <div class="stat-value">
-                                            {% with count=0 %}
-                                                {% for init in initiatives %}
-                                                    {% if init.status == 'In Progress' %}
-                                                        {% with count=count|add:1 %}{% endwith %}
-                                                    {% endif %}
-                                                {% endfor %}
-                                                {{ count }}
-                                            {% endwith %}
-                                        </div>
+                                        <div class="stat-value">{{ kpi_data.in_progress_count }}</div>
                                     </div>
                                     <div class="goal-stat">
                                         <div class="stat-label">Completed</div>
-                                        <div class="stat-value">
-                                            {% with count=0 %}
-                                                {% for init in initiatives %}
-                                                    {% if init.status == 'Completed' %}
-                                                        {% with count=count|add:1 %}{% endwith %}
-                                                    {% endif %}
-                                                {% endfor %}
-                                                {{ count }}
-                                            {% endwith %}
-                                        </div>
+                                        <div class="stat-value">{{ kpi_data.completed_count }}</div>
                                     </div>
                                     <div class="goal-stat">
                                         <div class="stat-label">Planning</div>
-                                        <div class="stat-value">
-                                            {% with count=0 %}
-                                                {% for init in initiatives %}
-                                                    {% if init.status == 'Planning' %}
-                                                        {% with count=count|add:1 %}{% endwith %}
-                                                    {% endif %}
-                                                {% endfor %}
-                                                {{ count }}
-                                            {% endwith %}
-                                        </div>
+                                        <div class="stat-value">{{ kpi_data.planning_count }}</div>
                                     </div>
                                 {% else %}
                                     <div class="goal-stat" style="grid-column: 1 / -1;">
@@ -1358,13 +1331,13 @@ body.modal-open {
                         </div>
                         
                         <!-- KPI Footer with Actions -->
-                        <div class="goal-card-footer">
+                        {% comment %} <div class="goal-card-footer">
                             <div class="goal-actions">
                                 <button class="action-btn primary" onclick="event.stopPropagation(); openModalWithTopic('{{ group.material_topic }}', '{{ kpi_data.kpi_name }}', event)">
                                     <i class="feather-plus"></i> Add Initiative
                                 </button>
                             </div>
-                        </div>
+                        </div> {% endcomment %}
                     </div>
                     {% empty %}
                     <div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: #8a94a6; font-size: 14px;">
@@ -1642,8 +1615,14 @@ function deleteKpiCard(topic, kpiName, event) {
     
     // Get the initiative count from the badge
     const badge = card.querySelector('.goal-card-badge');
-    const countText = badge ? badge.textContent.trim() : '0';
-    const count = parseInt(countText.replace(/[^0-9]/g, '')) || 0;
+    let count = 0;
+    if (badge) {
+        const countText = badge.textContent.trim();
+        const match = countText.match(/(\d+)/);
+        if (match) {
+            count = parseInt(match[1]) || 0;
+        }
+    }
     
     // Confirm deletion
     if (count === 0) {
@@ -1690,16 +1669,12 @@ function deleteKpiCard(topic, kpiName, event) {
             card.style.opacity = '0';
             
             setTimeout(() => {
-                // Get the parent container
                 const container = card.parentElement;
-                
-                // Remove the card
                 card.remove();
                 
-                // Update total count
-                updateTotalCount();
+                // Update the total count in stats bar
+                updateAllCounts();
                 
-                // If no cards left in this container, show empty message
                 if (container && container.children.length === 0) {
                     container.innerHTML = `
                         <div style="grid-column: 1 / -1; padding: 40px; text-align: center; color: #8a94a6; font-size: 14px;">
@@ -1707,12 +1682,8 @@ function deleteKpiCard(topic, kpiName, event) {
                             No KPIs found for this topic.
                         </div>
                     `;
-                } else {
-                    // Update the topic total
-                    updateTopicTotal(topic);
                 }
                 
-                // Restore button
                 if (btn) {
                     btn.innerHTML = originalHtml || '<i class="fas fa-trash-alt"></i>';
                     btn.disabled = false;
@@ -1734,6 +1705,30 @@ function deleteKpiCard(topic, kpiName, event) {
             btn.disabled = false;
         }
     });
+}
+
+function updateAllCounts() {
+    // Update total count
+    const totalElement = document.querySelector('.stats-bar .stat-item:first-child .value');
+    if (totalElement) {
+        const cards = document.querySelectorAll('.goal-card');
+        let total = 0;
+        cards.forEach(card => {
+            const badge = card.querySelector('.goal-card-badge');
+            if (badge) {
+                const countText = badge.textContent.trim();
+                const match = countText.match(/(\d+)/);
+                if (match) {
+                    total += parseInt(match[1]) || 0;
+                }
+            }
+        });
+        totalElement.textContent = total;
+    }
+    
+    // Update in-progress, completed, planning counts if needed
+    // This would require additional logic or a page reload
+    location.reload(); // Simple solution: reload the page
 }
 
 // ===== UPDATE TOTAL COUNT =====

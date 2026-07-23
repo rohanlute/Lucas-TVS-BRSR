@@ -1,0 +1,671 @@
+<!-- report_app/templates/report/report_generate.html -->
+{% extends 'base/base.html' %}
+{% load static %}
+{% load permission_tags %}
+
+{% block title %}Report Generation{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root{
+    --bg:#eef1f5;
+    --card:#ffffff;
+    --border:#e6e8ec;
+    --text-primary:#14181f;
+    --text-secondary:#6b7280;
+    --text-muted:#9aa2af;
+    --blue:#2f5bff;
+    --blue-dark:#2648d1;
+    --green:#1c9a5b;
+    --green-dark:#168049;
+    --green-light:#e7f7ee;
+    --blue-light:#eaf0ff;
+    --purple:#7c3aed;
+    --purple-light:#ede9fe;
+    --badge-green-bg:#e6f8ee;
+    --badge-green-text:#1c9a5b;
+    --badge-amber-bg:#fef3e2;
+    --badge-amber-text:#b85b14;
+    --radius-lg:14px;
+    --radius-md:10px;
+    --radius-sm:8px;
+    --shadow: 0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  
+  .report-page{
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+    color:var(--text-primary);
+    -webkit-font-smoothing:antialiased;
+    margin: 15px;
+  }
+  .page{max-width:1180px; margin:0 auto; display:flex; flex-direction:column; gap:20px;}
+
+  /* ---------- Header ---------- */
+  .page-header-wrap{display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:16px;}
+  .page-header-wrap h1{font-size:26px; font-weight:800; letter-spacing:-0.02em; color:var(--text-primary);}
+  .page-header-wrap p{margin-top:4px; font-size:14px; color:var(--text-secondary);}
+  .status-pill{
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--badge-green-bg); color:var(--badge-green-text);
+    font-size:13px; font-weight:600;
+    padding:7px 14px; border-radius:999px;
+    border:1px solid #c9eeda;
+    white-space:nowrap;
+  }
+  .status-pill svg{width:14px; height:14px;}
+
+  /* ---------- Filter card ---------- */
+  .filter-card{
+    background:var(--card); border:1px solid var(--border);
+    border-radius:var(--radius-lg); box-shadow:var(--shadow);
+    padding:20px 22px; display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap;
+  }
+  .filter-field{display:flex; flex-direction:column; gap:8px;}
+  .filter-label{
+    font-size:11.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--text-muted); display:flex; align-items:center; gap:6px;
+  }
+  .filter-label svg{width:13px; height:13px;}
+  select.year-select{
+    appearance:none; -webkit-appearance:none;
+    font-family:inherit; font-size:15px; font-weight:600; color:var(--text-primary);
+    background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%236b7280' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 14px center;
+    border:1px solid var(--border); border-radius:var(--radius-md);
+    padding:11px 38px 11px 14px; min-width:200px; cursor:pointer;
+  }
+  select.year-select:focus{outline:2px solid var(--blue); outline-offset:1px;}
+
+  .btn{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:inherit; font-size:14.5px; font-weight:600;
+    border-radius:var(--radius-md); padding:11px 20px; border:1px solid transparent;
+    cursor:pointer; transition:filter .15s ease, background .15s ease;
+    white-space:nowrap;
+    text-decoration:none;
+  }
+  .btn svg{width:16px; height:16px;}
+  .btn-primary{background:var(--green); color:#fff;}
+  .btn-primary:hover{background:var(--green-dark);}
+  .btn-secondary{background:var(--card); color:var(--text-primary); border-color:var(--border);}
+  .btn-secondary:hover{background:#f6f7f9;}
+  .btn-purple{background:var(--purple); color:#fff;}
+  .btn-purple:hover{background:#6d28d9;}
+  .btn:focus-visible{outline:2px solid var(--blue); outline-offset:2px;}
+  .btn:disabled{opacity:0.6; cursor:not-allowed;}
+
+  /* ---------- Section label ---------- */
+  .section-label{
+    font-size:13px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--text-muted); margin-top:6px;
+  }
+
+  /* ---------- Report cards ---------- */
+  .report-grid{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+  @media (max-width:820px){ .report-grid{grid-template-columns:1fr;} }
+
+  .report-card{
+    position:relative; overflow:hidden;
+    background:var(--card); border:1px solid var(--border);
+    border-radius:var(--radius-lg); box-shadow:var(--shadow);
+    padding:22px 22px 20px;
+  }
+  .report-card::before{
+    content:""; position:absolute; top:0; left:0; right:0; height:5px;
+  }
+  .report-card.accent-blue::before{background:var(--blue);}
+  .report-card.accent-green::before{background:var(--green);}
+  .report-card.accent-purple::before{background:var(--purple);}
+
+  .report-card-head{display:flex; gap:14px; align-items:flex-start;}
+  .report-icon{
+    width:42px; height:42px; border-radius:10px; flex:none;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .report-icon svg{width:20px; height:20px;}
+  .accent-blue .report-icon{background:var(--blue-light); color:var(--blue);}
+  .accent-green .report-icon{background:var(--green-light); color:var(--green);}
+  .accent-purple .report-icon{background:var(--purple-light); color:var(--purple);}
+
+  .report-title-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .report-title-row h3{font-size:16.5px; font-weight:700;}
+  .fy-badge{
+    font-size:11.5px; font-weight:700; padding:3px 10px; border-radius:999px;
+  }
+  .accent-blue .fy-badge{background:var(--blue-light); color:var(--blue);}
+  .accent-green .fy-badge{background:var(--green-light); color:var(--green);}
+  .accent-purple .fy-badge{background:var(--purple-light); color:var(--purple);}
+
+  .report-desc{margin-top:6px; font-size:13.5px; line-height:1.5; color:var(--text-secondary);}
+
+  .stat-row{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:18px;}
+  .stat-box{
+    background:#f5f7f9; border-radius:var(--radius-sm);
+    padding:12px 10px; text-align:center;
+  }
+  .stat-value{font-size:19px; font-weight:800; color:var(--text-primary);}
+  .stat-value.blue{color:var(--blue);}
+  .stat-value.green-neg{color:var(--green);}
+  .stat-value.red{color:#dc2626;}
+  .stat-value.green{color:var(--green);}
+  .stat-value.purple{color:var(--purple);}
+  .stat-label{margin-top:2px; font-size:11.5px; color:var(--text-secondary); font-weight:500;}
+
+  .card-actions{display:flex; gap:10px; margin-top:18px;}
+  .card-actions .btn{flex:1; justify-content:center;}
+
+  /* ---------- Recent Reports table card ---------- */
+  .table-card{
+    background:var(--card); border:1px solid var(--border);
+    border-radius:var(--radius-lg); box-shadow:var(--shadow);
+    padding:22px;
+  }
+  .table-card-head{display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:10px;}
+  .table-card-head h2{font-size:17px; font-weight:800;}
+  .table-card-head .sub{font-size:13px; color:var(--text-secondary); margin-top:2px;}
+  .chip{
+    font-size:12.5px; font-weight:600; color:var(--text-secondary);
+    background:#f2f4f7; border:1px solid var(--border);
+    padding:6px 12px; border-radius:999px; white-space:nowrap;
+  }
+
+  table{width:100%; border-collapse:collapse; margin-top:18px;}
+  thead th{
+    text-align:left; font-size:11.5px; font-weight:700; letter-spacing:.05em;
+    text-transform:uppercase; color:var(--text-muted);
+    padding:0 10px 10px; border-bottom:1px solid var(--border);
+  }
+  tbody td{
+    padding:14px 10px; font-size:14px; border-bottom:1px solid #f0f1f4;
+    vertical-align:middle;
+  }
+  tbody tr:last-child td{border-bottom:none;}
+  .report-name{display:flex; align-items:center; gap:12px; font-weight:600;}
+  .row-icon{
+    width:34px; height:34px; border-radius:8px; flex:none;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .row-icon svg{width:16px; height:16px;}
+  .row-icon.blue{background:var(--blue-light); color:var(--blue);}
+  .row-icon.green{background:var(--green-light); color:var(--green);}
+  .row-icon.purple{background:var(--purple-light); color:var(--purple);}
+
+  .type-badge{
+    font-size:12px; font-weight:700; padding:4px 10px; border-radius:999px;
+    display:inline-flex; align-items:center; gap:5px;
+  }
+  .type-badge.blue{background:var(--blue-light); color:var(--blue);}
+  .type-badge.green{background:var(--green-light); color:var(--green);}
+  .type-badge.purple{background:var(--purple-light); color:var(--purple);}
+
+  .year-tag{
+    font-size:12.5px; font-weight:600; color:var(--text-secondary);
+    background:#f2f4f7; padding:4px 10px; border-radius:6px; white-space:nowrap;
+  }
+  .status-badge{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:12.5px; font-weight:700;
+    padding:5px 12px; border-radius:999px;
+  }
+  .status-badge.completed{
+    background:var(--badge-green-bg); 
+    color:var(--badge-green-text);
+  }
+  .status-badge.processing{
+    background:var(--badge-amber-bg); 
+    color:var(--badge-amber-text);
+  }
+  .status-badge.draft{
+    background:#f0f0f0; 
+    color:#6b7280;
+  }
+  .status-badge.failed{
+    background:#fde8e8; 
+    color:#dc2626;
+  }
+  .status-badge svg{width:12px; height:12px;}
+
+  .dl-links{display:flex; gap:8px;}
+  .dl-link{
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:12.5px; font-weight:700;
+    border:1px solid var(--border); border-radius:7px;
+    padding:6px 11px; text-decoration:none; background:#fff;
+  }
+  .dl-link svg{width:12px; height:12px;}
+  .dl-link.pdf{color:var(--blue); border-color:#d7e2ff;}
+  .dl-link.xls{color:var(--green); border-color:#cdeedd;}
+  .dl-link:hover{filter:brightness(.96);}
+
+  .table-foot{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-top:16px; font-size:13px; color:var(--text-secondary);
+  }
+  .table-foot .foot-status{display:flex; gap:16px;}
+  .foot-status span{display:inline-flex; align-items:center; gap:6px;}
+  .dot{width:7px; height:7px; border-radius:50%; display:inline-block;}
+  .dot.green{background:var(--green);}
+  .dot.amber{background:#e2a125;}
+
+  /* Toast Notification */
+  .custom-toast {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    z-index: 99999;
+    max-width: 420px;
+    min-width: 300px;
+    animation: slideInRight 0.4s ease;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+  }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(80px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .loader-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 0.6s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .page-header-wrap {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .filter-card {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .filter-card .btn {
+      justify-content: center;
+    }
+    .table-card-head {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .table-foot {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .stat-row {
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+    .stat-box {
+      padding: 8px 10px;
+    }
+    .stat-value {
+      font-size: 16px;
+    }
+    .card-actions {
+      flex-direction: column;
+    }
+    .report-card {
+      padding: 16px;
+    }
+    .report-card-head {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .report-page {
+      margin: 10px;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Page Header with Breadcrumbs -->
+<div class="page-header">
+    <div class="page-header-left d-flex align-items-center">
+        <div class="page-header-title">
+            <h5 class="m-b-10">Report</h5>
+        </div>
+        <ul class="breadcrumb">
+            <li class="breadcrumb-item"><a href="#">Home</a></li>
+            <li class="breadcrumb-item active">Report Generation</li>
+        </ul>
+    </div>
+</div>
+
+<div class="report-page">
+  <div class="page">
+    <!-- Page Header -->
+    <div class="page-header-wrap">
+      <div>
+        <h1>Report Generation</h1>
+        <p>Generate, download, and manage your ESG compliance reports</p>
+      </div>
+      <span class="status-pill">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 17l5-5 4 4 8-8"/><path d="M14 8h6v6"/></svg>
+        FY {{ active_fy|default:"2024-25" }} reporting active
+      </span>
+    </div>
+
+    <!-- Filter Card -->
+    <form class="filter-card" method="get" action="{% url 'report:generate' %}" id="filterForm">
+      <div class="filter-field">
+        <label class="filter-label" for="reporting_year">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+          Reporting Year
+        </label>
+        <select class="year-select" id="reporting_year" name="reporting_year">
+          {% for year in reporting_years %}
+            <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary" id="generateBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
+        Generate All
+      </button>
+      <button type="button" class="btn btn-secondary" id="resetBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+        Reset
+      </button>
+    </form>
+
+    <div class="section-label">Available Reports — FY {{ selected_year|default:"2024-25" }}</div>
+
+    <!-- Report Cards -->
+    <div class="report-grid">
+      <!-- BRSR Report Card (Dynamic) -->
+      {% for report in available_reports %}
+      <div class="report-card accent-{{ report.accent }}">
+        <div class="report-card-head">
+          <div class="report-icon">
+            {% if report.accent == "blue" %}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+            {% elif report.accent == "purple" %}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h3l3-9 3 9h3M3 12h18M5 21h14"/></svg>
+            {% else %}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 20A7 7 0 019.8 6.1C15.5 5 17 3 17 3s2.5 3-2.7 8c2 2 3.7 4 3.7 6.5a5 5 0 01-7 2.5z"/></svg>
+            {% endif %}
+          </div>
+          <div>
+            <div class="report-title-row">
+              <h3>{{ report.title }}</h3>
+              <span class="fy-badge">FY {{ report.fy }}</span>
+            </div>
+            <p class="report-desc">{{ report.description }}</p>
+          </div>
+        </div>
+
+        <div class="stat-row">
+          {% for stat in report.stats %}
+          <div class="stat-box">
+            <div class="stat-value {{ stat.color }}">{{ stat.value }}</div>
+            <div class="stat-label">{{ stat.label }}</div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="card-actions">
+          <a class="btn btn-primary" href="{{ report.pdf_url }}" target="_blank">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
+            Download PDF
+          </a>
+          <a class="btn btn-secondary" href="{{ report.excel_url }}" target="_blank">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+            Download Excel
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+
+      <!-- GHG Report Card (Static) -->
+      <div class="report-card accent-purple">
+        <div class="report-card-head">
+          <div class="report-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 22v-4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M22 12h-4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          </div>
+          <div>
+            <div class="report-title-row">
+              <h3>GHG Report</h3>
+              <span class="fy-badge">FY {{ selected_year|default:"2024-25" }}</span>
+            </div>
+            <p class="report-desc">Greenhouse Gas (GHG) Emissions Report covering Scope 1, 2, and 3 emissions.</p>
+          </div>
+        </div>
+
+        <div class="stat-row">
+          <div class="stat-box">
+            <div class="stat-value purple">0</div>
+            <div class="stat-label">Scope 1 (tCO₂e)</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value blue">0</div>
+            <div class="stat-label">Scope 2 (tCO₂e)</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value green">0</div>
+            <div class="stat-label">Total (tCO₂e)</div>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <a class="btn btn-purple" href="#" target="_blank">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
+            Download PDF
+          </a>
+          <a class="btn btn-secondary" href="#" target="_blank">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+            Download Excel
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Reports Table -->
+    <div class="table-card">
+      <div class="table-card-head">
+        <div>
+          <h2>Recent Reports</h2>
+          <div class="sub">{{ recent_reports|length }} reports for FY {{ selected_year|default:"2024-25" }}</div>
+        </div>
+        <span class="chip">Showing: FY {{ selected_year|default:"2024-25" }}</span>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Report Name</th>
+            <th>Type</th>
+            <th>Year</th>
+            <th>Generated On</th>
+            <th>Status</th>
+            <th>Download</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in recent_reports %}
+          <tr>
+            <td>
+              <div class="report-name">
+                <div class="row-icon {{ r.accent }}">
+                  {% if r.accent == "blue" %}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+                  {% elif r.accent == "purple" %}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h3l3-9 3 9h3M3 12h18M5 21h14"/></svg>
+                  {% else %}
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 20A7 7 0 019.8 6.1C15.5 5 17 3 17 3s2.5 3-2.7 8c2 2 3.7 4 3.7 6.5a5 5 0 01-7 2.5z"/></svg>
+                  {% endif %}
+                </div>
+                <a href="{{ r.detail_url }}" style="text-decoration:none;color:var(--text-primary);">
+                  {{ r.name }}
+                </a>
+              </div>
+            </td>
+            <td><span class="type-badge {{ r.accent }}">{{ r.type }}</span></td>
+            <td><span class="year-tag">FY {{ r.year }}</span></td>
+            <td>{{ r.generated_on }}</td>
+            <td>
+              <span class="status-badge {{ r.status_raw|lower }}">
+                {% if r.status_raw == "completed" %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>
+                {% elif r.status_raw == "processing" or r.status_raw == "draft" %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                {% else %}
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                {% endif %}
+                {{ r.status }}
+              </span>
+            </td>
+            <td>
+              <div class="dl-links">
+                <a class="dl-link pdf" href="{{ r.pdf_url }}" target="_blank">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+                  PDF
+                </a>
+                <a class="dl-link xls" href="{{ r.excel_url }}" target="_blank">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+                  XLS
+                </a>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 30px; color: var(--text-secondary);">
+              No recent reports found for FY {{ selected_year }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <div class="table-foot">
+        <span>{{ recent_reports|length }} of {{ total_reports_count|default:"0" }} reports</span>
+        <span class="foot-status">
+          <span><span class="dot green"></span>{{ completed_count|default:"0" }} completed</span>
+          <span><span class="dot amber"></span>{{ processing_count|default:"0" }} processing</span>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ===== CSRF Token =====
+  function getCsrfToken() {
+    const csrfInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    return csrfInput ? csrfInput.value : '';
+  }
+
+  // ===== Toast Notification =====
+  function showToast(message, type = 'success') {
+    document.querySelectorAll('.custom-toast').forEach(el => el.remove());
+
+    const toast = document.createElement('div');
+    toast.className = 'custom-toast';
+
+    let bgColor = '#22c07a';
+    let icon = 'fa-check-circle';
+    if (type === 'error') {
+      bgColor = '#ef4444';
+      icon = 'fa-exclamation-circle';
+    } else if (type === 'warning') {
+      bgColor = '#f59e0b';
+      icon = 'fa-exclamation-triangle';
+    } else if (type === 'info') {
+      bgColor = '#2563eb';
+      icon = 'fa-info-circle';
+    }
+
+    toast.innerHTML = `
+      <div class="d-flex align-items-center p-3 rounded" style="background: ${bgColor}; color: white;">
+        <i class="fas ${icon} me-3" style="font-size: 18px;"></i>
+        <div class="flex-grow-1" style="font-size: 14px; font-weight: 500;">${message}</div>
+        <button type="button" class="btn-close btn-close-white" onclick="this.closest('.custom-toast').remove()" aria-label="Close"></button>
+      </div>
+    `;
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.style.transition = 'all 0.3s ease';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(50px)';
+        setTimeout(() => toast.remove(), 300);
+      }
+    }, 4000);
+  }
+
+ // ===== Generate All Reports =====
+document.getElementById('generateBtn').addEventListener('click', function(e) {
+  e.preventDefault();
+  const selectedYear = document.getElementById('reporting_year').value;
+  const csrfToken = getCsrfToken();
+  const btn = this;
+  const originalText = btn.innerHTML;
+
+  // Show loading state
+  btn.innerHTML = `<span class="loader-spinner"></span> Generating...`;
+  btn.disabled = true;
+
+  fetch('{% url "report:generate_action" %}', {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': csrfToken,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: `reporting_year=${selectedYear}`
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.status === 'success') {
+      showToast(data.message, 'success');
+      // Reload after delay to show updated status
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      showToast(data.message || 'Generation failed', 'error');
+    }
+  })
+  .catch(error => {
+    showToast('Error: ' + error.message, 'error');
+  })
+  .finally(() => {
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  });
+});
+
+  // ===== Reset Button =====
+  document.getElementById('resetBtn').addEventListener('click', function() {
+    window.location.href = '{% url "report:generate" %}';
+  });
+
+  // ===== Year Select Auto-submit =====
+  document.getElementById('reporting_year').addEventListener('change', function() {
+    this.closest('form').submit();
+  });
+</script>
+{% endblock %}

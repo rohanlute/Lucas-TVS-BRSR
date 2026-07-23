@@ -1,0 +1,193 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}BRSR Report{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root{
+    --bg:#eef1f5; --card:#ffffff; --border:#e6e8ec;
+    --text-primary:#14181f; --text-secondary:#6b7280; --text-muted:#9aa2af;
+    --green:#1c9a5b; --green-dark:#168049; --green-light:#e7f7ee;
+    --blue:#2f5bff; --blue-light:#eaf0ff;
+    --radius-lg:14px; --radius-md:10px;
+    --shadow: 0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06);
+  }
+  *{box-sizing:border-box;}
+  .brsr-report-page{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif; color:var(--text-primary); margin:15px;}
+  .page{max-width:1000px; margin:0 auto; display:flex; flex-direction:column; gap:20px;}
+
+  .report-toolbar{
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg);
+    box-shadow:var(--shadow); padding:16px 20px;
+  }
+  .report-toolbar h1{font-size:20px; font-weight:800;}
+  .report-toolbar .sub{font-size:13px; color:var(--text-secondary); margin-top:2px;}
+  .toolbar-actions{display:flex; gap:10px;}
+  .btn{
+    display:inline-flex; align-items:center; gap:8px; font-size:14px; font-weight:600;
+    border-radius:var(--radius-md); padding:10px 18px; border:1px solid transparent;
+    cursor:pointer; text-decoration:none;
+  }
+  .btn svg{width:15px; height:15px;}
+  .btn-primary{background:var(--green); color:#fff;}
+  .btn-primary:hover{background:var(--green-dark);}
+  .btn-secondary{background:#fff; color:var(--text-primary); border-color:var(--border);}
+
+  .cover-card{
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg);
+    box-shadow:var(--shadow); padding:40px; text-align:center;
+  }
+  .cover-card h2{font-size:26px; font-weight:800;}
+  .cover-card p{color:var(--text-secondary); margin-top:6px;}
+
+  .section-card{
+    background:var(--card); border:1px solid var(--border); border-radius:var(--radius-lg);
+    box-shadow:var(--shadow); padding:26px 28px;
+  }
+  .section-card h2{
+    font-size:18px; font-weight:800; color:var(--text-primary);
+    padding-bottom:10px; border-bottom:2px solid var(--green); margin-bottom:16px;
+  }
+  .sub-block{margin-bottom:24px;}
+  .sub-block:last-child{margin-bottom:0;}
+  .sub-block h3{
+    font-size:14px; font-weight:700; color:var(--green-dark);
+    background:var(--green-light); padding:8px 12px; border-radius:8px; margin-bottom:10px;
+  }
+  .principle-block{margin-bottom:30px; padding-bottom:20px; border-bottom:1px dashed var(--border);}
+  .principle-block:last-child{border-bottom:none;}
+  .principle-block h3{
+    font-size:15px; font-weight:800; color:#fff; background:var(--blue);
+    padding:10px 14px; border-radius:8px; margin-bottom:14px;
+  }
+
+  table.qa-table{width:100%; border-collapse:collapse; margin-bottom:10px;}
+  table.qa-table th, table.qa-table td{
+    border:1px solid var(--border); padding:10px 12px; font-size:13.5px; text-align:left; vertical-align:top;
+  }
+  table.qa-table th{background:#f5f7f9; font-weight:700; color:var(--text-muted); font-size:11.5px; text-transform:uppercase;}
+  .q-num{width:60px; font-weight:700; color:var(--text-secondary);}
+  .q-text{width:45%;}
+  .q-answer{color:var(--text-muted); font-style:italic;}
+  .q-answer.filled{color:var(--text-primary); font-style:normal;}
+  .answer-blank-line{display:inline-block; width:100%; border-bottom:1px solid var(--border); height:18px;}
+
+  .options-list{list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:6px;}
+  .options-list li{display:flex; align-items:center; gap:8px; font-size:13.5px;}
+  .options-list .box{width:14px; height:14px; border:1.5px solid var(--text-muted); border-radius:3px; flex:none;}
+
+  .mini-table{width:100%; border-collapse:collapse; margin-top:6px;}
+  .mini-table th, .mini-table td{border:1px solid var(--border); padding:6px 8px; font-size:12.5px;}
+  .mini-table th{background:#f5f7f9;}
+
+  .type-tag{
+    display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px;
+    background:var(--blue-light); color:var(--blue); margin-left:8px; text-transform:capitalize;
+  }
+
+  @media print{
+    .report-toolbar, .no-print{display:none !important;}
+    .section-card{box-shadow:none; break-inside:avoid;}
+    body{background:#fff;}
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="brsr-report-page">
+  <div class="page">
+
+    <div class="report-toolbar no-print">
+      <div>
+        <h1>BRSR Report Preview</h1>
+        <div class="sub">Live data from the BRSR questionnaire &middot; {{ financial_year }}</div>
+      </div>
+      <div class="toolbar-actions">
+        <a class="btn btn-primary" href="{% url 'report:brsr_report_pdf' %}?financial_year={{ financial_year }}" target="_blank">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
+          Download PDF
+        </a>
+        <a class="btn btn-secondary" href="{% url 'report:brsr_report_excel' %}?financial_year={{ financial_year }}" target="_blank">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
+          Download Excel
+        </a>
+      </div>
+    </div>
+
+    <div class="cover-card">
+      <h2>Business Responsibility &amp; Sustainability Report</h2>
+      <p>{{ financial_year }}</p>
+    </div>
+
+    {% for block in report_sections %}
+    <div class="section-card">
+      <h2>{{ block.section.name }}</h2>
+
+      {% if not block.is_principle_section %}
+        {% for sub in block.sub_sections %}
+        <div class="sub-block">
+          {% if sub.title != "General" %}<h3>{{ sub.title }}</h3>{% endif %}
+          <table class="qa-table">
+            <thead>
+              <tr>
+                <th class="q-num">No.</th>
+                <th class="q-text">Question</th>
+                <th>Answer</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in sub.rows %}
+              <tr>
+                <td class="q-num">{{ row.question_number }}</td>
+                <td class="q-text">
+                  {{ row.question_text }}
+                  <span class="type-tag">{{ row.question_type }}</span>
+                </td>
+                <td>
+                  {% include "report/_brsr_answer_cell.html" with row=row %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endfor %}
+
+      {% else %}
+        {% for p_block in block.principle_blocks %}
+        <div class="principle-block">
+          <h3>Principle {{ p_block.principle.principle_number }}: {{ p_block.principle.title }}</h3>
+          <table class="qa-table">
+            <thead>
+              <tr>
+                <th class="q-num">No.</th>
+                <th class="q-text">Question</th>
+                <th>Answer</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in p_block.rows %}
+              <tr>
+                <td class="q-num">{{ row.question_number }}</td>
+                <td class="q-text">
+                  {{ row.question_text }}
+                  <span class="type-tag">{{ row.question_type }}</span>
+                </td>
+                <td>
+                  {% include "report/_brsr_answer_cell.html" with row=row %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+    {% endfor %}
+
+  </div>
+</div>
+{% endblock %}

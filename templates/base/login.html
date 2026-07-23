@@ -63,6 +63,7 @@
                                         </div>
                                     {% endfor %}
                                 {% endif %}
+                                
                                 <form method="POST" action="{% url 'accounts:login' %}" class="w-100 mt-4 pt-2">
                                     {% csrf_token %}
                                     <div class="mb-4">
