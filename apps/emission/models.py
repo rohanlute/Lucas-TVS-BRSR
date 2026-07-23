@@ -438,6 +438,7 @@ class EmissionTransaction(models.Model):
     source = models.ForeignKey(
         EmissionSource,
         on_delete=models.PROTECT,
+        default="MANUAL",
         related_name="transactions",
     )
 

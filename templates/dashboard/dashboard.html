@@ -21,6 +21,14 @@ Dashboard
 <!-- [ page-header ] end -->
 <!-- [ Main Content ] start -->
 <div class="main-content">
+    {% if messages %}
+                                    {% for message in messages %}
+                                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                            {{ message }}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
     <div class="row">
         <!-- [Invoices Awaiting Payment] start -->
         <div class="col-xxl-3 col-md-6">
