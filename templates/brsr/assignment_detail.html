@@ -652,6 +652,41 @@
     color:var(--ink);
   }
 
+  .detail-toast-stack{
+    position:fixed;
+    top:18px;
+    right:18px;
+    z-index:1100;
+    display:grid;
+    gap:10px;
+    width:min(360px, calc(100vw - 36px));
+    pointer-events:none;
+  }
+
+  .detail-toast{
+    pointer-events:auto;
+    padding:12px 14px;
+    border-radius:14px;
+    box-shadow:0 18px 38px rgba(15,23,42,.16);
+    border:1px solid var(--border);
+    background:#fff;
+    color:var(--ink);
+    font-size:13px;
+    line-height:1.5;
+  }
+
+  .detail-toast.success{
+    border-color:rgba(22,163,74,.22);
+    background:linear-gradient(180deg,#f2fbf6 0%, #ffffff 100%);
+    color:var(--success);
+  }
+
+  .detail-toast.error{
+    border-color:rgba(220,38,38,.22);
+    background:linear-gradient(180deg,#fff5f5 0%, #ffffff 100%);
+    color:var(--danger);
+  }
+
   @media (max-width: 1100px){
     .hero-card-inner{
       grid-template-columns:1fr;
@@ -720,6 +755,7 @@
 
 {% block content %}
 <div class="assignment-detail-page">
+  <div class="detail-toast-stack" id="detailToastStack" aria-live="polite" aria-atomic="true"></div>
   <div class="page-shell">
     <div class="page-header">
       <div>
@@ -787,7 +823,7 @@
         </div>
         <div class="summary-item">
           <span class="label">Workflow Stage</span>
-          <span class="value">{{ assignment.workflow_stage }}</span>
+          <span class="value">{{ assignment.workflow_status_label|default:assignment.workflow_stage|default:"-" }}</span>
         </div>
         <div class="summary-item">
           <span class="label">Section</span>
@@ -814,7 +850,7 @@
             <div class="group-body">
               {% for question in group.questions %}
                 <article class="question-container" id="question-{{ question.question_id }}">
-                  <div class="question-header">
+                      <div class="question-header">
                     <div class="question-header-left">
                       <div class="question-number">Q{{ question.number }}</div>
                       <div>
@@ -829,7 +865,7 @@
                         </p>
                       </div>
                     </div>
-                    <span class="status-badge {{ question.status }}">{{ question.status|title }}</span>
+                    <span class="status-badge {{ question.status }}">{{ question.status_display|default:question.status|title }}</span>
                   </div>
 
                   <div class="question-content">
@@ -933,6 +969,25 @@
   const APPROVE_URL = "{% url 'brsr:question_approve_api' question_id='__question__' %}";
   const REJECT_URL = "{% url 'brsr:question_reject_api' question_id='__question__' %}";
 
+  function showDetailMessage(message, type = 'success') {
+    if (!message) return;
+    const stack = document.getElementById('detailToastStack');
+    if (!stack) {
+      alert(message);
+      return;
+    }
+    const toast = document.createElement('div');
+    toast.className = `detail-toast ${type === 'error' ? 'error' : 'success'}`;
+    toast.textContent = message;
+    stack.appendChild(toast);
+    window.setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(-4px)';
+      toast.style.transition = 'opacity .2s ease, transform .2s ease';
+      window.setTimeout(() => toast.remove(), 220);
+    }, 2800);
+  }
+
   function apiUrl(template, questionId) {
     return template.replace('__question__', encodeURIComponent(questionId));
   }
@@ -966,10 +1021,11 @@
       const assignmentId = button.getAttribute('data-assignment-id');
       button.disabled = true;
       try {
-        await postAction(apiUrl(APPROVE_URL, questionId), { assignment_id: assignmentId });
+        const data = await postAction(apiUrl(APPROVE_URL, questionId), { assignment_id: assignmentId });
+        showDetailMessage(data.message || 'Question approved successfully.', 'success');
         window.location.reload();
       } catch (error) {
-        alert(error.message);
+        showDetailMessage(error.message, 'error');
       } finally {
         button.disabled = false;
       }
@@ -990,13 +1046,14 @@
 
       button.disabled = true;
       try {
-        await postAction(apiUrl(REJECT_URL, questionId), {
+        const data = await postAction(apiUrl(REJECT_URL, questionId), {
           assignment_id: assignmentId,
           remark: remark,
         });
+        showDetailMessage(data.message || 'Question rejected and sent back for correction.', 'success');
         window.location.reload();
       } catch (error) {
-        alert(error.message);
+        showDetailMessage(error.message, 'error');
       } finally {
         button.disabled = false;
       }

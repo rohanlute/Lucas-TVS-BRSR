@@ -1,0 +1,1119 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}Review Comments - {{ assignment.assignment_id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root{
+    --ink:#24304a;
+    --ink-soft:#42516f;
+    --muted:#6f7b91;
+    --surface:#ffffff;
+    --bg:#f5f7fb;
+    --border:#e3e8f0;
+    --border-strong:#cfd7e6;
+    --brand:#2563eb;
+    --brand-bg:#eaf1ff;
+    --success:#16a34a;
+    --success-bg:#e7f8ee;
+    --warn:#d97706;
+    --warn-bg:#fff5e6;
+    --danger:#dc2626;
+    --danger-bg:#fdecec;
+    --shadow:0 18px 40px rgba(28,44,73,.08);
+    --radius:14px;
+    --font-display:'Space Grotesk','Segoe UI',sans-serif;
+    --font-body:'Inter','Segoe UI',sans-serif;
+  }
+
+  .review-page{
+    min-height:100vh;
+    padding:24px 30px 36px;
+    background:
+      radial-gradient(circle at top left, rgba(37,99,235,.08), transparent 34%),
+      radial-gradient(circle at bottom right, rgba(22,163,74,.08), transparent 28%),
+      var(--bg);
+    color:var(--ink);
+  }
+
+  .page-shell{
+    position:relative;
+    max-width:1320px;
+    margin:0 auto;
+  }
+
+  .page-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:16px;
+    margin-bottom:18px;
+    flex-wrap:wrap;
+  }
+
+  .eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:6px 10px;
+    border-radius:999px;
+    background:var(--brand-bg);
+    color:var(--brand);
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    margin-bottom:10px;
+  }
+
+  .page-header h1{
+    margin:0;
+    font-family:var(--font-display);
+    font-size:30px;
+    line-height:1.15;
+    font-weight:700;
+    color:var(--ink);
+  }
+
+  .page-header .subtitle{
+    margin:8px 0 0;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.5;
+  }
+
+  .top-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+  }
+
+  .btn-link{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 16px;
+    border-radius:12px;
+    background:var(--surface);
+    color:var(--ink);
+    border:1px solid var(--border);
+    text-decoration:none;
+    font-weight:700;
+    font-size:14px;
+    transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    box-shadow:0 8px 18px rgba(28,44,73,.04);
+  }
+
+  .btn-link:hover{
+    transform:translateY(-1px);
+    border-color:var(--brand);
+    color:var(--brand);
+    box-shadow:0 14px 24px rgba(37,99,235,.10);
+  }
+
+  .btn-primary{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 16px;
+    border-radius:12px;
+    border:0;
+    background:var(--brand);
+    color:#fff;
+    font-weight:800;
+    font-size:14px;
+    cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease;
+    box-shadow:0 10px 18px rgba(37,99,235,.2);
+  }
+
+  .btn-primary:hover{
+    transform:translateY(-1px);
+    box-shadow:0 14px 24px rgba(37,99,235,.25);
+  }
+
+  .btn-primary:disabled{
+    opacity:.6;
+    cursor:not-allowed;
+    transform:none;
+  }
+
+  .btn-secondary{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 16px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background:var(--surface);
+    color:var(--ink);
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+
+  .btn-secondary:hover{
+    transform:translateY(-1px);
+    box-shadow:0 8px 18px rgba(28,44,73,.08);
+  }
+
+  .btn-secondary:disabled{
+    opacity:.6;
+    cursor:not-allowed;
+    transform:none;
+  }
+
+  .hero-card{
+    background:linear-gradient(180deg,#fff 0%, #fbfcff 100%);
+    border:1px solid var(--border);
+    border-radius:20px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+    margin-bottom:20px;
+  }
+
+  .hero-card-inner{
+    padding:24px;
+    display:grid;
+    grid-template-columns:minmax(0,1.3fr) minmax(0,.9fr);
+    gap:18px;
+    align-items:start;
+  }
+
+  .hero-title{
+    margin:0;
+    font-family:var(--font-display);
+    font-size:22px;
+    line-height:1.3;
+    color:var(--ink);
+  }
+
+  .hero-copy{
+    margin:8px 0 0;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.65;
+  }
+
+  .hero-pills{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:16px;
+  }
+
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:6px 10px;
+    border-radius:999px;
+    background:#f1f5f9;
+    color:var(--ink);
+    font-size:12px;
+    font-weight:700;
+    border:1px solid transparent;
+  }
+
+  .pill.brand{background:var(--brand-bg);color:var(--brand);border-color:rgba(37,99,235,.12);}
+  .pill.success{background:var(--success-bg);color:var(--success);border-color:rgba(22,163,74,.12);}
+  .pill.warn{background:var(--warn-bg);color:var(--warn);border-color:rgba(217,119,6,.14);}
+  .pill.danger{background:var(--danger-bg);color:var(--danger);border-color:rgba(220,38,38,.12);}
+
+  .stats-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:12px;
+  }
+
+  .stat-card{
+    padding:14px 16px;
+    border:1px solid var(--border);
+    border-radius:16px;
+    background:#fff;
+    box-shadow:0 8px 22px rgba(28,44,73,.04);
+  }
+
+  .stat-label{
+    margin:0 0 6px;
+    font-size:11px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--muted);
+  }
+
+  .stat-value{
+    margin:0;
+    font-size:20px;
+    font-weight:800;
+    color:var(--ink);
+    line-height:1.2;
+  }
+
+  .stat-note{
+    margin-top:4px;
+    font-size:12px;
+    color:var(--muted);
+  }
+
+  .summary-strip{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    gap:12px;
+    padding:0 24px 24px;
+  }
+
+  .summary-item{
+    padding:14px 16px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:#fff;
+  }
+
+  .summary-item .label{
+    display:block;
+    font-size:11px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+
+  .summary-item .value{
+    font-size:15px;
+    font-weight:700;
+    color:var(--ink);
+    line-height:1.35;
+  }
+
+  .questions-stack{
+    display:grid;
+    gap:16px;
+  }
+
+  .group-block{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow:var(--shadow);
+  }
+
+  .group-head{
+    padding:16px 18px;
+    background:
+      radial-gradient(circle at top right, rgba(37,99,235,.08), transparent 34%),
+      linear-gradient(180deg,#fff 0%, #fafcff 100%);
+    border-bottom:1px solid var(--border);
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+  }
+
+  .group-head h2{
+    margin:0;
+    font-family:var(--font-display);
+    font-size:16px;
+    font-weight:700;
+    color:var(--ink);
+  }
+
+  .group-head p{
+    margin:6px 0 0;
+    font-size:13px;
+    color:var(--muted);
+  }
+
+  .group-body{
+    padding:16px;
+    display:grid;
+    gap:14px;
+  }
+
+  .question-container{
+    border:1px solid var(--border);
+    border-radius:16px;
+    overflow:hidden;
+    background:#fff;
+  }
+
+  .question-header{
+    padding:16px 18px;
+    background:#fafcff;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+  }
+
+  .question-header-left{
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    min-width:0;
+  }
+
+  .question-number{
+    flex-shrink:0;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:44px;
+    height:32px;
+    padding:0 10px;
+    border-radius:999px;
+    background:var(--brand-bg);
+    color:var(--brand);
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.04em;
+  }
+
+  .question-title{
+    margin:0;
+    font-size:15px;
+    font-weight:800;
+    color:var(--ink);
+    line-height:1.5;
+  }
+
+  .question-meta{
+    margin:6px 0 0;
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.5;
+  }
+
+  .status-badge{
+    flex-shrink:0;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:6px 10px;
+    border-radius:999px;
+    font-size:11px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+  }
+
+  .status-badge.approved{background:var(--success-bg);color:var(--success);}
+  .status-badge.rejected{background:var(--danger-bg);color:var(--danger);}
+  .status-badge.submitted{background:var(--brand-bg);color:var(--brand);}
+  .status-badge.resubmitted{background:#fef3c7;color:#92400e;}
+  .status-badge.draft{background:#eef2f7;color:#64748b;}
+
+  .question-content{
+    padding:18px;
+    display:grid;
+    gap:14px;
+  }
+
+  .response-box{
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:#fbfcff;
+    overflow:hidden;
+  }
+
+  .response-box .response-label{
+    display:block;
+    padding:12px 14px 0;
+    font-size:11px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--muted);
+  }
+
+  .response-box .response-body{
+    padding:10px 14px 14px;
+    color:var(--ink);
+    font-size:14px;
+    line-height:1.75;
+    white-space:pre-wrap;
+    word-break:break-word;
+  }
+
+  .response-value{
+    background:#fff;
+  }
+
+  .no-response{
+    padding:14px;
+    color:var(--muted);
+    font-style:italic;
+  }
+
+  .data-table-container{
+    width:100%;
+    overflow-x:auto;
+    padding:0 14px 14px;
+  }
+
+  .data-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    overflow:hidden;
+  }
+
+  .data-table th{
+    background:#f8fafc;
+    color:var(--ink);
+    font-weight:700;
+    padding:10px 14px;
+    text-align:left;
+    border-bottom:2px solid var(--border);
+    white-space:nowrap;
+  }
+
+  .data-table td{
+    padding:10px 14px;
+    border-bottom:1px solid var(--border);
+    color:var(--ink-soft);
+  }
+
+  .data-table tr:last-child td{
+    border-bottom:none;
+  }
+
+  .data-table tr:hover td{
+    background:#f8faff;
+  }
+
+  .kv-container{
+    padding:10px 14px 14px;
+    display:grid;
+    gap:8px;
+  }
+
+  .kv-row{
+    display:grid;
+    grid-template-columns:200px 1fr;
+    gap:12px;
+    padding:6px 0;
+    border-bottom:1px solid var(--border);
+  }
+
+  .kv-row:last-child{
+    border-bottom:none;
+  }
+
+  .kv-key{
+    font-weight:700;
+    color:var(--ink-soft);
+  }
+
+  .kv-value{
+    color:var(--ink);
+    word-break:break-word;
+  }
+
+  .sub-section-title{
+    font-weight:700;
+    color:var(--brand);
+    padding:8px 0 4px;
+    font-size:14px;
+  }
+
+  .comment-box{
+    border:1px solid #fdba74;
+    border-radius:14px;
+    background:#fff7ed;
+    overflow:hidden;
+  }
+
+  .comment-box .comment-label{
+    display:block;
+    padding:12px 14px 0;
+    font-size:11px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:#9a3412;
+  }
+
+  .comment-input{
+    width:100%;
+    min-height:100px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:12px 14px;
+    font-size:13px;
+    font-family:var(--font-body);
+    line-height:1.5;
+    resize:vertical;
+    background:#fff;
+    margin:0 14px 14px;
+    width:calc(100% - 28px);
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+
+  .comment-input:focus{
+    outline:none;
+    border-color:var(--brand);
+    box-shadow:0 0 0 3px rgba(37,99,235,.12);
+  }
+
+  .comment-input:disabled{
+    background:#f5f7fb;
+    cursor:not-allowed;
+    opacity:.7;
+  }
+
+  .comment-note{
+    margin:4px 14px 0;
+    font-size:12px;
+    color:var(--muted);
+  }
+
+  .comment-actions{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin:10px 14px 14px;
+  }
+
+  .response-meta{
+    display:flex;
+    gap:14px;
+    flex-wrap:wrap;
+    padding-top:2px;
+    font-size:13px;
+    color:var(--muted);
+  }
+
+  .response-meta span{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+  }
+
+  .response-meta .label{
+    font-weight:700;
+    color:var(--ink-soft);
+  }
+
+  .review-actions-bar{
+    border-top:1px solid var(--border);
+    padding-top:14px;
+    display:flex;
+    justify-content:flex-end;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .footer-note{
+    padding:12px 16px;
+    border-top:1px solid var(--border);
+    font-size:13px;
+    color:var(--muted);
+    background:#fbfcff;
+  }
+
+  .footer-note.has-comment{
+    border-top-color:#fdba74;
+    background:#fff7ed;
+    color:#9a3412;
+  }
+
+  .empty-state{
+    background:var(--surface);
+    border:1px dashed var(--border);
+    border-radius:18px;
+    padding:60px 24px;
+    text-align:center;
+    color:var(--muted);
+    box-shadow:var(--shadow);
+  }
+
+  .empty-state h3{
+    margin:0 0 8px;
+    font-family:var(--font-display);
+    font-size:20px;
+    color:var(--ink);
+  }
+
+  .toast-stack{
+    position:fixed;
+    top:18px;
+    right:18px;
+    z-index:1100;
+    display:grid;
+    gap:10px;
+    width:min(360px, calc(100vw - 36px));
+    pointer-events:none;
+  }
+
+  .toast{
+    pointer-events:auto;
+    padding:12px 14px;
+    border-radius:14px;
+    box-shadow:0 18px 38px rgba(15,23,42,.16);
+    border:1px solid var(--border);
+    background:#fff;
+    color:var(--ink);
+    font-size:13px;
+    line-height:1.5;
+  }
+
+  .toast.success{
+    border-color:rgba(22,163,74,.22);
+    background:linear-gradient(180deg,#f2fbf6 0%, #ffffff 100%);
+    color:var(--success);
+  }
+
+  .toast.error{
+    border-color:rgba(220,38,38,.22);
+    background:linear-gradient(180deg,#fff5f5 0%, #ffffff 100%);
+    color:var(--danger);
+  }
+
+  @media (max-width: 1100px){
+    .hero-card-inner{
+      grid-template-columns:1fr;
+    }
+  }
+
+  @media (max-width: 768px){
+    .review-page{
+      padding:16px;
+    }
+
+    .page-header{
+      flex-direction:column;
+    }
+
+    .page-header h1{
+      font-size:24px;
+    }
+
+    .summary-strip{
+      padding:0 16px 16px;
+    }
+
+    .hero-card-inner{
+      padding:18px;
+    }
+
+    .group-body{
+      padding:12px;
+    }
+
+    .question-header{
+      flex-direction:column;
+      align-items:flex-start;
+    }
+
+    .response-meta{
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .comment-actions{
+      justify-content:stretch;
+    }
+
+    .comment-actions .btn-secondary{
+      width:100%;
+      justify-content:center;
+    }
+
+    .review-actions-bar{
+      justify-content:stretch;
+    }
+
+    .review-actions-bar .btn-secondary,
+    .review-actions-bar .btn-primary{
+      width:100%;
+      justify-content:center;
+    }
+
+    .data-table{
+      font-size:12px;
+    }
+
+    .data-table th,
+    .data-table td{
+      padding:8px 10px;
+    }
+
+    .kv-row{
+      grid-template-columns:1fr;
+      gap:4px;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="review-page">
+  <div class="toast-stack" id="reviewToastStack" aria-live="polite" aria-atomic="true"></div>
+  <div class="page-shell">
+    <div class="page-header">
+      <div>
+        <div class="eyebrow">Reviewer Workspace</div>
+        <h1>Review Comments</h1>
+        <p class="subtitle">{{ assignment.assignment_id }} &bull; {{ assignment.plant }}</p>
+      </div>
+      <div class="top-actions">
+        <a href="{% url 'brsr:assignment_detail' assignment.id %}" class="btn-link">← Back to Assignment</a>
+        <a href="{% url 'brsr:approval_dashboard' %}" class="btn-link">Approval Dashboard</a>
+      </div>
+    </div>
+
+    <section class="hero-card">
+      <div class="hero-card-inner">
+        <div>
+          <h2 class="hero-title">{{ assignment.assignment_id }} · {{ assignment.plant }}</h2>
+          <p class="hero-copy">
+            Use this page to add comments for the whole assignment without leaving the review stage early.
+            Each comment saves independently, and the final button will move the assignment forward once you are done.
+          </p>
+          <div class="hero-pills">
+            <span class="pill brand">{{ assignment.workflow_stage|default:"Review" }}</span>
+            <span class="pill success">{{ assignment.workflow_template|default:"BRSR" }}</span>
+            {% if is_review_stage %}
+              <span class="pill warn">Review Stage</span>
+            {% endif %}
+            {% if is_assigned_reviewer %}
+              <span class="pill">Assigned Reviewer</span>
+            {% endif %}
+            <span class="pill">{{ questions|length }} questions</span>
+          </div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <p class="stat-label">Assignment</p>
+            <p class="stat-value">{{ assignment.assignment_id }}</p>
+          </div>
+          <div class="stat-card">
+            <p class="stat-label">Questions</p>
+            <p class="stat-value">{{ questions|length }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-strip">
+        <div class="summary-item">
+          <span class="label">Plant</span>
+          <span class="value">{{ assignment.plant }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="label">Workflow Stage</span>
+          <span class="value">{{ assignment.workflow_stage|default:"-" }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="label">Financial Year</span>
+          <span class="value">{{ assignment.financial_year|default:"-" }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="label">Section</span>
+          <span class="value">{{ assignment.section|default:"-" }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="label">Assignee</span>
+          <span class="value">{{ assignment.assignee|default:"-" }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="label">Status</span>
+          <span class="value">{{ assignment.workflow_status_label|default:assignment.workflow_stage|default:"-" }}</span>
+        </div>
+      </div>
+    </section>
+
+    {% if questions %}
+      <div class="questions-stack">
+        <section class="group-block">
+          <div class="group-head">
+            <div>
+              <h2>Review Comments</h2>
+              <p>{{ questions|length }} question{{ questions|length|pluralize }}</p>
+            </div>
+            <span class="pill">{{ questions|length }}</span>
+          </div>
+          <div class="group-body">
+            {% for question in questions %}
+              <article class="question-container" data-question-id="{{ question.question_id }}">
+                <div class="question-header">
+                  <div class="question-header-left">
+                    <div class="question-number">Q{{ question.number }}</div>
+                    <div>
+                      <h3 class="question-title">{{ question.title }}</h3>
+                      <p class="question-meta">
+                        {% if question.submitted_by %}
+                          &bull; Answered by {{ question.submitted_by }}
+                        {% endif %}
+                        {% if question.submitted_at %}
+                          &bull; Submitted {{ question.submitted_at|date:"Y-m-d H:i" }}
+                        {% endif %}
+                        &bull; {{ question.question_type|title }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="question-content">
+                  <div class="response-box">
+                    <span class="response-label">Submitted Response</span>
+                    {% if question.response_value %}
+                      <div class="response-body response-value">{{ question.response_value|linebreaksbr }}</div>
+                    {% elif question.response_json %}
+                      <div class="response-body response-value">{{ question.response_json|json_script:"response-json"|safe }}</div>
+                    {% else %}
+                      <div class="no-response">No response was provided.</div>
+                    {% endif %}
+                  </div>
+
+                  <div class="comment-box">
+                    <span class="comment-label">Reviewer Comment</span>
+                    <textarea
+                      class="comment-input js-review-comment-input"
+                      data-question-id="{{ question.question_id }}"
+                      placeholder="Add your comment for this question"
+                      {% if not question.can_edit_comment %}disabled{% endif %}
+                    >{{ question.review_remark|default_if_none:'' }}</textarea>
+                    <div class="comment-note">
+                      {% if question.can_edit_comment %}
+                        Use the save button to store this comment without leaving the page.
+                      {% else %}
+                        You do not have permission to edit comments for this question.
+                      {% endif %}
+                    </div>
+                    <div class="comment-actions">
+                      <button
+                        type="button"
+                        class="btn-secondary js-save-comment"
+                        data-question-id="{{ question.question_id }}"
+                        {% if not question.can_edit_comment %}disabled{% endif %}
+                      >Save Comment</button>
+                    </div>
+                  </div>
+
+                  <div class="response-meta">
+                    {% if question.submitted_by %}
+                      <span><span class="label">Submitted by:</span> {{ question.submitted_by }}</span>
+                    {% endif %}
+                    {% if question.submitted_at %}
+                      <span><span class="label">Submitted at:</span> {{ question.submitted_at|date:"Y-m-d H:i" }}</span>
+                    {% endif %}
+                    {% if question.reviewed_by %}
+                      <span><span class="label">Reviewed by:</span> {{ question.reviewed_by }}</span>
+                    {% endif %}
+                    {% if question.reviewed_at %}
+                      <span><span class="label">Reviewed at:</span> {{ question.reviewed_at|date:"Y-m-d H:i" }}</span>
+                    {% endif %}
+                    <span><span class="label">Stage:</span> {{ workflow_task.stage|default:assignment.workflow_stage|default:"-" }}</span>
+                  </div>
+
+                  {% if question.review_remark %}
+                    <div class="footer-note has-comment">
+                      <strong>Existing comment:</strong> {{ question.review_remark|linebreaksbr }}
+                    </div>
+                  {% endif %}
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        </section>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <h3>No Questions Found</h3>
+        <p>This assignment does not have any questions associated with it.</p>
+      </div>
+    {% endif %}
+
+    <div style="margin-top:24px;display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;border-top:1px solid var(--border);padding-top:24px;">
+      <button type="button" class="btn-secondary" id="saveAllCommentsBtn" {% if not is_assigned_reviewer %}disabled{% endif %}>Save All Comments</button>
+      <button type="button" class="btn-primary" id="finalizeReviewBtn" {% if not is_review_stage or not is_assigned_reviewer %}disabled{% endif %}>Finalize Review</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const COMMENT_URL = "{% url 'brsr:question_comment_api' question_id='__question__' %}";
+  const APPROVE_URL = "{{ assignment_approve_api_url|escapejs }}";
+  const REJECT_URL = "{{ assignment_reject_api_url|escapejs }}";
+
+  function apiUrl(template, questionId) {
+    return template.replace('__question__', encodeURIComponent(questionId));
+  }
+
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return '';
+  }
+
+  function showReviewMessage(message, type = 'success') {
+    if (!message) return;
+    const stack = document.getElementById('reviewToastStack');
+    if (!stack) {
+      alert(message);
+      return;
+    }
+    const toast = document.createElement('div');
+    toast.className = `toast ${type === 'error' ? 'error' : 'success'}`;
+    toast.textContent = message;
+    stack.appendChild(toast);
+    window.setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(-4px)';
+      toast.style.transition = 'opacity .2s ease, transform .2s ease';
+      window.setTimeout(() => toast.remove(), 220);
+    }, 2800);
+  }
+
+  async function postAction(url, payload) {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken'),
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.detail || data.message || 'Unable to complete the workflow action.');
+    }
+    return data;
+  }
+
+  async function saveComment(questionId) {
+    const textarea = document.querySelector(`.js-review-comment-input[data-question-id="${CSS.escape(questionId)}"]`);
+    if (!textarea) return;
+    
+    const remark = textarea.value.trim();
+    const assignmentId = "{{ assignment.id }}";
+    
+    try {
+      const data = await postAction(apiUrl(COMMENT_URL, questionId), {
+        assignment_id: assignmentId,
+        remark: remark,
+      });
+      showReviewMessage(data.message || 'Comment saved successfully.', 'success');
+      
+      // Update the footer note if it exists
+      const container = textarea.closest('.question-container');
+      if (container) {
+        let footerNote = container.querySelector('.footer-note');
+        if (remark) {
+          if (footerNote) {
+            footerNote.innerHTML = `<strong>Existing comment:</strong> ${remark.replace(/\n/g, '<br>')}`;
+            footerNote.className = 'footer-note has-comment';
+          } else {
+            const newFooter = document.createElement('div');
+            newFooter.className = 'footer-note has-comment';
+            newFooter.innerHTML = `<strong>Existing comment:</strong> ${remark.replace(/\n/g, '<br>')}`;
+            container.querySelector('.question-content').appendChild(newFooter);
+          }
+        } else if (footerNote) {
+          footerNote.remove();
+        }
+      }
+    } catch (error) {
+      showReviewMessage(error.message, 'error');
+    }
+  }
+
+  // Save individual comment
+  document.querySelectorAll('.js-save-comment').forEach((button) => {
+    button.addEventListener('click', () => {
+      const questionId = button.getAttribute('data-question-id');
+      saveComment(questionId);
+    });
+  });
+
+  // Save all comments
+  document.getElementById('saveAllCommentsBtn').addEventListener('click', async () => {
+    const buttons = document.querySelectorAll('.js-save-comment:not([disabled])');
+    if (buttons.length === 0) {
+      showReviewMessage('No editable comments to save.', 'error');
+      return;
+    }
+    
+    let successCount = 0;
+    let errorCount = 0;
+    
+    for (const button of buttons) {
+      const questionId = button.getAttribute('data-question-id');
+      try {
+        await saveComment(questionId);
+        successCount++;
+      } catch {
+        errorCount++;
+      }
+    }
+    
+    if (errorCount === 0 && successCount > 0) {
+      showReviewMessage(`All ${successCount} comments saved successfully.`, 'success');
+    } else if (errorCount > 0) {
+      showReviewMessage(`Saved ${successCount} comments, ${errorCount} failed.`, 'error');
+    }
+  });
+
+  // Finalize review
+  document.getElementById('finalizeReviewBtn').addEventListener('click', async () => {
+    const button = document.getElementById('finalizeReviewBtn');
+    const originalText = button.textContent;
+    
+    // Check if all questions have comments
+    const textareas = document.querySelectorAll('.js-review-comment-input:not([disabled])');
+    let emptyComments = [];
+    textareas.forEach((textarea) => {
+      if (!textarea.value.trim()) {
+        const container = textarea.closest('.question-container');
+        const number = container ? container.querySelector('.question-number') : null;
+        emptyComments.push(number ? number.textContent : 'Unknown question');
+      }
+    });
+    
+    if (emptyComments.length > 0) {
+      if (!confirm(`You have ${emptyComments.length} question(s) without comments: ${emptyComments.join(', ')}. Continue anyway?`)) {
+        return;
+      }
+    }
+    
+    button.disabled = true;
+    button.textContent = 'Finalizing...';
+    
+    try {
+      const data = await postAction(APPROVE_URL, {});
+      showReviewMessage(data.message || 'Review finalized successfully.', 'success');
+      window.location.href = "{% url 'brsr:approval_dashboard' %}";
+    } catch (error) {
+      showReviewMessage(error.message, 'error');
+    } finally {
+      button.disabled = false;
+      button.textContent = originalText;
+    }
+  });
+
+  // Auto-save on Ctrl+S
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      const textarea = document.activeElement;
+      if (textarea && textarea.classList.contains('js-review-comment-input')) {
+        const questionId = textarea.getAttribute('data-question-id');
+        saveComment(questionId);
+      }
+    }
+  });
+</script>
+{% endblock %}

@@ -23,6 +23,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelatio
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from django.utils.text import slugify
+from apps.organizations.workflow_configuration_engine import WorkflowConfigurationEngine
 
 
 # ---------------------------------------------------------------------------
@@ -301,6 +302,17 @@ class Assignment(models.Model):
     due_date = models.DateField(null=True, blank=True)
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
     notes = models.TextField(blank=True, null=True)
+    assignment_status = models.CharField(
+        max_length=20,
+        choices=[
+            ("pending", "Pending"),
+            ("in_progress", "In Progress"),
+            ("rejected", "Rejected"),
+            ("reassigned", "Reassigned"),
+            ("approved", "Approved"),
+        ],
+        default="pending",
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -345,6 +357,8 @@ class Assignment(models.Model):
 
     @property
     def is_editable(self):
+        if self.assignment_status in {"rejected", "reassigned", "pending"}:
+            return True
         stage_type = self.workflow_stage_type
         if stage_type:
             return stage_type == "data_entry"
@@ -356,11 +370,15 @@ class Assignment(models.Model):
 
     @property
     def is_overdue(self):
-        return bool(self.due_date) and self.due_date < timezone.now().date() and self.overall_status != 'completed'
+        return (self.due_date and self.due_date < timezone.now().date() and self.overall_status not in ("submitted", "completed"))
 
     @property
     def overall_status(self):
         """Roll up completion from child responses instead of a synced field."""
+        if self.assignment_status == "approved":
+            return "completed"
+        if self.assignment_status in {"rejected", "reassigned", "in_progress", "pending"}:
+            return self.assignment_status
         statuses = set(self.responses.values_list('status', flat=True))
         if not statuses:
             return 'pending'
@@ -486,14 +504,28 @@ class QuestionResponse(WorkflowMixin, models.Model):
         return WorkflowConfigurationEngine.start(template, self, assignee)
 
     def submit(self, user):
-        task = self._ensure_workflow_task(first_assignee=getattr(self.assignment, 'assignee', None))
+        task = self._ensure_workflow_task(
+            first_assignee=getattr(self.assignment, "assignee", None)
+        )
+
+        self.status = (
+            WorkflowStatus.RESUBMITTED
+            if self.resubmission_count
+            else WorkflowStatus.SUBMITTED
+        )
+        self.submitted_by = user
+        self.submitted_at = timezone.now()
+        self.save(update_fields=[
+            "status",
+            "submitted_by",
+            "submitted_at",
+        ])
+
         if task:
-            self.status = WorkflowStatus.RESUBMITTED if self.resubmission_count else WorkflowStatus.SUBMITTED
-            self.submitted_by = user
-            self.submitted_at = timezone.now()
-            self.save(update_fields=['status', 'submitted_by', 'submitted_at'])
-            return
-        super().submit(user)
+            WorkflowConfigurationEngine.advance_to_next_stage(
+                task,
+                user=user,
+            )
 
     def approve(self, user, remark=''):
         task = self.workflow_task

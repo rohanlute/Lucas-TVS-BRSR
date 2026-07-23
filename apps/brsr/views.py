@@ -13,6 +13,7 @@ from apps.organizations.models import ApprovalConfigurationTemplate, FinancialYe
 from apps.organizations.workflow_configuration_engine import WorkflowConfigurationEngine
 from .forms import BRSRAssignmentForm
 from .models import Assignment, AssignmentReviewer, BRSRPrinciple, BRSRQuestion, BRSRSection, QuestionResponse
+from django.db.models import Case, When, Value, IntegerField
 
 
 User = get_user_model()
@@ -292,13 +293,16 @@ def _approval_stage_queryset(user):
 def _serialize_workflow_task(task):
     if not task:
         return None
+    is_completed = bool(task.is_completed)
+    stage_label = "Final Approved & Locked" if is_completed else (task.current_stage.label if task.current_stage_id else "")
+    stage_type = "" if is_completed else (task.current_stage.stage_type if task.current_stage_id else "")
     return {
         "id": task.id,
         "template": task.template.name if task.template_id else "",
-        "stage": task.current_stage.label if task.current_stage_id else "",
-        "stage_type": task.current_stage.stage_type if task.current_stage_id else "",
+        "stage": stage_label,
+        "stage_type": stage_type,
         "stage_level": task.current_stage.level if task.current_stage_id else None,
-        "assignee": str(task.current_assignee) if task.current_assignee else "",
+        "assignee": "" if is_completed else (str(task.current_assignee) if task.current_assignee else ""),
         "is_completed": task.is_completed,
         "is_returned": task.is_returned,
         "is_overdue": task.is_overdue,
@@ -310,25 +314,6 @@ def _ensure_assignment_workflow_task(assignment, current_user=None):
     if assignment.workflow_task:
         task = assignment.workflow_task
         _advance_assignment_to_entry_stage(assignment, actor=current_user)
-        if task.current_stage_id and task.current_stage.stage_type == "review":
-            next_stage = _next_non_review_stage(task.current_stage)
-            if next_stage:
-                try:
-                    next_assignee = _first_workflow_assignee_for_stage(
-                        assignment.plant,
-                        next_stage,
-                        current_user=current_user,
-                        assignment=assignment,
-                    )
-                except ValueError:
-                    next_assignee = None
-                WorkflowConfigurationEngine.advance_skipping_stage_types(
-                    task,
-                    assignment.assigner or current_user or assignment.assignee,
-                    skip_stage_types={"review"},
-                    remark="Auto-advanced past comment-only reviewer stage.",
-                    next_assignee=next_assignee,
-                )
         return task
     template = assignment.workflow_template
     if not template:
@@ -343,25 +328,6 @@ def _ensure_assignment_workflow_task(assignment, current_user=None):
         return None
     task = WorkflowConfigurationEngine.start(template, assignment, first_assignee)
     _advance_assignment_to_entry_stage(assignment, actor=current_user)
-    if task.current_stage_id and task.current_stage.stage_type == "review":
-        next_stage = _next_non_review_stage(task.current_stage)
-        if next_stage:
-            try:
-                next_assignee = _first_workflow_assignee_for_stage(
-                    assignment.plant,
-                    next_stage,
-                    current_user=current_user,
-                    assignment=assignment,
-                )
-            except ValueError:
-                next_assignee = None
-            WorkflowConfigurationEngine.advance_skipping_stage_types(
-                task,
-                assignment.assigner or current_user or assignment.assignee,
-                skip_stage_types={"review"},
-                remark="Auto-advanced past comment-only reviewer stage.",
-                next_assignee=next_assignee,
-            )
     return task
 
 def _get_section_principle(section_code=None, principle_slug=None):
@@ -437,6 +403,33 @@ def _workflow_counts(questions, assignment=None):
         "rejected": rejected,
         "progress": round((completed / total * 100), 1) if total else 0,
     }
+
+
+def _assignment_missing_responses(assignment):
+    if not assignment:
+        return []
+
+    questions = list(
+        assignment.questions.select_related("section", "principle").order_by("display_order", "question_number")
+    )
+    responses = {response.question_id: response for response in assignment.responses.all()}
+    missing = []
+    for question in questions:
+        response = responses.get(question.id)
+        response_value = (response.response_value or "").strip() if response else ""
+        response_json = response.response_json if response else {}
+        if response and (response_value or response_json):
+            continue
+        missing.append(
+            {
+                "question_id": question.question_id,
+                "question_number": question.question_number,
+                "title": question.question_text,
+                "section": question.section.name if question.section_id else "",
+                "sub_section": question.sub_section or "",
+            }
+        )
+    return missing
 
 
 def _actor_content_type_map():
@@ -558,20 +551,30 @@ def _default_assignee_for_context(user, plant):
     return sorted(assignees, key=sort_key)[0]
 
 
-def _serialize_assignment(assignment):
+def _serialize_assignment(assignment, user=None):
     questions = list(assignment.questions.select_related("section", "principle").order_by("display_order", "question_number"))
     first_question = questions[0] if questions else None
     workflow_task = assignment.workflow_task
+    workflow_completed = bool(workflow_task and workflow_task.is_completed)
+    assignment_status = getattr(assignment, "assignment_status", "") or ""
+    assignment_status_label = {
+        "pending": "Pending",
+        "in_progress": "In Progress",
+        "rejected": "Rejected",
+        "reassigned": "Reassigned",
+        "approved": "Approved",
+    }.get(assignment_status, assignment_status.replace("_", " ").title() if assignment_status else "")
     response_map = {
         response.question_id: response.status
         for response in assignment.responses.all().only("question_id", "status")
     }
+    workflow_status_label = "Final Approved & Locked" if workflow_completed else (assignment_status_label or assignment.workflow_stage_label)
     return {
         "id": assignment.id,
         "assignment_id": assignment.assignment_id,
         "plant": assignment.plant.name if assignment.plant_id else "",
         "plant_code": assignment.plant.code if assignment.plant_id else "",
-        "assignee": _actor_label(assignment.assignee),
+        "assignee": "" if workflow_completed else _actor_label(assignment.assignee),
         "assignee_type": assignment.assignee_content_type.model if assignment.assignee_content_type_id else "",
         "assigner": _actor_label(assignment.assigner),
         "section": assignment.section.name if assignment.section_id else "",
@@ -579,8 +582,13 @@ def _serialize_assignment(assignment):
         "principle": assignment.principle.principle_name if assignment.principle_id else "",
         "financial_year": assignment.financial_year,
         "workflow_template": assignment.workflow_template_name,
-        "workflow_stage": assignment.workflow_stage_label,
-        "workflow_stage_type": assignment.workflow_stage_type,
+        "workflow_stage": "" if workflow_completed else assignment.workflow_stage_label,
+        "workflow_stage_type": "" if workflow_completed else assignment.workflow_stage_type,
+        "workflow_status_label": workflow_status_label,
+        "assignment_status": assignment_status,
+        "assignment_status_label": assignment_status_label,
+        "is_editable": assignment.is_editable,
+        "is_assigned_reviewer": _is_assigned_reviewer(user, assignment) if user else False,
         "workflow_task": _serialize_workflow_task(workflow_task),
         "due_date": assignment.due_date.isoformat() if assignment.due_date else "",
         "priority": assignment.priority,
@@ -712,11 +720,16 @@ def _serialize_task_for_user(task, user):
     """Serialize workflow task with user permissions."""
     if not task:
         return None
+    is_completed = bool(task.is_completed)
+    stage_label = "Final Approved & Locked" if is_completed else (task.current_stage.label if task.current_stage_id else "")
+    stage_type = "" if is_completed else (task.current_stage.stage_type if task.current_stage_id else "")
     
     assignee_id = task.current_assignee_object_id if (
         task.current_assignee_content_type_id and 
         task.current_assignee_content_type.model == "user"
     ) else None
+    if is_completed:
+        assignee_id = None
     
     current_user_role_id = getattr(user, "role_id", None)
     current_stage_role_id = task.current_stage.role_id if task.current_stage_id else None
@@ -730,20 +743,26 @@ def _serialize_task_for_user(task, user):
             or (current_user_role_id and current_stage_role_id and current_user_role_id == current_stage_role_id)
         )
     )
+    if task.is_returned and assignee_id == getattr(user, "id", None):
+        can_act = True
     if task.current_stage_id and task.current_stage.stage_type == "review":
         assignment = getattr(task.target, "assignment", None) or (task.target if isinstance(task.target, Assignment) else None)
         can_act = _is_assigned_reviewer(user, assignment)
+    if is_completed:
+        can_act = False
     
     return {
         "id": task.id,
-        "stage": task.current_stage.label if task.current_stage_id else "",
-        "stage_type": task.current_stage.stage_type if task.current_stage_id else "",
+        "stage": stage_label,
+        "stage_type": stage_type,
         "stage_role_code": task.current_stage.role.role_code if (
             task.current_stage_id and task.current_stage.role_id
         ) else "",
         "current_assignee_id": assignee_id,
-        "current_assignee": str(task.current_assignee) if task.current_assignee else "",
+        "current_assignee": "" if is_completed else (str(task.current_assignee) if task.current_assignee else ""),
         "can_act": can_act,
+        "is_completed": is_completed,
+        "status_label": "Final Approved & Locked" if is_completed else stage_label,
     }
 
 def _format_response_data(response_json):
@@ -849,8 +868,8 @@ class AssignmentDashboardView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-        assignments = (
-            _assignment_scope_queryset(user)
+        assignments = list(
+    _assignment_scope_queryset(user)
             .select_related(
                 "plant",
                 "section",
@@ -865,10 +884,13 @@ class AssignmentDashboardView(LoginRequiredMixin, TemplateView):
                 "questions__section",
                 "questions__principle",
             )
-            .order_by("-created_at")
         )
+        assignments.sort(key=lambda x: (x.overall_status == "completed", -x.created_at.timestamp()))
 
-        serialized_assignments = [_serialize_assignment(assignment) for assignment in assignments]
+        serialized_assignments = [
+            _serialize_assignment(assignment, user)
+            for assignment in assignments
+        ]
         context["assignments"] = serialized_assignments
         context["assignment_count"] = len(serialized_assignments)
         context["open_count"] = sum(1 for item in serialized_assignments if item["overall_status"] != "completed")
@@ -885,7 +907,11 @@ class ApprovalDashboardView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-        assignments = _approval_stage_queryset(user)
+        assignments = [
+            assignment
+            for assignment in _approval_stage_queryset(user)
+            if not assignment.workflow_task or not assignment.workflow_task.is_completed
+        ]
         grouped = {}
         total_questions = 0
         stage_counts = {
@@ -919,8 +945,9 @@ class ApprovalDashboardView(LoginRequiredMixin, TemplateView):
                         "title": question.question_text,
                         "number": question.question_number,
                         "status": response.status if response else "draft",
-                        "workflow_stage": assignment.workflow_stage_label,
-                        "workflow_stage_type": assignment.workflow_stage_type,
+                        "status_display": "Final Approved & Locked" if (assignment.workflow_task and assignment.workflow_task.is_completed) else ((response.status if response else "draft").replace("_", " ").title()),
+                        "workflow_stage": "Final Approved & Locked" if (assignment.workflow_task and assignment.workflow_task.is_completed) else assignment.workflow_stage_label,
+                        "workflow_stage_type": "" if (assignment.workflow_task and assignment.workflow_task.is_completed) else assignment.workflow_stage_type,
                         "response_value": response.response_value if response else "",
                         "response_json": response.response_json if response else {},
                         "review_remark": response.review_remark if response else "",
@@ -930,7 +957,7 @@ class ApprovalDashboardView(LoginRequiredMixin, TemplateView):
             total_questions += len(question_rows)
             plant_bucket.append(
                 {
-                    "assignment": _serialize_assignment(assignment),
+                    "assignment": _serialize_assignment(assignment, user),
                     "questions": question_rows,
                 }
             )
@@ -1028,8 +1055,9 @@ class AssignmentDetailView(LoginRequiredMixin, TemplateView):
                 "number": question.question_number,
                 "question_type": question.question_type,
                 "status": response.status if response else "draft",
-                "workflow_stage": assignment.workflow_stage_label,
-                "workflow_stage_type": assignment.workflow_stage_type,
+                "status_display": "Final Approved & Locked" if (assignment.workflow_task and assignment.workflow_task.is_completed) else ((response.status if response else "draft").replace("_", " ").title()),
+                "workflow_stage": "Final Approved & Locked" if (assignment.workflow_task and assignment.workflow_task.is_completed) else assignment.workflow_stage_label,
+                "workflow_stage_type": "" if (assignment.workflow_task and assignment.workflow_task.is_completed) else assignment.workflow_stage_type,
                 "response_value": response_value,
                 "response_json": response_json,
                 "response_json_pretty": response_json_pretty,
@@ -1044,7 +1072,7 @@ class AssignmentDetailView(LoginRequiredMixin, TemplateView):
                 "can_act": self._can_act_on_question(assignment, response, user),
             })
 
-        context["assignment"] = _serialize_assignment(assignment)
+        context["assignment"] = _serialize_assignment(assignment, user)
         context["questions"] = question_rows
         
         # Group questions for display
@@ -1117,14 +1145,88 @@ class AssignmentDetailView(LoginRequiredMixin, TemplateView):
 
     def _can_act_on_question(self, assignment, response, user):
         """Check if user can act on this question."""
-        if not assignment.workflow_task:
+        if not user or not user.is_authenticated:
             return False
-        
-        task_info = _serialize_task_for_user(assignment.workflow_task, user)
-        if not task_info:
+        if not assignment or not assignment.workflow_task:
             return False
-        
-        return task_info.get("can_act", False) and response and response.status in ["submitted", "resubmitted"]
+
+        task = assignment.workflow_task
+        if task.is_completed:
+            return False
+
+        stage_type = assignment.workflow_stage_type or (task.current_stage.stage_type if task.current_stage_id else "")
+        if stage_type not in {"approval", "pre_final_approval", "final_approval"}:
+            return False
+
+        if response and response.status in {"approved", "rejected"}:
+            return False
+
+        task_info = _serialize_task_for_user(task, user)
+        return bool(task_info and task_info.get("can_act"))
+
+
+class AssignmentReviewCommentView(LoginRequiredMixin, TemplateView):
+    login_url = "accounts:login"
+    template_name = "brsr/assignment_review_comments.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        assignment_id = kwargs.get("assignment_id")
+        user = self.request.user
+
+        assignment = get_object_or_404(
+            _assignment_queryset_for_user(user).select_related(
+                "plant",
+                "section",
+                "principle",
+                "workflow_template",
+                "assignee_content_type",
+                "assigner_content_type",
+            ).prefetch_related(
+                "questions",
+                "questions__section",
+                "questions__principle",
+                "responses",
+                "responses__question",
+            ),
+            pk=assignment_id,
+        )
+        _ensure_assignment_workflow_task(assignment, current_user=user)
+
+        questions = list(
+            assignment.questions.select_related("section", "principle").order_by("display_order", "question_number")
+        )
+        responses = {response.question_id: response for response in assignment.responses.select_related("question")}
+
+        question_rows = []
+        for question in questions:
+            response = responses.get(question.id)
+            question_rows.append(
+                {
+                    "question_id": question.question_id,
+                    "title": question.question_text,
+                    "number": question.question_number,
+                    "question_type": question.question_type,
+                    "response_value": response.response_value if response else "",
+                    "response_json": response.response_json if response else {},
+                    "review_remark": response.review_remark if response else "",
+                    "submitted_by": str(response.submitted_by) if response and response.submitted_by else "",
+                    "submitted_at": response.submitted_at if response else None,
+                    "can_edit_comment": _is_assigned_reviewer(user, assignment) and assignment.workflow_stage_type == "review",
+                }
+            )
+
+        context["assignment"] = _serialize_assignment(assignment, user)
+        context["questions"] = question_rows
+        context["approval_dashboard_url"] = reverse("brsr:approval_dashboard")
+        context["assignment_detail_url"] = reverse("brsr:assignment_detail", kwargs={"assignment_id": assignment.id})
+        context["question_comment_api_url"] = reverse("brsr:question_comment_api", kwargs={"question_id": "__question__"})
+        context["assignment_approve_api_url"] = reverse("brsr:assignment_approve_api", kwargs={"assignment_id": assignment.id})
+        context["assignment_reject_api_url"] = reverse("brsr:assignment_reject_api", kwargs={"assignment_id": assignment.id})
+        context["is_review_stage"] = assignment.workflow_stage_type == "review"
+        context["is_assigned_reviewer"] = _is_assigned_reviewer(user, assignment)
+        context["workflow_task"] = _serialize_workflow_task(assignment.workflow_task)
+        return context
 
 class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
     login_url = "accounts:login"
