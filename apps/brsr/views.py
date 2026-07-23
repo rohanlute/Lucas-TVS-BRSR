@@ -1198,6 +1198,18 @@ class AssignmentReviewCommentView(LoginRequiredMixin, TemplateView):
         )
         responses = {response.question_id: response for response in assignment.responses.select_related("question")}
 
+        task = assignment.workflow_task
+
+        current_stage_type = (
+            task.current_stage.stage_type
+            if task and task.current_stage
+            else ""
+        )
+
+        can_review = (
+            _is_assigned_reviewer(user, assignment)
+            and current_stage_type == "review"
+        )
         question_rows = []
         for question in questions:
             response = responses.get(question.id)
@@ -1212,7 +1224,9 @@ class AssignmentReviewCommentView(LoginRequiredMixin, TemplateView):
                     "review_remark": response.review_remark if response else "",
                     "submitted_by": str(response.submitted_by) if response and response.submitted_by else "",
                     "submitted_at": response.submitted_at if response else None,
-                    "can_edit_comment": _is_assigned_reviewer(user, assignment) and assignment.workflow_stage_type == "review",
+                    "can_edit_comment": can_review,
+                    "reviewed_by": str(response.reviewed_by) if response and response.reviewed_by else "",
+                    "reviewed_at": response.reviewed_at if response else None,
                 }
             )
 

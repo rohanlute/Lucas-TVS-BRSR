@@ -712,9 +712,26 @@ class QuestionReviewCommentAPIView(APIView):
             return Response({"detail": "No workflow task found for this response."}, status=status.HTTP_400_BAD_REQUEST)
         if task.is_completed:
             return _completed_task_response()
-        assignment_reviewers = _assigned_reviewer_ids_for_assignment(assignment)
-        if request.user.id not in assignment_reviewers:
-            return Response({"detail": "Only the selected reviewer can add comments for this assignment."}, status=status.HTTP_403_FORBIDDEN)
+        
+        task = assignment.workflow_task
+        if not task or task.is_completed:
+            return _completed_task_response()
+
+        if task.current_stage.stage_type != "review":
+            return Response(
+                {
+                    "detail": "Comments can only be added during the Review stage."
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        if not _is_assigned_reviewer(request.user, assignment):
+            return Response(
+                {
+                    "detail": "Only the assigned reviewer can add comments."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
         if not remark:
             return Response({"detail": "Reviewer comment is required."}, status=status.HTTP_400_BAD_REQUEST)
 
