@@ -159,6 +159,27 @@
     border-radius:18px;
     box-shadow:var(--shadow);
     overflow:hidden;
+    transition: all 0.3s ease;
+  }
+
+  .assignment-card.expanded .assignment-body {
+    display: grid;
+    animation: slideDown 0.3s ease forwards;
+  }
+
+  .assignment-card:not(.expanded) .assignment-body {
+    display: none;
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .assignment-card header{
@@ -167,6 +188,7 @@
     background:linear-gradient(180deg,#fff 0%, #fbfcff 100%);
     cursor:pointer;
     transition:background .2s ease;
+    user-select: none;
   }
 
   .assignment-card header:hover{
@@ -200,6 +222,26 @@
   .pill.success{background:var(--success-soft);color:var(--success);}
   .pill.brand{background:var(--brand-soft);color:var(--brand);}
   .pill.warn{background:#fff4df;color:#b45309;}
+  .pill.danger{background:var(--danger-soft);color:var(--danger);}
+
+  .header-content {
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+  }
+
+  .header-left {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .header-right {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-shrink: 0;
+  }
 
   .assignment-body{
     padding:16px 18px 18px;
@@ -211,6 +253,34 @@
   .assignment-body.expanded{
     display:grid;
   }
+
+  .assignment-quick-stats {
+    display: flex;
+    gap: 12px;
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--muted);
+    flex-wrap: wrap;
+  }
+
+  .assignment-quick-stats span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .assignment-quick-stats .dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 4px;
+  }
+
+  .assignment-quick-stats .dot.approved { background: var(--success); }
+  .assignment-quick-stats .dot.rejected { background: var(--danger); }
+  .assignment-quick-stats .dot.pending { background: var(--warn); }
+  .assignment-quick-stats .dot.submitted { background: var(--brand); }
 
   .assignment-summary{
     display:flex;
@@ -236,6 +306,8 @@
     font-weight:700;
     cursor:pointer;
     transition:all .15s ease;
+    text-decoration: none;
+    font-size: 13px;
   }
 
   .assignment-summary .view-btn:hover{
@@ -382,15 +454,69 @@
     color:var(--ink);
   }
 
+  .approval-toast-stack{
+    position:fixed;
+    top:18px;
+    right:18px;
+    z-index:1100;
+    display:grid;
+    gap:10px;
+    width:min(360px, calc(100vw - 36px));
+    pointer-events:none;
+  }
+
+  .approval-toast{
+    pointer-events:auto;
+    padding:12px 14px;
+    border-radius:14px;
+    box-shadow:0 18px 38px rgba(15,23,42,.16);
+    border:1px solid var(--border);
+    background:#fff;
+    color:var(--ink);
+    font-size:13px;
+    line-height:1.5;
+  }
+
+  .approval-toast.success{
+    border-color:rgba(22,163,74,.22);
+    background:linear-gradient(180deg,#f2fbf6 0%, #ffffff 100%);
+    color:var(--success);
+  }
+
+  .approval-toast.error{
+    border-color:rgba(220,38,38,.22);
+    background:linear-gradient(180deg,#fff5f5 0%, #ffffff 100%);
+    color:var(--danger);
+  }
+
   /* Toggle icon */
   .toggle-icon{
     font-size:18px;
-    transition:transform .2s ease;
+    transition:transform .3s ease;
     display:inline-block;
+    color:var(--muted);
   }
 
   .toggle-icon.expanded{
     transform:rotate(180deg);
+    color:var(--brand);
+  }
+
+  /* Question visibility toggle */
+  .questions-toggle-btn {
+    background: none;
+    border: none;
+    color: var(--brand);
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+  }
+
+  .questions-toggle-btn:hover {
+    background: var(--brand-soft);
   }
 
   @media (max-width: 1200px){
@@ -407,12 +533,15 @@
     .question-actions{flex-direction:column;}
     .btn-action{width:100%;}
     .assignment-summary{flex-direction:column;gap:8px;align-items:stretch;}
+    .header-content{flex-direction:column;}
+    .header-right{align-self:flex-end;}
   }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="approval-dashboard-page">
+  <div class="approval-toast-stack" id="approvalToastStack" aria-live="polite" aria-atomic="true"></div>
   <div class="dashboard-header">
     <div class="dashboard-title">
       <h1>BRSR Approval Dashboard</h1>
@@ -457,93 +586,114 @@
         <div class="plant-grid">
           {% for plant_name, assignment_items in plants.items %}
             {% for item in assignment_items %}
-              <article class="assignment-card">
+              <article class="assignment-card {% if forloop.parentloop.first and forloop.first %}expanded{% endif %}" data-assignment-id="{{ item.assignment.id }}">
                 <header onclick="toggleAssignment(this)">
-                  <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <h3>{{ plant_name }}</h3>
-                    <span class="toggle-icon" id="toggle-icon-{{ item.assignment.id }}">▼</span>
-                  </div>
-                  {% with assignment=item.assignment %}
-                    <div class="assignment-meta">
-                      <span class="pill brand">{{ assignment.assignment_id }}</span>
-                      <span class="pill">{{ assignment.workflow_template }}</span>
-                      <span class="pill success">{{ assignment.workflow_stage }}</span>
-                      <span class="pill">{{ assignment.assignee }}</span>
-                      <span class="pill">{{ item.questions|length }} question{{ item.questions|length|pluralize }}</span>
+                  <div class="header-content">
+                    <div class="header-left">
+                      <h3>{{ plant_name }}</h3>
+                      {% with assignment=item.assignment %}
+                        <div class="assignment-meta">
+                          <span class="pill brand">{{ assignment.assignment_id }}</span>
+                          <span class="pill">{{ assignment.workflow_template }}</span>
+                          <span class="pill success">{{ assignment.workflow_status_label|default:assignment.workflow_stage }}</span>
+                          <span class="pill">{{ assignment.assignee|default:"-" }}</span>
+                        </div>
+                        <div class="assignment-quick-stats">
+                          <span>📋 {{ item.questions|length }} question{{ item.questions|length|pluralize }}</span>
+                          <span>
+                            <span class="dot {{ assignment.workflow_status_label|lower|default:'pending' }}"></span>
+                            {{ assignment.workflow_status_label|default:assignment.workflow_stage }}
+                          </span>
+                          {% if assignment.is_overdue %}
+                          <span style="color: var(--danger);">⚠️ Overdue</span>
+                          {% endif %}
+                        </div>
+                      {% endwith %}
                     </div>
-                  {% endwith %}
+                    <div class="header-right">
+                      <span class="pill {% if item.assignment.workflow_status_label == 'approved' %}success{% elif item.assignment.workflow_status_label == 'rejected' %}danger{% elif item.assignment.workflow_status_label == 'review' %}warn{% else %}brand{% endif %}">
+                        {{ item.assignment.workflow_status_label|default:item.assignment.workflow_stage }}
+                      </span>
+                      <span class="toggle-icon {% if forloop.parentloop.first and forloop.first %}expanded{% endif %}" aria-hidden="true">▼</span>
+                    </div>
+                  </div>
                 </header>
                 <div class="assignment-body" id="body-{{ item.assignment.id }}">
                   <div class="assignment-summary">
                     <span class="question-count">{{ item.questions|length }} question{{ item.questions|length|pluralize }} submitted</span>
-                    <a href="{% url 'brsr:assignment_detail' item.assignment.id %}" class="view-btn">
-                      View All Questions →
-                    </a>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                      <button class="questions-toggle-btn" onclick="toggleQuestions(event, this)" data-target="questions-{{ item.assignment.id }}">
+                        View Questions
+                      </button>
+                      <a href="{% url 'brsr:assignment_detail' item.assignment.id %}" class="view-btn">
+                        View All →
+                      </a>
+                    </div>
                   </div>
-                  {% for question in item.questions %}
-                    <div class="question-row" data-assignment-id="{{ question.assignment_id }}" data-question-id="{{ question.question_id }}" data-stage-type="{{ question.workflow_stage_type }}">
-                      <div class="question-row-top">
-                        <h4>{{ question.number }}. {{ question.title }}</h4>
-                        <span class="pill {% if question.status == 'approved' %}success{% elif question.status == 'rejected' %}warn{% else %}brand{% endif %}">{{ question.status }}</span>
+                  <div id="questions-{{ item.assignment.id }}" style="display:none;">
+                    {% for question in item.questions %}
+                      <div class="question-row" data-assignment-id="{{ question.assignment_id }}" data-question-id="{{ question.question_id }}" data-stage-type="{{ question.workflow_stage_type }}">
+                        <div class="question-row-top">
+                          <h4>{{ question.number }}. {{ question.title }}</h4>
+                          <span class="pill {% if question.status == 'approved' %}success{% elif question.status == 'rejected' %}danger{% elif question.status == 'review' %}warn{% else %}brand{% endif %}">{{ question.status_display|default:question.status }}</span>
+                        </div>
+
+                        <!-- Show response value if available -->
+                        {% if question.response_value %}
+                          <div class="response-box">
+                            <span class="response-label">Submitted response</span>
+                            <p class="response-value">{{ question.response_value }}</p>
+                          </div>
+                        {% endif %}
+
+                        <!-- Show response_json if available (and no response_value) -->
+                        {% if question.response_json and not question.response_value %}
+                          <div class="response-box">
+                            <span class="response-label">Submitted response</span>
+                            <pre class="response-json">{{ question.response_json|json_script:"response-json"|safe }}</pre>
+                          </div>
+                        {% endif %}
+
+                        <!-- Show both if both exist -->
+                        {% if question.response_value and question.response_json %}
+                          <div class="response-box">
+                            <span class="response-label">Submitted response (structured)</span>
+                            <pre class="response-json">{{ question.response_json|json_script:"response-json"|safe }}</pre>
+                          </div>
+                        {% endif %}
+
+                        <!-- Show empty state if no response -->
+                        {% if not question.response_value and not question.response_json %}
+                          <div class="response-box">
+                            <span class="response-label">Submitted response</span>
+                            <p class="response-value" style="color:var(--muted);font-style:italic;">No response submitted</p>
+                          </div>
+                        {% endif %}
+
+                        {% if question.review_remark %}
+                          <div class="response-box">
+                            <span class="response-label">Reviewer comment</span>
+                            <p class="response-value">{{ question.review_remark }}</p>
+                          </div>
+                        {% endif %}
                       </div>
-
-                      <!-- Show response value if available -->
-                      {% if question.response_value %}
-                        <div class="response-box">
-                          <span class="response-label">Submitted response</span>
-                          <p class="response-value">{{ question.response_value }}</p>
+                    {% endfor %}
+                    <div class="question-actions" style="margin-top:18px; padding-top:16px; border-top:1px solid var(--border); flex-wrap:wrap;">
+                      {% if item.assignment.workflow_stage_type == 'review' and item.assignment.is_assigned_reviewer %}
+                        <a href="{% url 'brsr:assignment_review_comments' item.assignment.id %}" class="btn-action btn-approve">Open Review Comments</a>
+                      {% elif item.assignment.workflow_stage_type %}
+                        <div style="flex:1 1 100%;">
+                          <label class="response-label" for="assignment-reject-remark-{{ item.assignment.id }}">Rejection remark</label>
+                          <textarea class="approval-comment js-assignment-reject-remark"
+                                    id="assignment-reject-remark-{{ item.assignment.id }}"
+                                    data-assignment-id="{{ item.assignment.id }}"
+                                    placeholder="Add a note explaining what needs to be corrected before rejecting this assignment"></textarea>
                         </div>
-                      {% endif %}
-
-                      <!-- Show response_json if available (and no response_value) -->
-                      {% if question.response_json and not question.response_value %}
-                        <div class="response-box">
-                          <span class="response-label">Submitted response</span>
-                          <pre class="response-json">{{ question.response_json|json_script:"response-json"|safe }}</pre>
-                        </div>
-                      {% endif %}
-
-                      <!-- Show both if both exist -->
-                      {% if question.response_value and question.response_json %}
-                        <div class="response-box">
-                          <span class="response-label">Submitted response (structured)</span>
-                          <pre class="response-json">{{ question.response_json|json_script:"response-json"|safe }}</pre>
-                        </div>
-                      {% endif %}
-
-                      <!-- Show empty state if no response -->
-                      {% if not question.response_value and not question.response_json %}
-                        <div class="response-box">
-                          <span class="response-label">Submitted response</span>
-                          <p class="response-value" style="color:var(--muted);font-style:italic;">No response submitted</p>
-                        </div>
-                      {% endif %}
-
-                      {% if question.review_remark %}
-                        <div class="response-box">
-                          <span class="response-label">Reviewer comment</span>
-                          <p class="response-value">{{ question.review_remark }}</p>
-                        </div>
-                      {% endif %}
-
-                      {% if question.workflow_stage_type == 'review' and question.can_act %}
-                        <label class="response-label" for="remark-{{ question.assignment_id }}-{{ question.question_id }}">Review comment</label>
-                        <textarea class="approval-comment js-review-comment"
-                                  id="remark-{{ question.assignment_id }}-{{ question.question_id }}"
-                                  data-question-id="{{ question.question_id }}"
-                                  data-assignment-id="{{ question.assignment_id }}"
-                                  placeholder="Add review notes for this submission">{{ question.review_remark|default_if_none:'' }}</textarea>
-                        <div class="stat-note" style="margin-top:8px;">Comments save automatically when you leave the field.</div>
-                      {% endif %}
-
-                      {% if question.workflow_stage_type != 'review' and question.can_act and question.status != 'approved' %}
-                        <div class="question-actions">
-                          <button type="button" class="btn-action btn-reject js-reject" data-question-id="{{ question.question_id }}" data-assignment-id="{{ question.assignment_id }}">Reject</button>
-                          <button type="button" class="btn-action btn-approve js-approve" data-question-id="{{ question.question_id }}" data-assignment-id="{{ question.assignment_id }}">Approve</button>
-                        </div>
+                        <button type="button" class="btn-action btn-reject js-assignment-reject" data-assignment-id="{{ item.assignment.id }}" data-reject-url="{% url 'brsr:assignment_reject_api' item.assignment.id %}">Reject Assignment</button>
+                        <button type="button" class="btn-action btn-approve js-assignment-approve" data-assignment-id="{{ item.assignment.id }}" data-approve-url="{% url 'brsr:assignment_approve_api' item.assignment.id %}">Approve Assignment</button>
                       {% endif %}
                     </div>
-                  {% endfor %}
+                  </div>
                 </div>
               </article>
             {% endfor %}
@@ -566,11 +716,11 @@
     const body = card.querySelector('.assignment-body');
     const icon = card.querySelector('.toggle-icon');
     
-    if (body.classList.contains('expanded')) {
-      body.classList.remove('expanded');
+    if (card.classList.contains('expanded')) {
+      card.classList.remove('expanded');
       if (icon) icon.classList.remove('expanded');
     } else {
-      body.classList.add('expanded');
+      card.classList.add('expanded');
       if (icon) icon.classList.add('expanded');
     }
   }
@@ -579,56 +729,70 @@
   function toggleQuestions(event, button) {
     event.stopPropagation();
     const targetId = button.dataset.target;
-    const body = document.getElementById(targetId);
-    if (!body) return;
+    const container = document.getElementById(targetId);
+    if (!container) return;
 
-    const questionRows = body.querySelectorAll('.question-row');
-    const isVisible = questionRows.length > 0 && questionRows[0].style.display !== 'none';
-
-    if (isVisible) {
-      questionRows.forEach(row => row.style.display = 'none');
-      button.textContent = 'View Questions';
-      button.classList.remove('expanded');
-    } else {
-      questionRows.forEach(row => row.style.display = 'block');
+    if (container.style.display === 'none') {
+      container.style.display = 'block';
       button.textContent = 'Hide Questions';
       button.classList.add('expanded');
+    } else {
+      container.style.display = 'none';
+      button.textContent = 'View Questions';
+      button.classList.remove('expanded');
     }
   }
 
-  // Initialize: hide all question rows by default, but keep the body expanded
+  // Keyboard accessibility for headers
   document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('.assignment-body').forEach(body => {
-      body.classList.add('expanded');
-      const questionRows = body.querySelectorAll('.question-row');
-      questionRows.forEach(row => row.style.display = 'none');
-      const viewBtn = body.querySelector('.view-btn');
-      if (viewBtn) {
-        viewBtn.textContent = 'View Questions';
-        viewBtn.classList.remove('expanded');
-      }
+    document.querySelectorAll('.assignment-card header').forEach(header => {
+      header.setAttribute('role', 'button');
+      header.setAttribute('tabindex', '0');
+      
+      header.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          this.click();
+        }
+      });
     });
 
-    // Initialize toggle icons
-    document.querySelectorAll('.toggle-icon').forEach(icon => {
-      icon.classList.remove('expanded');
+    // Initialize: hide all question containers by default
+    document.querySelectorAll('[id^="questions-"]').forEach(container => {
+      container.style.display = 'none';
+    });
+
+    // Update toggle buttons text
+    document.querySelectorAll('.questions-toggle-btn').forEach(btn => {
+      btn.textContent = 'View Questions';
+      btn.classList.remove('expanded');
     });
   });
-
-  // API URLs and functions
-  const APPROVE_URL = "{% url 'brsr:question_approve_api' question_id='__question__' %}";
-  const REJECT_URL = "{% url 'brsr:question_reject_api' question_id='__question__' %}";
-  const COMMENT_URL = "{% url 'brsr:question_comment_api' question_id='__question__' %}";
-
-  function apiUrl(template, questionId) {
-    return template.replace('__question__', encodeURIComponent(questionId));
-  }
 
   function getCookie(name) {
     const value = `; ${document.cookie}`;
     const parts = value.split(`; ${name}=`);
     if (parts.length === 2) return parts.pop().split(';').shift();
     return '';
+  }
+
+  function showApprovalMessage(message, type = 'success') {
+    if (!message) return;
+    const stack = document.getElementById('approvalToastStack');
+    if (!stack) {
+      alert(message);
+      return;
+    }
+    const toast = document.createElement('div');
+    toast.className = `approval-toast ${type === 'error' ? 'error' : 'success'}`;
+    toast.textContent = message;
+    stack.appendChild(toast);
+    window.setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(-4px)';
+      toast.style.transition = 'opacity .2s ease, transform .2s ease';
+      window.setTimeout(() => toast.remove(), 220);
+    }, 2800);
   }
 
   async function postAction(url, payload) {
@@ -647,55 +811,37 @@
     return response.json().catch(() => ({}));
   }
 
-  document.querySelectorAll('.js-review-comment').forEach((field) => {
-    const saveComment = async () => {
-      const questionId = field.getAttribute('data-question-id');
-      const assignmentId = field.getAttribute('data-assignment-id');
-      try {
-        await postAction(apiUrl(COMMENT_URL, questionId), {
-          assignment_id: assignmentId,
-          remark: field.value || '',
-        });
-      } catch (error) {
-        alert(error.message);
-      }
-    };
-    field.addEventListener('blur', saveComment);
-  });
-
-  document.querySelectorAll('.js-approve').forEach((button) => {
+  document.querySelectorAll('.js-assignment-approve').forEach((button) => {
     button.addEventListener('click', async () => {
-      const questionId = button.getAttribute('data-question-id');
-      const assignmentId = button.getAttribute('data-assignment-id');
       button.disabled = true;
       try {
-        await postAction(apiUrl(APPROVE_URL, questionId), { assignment_id: assignmentId });
+        const data = await postAction(button.getAttribute('data-approve-url'), {});
+        showApprovalMessage(data.message || 'Assignment approved successfully.', 'success');
         window.location.reload();
       } catch (error) {
-        alert(error.message);
+        showApprovalMessage(error.message, 'error');
       } finally {
         button.disabled = false;
       }
     });
   });
 
-  document.querySelectorAll('.js-reject').forEach((button) => {
+  document.querySelectorAll('.js-assignment-reject').forEach((button) => {
     button.addEventListener('click', async () => {
-      const questionId = button.getAttribute('data-question-id');
       const assignmentId = button.getAttribute('data-assignment-id');
-      const row = button.closest('.question-row');
-      const remarkField = row ? row.querySelector('.approval-comment') : null;
+      const remarkField = document.querySelector(`.js-assignment-reject-remark[data-assignment-id="${CSS.escape(assignmentId)}"]`);
       const remark = ((remarkField && remarkField.value) || '').trim();
       if (!remark) {
-        alert('Please add a rejection comment before rejecting.');
+        alert('Please add a rejection comment before rejecting the assignment.');
         return;
       }
       button.disabled = true;
       try {
-        await postAction(apiUrl(REJECT_URL, questionId), { assignment_id: assignmentId, remark });
+        const data = await postAction(button.getAttribute('data-reject-url'), { remark });
+        showApprovalMessage(data.message || 'Assignment rejected and sent back for correction.', 'success');
         window.location.reload();
       } catch (error) {
-        alert(error.message);
+        showApprovalMessage(error.message, 'error');
       } finally {
         button.disabled = false;
       }

@@ -233,7 +233,9 @@ class AssignmentAdmin(admin.ModelAdmin):
             'pending': 'gray',
             'in_progress': 'orange',
             'completed': 'green',
-            'needs_revision': 'red'
+            'needs_revision': 'red',
+            'rejected': 'red',
+            'reassigned': 'orange',
         }
         color = colors.get(status, 'black')
         return format_html(

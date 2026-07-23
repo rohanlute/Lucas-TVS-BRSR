@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 from apps.organizations.models import FinancialYear, Plant
 from apps.organizations.workflow_configuration_engine import WorkflowConfigurationEngine
 from .forms import BRSRAssignmentForm
-from .models import Assignment, BRSRPrinciple, BRSRQuestion, BRSRSection, QuestionResponse
+from .models import Assignment, BRSRPrinciple, BRSRQuestion, BRSRSection, QuestionResponse, WorkflowStatus
 from .views import (
     _assignment_context,
     _assignment_queryset_for_user,
@@ -33,6 +33,10 @@ from .views import (
     _resolve_brsr_workflow_template,
     _serialize_workflow_task,
     _workflow_counts,
+    _assigned_reviewer_ids_for_assignment,
+    _is_assigned_reviewer,
+    _assignment_missing_responses,
+    _next_non_review_stage,
 )
 
 
@@ -74,12 +78,14 @@ def _serialize_question(question, assignment=None, user=None):
     task_info = _serialize_task_for_user(task, user) if (task and user) else None
     workflow_stage_type = task_info.get("stage_type", "") if task_info else ""
     can_act = task_info.get("can_act", False) if task_info else False
+    status_display = "Final Approved & Locked" if (task and task.is_completed) else ((response.status if response else "draft").replace("_", " ").title())
     return {
         "question_id": question.question_id,
         "title": question.question_text,
         "question_number": question.question_number,
         "question_type": question.question_type,
         "status": response.status if response else "draft",
+        "status_display": status_display,
         "workflow_stage": task.current_stage.label if task and task.current_stage_id else "",
         "workflow_stage_type": workflow_stage_type,
         "can_act": can_act,
@@ -115,7 +121,12 @@ def _serialize_user(user):
 def _serialize_task_for_user(task, user):
     if not task:
         return None
+    is_completed = bool(task.is_completed)
+    stage_label = "Final Approved & Locked" if is_completed else (task.current_stage.label if task.current_stage_id else "")
+    stage_type = "" if is_completed else (task.current_stage.stage_type if task.current_stage_id else "")
     assignee_id = task.current_assignee_object_id if task.current_assignee_content_type_id and task.current_assignee_content_type.model == "user" else None
+    if is_completed:
+        assignee_id = None
     current_user_role_id = getattr(user, "role_id", None)
     current_stage_role_id = task.current_stage.role_id if task.current_stage_id else None
     can_act = bool(
@@ -127,15 +138,236 @@ def _serialize_task_for_user(task, user):
             or (current_user_role_id and current_stage_role_id and current_user_role_id == current_stage_role_id)
         )
     )
+    if task.is_returned and assignee_id == getattr(user, "id", None):
+        can_act = True
+    if task.current_stage_id and task.current_stage.stage_type == "review":
+        assignment = getattr(task.target, "assignment", None) or (task.target if isinstance(task.target, Assignment) else None)
+        can_act = _is_assigned_reviewer(user, assignment)
+    if is_completed:
+        can_act = False
     return {
         "id": task.id,
-        "stage": task.current_stage.label if task.current_stage_id else "",
-        "stage_type": task.current_stage.stage_type if task.current_stage_id else "",
+        "stage": stage_label,
+        "stage_type": stage_type,
         "stage_role_code": task.current_stage.role.role_code if task.current_stage_id and task.current_stage.role_id else "",
         "current_assignee_id": assignee_id,
-        "current_assignee": str(task.current_assignee) if task.current_assignee else "",
+        "current_assignee": "" if is_completed else (str(task.current_assignee) if task.current_assignee else ""),
         "can_act": can_act,
+        "is_completed": is_completed,
+        "status_label": "Final Approved & Locked" if is_completed else stage_label,
     }
+
+
+def _completed_task_response():
+    return Response(
+        {"detail": "This workflow has already been completed."},
+        status=status.HTTP_409_CONFLICT,
+    )
+
+
+def _ensure_assignment_task(assignment, user):
+    if not assignment.workflow_template_id:
+        template = _resolve_brsr_workflow_template(user, assignment.plant)
+        if template:
+            assignment.workflow_template = template
+            assignment.save(update_fields=["workflow_template", "updated_at"])
+    from .views import _ensure_assignment_workflow_task
+
+    _ensure_assignment_workflow_task(assignment, current_user=user)
+    return assignment.workflow_task
+
+
+def _finalize_assignment_submission(assignment, user, *, force=False):
+    task = _ensure_assignment_task(assignment, user)
+    if task and task.is_completed:
+        return None, _completed_task_response()
+    if not assignment.is_editable and assignment.workflow_stage_type != "data_entry":
+        return None, Response(
+            {"detail": "This assignment cannot be submitted in the current workflow stage."},
+            status=status.HTTP_409_CONFLICT,
+        )
+
+    missing_questions = _assignment_missing_responses(assignment)
+    if missing_questions and not force:
+        return None, Response(
+            {
+                "detail": "Some questions have not been filled yet.",
+                "missing_questions": missing_questions,
+                "requires_confirmation": True,
+            },
+            status=status.HTTP_409_CONFLICT,
+        )
+
+    questions = list(assignment.questions.select_related("section", "principle").order_by("display_order", "question_number"))
+    responses = {
+        response.question_id: response
+        for response in assignment.responses.select_related("question")
+    }
+    with transaction.atomic():
+        for question in questions:
+            response = responses.get(question.id)
+            if response is None and force:
+                response = QuestionResponse.objects.create(
+                    assignment=assignment,
+                    question=question,
+                    response_value="",
+                    response_json={},
+                )
+                responses[question.id] = response
+            if response is None:
+                continue
+            response.answered_by_content_type = ContentType.objects.get_for_model(User)
+            response.answered_by_object_id = user.id
+            response.status = WorkflowStatus.RESUBMITTED if response.resubmission_count else WorkflowStatus.SUBMITTED
+            response.submitted_by = user
+            response.submitted_at = timezone.now()
+            response.save(update_fields=["status", "answered_by_content_type", "answered_by_object_id", "submitted_by", "submitted_at", "updated_at"])
+
+        task = assignment.workflow_task
+        if task:
+            next_stage = task.current_stage.next_stage() if task.current_stage_id else None
+            next_assignee = None
+            if next_stage:
+                if next_stage.stage_type == "review" and not assignment.reviewer_links.exists():
+                    next_stage = _next_non_review_stage(next_stage)
+                if next_stage:
+                    try:
+                        next_assignee = _first_workflow_assignee_for_stage(
+                            assignment.plant,
+                            next_stage,
+                            current_user=user,
+                            assignment=assignment,
+                        )
+                    except ValueError:
+                        next_assignee = None
+                        if next_stage.stage_type == "review":
+                            next_stage = _next_non_review_stage(next_stage)
+                            if next_stage:
+                                try:
+                                    next_assignee = _first_workflow_assignee_for_stage(
+                                        assignment.plant,
+                                        next_stage,
+                                        current_user=user,
+                                        assignment=assignment,
+                                    )
+                                except ValueError:
+                                    next_assignee = None
+            WorkflowConfigurationEngine.advance_to_next_stage(
+                task,
+                user,
+                remark="Submitted for review.",
+                next_assignee=next_assignee,
+            )
+    assignment.refresh_from_db()
+    return {
+        "message": f"Assignment {assignment.assignment_id} submitted successfully.",
+        "workflow_task": _serialize_task_for_user(assignment.workflow_task, user),
+        "missing_questions": missing_questions,
+    }, None
+
+
+def _approve_assignment_stage(assignment, user):
+    task = _ensure_assignment_task(assignment, user)
+    if not task:
+        return None, Response({"detail": "No workflow task found for this assignment."}, status=status.HTTP_400_BAD_REQUEST)
+    if task.is_completed:
+        return None, _completed_task_response()
+    if assignment.workflow_stage_type == "review":
+        if not _is_assigned_reviewer(user, assignment):
+            return None, Response(
+                {"detail": "Only the assigned reviewer can finalize the review stage."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        next_stage = task.current_stage.next_stage() if task.current_stage_id else None
+        next_assignee = None
+        if next_stage:
+            try:
+                next_assignee = _first_workflow_assignee_for_stage(
+                    assignment.plant,
+                    next_stage,
+                    current_user=user,
+                    assignment=assignment,
+                )
+            except ValueError:
+                next_assignee = None
+        WorkflowConfigurationEngine.advance_to_next_stage(
+            task,
+            user,
+            remark="Reviewer comments finalized.",
+            next_assignee=next_assignee,
+        )
+        assignment.refresh_from_db()
+        return {
+            "message": f"Assignment {assignment.assignment_id} review finalized successfully.",
+            "workflow_task": _serialize_task_for_user(assignment.workflow_task, user),
+        }, None
+    if assignment.workflow_stage_type not in {"approval", "pre_final_approval", "final_approval"}:
+        return None, Response(
+            {"detail": "This assignment cannot be approved in the current workflow stage."},
+            status=status.HTTP_409_CONFLICT,
+        )
+    next_stage = task.current_stage.next_stage() if task.current_stage_id else None
+    next_assignee = None
+    if next_stage:
+        try:
+            next_assignee = _first_workflow_assignee_for_stage(
+                assignment.plant,
+                next_stage,
+                current_user=user,
+                assignment=assignment,
+            )
+        except ValueError as exc:
+            return None, Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    WorkflowConfigurationEngine.approve(task, user, next_assignee=next_assignee)
+    assignment.refresh_from_db()
+    return {
+        "message": f"Assignment {assignment.assignment_id} approved successfully.",
+        "workflow_task": _serialize_task_for_user(assignment.workflow_task, user),
+    }, None
+
+
+def _reject_assignment_stage(assignment, user, remark):
+    task = _ensure_assignment_task(assignment, user)
+    if not task:
+        return None, Response({"detail": "No workflow task found for this assignment."}, status=status.HTTP_400_BAD_REQUEST)
+    if task.is_completed:
+        return None, _completed_task_response()
+    if assignment.workflow_stage_type == "review":
+        return None, Response(
+            {"detail": "Reviewer stage is comment-only. Please use the comment page instead."},
+            status=status.HTTP_409_CONFLICT,
+        )
+    if assignment.workflow_stage_type not in {"approval", "pre_final_approval", "final_approval"}:
+        return None, Response(
+            {"detail": "This assignment cannot be rejected in the current workflow stage."},
+            status=status.HTTP_409_CONFLICT,
+        )
+    if not remark:
+        return None, Response({"detail": "Rejection requires a remark."}, status=status.HTTP_400_BAD_REQUEST)
+    return_to_stage = None
+    if task.template_id:
+        return_to_stage = task.template.stages.filter(stage_type="data_entry").first()
+    responses = list(assignment.responses.select_related("question"))
+    WorkflowConfigurationEngine.reject(
+        task,
+        user,
+        remark=remark,
+        return_to_stage=return_to_stage,
+        return_to_assignee=assignment.assignee,
+    )
+    for response in responses:
+        if response.status in {WorkflowStatus.SUBMITTED, WorkflowStatus.RESUBMITTED}:
+            response.status = WorkflowStatus.REJECTED
+            response.reviewed_by = user
+            response.reviewed_at = timezone.now()
+            response.review_remark = remark
+            response.save(update_fields=["status", "reviewed_by", "reviewed_at", "review_remark", "updated_at"])
+    response_obj = _serialize_task_for_user(assignment.workflow_task, user)
+    assignment.refresh_from_db()
+    return {
+        "message": f"Assignment {assignment.assignment_id} rejected and sent back for correction.",
+        "workflow_task": response_obj,
+    }, None
 
 
 class BRSRWorkspaceDataAPIView(APIView):
@@ -249,11 +481,30 @@ class BRSRWorkspaceDataAPIView(APIView):
                     "id": assignment.id,
                     "assignment_id": assignment.assignment_id,
                     "workflow_template": assignment.workflow_template_name,
-                    "workflow_stage": assignment.workflow_stage_label,
-                    "workflow_stage_type": workflow_stage_type,
-                    "current_assignee_id": assignment.workflow_task.current_assignee_object_id if assignment.workflow_task and assignment.workflow_task.current_assignee_content_type_id and assignment.workflow_task.current_assignee_content_type.model == "user" else None,
+                    "workflow_stage": "Final Approved & Locked" if (assignment.workflow_task and assignment.workflow_task.is_completed) else assignment.workflow_stage_label,
+                    "workflow_stage_type": "" if (assignment.workflow_task and assignment.workflow_task.is_completed) else workflow_stage_type,
+                    "assignment_status": getattr(assignment, "assignment_status", "") or "",
+                    "assignment_status_label": {
+                        "pending": "Pending",
+                        "in_progress": "In Progress",
+                        "rejected": "Rejected",
+                        "reassigned": "Reassigned",
+                        "approved": "Approved",
+                    }.get(getattr(assignment, "assignment_status", "") or "", (getattr(assignment, "assignment_status", "") or "").replace("_", " ").title()),
+                    "workflow_status_label": {
+                        "pending": "Pending",
+                        "in_progress": "In Progress",
+                        "rejected": "Rejected",
+                        "reassigned": "Reassigned",
+                        "approved": "Approved",
+                    }.get(getattr(assignment, "assignment_status", "") or "", _serialize_task_for_user(assignment.workflow_task, request.user).get("status_label") if assignment.workflow_task else assignment.workflow_stage_label),
+                    "current_assignee_id": None if (assignment.workflow_task and assignment.workflow_task.is_completed) else (assignment.workflow_task.current_assignee_object_id if assignment.workflow_task and assignment.workflow_task.current_assignee_content_type_id and assignment.workflow_task.current_assignee_content_type.model == "user" else None),
                     "workflow_task": _serialize_task_for_user(assignment.workflow_task, request.user),
-                    "can_act": can_act,
+                    "can_act": False if (assignment.workflow_task and assignment.workflow_task.is_completed) else can_act,
+                    "is_editable": assignment.is_editable,
+                    "assigned_reviewer_ids": _assigned_reviewer_ids_for_assignment(assignment),
+                    "is_assigned_reviewer": _is_assigned_reviewer(request.user, assignment),
+                    "is_completed": assignment.workflow_task.is_completed if assignment.workflow_task else False,
                 }
                 if assignment
                 else None
@@ -333,23 +584,33 @@ class QuestionSaveAPIView(APIView):
                 assignment.save(update_fields=["workflow_template", "updated_at"])
         from .views import _ensure_assignment_workflow_task
         _ensure_assignment_workflow_task(assignment, current_user=request.user)
-        if assignment.workflow_task:
-            task_info = _serialize_task_for_user(assignment.workflow_task, request.user)
-            if not task_info.get("can_act", False):
-                return Response(
-                    {"detail": "You don't have permission to save this question."},
-                    status=status.HTTP_403_FORBIDDEN,
-                )
-        stage_type = assignment.workflow_stage_type
-        if stage_type and stage_type not in {"question_assignment", "data_entry"}:
-            return Response(
-                {"detail": "This question cannot be saved in the current workflow stage."},
-                status=status.HTTP_409_CONFLICT,
-            )
+        if assignment.workflow_task and assignment.workflow_task.is_completed:
+            return _completed_task_response()
         response, _ = QuestionResponse.objects.get_or_create(
             assignment=assignment,
             question=question,
         )
+        if assignment.workflow_task:
+            task_info = _serialize_task_for_user(assignment.workflow_task, request.user)
+            if not task_info.get("can_act", False):
+                task = assignment.workflow_task
+                assignee_is_current_user = bool(
+                    task
+                    and task.is_returned
+                    and task.current_assignee_content_type_id
+                    and task.current_assignee_content_type.model == "user"
+                    and task.current_assignee_object_id == request.user.id
+                )
+                if not assignee_is_current_user:
+                    return Response(
+                        {"detail": "You don't have permission to save this question."},
+                        status=status.HTTP_403_FORBIDDEN,
+                    )
+        if not assignment.is_editable and assignment.assignment_status not in {"rejected", "reassigned"}:
+            return Response(
+                {"detail": "This question cannot be saved in the current workflow stage."},
+                status=status.HTTP_409_CONFLICT,
+            )
         response.answered_by_content_type = ContentType.objects.get_for_model(User)
         response.answered_by_object_id = request.user.id
         if "response_value" in request.data:
@@ -357,130 +618,81 @@ class QuestionSaveAPIView(APIView):
         if "response_json" in request.data:
             response.response_json = request.data.get("response_json") or {}
         response.save()
+        stage_type = ""
+        if assignment.workflow_task and assignment.workflow_task.current_stage:
+            stage_type = assignment.workflow_task.current_stage.stage_type
         if stage_type == "question_assignment":
             from .views import _advance_assignment_to_entry_stage
             _advance_assignment_to_entry_stage(assignment, actor=request.user)
         response.refresh_from_db()
-        return Response(_serialize_question(question, assignment=assignment))
+        return Response(
+            {
+                **_serialize_question(question, assignment=assignment),
+                "message": f"Draft saved for question {question.question_number}.",
+            }
+        )
 
 
 class QuestionSubmitAPIView(APIView):
     def post(self, request, question_id):
         question = get_object_or_404(_pdf_questions_queryset(), question_id=question_id)
         assignment_id = request.data.get("assignment_id")
+        force = str(request.data.get("force", "")).lower() in {"1", "true", "yes", "on"}
         if not assignment_id:
             return Response(
                 {"detail": "Create an assignment before submitting this response."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         assignment = get_object_or_404(_assignment_queryset_for_user(request.user), pk=assignment_id)
-        if not assignment.workflow_template_id:
-            template = _resolve_brsr_workflow_template(request.user, assignment.plant)
-            if template:
-                assignment.workflow_template = template
-                assignment.save(update_fields=["workflow_template", "updated_at"])
-        from .views import _ensure_assignment_workflow_task
-        _ensure_assignment_workflow_task(assignment, current_user=request.user)
-        response = get_object_or_404(QuestionResponse, assignment=assignment, question=question)
-        if assignment.workflow_stage_type and assignment.workflow_stage_type != "data_entry":
-            return Response(
-                {"detail": "This question cannot be submitted in the current workflow stage."},
-                status=status.HTTP_409_CONFLICT,
-            )
-        response.answered_by_content_type = ContentType.objects.get_for_model(User)
-        response.answered_by_object_id = request.user.id
-        task = assignment.workflow_task
-        next_stage = task.current_stage.next_stage() if task and task.current_stage_id else None
-        next_assignee = None
-        if next_stage:
-            try:
-                next_assignee = _first_workflow_assignee_for_stage(
-                    assignment.plant,
-                    next_stage,
-                    current_user=request.user,
-                    assignment=assignment,
-                )
-            except ValueError as exc:
-                return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
-        with transaction.atomic():
-            response.submit(request.user)
-            if next_stage and next_stage.stage_type == "review":
-                WorkflowConfigurationEngine.advance_to_next_stage(
-                    task,
-                    request.user,
-                    remark="Submitted for review.",
-                    next_assignee=next_assignee,
-                )
-            else:
-                WorkflowConfigurationEngine.approve(task, request.user, next_assignee=next_assignee)
-            response.refresh_from_db()
+        _ensure_assignment_task(assignment, request.user)
+        result, error_response = _finalize_assignment_submission(assignment, request.user, force=force)
+        if error_response:
+            return error_response
         return Response(
             {
-                "status": response.status,
-                "workflow_task": _serialize_task_for_user(assignment.workflow_task, request.user),
+                "status": "submitted",
+                "workflow_task": result["workflow_task"],
+                "missing_questions": result["missing_questions"],
+                "message": result["message"],
             }
         )
 
 
 class QuestionApproveAPIView(APIView):
     def post(self, request, question_id):
-        question = get_object_or_404(_pdf_questions_queryset(), question_id=question_id)
         assignment_id = request.data.get("assignment_id")
         if not assignment_id:
             return Response({"detail": "Create an assignment before approving this response."}, status=status.HTTP_400_BAD_REQUEST)
         assignment = get_object_or_404(_assignment_queryset_for_user(request.user), pk=assignment_id)
-        from .views import _ensure_assignment_workflow_task
-        _ensure_assignment_workflow_task(assignment, current_user=request.user)
-        response = get_object_or_404(QuestionResponse, assignment=assignment, question=question)
-        task = assignment.workflow_task
-        if not task:
-            return Response({"detail": "No workflow task found for this response."}, status=status.HTTP_400_BAD_REQUEST)
-        next_stage = task.current_stage.next_stage() if task.current_stage_id else None
-        next_assignee = None
-        if next_stage:
-            try:
-                next_assignee = _first_workflow_assignee_for_stage(
-                    assignment.plant,
-                    next_stage,
-                    current_user=request.user,
-                    assignment=assignment,
-                )
-            except ValueError as exc:
-                return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
-        WorkflowConfigurationEngine.approve(task, request.user, next_assignee=next_assignee)
-        response.refresh_from_db()
-        return Response({"status": response.status, "workflow_task": _serialize_task_for_user(assignment.workflow_task, request.user)})
+        result, error_response = _approve_assignment_stage(assignment, request.user)
+        if error_response:
+            return error_response
+        return Response(
+            {
+                "status": "approved",
+                "workflow_task": result["workflow_task"],
+                "message": result["message"],
+            }
+        )
 
 
 class QuestionRejectAPIView(APIView):
     def post(self, request, question_id):
-        question = get_object_or_404(_pdf_questions_queryset(), question_id=question_id)
         assignment_id = request.data.get("assignment_id")
         remark = (request.data.get("remark") or "").strip()
         if not assignment_id:
             return Response({"detail": "Create an assignment before rejecting this response."}, status=status.HTTP_400_BAD_REQUEST)
-        if not remark:
-            return Response({"detail": "Rejection requires a remark."}, status=status.HTTP_400_BAD_REQUEST)
         assignment = get_object_or_404(_assignment_queryset_for_user(request.user), pk=assignment_id)
-        from .views import _ensure_assignment_workflow_task
-        _ensure_assignment_workflow_task(assignment, current_user=request.user)
-        response = get_object_or_404(QuestionResponse, assignment=assignment, question=question)
-        task = assignment.workflow_task
-        if not task:
-            return Response({"detail": "No workflow task found for this response."}, status=status.HTTP_400_BAD_REQUEST)
-        return_to_stage = None
-        if assignment.workflow_task and assignment.workflow_task.template_id:
-            return_to_stage = assignment.workflow_task.template.stages.filter(stage_type="data_entry").first()
-        return_to_assignee = getattr(response, "answered_by", None) or assignment.assignee
-        WorkflowConfigurationEngine.reject(
-            task,
-            request.user,
-            remark=remark,
-            return_to_stage=return_to_stage,
-            return_to_assignee=return_to_assignee,
+        result, error_response = _reject_assignment_stage(assignment, request.user, remark)
+        if error_response:
+            return error_response
+        return Response(
+            {
+                "status": "rejected",
+                "workflow_task": result["workflow_task"],
+                "message": result["message"],
+            }
         )
-        response.refresh_from_db()
-        return Response({"status": response.status, "workflow_task": _serialize_task_for_user(assignment.workflow_task, request.user)})
 
 
 class QuestionReviewCommentAPIView(APIView):
@@ -498,45 +710,74 @@ class QuestionReviewCommentAPIView(APIView):
         task = assignment.workflow_task
         if not task:
             return Response({"detail": "No workflow task found for this response."}, status=status.HTTP_400_BAD_REQUEST)
-        if assignment.workflow_stage_type != "review":
-            return Response({"detail": "Review comments can only be saved during the review stage."}, status=status.HTTP_409_CONFLICT)
-        task_info = _serialize_task_for_user(task, request.user)
-        if not task_info or not task_info.get("can_act", False):
-            return Response({"detail": "You don't have permission to update this review comment."}, status=status.HTTP_403_FORBIDDEN)
+        if task.is_completed:
+            return _completed_task_response()
+        
+        task = assignment.workflow_task
+        if not task or task.is_completed:
+            return _completed_task_response()
+
+        if task.current_stage.stage_type != "review":
+            return Response(
+                {
+                    "detail": "Comments can only be added during the Review stage."
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        if not _is_assigned_reviewer(request.user, assignment):
+            return Response(
+                {
+                    "detail": "Only the assigned reviewer can add comments."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
         if not remark:
-            return Response({"detail": "Reviewer comment is required before moving this stage forward."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Reviewer comment is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         response = get_object_or_404(QuestionResponse, assignment=assignment, question=question)
         response.review_remark = remark
         response.reviewed_by = request.user
         response.reviewed_at = timezone.now()
-        next_stage = task.current_stage.next_stage() if task.current_stage_id else None
-        next_assignee = None
-        if next_stage:
-            try:
-                next_assignee = _first_workflow_assignee_for_stage(
-                    assignment.plant,
-                    next_stage,
-                    current_user=request.user,
-                    assignment=assignment,
-                )
-            except ValueError as exc:
-                return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
-        with transaction.atomic():
-            response.save(update_fields=["review_remark", "reviewed_by", "reviewed_at", "updated_at"])
-            if next_stage:
-                WorkflowConfigurationEngine.advance_to_next_stage(
-                    task,
-                    request.user,
-                    remark=remark,
-                    next_assignee=next_assignee,
-                )
+        response.save(update_fields=["review_remark", "reviewed_by", "reviewed_at", "updated_at"])
         response.refresh_from_db()
         return Response(
             {
                 "status": response.status,
                 "review_remark": response.review_remark or "",
                 "workflow_task": _serialize_task_for_user(assignment.workflow_task, request.user),
+                "message": "Reviewer comment saved successfully.",
+            }
+        )
+
+
+class AssignmentApproveAPIView(APIView):
+    def post(self, request, assignment_id):
+        assignment = get_object_or_404(_assignment_queryset_for_user(request.user), pk=assignment_id)
+        result, error_response = _approve_assignment_stage(assignment, request.user)
+        if error_response:
+            return error_response
+        return Response(
+            {
+                "status": "approved",
+                "workflow_task": result["workflow_task"],
+                "message": result["message"],
+            }
+        )
+
+
+class AssignmentRejectAPIView(APIView):
+    def post(self, request, assignment_id):
+        remark = (request.data.get("remark") or "").strip()
+        assignment = get_object_or_404(_assignment_queryset_for_user(request.user), pk=assignment_id)
+        result, error_response = _reject_assignment_stage(assignment, request.user, remark)
+        if error_response:
+            return error_response
+        return Response(
+            {
+                "status": "rejected",
+                "workflow_task": result["workflow_task"],
+                "message": result["message"],
             }
         )
 
@@ -586,6 +827,7 @@ class AssignmentCreateAPIView(APIView):
                 "id": assignment.id,
                 "assignment_id": assignment.assignment_id,
                 "question_count": selected_questions.count(),
+                "message": f"Assignment {assignment.assignment_id} created successfully.",
             },
             status=status.HTTP_201_CREATED,
         )

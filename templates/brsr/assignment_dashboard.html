@@ -130,6 +130,26 @@
     border-radius:20px;
     padding:20px;
     box-shadow:var(--shadow);
+    transition: all 0.3s ease;
+  }
+
+  .assignment-card.expanded .assignment-grid {
+    max-height: 2000px;
+    opacity: 1;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    transition: all 0.4s ease;
+  }
+
+  .assignment-card:not(.expanded) .assignment-grid {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    transition: all 0.3s ease;
   }
 
   .assignment-card-head{
@@ -137,7 +157,33 @@
     justify-content:space-between;
     gap:12px;
     flex-wrap:wrap;
-    margin-bottom:16px;
+    margin-bottom:0;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+  }
+
+  .assignment-card-head:hover {
+    opacity: 0.8;
+  }
+
+  .assignment-card-head .expand-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--brand-soft);
+    color: var(--brand);
+    transition: transform 0.3s ease;
+    font-size: 18px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .assignment-card.expanded .expand-icon {
+    transform: rotate(180deg);
   }
 
   .assignment-meta h3{
@@ -181,6 +227,10 @@
     display:grid;
     grid-template-columns:1.25fr .85fr;
     gap:16px;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: all 0.3s ease;
   }
 
   .question-box,
@@ -268,6 +318,63 @@
     color:var(--ink);
   }
 
+  .dashboard-toast-stack{
+    position:fixed;
+    top:18px;
+    right:18px;
+    z-index:1100;
+    display:grid;
+    gap:10px;
+    width:min(360px, calc(100vw - 36px));
+    pointer-events:none;
+  }
+
+  .dashboard-toast{
+    pointer-events:auto;
+    padding:12px 14px;
+    border-radius:14px;
+    box-shadow:0 18px 38px rgba(15,23,42,.16);
+    border:1px solid var(--border);
+    background:#fff;
+    color:var(--ink);
+    font-size:13px;
+    line-height:1.5;
+  }
+
+  .dashboard-toast.success{
+    border-color:rgba(22,163,74,.22);
+    background:linear-gradient(180deg,#f2fbf6 0%, #ffffff 100%);
+    color:var(--success);
+  }
+
+  /* Quick stats badge on collapsed card */
+  .assignment-quick-stats {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .assignment-quick-stats span {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .assignment-quick-stats .dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 4px;
+  }
+
+  .assignment-quick-stats .dot.completed { background: var(--success); }
+  .assignment-quick-stats .dot.in_progress { background: var(--warn); }
+  .assignment-quick-stats .dot.pending { background: var(--muted); }
+  .assignment-quick-stats .dot.needs_revision { background: var(--danger); }
+
   @media (max-width: 1200px){
     .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
     .assignment-grid{grid-template-columns:1fr;}
@@ -278,12 +385,14 @@
     .dashboard-header{flex-direction:column;}
     .stats-grid{grid-template-columns:1fr;}
     .assignment-card-head{flex-direction:column;}
+    .assignment-quick-stats { flex-wrap: wrap; }
   }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="assignment-dashboard-page">
+  <div class="dashboard-toast-stack" id="dashboardToastStack" aria-live="polite" aria-atomic="true"></div>
   <div class="dashboard-header">
     <div class="dashboard-title">
       <h1>Assignment Dashboard</h1>
@@ -321,18 +430,30 @@
   {% if assignments %}
   <div class="assignment-list">
     {% for assignment in assignments %}
-    <article class="assignment-card">
-      <div class="assignment-card-head">
+    <article class="assignment-card {% if forloop.first %}expanded{% endif %}" data-assignment-id="{{ assignment.assignment_id }}">
+      <div class="assignment-card-head" role="button" tabindex="0" aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}">
         <div class="assignment-meta">
           <h3>{{ assignment.assignment_id }}</h3>
           <p>{{ assignment.plant }} · {{ assignment.section }}{% if assignment.principle %} · {{ assignment.principle }}{% endif %}</p>
+          <div class="assignment-quick-stats">
+            <span>📋 {{ assignment.question_count }} questions</span>
+            <span>📅 {{ assignment.due_date|default:"No due date" }}</span>
+            <span>
+              <span class="dot {{ assignment.overall_status|default:'pending' }}"></span>
+              {{ assignment.overall_status|default:"pending"|title }}
+            </span>
+            {% if assignment.is_overdue %}
+            <span style="color: var(--danger);">⚠️ Overdue</span>
+            {% endif %}
+          </div>
         </div>
         <div class="pill-row">
           <span class="pill brand">{{ assignment.assignee_type|default:"user" }}</span>
-          <span class="pill {% if assignment.overall_status == 'completed' %}success{% elif assignment.overall_status == 'needs_revision' %}danger{% elif assignment.overall_status == 'in_progress' %}warn{% else %}muted{% endif %}">{{ assignment.overall_status|default:"pending" }}</span>
+          <span class="pill {% if assignment.overall_status == 'completed' %}success{% elif assignment.overall_status == 'rejected' or assignment.overall_status == 'reassigned' or assignment.overall_status == 'needs_revision' %}danger{% elif assignment.overall_status == 'in_progress' %}warn{% else %}muted{% endif %}">{{ assignment.overall_status|default:"pending" }}</span>
           {% if assignment.is_overdue %}
           <span class="pill danger">Overdue</span>
           {% endif %}
+          <span class="expand-icon" aria-hidden="true">▼</span>
         </div>
       </div>
 
@@ -397,4 +518,72 @@
   </div>
   {% endif %}
 </div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Toggle functionality for assignment cards
+    const assignmentCards = document.querySelectorAll('.assignment-card');
+    
+    assignmentCards.forEach(card => {
+      const header = card.querySelector('.assignment-card-head');
+      
+      header.addEventListener('click', function(e) {
+        // Don't toggle if clicking on a link or button inside the header
+        if (e.target.closest('a') || e.target.closest('button')) {
+          return;
+        }
+        
+        const isExpanded = card.classList.contains('expanded');
+        const ariaExpanded = header.getAttribute('aria-expanded');
+        
+        // Close all other cards (optional - uncomment for accordion behavior)
+        // assignmentCards.forEach(otherCard => {
+        //   if (otherCard !== card && otherCard.classList.contains('expanded')) {
+        //     otherCard.classList.remove('expanded');
+        //     otherCard.querySelector('.assignment-card-head').setAttribute('aria-expanded', 'false');
+        //   }
+        // });
+        
+        if (isExpanded) {
+          card.classList.remove('expanded');
+          header.setAttribute('aria-expanded', 'false');
+        } else {
+          card.classList.add('expanded');
+          header.setAttribute('aria-expanded', 'true');
+        }
+      });
+      
+      // Keyboard accessibility
+      header.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          header.click();
+        }
+      });
+    });
+
+    // Show dashboard messages
+    function showDashboardMessage(message) {
+      if (!message) return;
+      const stack = document.getElementById('dashboardToastStack');
+      if (!stack) return;
+      const toast = document.createElement('div');
+      toast.className = 'dashboard-toast success';
+      toast.textContent = message;
+      stack.appendChild(toast);
+      window.setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-4px)';
+        toast.style.transition = 'opacity .2s ease, transform .2s ease';
+        window.setTimeout(() => toast.remove(), 220);
+      }, 2800);
+    }
+
+    const flashMessage = sessionStorage.getItem('brsr_workspace_message');
+    if (flashMessage) {
+      showDashboardMessage(flashMessage);
+      sessionStorage.removeItem('brsr_workspace_message');
+    }
+  });
+</script>
 {% endblock %}

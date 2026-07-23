@@ -265,6 +265,48 @@
     margin-bottom:14px;
   }
 
+  .workspace-banner-actions{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .workspace-toast-stack{
+    position:fixed;
+    top:18px;
+    right:18px;
+    z-index:1100;
+    display:grid;
+    gap:10px;
+    width:min(360px, calc(100vw - 36px));
+    pointer-events:none;
+  }
+
+  .workspace-toast{
+    pointer-events:auto;
+    padding:12px 14px;
+    border-radius:14px;
+    box-shadow:0 18px 38px rgba(15,23,42,.16);
+    border:1px solid var(--border);
+    background:#fff;
+    color:var(--ink);
+    font-size:13px;
+    line-height:1.5;
+  }
+
+  .workspace-toast.success{
+    border-color:rgba(22,163,74,.22);
+    background:linear-gradient(180deg,#f2fbf6 0%, #ffffff 100%);
+    color:var(--success);
+  }
+
+  .workspace-toast.error{
+    border-color:rgba(220,38,38,.22);
+    background:linear-gradient(180deg,#fff5f5 0%, #ffffff 100%);
+    color:var(--danger);
+  }
+
   .main-panel{
     margin:0 20px 20px;
     border:1px solid var(--border);
@@ -424,6 +466,25 @@
 
   .question-fieldset:disabled{
     opacity:.92;
+  }
+
+  .review-comment-box{
+    margin-top:14px;
+    padding:14px;
+    border:1px solid #fed7aa;
+    border-radius:14px;
+    background:#fffaf3;
+  }
+
+  .review-comment-box .review-comment-input{
+    min-height:90px;
+    margin-top:8px;
+  }
+
+  .review-comment-box .review-comment-meta{
+    margin-top:8px;
+    font-size:12px;
+    color:var(--muted);
   }
 
   .question-container.active .question-content{
@@ -714,6 +775,7 @@
 </div>
 
 <div class="main-content">
+  <div class="workspace-toast-stack" id="workspaceToastStack" aria-live="polite" aria-atomic="true"></div>
   <div class="brsr-shell">
     <aside class="brsr-sidebar">
       <div class="sidebar-head">
@@ -753,7 +815,10 @@
       <div class="workspace-top">
         <div class="status-banner">
           <div id="workspaceStatus">Loading workspace...</div>
-          <div id="workspaceStats">-</div>
+          <div class="workspace-banner-actions">
+            <div id="workspaceStats">-</div>
+            <button type="button" class="btn-brsr success" id="submitAssignmentBtn" style="display:none;">Submit Assignment</button>
+          </div>
         </div>
       </div>
 
@@ -877,6 +942,27 @@
     return match ? match.pop() : '';
   }
 
+  function showWorkspaceMessage(message, type = 'success') {
+    if (!message) return;
+    const stack = document.getElementById('workspaceToastStack');
+    if (!stack) {
+      alert(message);
+      return;
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `workspace-toast ${type === 'error' ? 'error' : 'success'}`;
+    toast.textContent = message;
+    stack.appendChild(toast);
+
+    window.setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(-4px)';
+      toast.style.transition = 'opacity .2s ease, transform .2s ease';
+      window.setTimeout(() => toast.remove(), 220);
+    }, 2800);
+  }
+
   function escapeHtml(value) {
     return (value ?? '')
       .toString()
@@ -900,6 +986,10 @@
       approved: 'approved',
       rejected: 'rejected',
     }[status] || 'todo';
+  }
+
+  function statusLabel(question) {
+    return question.status_display || (question.status ? question.status.replaceAll('_', ' ') : 'Draft');
   }
 
   function apiUrl(template, questionId) {
@@ -1335,36 +1425,52 @@
     const currentAssignment = state.workspace?.current_assignment || {};
     const currentStageType = currentAssignment.workflow_stage_type || question.workflow_stage_type || '';
     const canAct = currentAssignment.can_act ?? question.can_act ?? false;
-    const canSave = canAct && ['question_assignment', 'data_entry'].includes(currentStageType);
-    const canSubmit = canAct && currentStageType === 'data_entry';
-    const isLocked = question.is_editable === false;
+    const isReviewerView = Boolean(currentAssignment.is_assigned_reviewer && !currentAssignment.is_completed);
+    const canSave = canAct && Boolean(currentAssignment.is_editable);
+    const isLocked = (!currentAssignment.is_editable && question.is_editable === false) || isReviewerView || statusLabel(question) === 'Final Approved & Locked';
+    const badgeText = statusLabel(question);
     
     let actionButtons = '';
-    if (canSave) {
+    if (canSave && !isReviewerView) {
       actionButtons = `
         <div class="table-actions">
           <button type="button" class="btn-brsr secondary js-save-question">Save Draft</button>
-          <button type="button" class="btn-brsr success js-submit-question" ${canSubmit ? '' : 'disabled title="Submit is available in the data entry stage"'}>Submit</button>
         </div>
       `;
     }
+
+    const reviewerCommentBlock = isReviewerView ? `
+      <div class="review-comment-box">
+        <span class="review-label">Reviewer Comment</span>
+        <textarea
+          class="workspace-textarea review-comment-input js-review-comment-input"
+          data-question-id="${escapeHtml(qId)}"
+          placeholder="Add a comment for this question"
+        >${escapeHtml(question.review_remark || '')}</textarea>
+        <div class="review-comment-meta">Only the reviewer selected in workflow configuration can add or edit this comment.</div>
+        <div class="table-actions">
+          <button type="button" class="btn-brsr secondary js-save-review-comment" data-question-id="${escapeHtml(qId)}">Save Comment</button>
+        </div>
+      </div>
+    ` : '';
     
     return `
       <div class="question-container ${selected}" id="question-${escapeHtml(qId)}" data-question-id="${escapeHtml(qId)}">
         <div class="question-header">
           <div class="question-header-left">
-            <input type="checkbox" class="question-checkbox js-question-select" data-question-id="${escapeHtml(qId)}">
+            ${isReviewerView ? '' : `<input type="checkbox" class="question-checkbox js-question-select" data-question-id="${escapeHtml(qId)}">`}
             <div>
               <h3 class="question-title"><span class="question-number">${escapeHtml(question.question_number)}.</span>${escapeHtml(question.title)}</h3>
             </div>
           </div>
-          <span class="status-badge ${statusClass(question.status)}">${escapeHtml(question.status || 'draft')}</span>
+          <span class="status-badge ${statusClass(question.status)}">${escapeHtml(badgeText)}</span>
         </div>
         <div class="question-content">
           <fieldset class="question-fieldset" ${isLocked ? 'disabled' : ''}>
             ${renderQuestionInput(question, isLocked)}
             ${actionButtons}
           </fieldset>
+          ${reviewerCommentBlock}
         </div>
       </div>
     `;
@@ -1430,9 +1536,9 @@
       card.classList.toggle('active', questionId === activeQId);
 
       const saveBtn = card.querySelector('.js-save-question');
-      const submitBtn = card.querySelector('.js-submit-question');
+      const saveCommentBtn = card.querySelector('.js-save-review-comment');
       if (saveBtn) saveBtn.addEventListener('click', () => saveQuestion(questionId));
-      if (submitBtn) submitBtn.addEventListener('click', () => submitQuestion(questionId));
+      if (saveCommentBtn) saveCommentBtn.addEventListener('click', () => saveReviewComment(questionId));
 
       const table = card.querySelector('.data-table');
       if (table) {
@@ -1467,7 +1573,23 @@
     const contextPillsEl = document.getElementById('contextPills');
     if (contextPillsEl) contextPillsEl.innerHTML = pills.join('');
 
-    document.getElementById('assignmentBadge').textContent = workspace.latest_assignment ? workspace.latest_assignment.assignment_id : 'Draft';
+    const activeLabel =
+      workspace.current_assignment?.workflow_task?.status_label
+      || workspace.current_assignment?.workflow_status_label
+      || workspace.latest_assignment?.workflow_task?.status_label
+      || workspace.latest_assignment?.workflow_stage
+      || 'Draft';
+    document.getElementById('assignmentBadge').textContent = activeLabel;
+
+    const submitAssignmentBtn = document.getElementById('submitAssignmentBtn');
+    const canSubmitAssignment = Boolean(
+      workspace.current_assignment
+      && workspace.current_assignment.can_act
+      && Boolean(workspace.current_assignment.is_editable)
+    );
+    if (submitAssignmentBtn) {
+      submitAssignmentBtn.style.display = canSubmitAssignment ? '' : 'none';
+    }
 
     const assignmentLauncher = document.getElementById('assignmentLauncher');
     const stageType = workspace.current_assignment?.workflow_stage_type || '';
@@ -1617,20 +1739,32 @@
     return payload;
   }
 
-  async function saveQuestion(questionId) {
+  function isBlankResponseValue(value) {
+    if (value == null) return true;
+    if (typeof value === 'string') return value.trim() === '';
+    if (Array.isArray(value)) return value.every((item) => isBlankResponseValue(item));
+    if (typeof value === 'object') {
+      return Object.keys(value).length === 0 || Object.values(value).every((item) => isBlankResponseValue(item));
+    }
+    return false;
+  }
+
+  function questionHasResponseData(payload) {
+    return !isBlankResponseValue(payload?.response_value) || !isBlankResponseValue(payload?.response_json);
+  }
+
+  async function persistQuestion(questionId, { reload = false, showMessage = true } = {}) {
     const payload = collectQuestionPayload(questionId);
     if (!payload) {
       alert('Could not collect question data. Please ensure you have an active assignment.');
-      return;
-    }
-    
-    if (!payload.assignment_id) {
-      alert('No assignment found for this question. Please create an assignment first.');
-      return;
+      return false;
     }
 
-    console.log('Saving with payload:', payload);
-    
+    if (!payload.assignment_id) {
+      alert('No assignment found for this question. Please create an assignment first.');
+      return false;
+    }
+
     try {
       const response = await fetch(apiUrl(API_SAVE, questionId), {
         method: 'PUT',
@@ -1640,69 +1774,167 @@
         },
         body: JSON.stringify(payload),
       });
-      
-      if (response.ok) {
-        await loadWorkspace(state.sectionCode, state.principleSlug, questionId, state.assignmentId);
-      } else {
-        const data = await response.json().catch(() => ({}));
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
         alert(data.detail || 'Unable to save the question.');
+        return false;
       }
+
+      if (showMessage) {
+        showWorkspaceMessage(data.message || `Draft saved for question ${questionId}.`, 'success');
+      }
+      if (reload) {
+        await loadWorkspace(state.sectionCode, state.principleSlug, questionId, state.assignmentId);
+      }
+      return true;
     } catch (error) {
       console.error('Error saving question:', error);
       alert('An error occurred while saving. Please check the console for details.');
+      return false;
     }
   }
 
-  async function submitQuestion(questionId) {
-    const payload = collectQuestionPayload(questionId);
-    if (!payload) {
-      alert('Could not collect question data. Please ensure you have an active assignment.');
-      return;
-    }
-    
-    if (!payload.assignment_id) {
-      alert('No assignment found for this question. Please create an assignment first.');
+  async function saveQuestion(questionId) {
+    await persistQuestion(questionId, { reload: true, showMessage: true });
+  }
+
+  async function submitAssignmentResponses() {
+    const currentAssignment = state.workspace?.current_assignment || {};
+    const topicIds = (state.workspace?.topics || []).map((item) => getQuestionId(item)).filter(Boolean);
+    if (!topicIds.length) {
+      alert('No questions found for this assignment.');
       return;
     }
 
-    console.log('Submitting with payload:', payload);
-    
-    try {
-      // First save the question
-      const saveResponse = await fetch(apiUrl(API_SAVE, questionId), {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': getCookie('csrftoken'),
-        },
-        body: JSON.stringify(payload),
-      });
-      
-      if (!saveResponse.ok) {
-        const data = await saveResponse.json().catch(() => ({}));
-        alert(data.detail || 'Unable to save the question before submission.');
+    for (const questionId of topicIds) {
+      const saved = await persistQuestion(questionId, { reload: false, showMessage: false });
+      if (!saved) {
         return;
       }
-      
-      // Then submit
-      const response = await fetch(apiUrl(API_SUBMIT, questionId), {
+    }
+
+    const payloads = topicIds
+      .map((questionId) => {
+        const payload = collectQuestionPayload(questionId);
+        return payload ? { questionId, payload } : null;
+      })
+      .filter(Boolean);
+
+    const missingQuestions = payloads
+      .filter(({ payload }) => !questionHasResponseData(payload))
+      .map(({ questionId, payload }) => {
+        const question = state.workspace.topics.find((item) => getQuestionId(item) === questionId);
+        return {
+          question_id: questionId,
+          question_number: question?.question_number || '',
+          title: question?.title || '',
+          section: question?.section_code || '',
+        };
+      });
+
+    if (missingQuestions.length) {
+      const summary = missingQuestions
+        .slice(0, 8)
+        .map((item) => `${item.question_number ? `${item.question_number}. ` : ''}${item.title}`)
+        .join('\n');
+      const shouldSubmit = window.confirm(
+        `The following questions are still empty:\n${summary}${missingQuestions.length > 8 ? '\n…' : ''}\n\nDo you still want to submit the assignment?`
+      );
+      if (!shouldSubmit) {
+        const firstMissing = missingQuestions[0];
+        if (firstMissing?.question_id) {
+          const firstCard = document.getElementById(`question-${CSS.escape(firstMissing.question_id)}`);
+          if (firstCard) {
+            firstCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            firstCard.classList.add('active');
+          }
+        }
+        return;
+      }
+    }
+
+    const submitQuestionId = topicIds[0];
+    try {
+      const response = await fetch(apiUrl(API_SUBMIT, submitQuestionId), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-CSRFToken': getCookie('csrftoken'),
         },
-        body: JSON.stringify({ assignment_id: payload.assignment_id }),
+        body: JSON.stringify({
+          assignment_id: currentAssignment.id || state.assignmentId,
+          force: missingQuestions.length > 0,
+        }),
       });
-      
-      if (response.ok) {
-        await loadWorkspace(state.sectionCode, state.principleSlug, questionId, state.assignmentId);
-      } else {
-        const data = await response.json().catch(() => ({}));
-        alert(data.detail || 'Unable to submit the question.');
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        if (data.missing_questions && data.missing_questions.length) {
+          const firstMissing = data.missing_questions[0];
+          const firstCard = firstMissing?.question_id ? document.getElementById(`question-${CSS.escape(firstMissing.question_id)}`) : null;
+          if (firstCard) {
+            firstCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            firstCard.classList.add('active');
+          }
+        }
+        alert(data.detail || 'Unable to submit the assignment.');
+        return;
       }
+
+      showWorkspaceMessage(data.message || 'Assignment submitted successfully.', 'success');
+      await loadWorkspace(state.sectionCode, state.principleSlug, state.questionId, state.assignmentId);
     } catch (error) {
-      console.error('Error submitting question:', error);
-      alert('An error occurred while submitting. Please check the console for details.');
+      console.error('Error submitting assignment:', error);
+      alert('An error occurred while submitting the assignment. Please check the console for details.');
+    }
+  }
+
+  async function saveReviewComment(questionId) {
+    const currentAssignment = state.workspace?.current_assignment || {};
+    if (!currentAssignment.is_assigned_reviewer) {
+      alert('Only the selected reviewer can add comments for this assignment.');
+      return;
+    }
+
+    const textarea = document.querySelector(`.js-review-comment-input[data-question-id="${CSS.escape(questionId)}"]`);
+    const remark = textarea ? textarea.value.trim() : '';
+    if (!remark) {
+      alert('Please enter a reviewer comment before saving.');
+      if (textarea) textarea.focus();
+      return;
+    }
+
+    const assignmentId = currentAssignment.id || state.assignmentId;
+    if (!assignmentId) {
+      alert('No assignment found for this question.');
+      return;
+    }
+
+    try {
+      const response = await fetch(apiUrl(API_COMMENT, questionId), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({
+          assignment_id: assignmentId,
+          remark,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        alert(data.detail || 'Unable to save the reviewer comment.');
+        return;
+      }
+
+      showWorkspaceMessage(data.message || 'Reviewer comment saved successfully.', 'success');
+      await loadWorkspace(state.sectionCode, state.principleSlug, state.questionId, state.assignmentId);
+    } catch (error) {
+      console.error('Error saving reviewer comment:', error);
+      alert('An error occurred while saving the reviewer comment.');
     }
   }
 
@@ -1776,7 +2008,7 @@
       if (matchedAssignee) {
         assigneeSelect.value = matchedAssignee.id.toString();
       }
-      const matchedReviewer = defaultReviewer || reviewers[0] || null;
+      const matchedReviewer = defaultReviewer || null;
       if (matchedReviewer) {
         reviewerSelect.value = matchedReviewer.id.toString();
       }
@@ -1855,6 +2087,8 @@
       });
       
       if (response.ok) {
+        const data = await response.json().catch(() => ({}));
+        sessionStorage.setItem('brsr_workspace_message', data.message || 'Assignment created successfully.');
         closeModal();
         window.location.href = "{{ assignment_dashboard_url|escapejs }}";
       } else {
@@ -1893,6 +2127,12 @@
       state.questionId = workspace.active_question_id;
       state.assignmentId = workspace.assignment_id || assignmentId || state.assignmentId;
 
+      const flashMessage = sessionStorage.getItem('brsr_workspace_message');
+      if (flashMessage) {
+        showWorkspaceMessage(flashMessage, 'success');
+        sessionStorage.removeItem('brsr_workspace_message');
+      }
+
       renderSidebar(workspace);
       renderQuestionDeck(workspace, workspace.active_question_id);
       refreshSelectedList();
@@ -1906,6 +2146,7 @@
   document.getElementById('openAssignModalBtn').addEventListener('click', openModal);
   document.getElementById('closeAssignModalBtn').addEventListener('click', closeModal);
   document.getElementById('cancelAssignmentBtn').addEventListener('click', closeModal);
+  document.getElementById('submitAssignmentBtn').addEventListener('click', submitAssignmentResponses);
   document.getElementById('assignModal').addEventListener('click', (event) => {
     if (event.target.id === 'assignModal') closeModal();
   });

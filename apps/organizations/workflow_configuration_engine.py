@@ -24,6 +24,8 @@ class WorkflowConfigurationEngine:
 
     @classmethod
     def _move_to_stage(cls, task, user, next_stage, remark="", next_assignee=None, action="approve"):
+        if task.is_completed:
+            raise PermissionDenied("This workflow has already been completed.")
         actor_ct, actor_id = cls._actor_ref(user)
         next_assignee_ct = next_assignee_id = None
         if next_assignee is not None:
@@ -85,6 +87,8 @@ class WorkflowConfigurationEngine:
 
     @classmethod
     def approve(cls, task, user, remark="", next_assignee=None):
+        if task.is_completed:
+            raise PermissionDenied("This workflow has already been completed.")
         stage = task.current_stage
         if not stage.can_approve:
             raise PermissionDenied("This stage cannot approve.")
@@ -101,11 +105,30 @@ class WorkflowConfigurationEngine:
         permissions. This is intended for automatic system transitions, such as
         skipping a question-assignment gate after the assignment is created.
         """
+        if task.is_completed:
+            raise PermissionDenied("This workflow has already been completed.")
         next_stage = task.current_stage.next_stage() if task.current_stage_id else None
         return cls._move_to_stage(task, user, next_stage, remark=remark, next_assignee=next_assignee, action="approve")
 
     @classmethod
+    def advance_skipping_stage_types(cls, task, user, skip_stage_types=None, remark="", next_assignee=None):
+        """
+        Advance to the next non-skipped stage in a single hop.
+        This is useful when a workflow contains an optional, comment-only stage
+        that should not block progression, such as a reviewer note stage.
+        """
+        if task.is_completed:
+            raise PermissionDenied("This workflow has already been completed.")
+        skip_stage_types = set(skip_stage_types or [])
+        next_stage = task.current_stage.next_stage() if task.current_stage_id else None
+        while next_stage and next_stage.stage_type in skip_stage_types:
+            next_stage = next_stage.next_stage()
+        return cls._move_to_stage(task, user, next_stage, remark=remark, next_assignee=next_assignee, action="approve")
+
+    @classmethod
     def reject(cls, task, user, remark, return_to_stage=None, return_to_assignee=None):
+        if task.is_completed:
+            raise PermissionDenied("This workflow has already been completed.")
         stage = task.current_stage
         if not stage.can_reject:
             raise PermissionDenied("This stage cannot reject.")
@@ -141,6 +164,8 @@ class WorkflowConfigurationEngine:
 
     @classmethod
     def reassign(cls, task, user, new_assignee, remark=""):
+        if task.is_completed:
+            raise PermissionDenied("This workflow has already been completed.")
         stage = task.current_stage
         if not stage.can_reassign:
             raise PermissionDenied("This stage cannot reassign.")
@@ -167,10 +192,15 @@ class WorkflowConfigurationEngine:
                 "current_assignee_object_id",
                 "updated_at",
             ])
+            if hasattr(task.target, "assignment_status"):
+                task.target.assignment_status = "reassigned"
+                task.target.save(update_fields=["assignment_status"])
         return task
 
     @classmethod
     def escalate(cls, task, user, remark=""):
+        if task.is_completed:
+            raise PermissionDenied("This workflow has already been completed.")
         stage = task.current_stage
         if not stage.can_escalate or not stage.escalation_role_id:
             raise PermissionDenied("This stage cannot escalate.")
@@ -190,25 +220,38 @@ class WorkflowConfigurationEngine:
     @staticmethod
     def _sync_denormalized_status(task):
         target = task.target
-        if target is None or not hasattr(target, "status"):
+        if target is None:
             return
 
         if task.is_completed:
-            target.status = "approved"
+            if hasattr(target, "status"):
+                target.status = "approved"
+            if hasattr(target, "assignment_status"):
+                target.assignment_status = "approved"
         elif task.is_returned:
-            target.status = "rejected"
+            if hasattr(target, "status"):
+                target.status = "rejected"
+            if hasattr(target, "assignment_status"):
+                target.assignment_status = "rejected"
         else:
-            target.status = "submitted"
+            if hasattr(target, "status"):
+                target.status = "submitted"
+            if hasattr(target, "assignment_status"):
+                target.assignment_status = "in_progress"
 
-        update_fields = ["status"]
+        update_fields = []
+        if hasattr(target, "status"):
+            update_fields.append("status")
+        if hasattr(target, "assignment_status"):
+            update_fields.append("assignment_status")
         if hasattr(target, "reviewed_by"):
             target.reviewed_by = task.current_assignee if hasattr(task.current_assignee, "pk") else None
             update_fields.append("reviewed_by")
         if hasattr(target, "reviewed_at"):
             target.reviewed_at = timezone.now()
             update_fields.append("reviewed_at")
-        target.save(update_fields=update_fields)
+        if update_fields:
+            target.save(update_fields=update_fields)
 
 
-# Backward-compatible alias.
 ApprovalConfigurationEngine = WorkflowConfigurationEngine
