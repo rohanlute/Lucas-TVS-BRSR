@@ -712,41 +712,94 @@ class QuestionReviewCommentAPIView(APIView):
             return Response({"detail": "No workflow task found for this response."}, status=status.HTTP_400_BAD_REQUEST)
         if task.is_completed:
             return _completed_task_response()
-        
-        task = assignment.workflow_task
-        if not task or task.is_completed:
-            return _completed_task_response()
 
         if task.current_stage.stage_type != "review":
             return Response(
-                {
-                    "detail": "Comments can only be added during the Review stage."
-                },
+                {"detail": "Comments can only be added during the Review stage."},
                 status=status.HTTP_409_CONFLICT,
             )
 
         if not _is_assigned_reviewer(request.user, assignment):
             return Response(
-                {
-                    "detail": "Only the assigned reviewer can add comments."
-                },
+                {"detail": "Only the assigned reviewer can add comments."},
                 status=status.HTTP_403_FORBIDDEN,
             )
         if not remark:
             return Response({"detail": "Reviewer comment is required."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Save the comment
         response = get_object_or_404(QuestionResponse, assignment=assignment, question=question)
         response.review_remark = remark
         response.reviewed_by = request.user
         response.reviewed_at = timezone.now()
         response.save(update_fields=["review_remark", "reviewed_by", "reviewed_at", "updated_at"])
         response.refresh_from_db()
+
+        # ADVANCE THE WORKFLOW TO NEXT STAGE
+        from .views import _first_workflow_assignee_for_stage, _next_non_review_stage
+        
+        # Get the next stage
+        next_stage = task.current_stage.next_stage() if task.current_stage_id else None
+        
+        # If there's no next stage, the workflow is complete
+        if not next_stage:
+            WorkflowConfigurationEngine.complete(task, request.user, remark="Review completed.")
+            return Response(
+                {
+                    "status": response.status,
+                    "review_remark": response.review_remark or "",
+                    "workflow_task": _serialize_task_for_user(assignment.workflow_task, request.user),
+                    "message": "Review comment saved and workflow completed successfully.",
+                }
+            )
+        
+        # Skip any other review stages
+        if next_stage.stage_type == "review":
+            next_stage = _next_non_review_stage(next_stage)
+        
+        # Determine the next assignee
+        next_assignee = None
+        if next_stage:
+            try:
+                next_assignee = _first_workflow_assignee_for_stage(
+                    assignment.plant,
+                    next_stage,
+                    current_user=request.user,
+                    assignment=assignment,
+                )
+            except ValueError:
+                # If no assignee found, try to find the next non-review stage
+                next_stage = _next_non_review_stage(next_stage) if next_stage else None
+                if next_stage:
+                    try:
+                        next_assignee = _first_workflow_assignee_for_stage(
+                            assignment.plant,
+                            next_stage,
+                            current_user=request.user,
+                            assignment=assignment,
+                        )
+                    except ValueError:
+                        next_assignee = None
+        
+        # Advance the workflow
+        WorkflowConfigurationEngine.advance_to_next_stage(
+            task,
+            request.user,
+            remark=f"Reviewer comment: {remark}",
+            next_assignee=next_assignee,
+        )
+
+        # Update assignment status
+        assignment.assignment_status = "in_progress"
+        assignment.save(update_fields=["assignment_status", "updated_at"])
+
         return Response(
             {
                 "status": response.status,
                 "review_remark": response.review_remark or "",
                 "workflow_task": _serialize_task_for_user(assignment.workflow_task, request.user),
-                "message": "Reviewer comment saved successfully.",
+                "message": "Review comment saved and workflow advanced successfully.",
+                "next_stage": next_stage.label if next_stage else "Completed",
             }
         )
 

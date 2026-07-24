@@ -470,6 +470,12 @@ def _assignment_scope_queryset(user, plant=None, department=None):
 
     ct_map = _actor_content_type_map()
     filters = Q(assignee_content_type=ct_map["user"], assignee_object_id=user.id)
+    reviewer_content_type = ContentType.objects.get_for_model(User)
+    reviewer_assignments = Assignment.objects.filter(
+        reviewer_links__reviewer_content_type=reviewer_content_type,
+        reviewer_links__reviewer_object_id=user.id
+    )
+    filters |= Q(id__in=reviewer_assignments.values_list('id', flat=True))
 
     plant_ids = list(user.assigned_plants.filter(is_active=True).values_list("id", flat=True))
     if plant_ids:
@@ -486,7 +492,6 @@ def _assignment_scope_queryset(user, plant=None, department=None):
     if department:
         filters |= Q(assignee_content_type=ct_map["department"], assignee_object_id=department.id)
     return Assignment.objects.filter(filters).distinct()
-
 
 def _plant_departments(plant):
     if not plant:
@@ -628,6 +633,44 @@ def _serialize_assignment(assignment, user=None):
         ),
     }
 
+def _serialize_assignment_with_reviewers(assignment, user=None):
+    """Serialize assignment with reviewer information and comments."""
+    base_data = _serialize_assignment(assignment, user)
+    
+    # Add reviewer information
+    reviewer_links = assignment.reviewer_links.select_related('reviewer_content_type').all()
+    reviewers = []
+    for link in reviewer_links:
+        reviewer = link.reviewer
+        if reviewer:
+            reviewers.append({
+                "id": reviewer.id,
+                "name": _actor_label(reviewer),
+                "type": link.reviewer_content_type.model if link.reviewer_content_type_id else "user",
+            })
+    
+    responses_with_comments = []
+    for response in assignment.responses.select_related('question').all():
+        if response.review_remark:  
+            responses_with_comments.append({
+                "question_id": response.question.question_id,
+                "question_number": response.question.question_number,
+                "question_text": response.question.question_text,
+                "review_remark": response.review_remark,
+                "reviewed_by": _actor_label(response.reviewed_by) if response.reviewed_by else "",
+                "reviewed_at": response.reviewed_at.isoformat() if response.reviewed_at else "",
+                "status": response.status,
+            })
+    
+    base_data.update({
+        "reviewers": reviewers,
+        "review_comments": responses_with_comments,
+        "has_review_comments": len(responses_with_comments) > 0,
+        "is_assigned_reviewer": _is_assigned_reviewer(user, assignment) if user else False,
+        "review_comments_count": len(responses_with_comments),
+    })
+    
+    return base_data
 
 def _assignment_context(section, principle, questions, assignment=None, user=None):
     latest_assignment = (
@@ -869,7 +912,7 @@ class AssignmentDashboardView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
         assignments = list(
-    _assignment_scope_queryset(user)
+            _assignment_scope_queryset(user)
             .select_related(
                 "plant",
                 "section",
@@ -883,12 +926,15 @@ class AssignmentDashboardView(LoginRequiredMixin, TemplateView):
                 "responses",
                 "questions__section",
                 "questions__principle",
+                "responses__question",
+                "reviewer_links",  # Add this to prefetch reviewer links
+                "reviewer_links__reviewer_content_type",  # Add this for reviewer details
             )
         )
         assignments.sort(key=lambda x: (x.overall_status == "completed", -x.created_at.timestamp()))
 
         serialized_assignments = [
-            _serialize_assignment(assignment, user)
+            _serialize_assignment_with_reviewers(assignment, user)  # Use updated serializer
             for assignment in assignments
         ]
         context["assignments"] = serialized_assignments
