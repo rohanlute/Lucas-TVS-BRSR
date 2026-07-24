@@ -838,23 +838,22 @@
     /* Default selected for Scope 1 (light green) */
     .scope-1.selected {
         border: 2px solid #b0ddc1;
-        background: #f0fdf4;  /* light green */
+        background: #f0fdf4;
         box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.15);
     }
 
     .scope-2.selected {
         border: 2px solid #a0b3db;
-        background: #eff6ff;  /* light blue */
+        background: #eff6ff;
         box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
     }
 
     .scope-3.selected {
         border: 2px solid #d97706;
-        background: #fffbeb;  /* light amber */
+        background: #fffbeb;
         box-shadow: 0 0 0 4px rgba(217, 119, 6, 0.15);
     }
 
-    /* Remove the hover transform when selected (optional) */
     .scope-card.selected:hover {
         transform: none;
     }
@@ -863,7 +862,7 @@
     .toast-container {
         position: fixed;
         top: 90px;
-        right: -60px;
+        right: 20px;
         z-index: 9999;
         display: flex;
         flex-direction: column;
@@ -877,7 +876,7 @@
         pointer-events: auto;
         background: #ffffff;
         border-radius: 16px;
-        padding: 0px 20px;
+        padding: 16px 20px;
         box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
         display: flex;
         align-items: center;
@@ -890,7 +889,6 @@
         overflow: hidden;
     }
 
-    /* Colored left accent bar */
     .toast::before {
         content: '';
         position: absolute;
@@ -911,7 +909,6 @@
         background: linear-gradient(180deg, #fbbf24, #d97706);
     }
 
-    /* Toast icon */
     .toast .toast-icon {
         font-size: 22px;
         flex-shrink: 0;
@@ -924,7 +921,6 @@
         background: rgba(0, 0, 0, 0.04);
         font-weight: 700;
         line-height: 1;
-        margin-top: 2px;
     }
 
     .toast.error .toast-icon {
@@ -940,7 +936,6 @@
         background: #fffbeb;
     }
 
-    /* Toast body text */
     .toast .toast-body {
         flex: 1;
         font-size: 14px;
@@ -951,7 +946,6 @@
         padding-right: 4px;
     }
 
-    /* Close button */
     .toast .toast-close {
         background: none;
         border: none;
@@ -968,7 +962,6 @@
         color: #475569;
     }
 
-    /* ---- Auto-dismiss progress bar (optional) ---- */
     .toast .toast-progress {
         position: absolute;
         bottom: 0;
@@ -1025,29 +1018,10 @@
         }
     }
 
-    /* When a toast is removed, we apply this class via JS */
     .toast.removing {
         animation: toastSlideOut 0.3s ease forwards;
     }
-    .swal2-popup.swal2-toast {
-        width: 320px !important;
-        min-height: 60px !important;
-        padding: 12px 16px !important;
-        border-radius: 10px !important;
-        font-size: 14px !important;
-    }
 
-    .swal2-toast .swal2-title {
-        font-size: 15px !important;
-        margin: 0 !important;
-    }
-
-    .swal2-toast .swal2-icon {
-        margin: 0 10px 0 0 !important;
-        transform: scale(0.8);
-    }
-
-    /* Read-only input styling */
     input:disabled,
     select:disabled,
     textarea:disabled {
@@ -1057,7 +1031,6 @@
         opacity: 0.8;
     }
 
-    /* Read-only banner */
     #readOnlyBanner {
         border-left: 4px solid #2563eb;
         background-color: #eff6ff;
@@ -1065,32 +1038,52 @@
         padding: 12px 16px;
     }
 
-    /* Disabled button styling */
     .btn-brsr:disabled {
         opacity: 0.6;
         cursor: not-allowed;
     }
-    input:disabled,
-    select:disabled,
-    textarea:disabled {
-        background-color: #f3f4f6 !important;
-        color: #6b7280 !important;
-        cursor: not-allowed !important;
-        opacity: 0.8;
+
+    .category-total-card {
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        border: 1px solid #86efac;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-top: 12px;
     }
 
-    /* Read-only banner */
-    #readOnlyBanner {
-        border-left: 4px solid #2563eb;
-        background-color: #eff6ff;
-        border-radius: 8px;
-        padding: 12px 16px;
+    .category-total-card.scope-1 {
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        border-color: #86efac;
     }
 
-    /* Disabled button styling */
-    .btn-brsr:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
+    .category-total-card.scope-2 {
+        background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+        border-color: #93c5fd;
+    }
+
+    .category-total-card.scope-3 {
+        background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        border-color: #fcd34d;
+    }
+
+    .category-total-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink-soft);
+        margin-bottom: 4px;
+    }
+
+    .category-total-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--ink);
+    }
+
+    .category-total-unit {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--muted);
+        margin-left: 6px;
     }
 </style>
 {% endblock %}
@@ -1099,6 +1092,7 @@
 <input type="hidden" id="assignmentId" value="{{ assignment.id|default:'' }}">
 <input type="hidden" id="selectedScopeId" value="{{ scope.id }}">
 <input type="hidden" id="isAssignmentLocked" value="{% if is_assignment_locked %}1{% else %}0{% endif %}">
+
 {% if is_assignment_locked %}
 <div class="alert alert-success mb-3">
     <strong>Assignment Submitted.</strong>
@@ -1112,6 +1106,7 @@
     {{ assignment.review_comments }}
 </div>
 {% endif %}
+
 <div class="page-header">
     <div class="page-header-left d-flex align-items-center">
         <div class="page-header-title">
@@ -1137,13 +1132,13 @@
                                 <span class="scope-badge">Scope 1</span>
                                 <span class="scope-desc">Direct emissions</span>
                             </div>
-                            <h3 class="scope-value">1,245 tCO₂e</h3>
+                            <h3 class="scope-value" id="scope1Total">0.00 tCO₂e</h3>
                             <div class="d-flex align-items-center mt-1 flex-wrap">
                                 <span class="scope-trend down">
                                     <i class="feather-trending-down" style="font-size:14px;"></i> -5%
                                 </span>
                                 <span class="fs-12 text-muted ms-2">vs last year</span>
-                                <span class="fs-12 text-muted ms-2">2023</span>
+                                <span class="fs-12 text-muted ms-2" id="scope1Year">2023</span>
                             </div>
                         </div>
                         <div class="scope-icon">
@@ -1164,13 +1159,13 @@
                                 <span class="scope-badge">Scope 2</span>
                                 <span class="scope-desc">Energy indirect</span>
                             </div>
-                            <h3 class="scope-value">3,892 tCO₂e</h3>
+                            <h3 class="scope-value" id="scope2Total">0.00 tCO₂e</h3>
                             <div class="d-flex align-items-center mt-1 flex-wrap">
                                 <span class="scope-trend up">
                                     <i class="feather-trending-up" style="font-size:14px;"></i> +12%
                                 </span>
                                 <span class="fs-12 text-muted ms-2">vs last year</span>
-                                <span class="fs-12 text-muted ms-2">2023</span>
+                                <span class="fs-12 text-muted ms-2" id="scope2Year">2023</span>
                             </div>
                         </div>
                         <div class="scope-icon">
@@ -1191,13 +1186,13 @@
                                 <span class="scope-badge">Scope 3</span>
                                 <span class="scope-desc">Value chain</span>
                             </div>
-                            <h3 class="scope-value">5,678 tCO₂e</h3>
+                            <h3 class="scope-value" id="scope3Total">0.00 tCO₂e</h3>
                             <div class="d-flex align-items-center mt-1 flex-wrap">
                                 <span class="scope-trend up">
                                     <i class="feather-trending-up" style="font-size:14px;"></i> +8%
                                 </span>
                                 <span class="fs-12 text-muted ms-2">vs last year</span>
-                                <span class="fs-12 text-muted ms-2">2023</span>
+                                <span class="fs-12 text-muted ms-2" id="scope3Year">2023</span>
                             </div>
                         </div>
                         <div class="scope-icon">
@@ -1208,7 +1203,6 @@
             </div>
         </div>
     </div>
-    <!-- ===== END SCOPE CARDS ===== -->
 
     <div class="brsr-shell">
         <!-- ===== SIDEBAR ===== -->
@@ -1223,7 +1217,6 @@
             </div>
 
             <div class="question-scroll">
-                <!-- ===== EMISSION SOURCES (top) ===== -->
                 <div class="nav-group">
                     <div class="nav-group-head">EMISSION SOURCES</div>
                     <div id="categoryList">
@@ -1237,9 +1230,8 @@
                     </div>
                 </div>
 
-                <!-- ===== "What is Scope 1?" NOTE (bottom) ===== -->
                 <div class="nav-group note-box" style="margin-top: 20px; padding: 14px 16px; background: #f8fafc; border-radius: 12px; border: 1px solid var(--border);">
-                    <div style="font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 6px;">What is Scope 1?</div>
+                    <div style="font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 6px;">What is Scope {{ scope.name|slice:"-1" }}?</div>
                     <div style="font-size: 13px; color: var(--ink-soft); line-height: 1.5; margin-bottom: 10px;">
                         {{ scope.description }}
                     </div>
@@ -1247,10 +1239,11 @@
                         Categories:
                     </div>
                     <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: var(--ink-soft); line-height: 1.8;">
-                        <li>Diesel Vehicles</li>
-                        <li>Petrol Vehicles</li>
-                        <li>CNG Vehicles</li>
-                        <li>Aviation Fuel</li>
+                        {% for category in categories %}
+                        <li>{{ category.name }}</li>
+                        {% empty %}
+                        <li>No categories available</li>
+                        {% endfor %}
                     </ul>
                 </div>
             </div>
@@ -1260,20 +1253,15 @@
         <main class="brsr-main">
             <div class="main-panel">
                 <div class="panel-body">
-                    <!-- ======================================== -->
-                    <!-- CARD 1: IMPORT DATA FROM EXCEL TEMPLATE  -->
-                    <!-- ======================================== -->
+                    <!-- CARD 1: IMPORT DATA FROM EXCEL TEMPLATE -->
                     <div class="card border-0 shadow-sm" style="border-radius: var(--radius);">
                         <div class="card-body">
-                            <!-- Header -->
                             <div class="mb-4">
                                 <h2 class="fs-4 fw-bold" style="color: var(--ink);">Import Data from Excel Template</h2>
                                 <p class="text-muted" style="font-size: 14px;">Master data entry: Download our latest Excel template, fill in your emission data offline, and upload it back for instant processing.</p>
                             </div>
 
-                            <!-- Steps -->
                             <div class="row g-4 mb-4">
-                                <!-- Step 1 -->
                                 <div class="col-md-4">
                                     <div class="card h-100 border-0 shadow-sm" style="border-radius: var(--radius);">
                                         <div class="card-body text-center">
@@ -1286,7 +1274,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Step 2 -->
                                 <div class="col-md-4">
                                     <div class="card h-100 border-0 shadow-sm" style="border-radius: var(--radius);">
                                         <div class="card-body text-center">
@@ -1299,7 +1286,6 @@
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Step 3 -->
                                 <div class="col-md-4">
                                     <div class="card h-100 border-0 shadow-sm" style="border-radius: var(--radius);">
                                         <div class="card-body text-center">
@@ -1309,13 +1295,12 @@
                                             <h5 class="fw-bold">3. Upload &amp; Import</h5>
                                             <p class="text-muted small">Upload filled Excel and we import for automatic calculation.</p>
                                             <button id="uploadTemplateBtn" class="btn btn-brsr success w-100 mt-2">Upload File</button>
-<input type="file" id="uploadTemplateInput" accept=".xlsx" style="display:none;">
+                                            <input type="file" id="uploadTemplateInput" accept=".xlsx" style="display:none;">
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Features -->
                             <div class="row g-3 mt-2">
                                 <div class="col-md-6">
                                     <ul class="list-unstyled d-flex flex-column gap-2">
@@ -1335,186 +1320,170 @@
                         </div>
                     </div>
 
-                    <!-- ======================================== -->
-<!-- ======================================== -->
-<!-- CARD 2: CONTEXT INFORMATION              -->
-<!-- ======================================== -->
-<div class="card border-0 shadow-sm mb-4" style="border-radius: var(--radius);">
-    <div class="card-header bg-transparent d-flex justify-content-between align-items-center" style="cursor: pointer; padding: 1rem 1.25rem;" data-bs-toggle="collapse" data-bs-target="#contextAccordion" aria-expanded="true" aria-controls="contextAccordion">
-        <h4 class="fw-bold mb-0" style="color: var(--ink);">CONTEXT INFORMATION</h4>
-        <span class="badge bg-light text-muted"><i class="feather-chevron-down" id="contextIcon"></i></span>
-    </div>
-    <div id="contextAccordion" class="collapse show">
-        <div class="card-body">
-            <div class="row g-3">
-                <!-- Company - EDITABLE (no disabled) -->
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                        [ Company ] <span class="text-danger">*</span>
-                    </label>
-                    <select id="company" class="workspace-select">
-                        {% for company in companies %}
-                            <option value="{{ company.id }}"
-                                {% if assignment %}
-                                    {% if company.id == assignment.company.id %}selected{% endif %}
-                                {% else %}
-                                    {% if forloop.first %}selected{% endif %}
-                                {% endif %}>
-                                {{ company.company_name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
+                    <!-- CARD 2: CONTEXT INFORMATION -->
+                    <div class="card border-0 shadow-sm mb-4" style="border-radius: var(--radius);">
+                        <div class="card-header bg-transparent d-flex justify-content-between align-items-center" style="cursor: pointer; padding: 1rem 1.25rem;" data-bs-toggle="collapse" data-bs-target="#contextAccordion" aria-expanded="true" aria-controls="contextAccordion">
+                            <h4 class="fw-bold mb-0" style="color: var(--ink);">CONTEXT INFORMATION</h4>
+                            <span class="badge bg-light text-muted"><i class="feather-chevron-down" id="contextIcon"></i></span>
+                        </div>
+                        <div id="contextAccordion" class="collapse show">
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ Company ] <span class="text-danger">*</span>
+                                        </label>
+                                        <select id="company" class="workspace-select">
+                                            {% for company in companies %}
+                                                <option value="{{ company.id }}"
+                                                    {% if assignment %}
+                                                        {% if company.id == assignment.company.id %}selected{% endif %}
+                                                    {% else %}
+                                                        {% if forloop.first %}selected{% endif %}
+                                                    {% endif %}>
+                                                    {{ company.company_name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
 
-                <!-- Plant - EDITABLE (no disabled) -->
-                <div class="col-md-8">
-                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                        [ Plant ] <span class="text-danger">*</span>
-                    </label>
-                    <select id="plant" class="workspace-select">
-                        <option value="ALL">All Plants</option>
-                        {% for plant in plants %}
-                            <option value="{{ plant.id }}"
-                                data-country="{{ plant.country.name|default:'' }}"
-                                data-state="{{ plant.state.name|default:'' }}"
-                                data-city="{{ plant.city.name|default:'' }}"
-                                {% if assignment and plant.id == assignment.plant.id %}selected{% endif %}>
-                                {{ plant.name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
+                                    <div class="col-md-8">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ Plant ] <span class="text-danger">*</span>
+                                        </label>
+                                        <select id="plant" class="workspace-select">
+                                            <option value="ALL">All Plants</option>
+                                            {% for plant in plants %}
+                                                <option value="{{ plant.id }}"
+                                                    data-country="{{ plant.country.name|default:'' }}"
+                                                    data-state="{{ plant.state.name|default:'' }}"
+                                                    data-city="{{ plant.city.name|default:'' }}"
+                                                    {% if assignment and plant.id == assignment.plant.id %}selected{% endif %}>
+                                                    {{ plant.name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
 
-                <!-- Financial Year - EDITABLE (no disabled) -->
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                        [ Financial Year ] <span class="text-danger">*</span>
-                    </label>
-                    <select id="financialYear" class="workspace-select">
-                        <option value="">Select Financial Year</option>
-                        {% for fy in financial_years %}
-                            <option value="{{ fy.id }}"
-                                {% if assignment %}
-                                    {% if fy.id == assignment.financial_year.id %}selected{% endif %}
-                                {% else %}
-                                    {% if current_financial_year and fy.id == current_financial_year.id %}selected{% endif %}
-                                {% endif %}>
-                                {{ fy.financial_year }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ Financial Year ] <span class="text-danger">*</span>
+                                        </label>
+                                        <select id="financialYear" class="workspace-select">
+                                            <option value="">Select Financial Year</option>
+                                            {% for fy in financial_years %}
+                                                <option value="{{ fy.id }}"
+                                                    {% if assignment %}
+                                                        {% if fy.id == assignment.financial_year.id %}selected{% endif %}
+                                                    {% else %}
+                                                        {% if current_financial_year and fy.id == current_financial_year.id %}selected{% endif %}
+                                                    {% endif %}>
+                                                    {{ fy.financial_year }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
 
-                <!-- Financial Month - EDITABLE (no disabled) -->
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                        [ Financial Month ] <span class="text-danger">*</span>
-                    </label>
-                    <select id="financialMonth" class="workspace-select">
-                        <option value="">Select Month</option>
-                        {% for month in financial_months %}
-                            <option value="{{ month.id }}"
-                                {% if assignment %}
-                                    {% if month.id == assignment.financial_month.id %}selected{% endif %}
-                                {% else %}
-                                    {% if current_financial_month and month.id == current_financial_month.id %}selected{% endif %}
-                                {% endif %}>
-                                {{ month.month_name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ Financial Month ] <span class="text-danger">*</span>
+                                        </label>
+                                        <select id="financialMonth" class="workspace-select">
+                                            <option value="">Select Month</option>
+                                            {% for month in financial_months %}
+                                                <option value="{{ month.id }}"
+                                                    {% if assignment %}
+                                                        {% if month.id == assignment.financial_month.id %}selected{% endif %}
+                                                    {% else %}
+                                                        {% if current_financial_month and month.id == current_financial_month.id %}selected{% endif %}
+                                                    {% endif %}>
+                                                    {{ month.month_name }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
 
-                <!-- Country - EDITABLE -->
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                        [ Country ]
-                    </label>
-                    <input id="country" class="workspace-input" placeholder="Enter country" value="{{ assignment.country|default:'' }}">
-                </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ Country ]
+                                        </label>
+                                        <input id="country" class="workspace-input" placeholder="Enter country" value="{{ assignment.country|default:'' }}">
+                                    </div>
 
-                <!-- State - EDITABLE -->
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                        [ State ]
-                    </label>
-                    <input id="state" class="workspace-input" placeholder="Enter state" value="{{ assignment.state|default:'' }}">
-                </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ State ]
+                                        </label>
+                                        <input id="state" class="workspace-input" placeholder="Enter state" value="{{ assignment.state|default:'' }}">
+                                    </div>
 
-                <!-- City - EDITABLE -->
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                        [ City ]
-                    </label>
-                    <input id="city" class="workspace-input" placeholder="Enter city" value="{{ assignment.city|default:'' }}">
-                </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ City ]
+                                        </label>
+                                        <input id="city" class="workspace-input" placeholder="Enter city" value="{{ assignment.city|default:'' }}">
+                                    </div>
 
-                <!-- Base Year - EDITABLE -->
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                        [ Base Year ]
-                    </label>
-                    <input id="baseYear" class="workspace-input" type="text" placeholder="Example : 2021-22" value="{{ assignment.base_year|default:'' }}">
-                </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ Base Year ]
+                                        </label>
+                                        <input id="baseYear" class="workspace-input" type="text" placeholder="Example : 2021-22" value="{{ assignment.base_year|default:'' }}">
+                                    </div>
 
-                <!-- Reporting Frequency - EDITABLE -->
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                        [ Reporting Frequency ]
-                    </label>
-                    <select id="frequency" class="workspace-select">
-                        <option value="MONTHLY" {% if assignment and assignment.frequency == 'MONTHLY' %}selected{% endif %}>Monthly</option>
-                        <option value="QUARTERLY" {% if assignment and assignment.frequency == 'QUARTERLY' %}selected{% endif %}>Quarterly</option>
-                        <option value="HALF_YEARLY" {% if assignment and assignment.frequency == 'HALF_YEARLY' %}selected{% endif %}>Half Yearly</option>
-                        <option value="ANNUALLY" {% if assignment and assignment.frequency == 'ANNUALLY' %}selected{% endif %}>Annually</option>
-                    </select>
-                </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ Reporting Frequency ]
+                                        </label>
+                                        <select id="frequency" class="workspace-select">
+                                            <option value="MONTHLY" {% if assignment and assignment.frequency == 'MONTHLY' %}selected{% endif %}>Monthly</option>
+                                            <option value="QUARTERLY" {% if assignment and assignment.frequency == 'QUARTERLY' %}selected{% endif %}>Quarterly</option>
+                                            <option value="HALF_YEARLY" {% if assignment and assignment.frequency == 'HALF_YEARLY' %}selected{% endif %}>Half Yearly</option>
+                                            <option value="ANNUALLY" {% if assignment and assignment.frequency == 'ANNUALLY' %}selected{% endif %}>Annually</option>
+                                        </select>
+                                    </div>
 
-                <!-- Consolidation - EDITABLE -->
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                        [ Consolidation Approach ]
-                    </label>
-                    <select id="consolidation" class="workspace-select">
-                        <option {% if assignment and assignment.consolidation == 'Operational Control' %}selected{% endif %}>Operational Control</option>
-                        <option {% if assignment and assignment.consolidation == 'Financial Control' %}selected{% endif %}>Financial Control</option>
-                        <option {% if assignment and assignment.consolidation == 'Equity Share' %}selected{% endif %}>Equity Share</option>
-                    </select>
-                </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ Consolidation Approach ]
+                                        </label>
+                                        <select id="consolidation" class="workspace-select">
+                                            <option {% if assignment and assignment.consolidation == 'Operational Control' %}selected{% endif %}>Operational Control</option>
+                                            <option {% if assignment and assignment.consolidation == 'Financial Control' %}selected{% endif %}>Financial Control</option>
+                                            <option {% if assignment and assignment.consolidation == 'Equity Share' %}selected{% endif %}>Equity Share</option>
+                                        </select>
+                                    </div>
 
-                <!-- Reporting Standard - EDITABLE -->
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                        [ Reporting Standard ]
-                    </label>
-                    <input id="reportingStandard" class="workspace-input" value="GHG Protocol">
-                </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ Reporting Standard ]
+                                        </label>
+                                        <input id="reportingStandard" class="workspace-input" value="GHG Protocol">
+                                    </div>
 
-                <!-- Data Collection Method - EDITABLE (no disabled) -->
-                <div class="col-md-4">
-                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                        [ Data Collection Method ]
-                    </label>
-                    <select id="collectionMethod" class="workspace-select">
-                        <option value="MANUAL" {% if not assignment or assignment.collection_method != 'EXCEL' %}selected{% endif %}>Manual Entry</option>
-                        <option value="EXCEL" {% if assignment and assignment.collection_method == 'EXCEL' %}selected{% endif %}>Excel Import</option>
-                        <option value="API">API Integration</option>
-                    </select>
-                </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ Data Collection Method ]
+                                        </label>
+                                        <select id="collectionMethod" class="workspace-select">
+                                            <option value="MANUAL" {% if not assignment or assignment.collection_method != 'EXCEL' %}selected{% endif %}>Manual Entry</option>
+                                            <option value="EXCEL" {% if assignment and assignment.collection_method == 'EXCEL' %}selected{% endif %}>Excel Import</option>
+                                            <option value="API">API Integration</option>
+                                        </select>
+                                    </div>
 
-                <!-- Recalculation Context - EDITABLE -->
-                <div class="col-12">
-                    <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
-                        [ Recalculation Context ]
-                    </label>
-                    <textarea id="recalculationContext" class="workspace-textarea" rows="2" placeholder="Enter recalculation context...">{{ assignment.recalculation_context|default:'' }}</textarea>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold" style="font-size:13px;color:var(--ink-soft);">
+                                            [ Recalculation Context ]
+                                        </label>
+                                        <textarea id="recalculationContext" class="workspace-textarea" rows="2" placeholder="Enter recalculation context...">{{ assignment.recalculation_context|default:'' }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-                    <!-- ===== SECOND ACCORDION: EMISSION SOURCES DATA ENTRY ===== -->
+                    <!-- SECOND ACCORDION: EMISSION SOURCES DATA ENTRY -->
                     <div class="card border-0 shadow-sm mb-4" style="border-radius: var(--radius);">
                         <div class="card-header bg-transparent d-flex justify-content-between align-items-center" style="cursor: pointer; padding: 1rem 1.25rem;" data-bs-toggle="collapse" data-bs-target="#emissionAccordion" aria-expanded="false" aria-controls="emissionAccordion">
                             <h4 class="fw-bold mb-0" style="color: var(--ink);">EMISSION SOURCES DATA ENTRY</h4>
@@ -1522,13 +1491,11 @@
                         </div>
                         <div id="emissionAccordion" class="collapse">
                             <div class="card-body">
-                                <!-- Dynamic Category Name - FIXED -->
                                 <div class="mb-4">
                                     <h5 class="fw-bold" id="categoryHeading" style="color: var(--ink);">Select a category</h5>
                                     <p class="text-muted" style="font-size: 14px;">— Enter activity data below. Emission factors are auto-applied.</p>
                                 </div>
 
-                                <!-- Available Emission Factors -->
                                 <div class="mb-4 p-3 border rounded-3" style="background: #f8fafc; border-color: var(--border);">
                                     <h6 class="fw-bold mb-2" style="font-size: 13px; color: var(--ink-soft);">AVAILABLE EMISSION FACTORS</h6>
                                     <div class="d-flex flex-wrap gap-4">
@@ -1545,7 +1512,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Data Table -->
                                 <div class="table-container mb-3">
                                     <table class="data-table" style="min-width: 600px;">
                                         <thead>
@@ -1557,8 +1523,8 @@
                                                 <th>SOURCE</th>
                                                 <th>QUANTITY</th>
                                                 <th>UNIT</th>
-                                                <th>EMISSION FACTOR</th>
-                                                <th>TOTAL EMISSION</th>
+                                                <th>EMISSION FACTOR (kg CO₂e/unit)</th>
+                                                <th>TOTAL EMISSION (kg CO₂e)</th>
                                                 <th>ACTION</th>
                                             </tr>
                                         </thead>
@@ -1573,7 +1539,7 @@
                         </div>
                     </div>
 
-                    <!-- ===== FOURTH ACCORDION: REVIEW & SUBMIT ===== -->
+                    <!-- FOURTH ACCORDION: REVIEW & SUBMIT -->
                     <div class="card border-0 shadow-sm mb-4" style="border-radius: var(--radius);">
                         <div class="card-header bg-transparent d-flex justify-content-between align-items-center" style="cursor: pointer; padding: 1rem 1.25rem;" data-bs-toggle="collapse" data-bs-target="#reviewAccordion" aria-expanded="false" aria-controls="reviewAccordion">
                             <h4 class="fw-bold mb-0" style="color: var(--ink);">REVIEW &amp; SUBMIT</h4>
@@ -1629,7 +1595,20 @@
                                     </div>
                                     <div class="col-md-3">
                                         <label class="form-label fw-semibold" style="font-size:12px;color:var(--muted);text-transform:uppercase;">Total Emission</label>
-                                        <p id="reviewEmission" class="fw-bold" style="color:var(--success);">0.0000 tCO₂e</p>
+                                        <p id="reviewEmission" class="fw-bold" style="color:var(--success);">0.0000 kg CO₂e</p>
+                                    </div>
+                                </div>
+
+                                <!-- Category Total Emission in tCO₂e -->
+                                <div class="category-total-card" id="categoryTotalCard">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="category-total-label" id="categoryTotalLabel">Total Category Emission</div>
+                                            <div class="category-total-value" id="categoryTotalValue">0.0000 <span class="category-total-unit">tCO₂e</span></div>
+                                        </div>
+                                        <div style="font-size: 14px; color: var(--muted);">
+                                            <span id="categoryTotalKg">0.00</span> kg CO₂e
+                                        </div>
                                     </div>
                                 </div>
 
@@ -1646,7 +1625,7 @@
 
                                 <!-- Activity Summary -->
                                 <div class="card border-0 shadow-sm mb-4" style="border-radius: var(--radius);">
-                                    <div class="card-header bg-transparent">
+                                    <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
                                         <h5 class="fw-bold mb-0" style="color:var(--ink);">Activity-wise Emission Summary</h5>
                                         <button id="viewTransactionsBtn" class="btn btn-brsr secondary btn-sm" style="padding: 6px 16px; font-size: 12px;">
                                             <i class="feather-eye"></i> View
@@ -1660,7 +1639,7 @@
                                                         <th>Activity</th>
                                                         <th>Source</th>
                                                         <th class="text-end">Quantity</th>
-                                                        <th class="text-end">Emission</th>
+                                                        <th class="text-end">Emission (kg CO₂e)</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody id="reviewActivitySummary">
@@ -1706,7 +1685,7 @@
     </div>
 </div>
 
-<!-- ===== ASSIGN TASK MODAL ===== -->
+<!-- ASSIGN TASK MODAL -->
 <div class="modal-backdrop-brsr" id="assignScopeModal">
     <div class="modal-card">
         <div class="modal-head">
@@ -1778,7 +1757,7 @@
     </div>
 </div>
 
-<!-- ===== VIEW TRANSACTIONS MODAL ===== -->
+<!-- VIEW TRANSACTIONS MODAL -->
 <div class="modal-backdrop-brsr" id="viewTransactionsModal">
     <div class="modal-card" style="max-width: 900px;">
         <div class="modal-head">
@@ -1795,7 +1774,7 @@
                                 <th>Source</th>
                                 <th>Total Quantity</th>
                                 <th>Unit</th>
-                                <th>Total Emission (tCO₂e)</th>
+                                <th>Total Emission (kg CO₂e)</th>
                             </tr>
                         </thead>
                         <tbody id="viewSummaryBody">
@@ -1814,8 +1793,8 @@
                                 <th>Source</th>
                                 <th>Quantity</th>
                                 <th>Unit</th>
-                                <th>Emission Factor</th>
-                                <th>Total Emission</th>
+                                <th>Emission Factor (kg CO₂e/unit)</th>
+                                <th>Total Emission (kg CO₂e)</th>
                             </tr>
                         </thead>
                         <tbody id="viewDetailBody">
@@ -1835,7 +1814,6 @@
 <div id="toastContainer" class="toast-container"></div>
 {% endblock %}
 
-
 {% block extra_js %}
 <script>
 // =============================================
@@ -1844,94 +1822,59 @@
 let pendingUploadData = null;
 window.isImportedFromExcel = false;
 
+// Store all scope totals
+let allScopeTotals = {
+    'S1': 0,
+    'S2': 0,
+    'S3': 0
+};
+
 // =============================================
 // SCOPE SELECTION WITH AUTO-LOAD FIRST CATEGORY
 // =============================================
 document.querySelectorAll(".scope-card").forEach(function(card){
-
     card.addEventListener("click", function(){
-
-        document
-            .querySelectorAll(".scope-card")
-            .forEach(c => c.classList.remove("selected"));
-
+        document.querySelectorAll(".scope-card").forEach(c => c.classList.remove("selected"));
         this.classList.add("selected");
 
         const scope = this.dataset.scope;
-
-        const scopeId = {
-            "S1": 1,
-            "S2": 2,
-            "S3": 3
-        };
-
+        const scopeId = {"S1": 1, "S2": 2, "S3": 3};
         document.getElementById("selectedScopeId").value = scopeId[scope];
 
-        // Show loading state
         document.getElementById("scopeTitle").innerHTML = "Loading...";
         document.getElementById("scopeDescription").innerHTML = "Please wait...";
 
         fetch(`/emission/api/scope-categories/?scope=${scope}`)
-
         .then(res => res.json())
-
         .then(data => {
-
             if(!data.success) {
                 showToast("Failed to load categories.", "error");
                 return;
             }
 
-            // Scope Name
             document.getElementById("scopeTitle").innerHTML = data.scope;
-
-            // Scope Description
             document.getElementById("scopeDescription").innerHTML = data.description;
-
-            // Update review scope
             document.getElementById("reviewScope").innerText = data.scope;
 
-            // Categories
             let html = "";
-
             data.categories.forEach(function(category){
-
                 html += `
-                    <div
-                        class="question-item category-item"
-                        data-category-id="${category.id}">
-
+                    <div class="question-item category-item" data-category-id="${category.id}">
                         <span class="question-dot todo"></span>
-
                         ${category.name}
-
                     </div>
                 `;
-
             });
-
             document.getElementById("categoryList").innerHTML = html;
 
-            // =============================================
-            // AUTO-SELECT AND LOAD FIRST CATEGORY
-            // =============================================
             const firstCategory = document.querySelector("#categoryList .category-item");
-
             if (firstCategory) {
-
-                // Remove active from any existing
                 document.querySelectorAll(".category-item").forEach(function(item) {
                     item.classList.remove("active");
                 });
-
-                // Add active to first
                 firstCategory.classList.add("active");
-
-                // DIRECTLY LOAD THE CATEGORY DATA
                 loadCategoryData(firstCategory);
-
             } else {
-                // No categories found
                 document.getElementById("activityTableBody").innerHTML = `
                     <tr>
                         <td colspan="8" class="text-center text-muted">
@@ -1940,71 +1883,45 @@ document.querySelectorAll(".scope-card").forEach(function(card){
                     </tr>
                 `;
             }
-
         })
         .catch(error => {
             console.error("Error loading scope:", error);
             showToast("Error loading scope data.", "error");
         });
-
     });
-
 });
 
 // =============================================
 // CATEGORY CLICK HANDLER
 // =============================================
 document.addEventListener("click", function (e) {
-
     const category = e.target.closest(".category-item");
+    if (!category) return;
+    if (category.classList.contains("active")) return;
 
-    if (!category) {
-        return;
-    }
-
-    // Prevent if already active (to avoid duplicate loads)
-    if (category.classList.contains("active")) {
-        return;
-    }
-
-    // -----------------------------
-    // Active Category
-    // -----------------------------
     document.querySelectorAll(".category-item").forEach(function (item) {
         item.classList.remove("active");
     });
-
     category.classList.add("active");
-
     loadCategoryData(category);
-
 });
 
 // =============================================
 // FUNCTION TO LOAD CATEGORY DATA
 // =============================================
 function loadCategoryData(category) {
-
-    // -----------------------------
-    // Category ID
-    // -----------------------------
     const assignmentId = document.getElementById("assignmentId").value;
     const categoryId = category.dataset.categoryId;
-
-    // Get the category name correctly
     const categoryName = category.textContent.trim();
     
-    // Update category heading in the emission sources section
     const categoryHeading = document.getElementById("categoryHeading");
     if (categoryHeading) {
         categoryHeading.textContent = categoryName;
     }
     
-    // Update review category IMMEDIATELY
     document.getElementById("reviewCategory").innerText = categoryName;
     document.getElementById("reviewEmissionCategory").innerText = categoryName;
 
-    // Show loading in table
     const tbody = document.getElementById("activityTableBody");
     tbody.innerHTML = `
         <tr>
@@ -2015,11 +1932,7 @@ function loadCategoryData(category) {
         </tr>
     `;
 
-    // -----------------------------
-    // Fetch Activities
-    // -----------------------------
     let url = `/emission/api/category-activities/?category_id=${categoryId}`;
-
     if (assignmentId) {
         url += `&assignment=${assignmentId}`;
     }
@@ -2027,9 +1940,7 @@ function loadCategoryData(category) {
     fetch(url)
         .then(response => response.json())
         .then(data => {
-
             tbody.innerHTML = "";
-
             if (data.activities && data.activities.length > 0) {
                 data.activities.forEach(function (activity) {
                     if (activity.sources.length === 0) {
@@ -2072,25 +1983,19 @@ function loadCategoryData(category) {
                 `;
             }
 
-            // -----------------------------
             // Load Emission Factors
-            // -----------------------------
             document.querySelectorAll("#activityTableBody tr").forEach(function (row) {
-
                 const activityId = row.dataset.activity;
-
                 if (activityId) {
                     fetch(`/emission/api/activity-factor/?activity_id=${activityId}`)
                         .then(response => response.json())
                         .then(result => {
-
                             if (result.success) {
                                 const factorInput = row.querySelector(".factor");
                                 if (factorInput) {
                                     factorInput.value = result.factor;
                                 }
                             }
-
                         })
                         .catch(error => {
                             console.error("Error loading factor:", error);
@@ -2099,25 +2004,18 @@ function loadCategoryData(category) {
 
                 const quantityInput = row.querySelector(".quantity");
                 if (quantityInput) {
-                    // Remove existing event listeners
                     quantityInput.removeEventListener("input", handleQuantityInput);
-                    // Add new event listener
                     quantityInput.addEventListener("input", handleQuantityInput);
                 }
-
             });
 
-            // Load existing transactions if any
             loadTransactions();
-            
-            // FILL UPLOADED ROWS FOR THIS CATEGORY
             applyUploadedRows();
 
-            // Update review summary after data is loaded
             setTimeout(function () {
                 updateReviewSummary();
+                calculateAllScopeTotals();
             }, 300);
-
         })
         .catch(error => {
             console.error("Error loading category data:", error);
@@ -2130,7 +2028,6 @@ function loadCategoryData(category) {
             `;
             showToast("Error loading category data.", "error");
         });
-
 }
 
 // =============================================
@@ -2149,41 +2046,79 @@ function handleQuantityInput() {
     }
 
     updateReviewSummary();
+    calculateAllScopeTotals();
+}
+
+// =============================================
+// CALCULATE ALL SCOPE TOTALS (tCO₂e)
+// =============================================
+function calculateAllScopeTotals() {
+    // Reset scope totals
+    allScopeTotals = {
+        'S1': 0,
+        'S2': 0,
+        'S3': 0
+    };
+
+    // Get all rows from the data table
+    const rows = document.querySelectorAll('#activityTableBody tr');
+    
+    let totalEmissionKg = 0;
+    
+    rows.forEach(row => {
+        const totalInput = row.querySelector('.total');
+        if (totalInput) {
+            const total = parseFloat(totalInput.value) || 0;
+            totalEmissionKg += total;
+        }
+    });
+
+    // Get the currently selected scope
+    const selectedScope = document.querySelector('.scope-card.selected');
+    const currentScope = selectedScope ? selectedScope.dataset.scope : 'S1';
+    
+    // Assign the total to the current scope
+    if (allScopeTotals[currentScope] !== undefined) {
+        allScopeTotals[currentScope] = totalEmissionKg;
+    }
+
+    // Convert kg CO₂e to tCO₂e (divide by 1000)
+    const tCO2eTotals = {
+        'S1': allScopeTotals['S1'] / 1000,
+        'S2': allScopeTotals['S2'] / 1000,
+        'S3': allScopeTotals['S3'] / 1000
+    };
+
+    // Update scope cards
+    document.getElementById('scope1Total').textContent = tCO2eTotals['S1'].toFixed(2) + ' tCO₂e';
+    document.getElementById('scope2Total').textContent = tCO2eTotals['S2'].toFixed(2) + ' tCO₂e';
+    document.getElementById('scope3Total').textContent = tCO2eTotals['S3'].toFixed(2) + ' tCO₂e';
+
+    return tCO2eTotals;
 }
 
 // ==============================================
 // Get CSRF Token
 // ==============================================
 function getCookie(name) {
-
     let cookieValue = null;
-
     if (document.cookie && document.cookie !== "") {
-
         const cookies = document.cookie.split(";");
-
         for (let cookie of cookies) {
-
             cookie = cookie.trim();
-
             if (cookie.startsWith(name + "=")) {
-
-                cookieValue = decodeURIComponent(
-                    cookie.substring(name.length + 1)
-                );
-
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                 break;
             }
         }
     }
-
     return cookieValue;
 }
 
 const csrftoken = getCookie("csrftoken");
 
 // =============================================
-// APPLY UPLOADED ROWS (with read-only mode)
+// APPLY UPLOADED ROWS
 // =============================================
 function applyUploadedRows() {
     if (!pendingUploadData || !pendingUploadData.rows) return;
@@ -2206,7 +2141,6 @@ function applyUploadedRows() {
 
             if (qtyInput) {
                 qtyInput.value = r.quantity;
-                // Make it read-only if imported from Excel
                 if (window.isImportedFromExcel) {
                     qtyInput.disabled = true;
                     qtyInput.style.backgroundColor = "#f3f4f6";
@@ -2228,10 +2162,9 @@ function applyUploadedRows() {
 }
 
 // =============================================
-// MAKE ALL INPUTS READ-ONLY (UPDATED for selective editing)
+// MAKE ALL INPUTS READ-ONLY
 // =============================================
 function makeAllInputsReadOnly(isReadOnly) {
-    // Disable/enable all quantity inputs
     document.querySelectorAll(".quantity").forEach(function(input) {
         input.disabled = isReadOnly;
         if (isReadOnly) {
@@ -2245,7 +2178,6 @@ function makeAllInputsReadOnly(isReadOnly) {
         }
     });
 
-    // Disable/enable all add/remove buttons
     document.querySelectorAll(".btn-brsr.secondary, .remove-row").forEach(function(btn) {
         btn.disabled = isReadOnly;
         if (isReadOnly) {
@@ -2257,9 +2189,6 @@ function makeAllInputsReadOnly(isReadOnly) {
         }
     });
 
-    // =============================================
-    // FIELDS THAT SHOULD BE DISABLED ONLY WHEN EXCEL IS IMPORTED
-    // =============================================
     const fieldsToDisableOnImport = ['company', 'plant', 'financialYear', 'financialMonth', 'collectionMethod'];
     fieldsToDisableOnImport.forEach(function(id) {
         const el = document.getElementById(id);
@@ -2277,18 +2206,9 @@ function makeAllInputsReadOnly(isReadOnly) {
         }
     });
 
-    // =============================================
-    // FIELDS THAT SHOULD ALWAYS BE EDITABLE
-    // =============================================
     const alwaysEditableFields = [
-        'country', 
-        'state', 
-        'city', 
-        'baseYear', 
-        'frequency',
-        'consolidation',
-        'reportingStandard', 
-        'recalculationContext'
+        'country', 'state', 'city', 'baseYear', 'frequency',
+        'consolidation', 'reportingStandard', 'recalculationContext'
     ];
     alwaysEditableFields.forEach(function(id) {
         const el = document.getElementById(id);
@@ -2302,7 +2222,6 @@ function makeAllInputsReadOnly(isReadOnly) {
         }
     });
 
-    // Show/hide read-only banner
     let banner = document.getElementById('readOnlyBanner');
     if (isReadOnly) {
         if (!banner) {
@@ -2327,54 +2246,38 @@ function makeAllInputsReadOnly(isReadOnly) {
 }
 
 // =============================================
-// WINDOW LOAD - Simply make all fields editable
+// WINDOW LOAD
 // =============================================
 window.addEventListener("load", function () {
-
-    // Make all fields editable by default
     makeAllInputsReadOnly(false);
-
-    // Load transactions if available
     loadTransactions();
 
     setTimeout(function(){
-
         updateReviewSummary();
+        calculateAllScopeTotals();
+    }, 300);
 
-    },300);
-
-    const isAssignmentLocked =
-        document.getElementById("isAssignmentLocked").value === "1";
-
+    const isAssignmentLocked = document.getElementById("isAssignmentLocked").value === "1";
     if (isAssignmentLocked) {
         lockWorkspace();
     }
 
-    // =============================================
-    // AUTO-LOAD FIRST CATEGORY ON PAGE LOAD
-    // =============================================
     setTimeout(function() {
         const firstCategory = document.querySelector("#categoryList .category-item");
         if (firstCategory) {
-            // Add active class
             firstCategory.classList.add("active");
-            
-            // Load the data directly
             loadCategoryData(firstCategory);
         }
     }, 500);
-
 });
 
 // =============================================
 // SWITCH TO MANUAL ENTRY MODE
 // =============================================
 function switchToManualMode() {
-    // Clear the pending upload data
     pendingUploadData = null;
     window.isImportedFromExcel = false;
 
-    // Clear all quantity inputs and make them editable
     document.querySelectorAll(".quantity").forEach(function(input) {
         input.value = "";
         input.disabled = false;
@@ -2383,14 +2286,12 @@ function switchToManualMode() {
         input.style.opacity = "1";
     });
 
-    // Enable all add/remove buttons
     document.querySelectorAll(".btn-brsr.secondary, .remove-row").forEach(function(btn) {
         btn.disabled = false;
         btn.style.opacity = "1";
         btn.style.cursor = "pointer";
     });
 
-    // Set Data Collection Method to MANUAL and disable it (non-editable)
     const collectionMethod = document.getElementById("collectionMethod");
     if (collectionMethod) {
         collectionMethod.value = "MANUAL";
@@ -2400,18 +2301,14 @@ function switchToManualMode() {
         collectionMethod.style.opacity = "0.8";
     }
 
-    // Make all fields editable (but non-editable fields stay disabled)
     makeAllInputsReadOnly(false);
-
-    // Clear the read-only banner
     const banner = document.getElementById('readOnlyBanner');
     if (banner) {
         banner.style.display = 'none';
     }
 
-    // Update review summary
     updateReviewSummary();
-
+    calculateAllScopeTotals();
     showToast("Switched to Manual Entry mode. All fields are now editable.", "success");
 }
 
@@ -2419,10 +2316,8 @@ function switchToManualMode() {
 // DOWNLOAD TEMPLATE
 // =============================================
 const downloadTemplateBtn = document.getElementById("downloadTemplateBtn");
-
 if (downloadTemplateBtn) {
     downloadTemplateBtn.addEventListener("click", function () {
-
         const selectedScope = document.querySelector(".scope-card.selected");
         const scopeCode = selectedScope ? selectedScope.dataset.scope : "S1";
         const assignmentId = document.getElementById("assignmentId").value;
@@ -2431,33 +2326,28 @@ if (downloadTemplateBtn) {
         if (assignmentId) {
             url += `&assignment=${assignmentId}`;
         }
-
-        // Plain navigation so the browser handles the file download/save dialog.
         window.location.href = url;
     });
 }
 
 // =============================================
-// UPLOAD TEMPLATE - COMPLETE IMPLEMENTATION WITH READ-ONLY MODE
+// UPLOAD TEMPLATE
 // =============================================
 const uploadTemplateBtn = document.getElementById("uploadTemplateBtn");
 const uploadTemplateInput = document.getElementById("uploadTemplateInput");
 
 if (uploadTemplateBtn && uploadTemplateInput) {
-
     uploadTemplateBtn.addEventListener("click", function () {
         uploadTemplateInput.click();
     });
 
     uploadTemplateInput.addEventListener("change", function () {
-
         const file = this.files[0];
         if (!file) {
             showToast("No file selected.", "warning");
             return;
         }
 
-        // Validate file type
         const validTypes = [
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'application/vnd.ms-excel'
@@ -2469,7 +2359,6 @@ if (uploadTemplateBtn && uploadTemplateInput) {
         }
 
         const assignmentId = document.getElementById("assignmentId").value;
-
         const formData = new FormData();
         formData.append("file", file);
         if (assignmentId) {
@@ -2495,7 +2384,6 @@ if (uploadTemplateBtn && uploadTemplateInput) {
             }
         })
         .then(result => {
-
             if (!result.success) {
                 showToast(result.message || "Import failed. Please check the file format.", "error");
                 return;
@@ -2503,8 +2391,6 @@ if (uploadTemplateBtn && uploadTemplateInput) {
 
             showToast(result.message, "success");
 
-            // --- UPDATE CONTEXT INFORMATION ---
-            // 1. Set Company (disabled - non-editable)
             const companySelect = document.getElementById("company");
             if (result.company_id) {
                 for (let option of companySelect.options) {
@@ -2519,7 +2405,6 @@ if (uploadTemplateBtn && uploadTemplateInput) {
                 companySelect.style.opacity = "0.8";
             }
 
-            // 2. Set Plant (disabled - non-editable)
             const plantSelect = document.getElementById("plant");
             if (result.plant_id) {
                 let found = false;
@@ -2544,12 +2429,9 @@ if (uploadTemplateBtn && uploadTemplateInput) {
                 plantSelect.style.backgroundColor = "#f3f4f6";
                 plantSelect.style.cursor = "not-allowed";
                 plantSelect.style.opacity = "0.8";
-                
-                // Trigger plant change to update country/state/city
                 plantSelect.dispatchEvent(new Event("change"));
             }
 
-            // 3. Set Financial Year (disabled - non-editable)
             const fySelect = document.getElementById("financialYear");
             if (result.financial_year_id) {
                 let found = false;
@@ -2573,7 +2455,6 @@ if (uploadTemplateBtn && uploadTemplateInput) {
                 fySelect.style.opacity = "0.8";
             }
 
-            // 4. Set Financial Month (disabled - non-editable)
             const monthSelect = document.getElementById("financialMonth");
             if (result.financial_month_id) {
                 let found = false;
@@ -2597,7 +2478,6 @@ if (uploadTemplateBtn && uploadTemplateInput) {
                 monthSelect.style.opacity = "0.8";
             }
 
-            // 5. Set Data Collection Method to EXCEL (disabled - non-editable)
             const collectionMethod = document.getElementById("collectionMethod");
             if (collectionMethod) {
                 for (let option of collectionMethod.options) {
@@ -2612,7 +2492,6 @@ if (uploadTemplateBtn && uploadTemplateInput) {
                 collectionMethod.style.opacity = "0.8";
             }
 
-            // 6. Country, State, City - auto-filled from plant but EDITABLE
             ['country', 'state', 'city'].forEach(function(id) {
                 const el = document.getElementById(id);
                 if (el) {
@@ -2628,97 +2507,48 @@ if (uploadTemplateBtn && uploadTemplateInput) {
                 }
             });
 
-            // 7. Base Year - keep editable
-            const baseYear = document.getElementById('baseYear');
-            if (baseYear) {
-                baseYear.disabled = false;
-                baseYear.style.backgroundColor = "";
-                baseYear.style.cursor = "";
-                baseYear.style.opacity = "1";
-                baseYear.style.color = "";
-                if (result.base_year) {
-                    baseYear.value = result.base_year;
+            ['baseYear', 'frequency', 'consolidation', 'reportingStandard', 'recalculationContext'].forEach(function(id) {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.disabled = false;
+                    el.style.backgroundColor = "";
+                    el.style.cursor = "";
+                    el.style.opacity = "1";
+                    el.style.color = "";
+                    if (result[id]) {
+                        el.value = result[id];
+                    }
                 }
-            }
+            });
 
-            // 8. Reporting Frequency - keep editable
-            const frequency = document.getElementById('frequency');
-            if (frequency) {
-                frequency.disabled = false;
-                frequency.style.backgroundColor = "";
-                frequency.style.cursor = "";
-                frequency.style.opacity = "1";
-                frequency.style.color = "";
-            }
-
-            // 9. Consolidation - keep editable
-            const consolidation = document.getElementById('consolidation');
-            if (consolidation) {
-                consolidation.disabled = false;
-                consolidation.style.backgroundColor = "";
-                consolidation.style.cursor = "";
-                consolidation.style.opacity = "1";
-                consolidation.style.color = "";
-            }
-
-            // 10. Reporting Standard - keep editable
-            const reportingStandard = document.getElementById('reportingStandard');
-            if (reportingStandard) {
-                reportingStandard.disabled = false;
-                reportingStandard.style.backgroundColor = "";
-                reportingStandard.style.cursor = "";
-                reportingStandard.style.opacity = "1";
-                reportingStandard.style.color = "";
-            }
-
-            // 11. Recalculation Context - keep editable
-            const recalculationContext = document.getElementById('recalculationContext');
-            if (recalculationContext) {
-                recalculationContext.disabled = false;
-                recalculationContext.style.backgroundColor = "";
-                recalculationContext.style.cursor = "";
-                recalculationContext.style.opacity = "1";
-                recalculationContext.style.color = "";
-            }
-
-            // 12. UPDATE THE GRID WITH PARSED ROWS (READ-ONLY MODE)
             pendingUploadData = result;
             window.isImportedFromExcel = true;
 
-            // Force a reload of the current category to apply the rows
             const activeCategory = document.querySelector(".category-item.active");
             if (activeCategory) {
                 loadCategoryData(activeCategory);
             }
 
-            // In case no category is active, try to apply anyway
             setTimeout(applyUploadedRows, 400);
-
-            // Update review summary
             setTimeout(updateReviewSummary, 500);
-
-            // --- MAKE ALL INPUTS READ-ONLY (selective) ---
             makeAllInputsReadOnly(true);
 
-            // Show warnings if any
             if (result.warnings && result.warnings.length > 0) {
                 result.warnings.forEach(w => showToast(w, "warning"));
             }
-            
             if (result.errors && result.errors.length > 0) {
                 console.warn("Import errors:", result.errors);
                 if (result.errors.length > 0) {
                     showToast("Some rows had issues: " + result.errors[0], "warning");
                 }
             }
-
         })
         .catch(error => {
             console.error("Upload error:", error);
             showToast(error.message || "Network error while uploading. Please try again.", "error");
         })
         .finally(() => {
-            uploadTemplateInput.value = ""; // allow re-selecting the same file
+            uploadTemplateInput.value = "";
         });
     });
 }
@@ -2727,23 +2557,14 @@ if (uploadTemplateBtn && uploadTemplateInput) {
 // Save Draft
 // ==============================================
 const saveDraftBtn = document.getElementById("saveDraft");
-
 if (saveDraftBtn) {
-
     saveDraftBtn.addEventListener("click", function () {
-
-        // -----------------------------
-        // Context Information
-        // -----------------------------
         const company = document.getElementById("company").value;
         const plant = document.getElementById("plant").value;
         const financialYear = document.getElementById("financialYear").value;
         const financialMonth = document.getElementById("financialMonth").value;
         const assignmentId = document.getElementById("assignmentId").value;
 
-        // -----------------------------
-        // Validation
-        // -----------------------------
         if (!company) {
             showToast("Please select a Company.", "error");
             return;
@@ -2761,77 +2582,42 @@ if (saveDraftBtn) {
             return;
         }
 
-        // -----------------------------
-        // Collect Activities
-        // -----------------------------
         const rows = [];
-
         document.querySelectorAll("#activityTableBody tr").forEach(function (row) {
-
             const quantity = parseFloat(row.querySelector(".quantity").value) || 0;
-
-            // Ignore empty rows
-            if (quantity <= 0) {
-                return;
-            }
+            if (quantity <= 0) return;
 
             rows.push({
-
                 activity: parseInt(row.dataset.activity),
-
                 source: parseInt(row.dataset.source),
-
                 unit: parseInt(row.dataset.unit),
-
                 quantity: quantity,
-
                 factor: parseFloat(row.querySelector(".factor").value) || 0,
-
                 total: parseFloat(row.querySelector(".total").value) || 0,
-
             });
-
         });
+
         if (rows.length === 0) {
             showToast("Please enter at least one quantity.", "warning");
             return;
         }
 
-        // -----------------------------
-        // Save to Django
-        // -----------------------------
         fetch("/emission/api/save-transactions/", {
-
             method: "POST",
-
             headers: {
-
                 "Content-Type": "application/json",
-
                 "X-CSRFToken": csrftoken,
-
             },
-
             body: JSON.stringify({
-
                 company: company,
-
                 plant: plant,
-
                 financial_year: financialYear,
-
                 financial_month: financialMonth,
-
                 assignment: assignmentId || null,
-
                 rows: rows,
-
             }),
-
         })
-
         .then(response => response.json())
-
         .then(result => {
             if (result.success) {
                 showToast(result.message, "success");
@@ -2844,222 +2630,141 @@ if (saveDraftBtn) {
             console.error(error);
             showToast("Network error. Please try again.", "error");
         });
-    }); 
+    });
 }
 
 // =============================================
 // SUBMIT ASSIGNMENT
 // =============================================
 const submitBtn = document.getElementById("submitAssignment");
-
 if (submitBtn) {
-
     submitBtn.addEventListener("click", function () {
-
         const assignmentId = document.getElementById("assignmentId").value;
-
         if (!assignmentId) {
             showToast("Assignment not found.", "error");
             return;
         }
 
         fetch("/emission/api/submit-assignment/", {
-
             method: "POST",
-
             headers: {
-
                 "Content-Type": "application/json",
-
                 "X-CSRFToken": csrftoken,
-
             },
-
             body: JSON.stringify({
-
                 assignment: assignmentId,
-
             }),
-
         })
-
         .then(response => response.json())
-
         .then(result => {
-
             if (result.success) {
-
                 showToast(result.message, "success");
-
             } else {
-
                 showToast(result.message, "error");
-
             }
-
         })
-
         .catch(error => {
-
             console.error(error);
-
             showToast("Network error.", "error");
-
         });
-
     });
-
 }
 
 // =============================================
 // APPROVE ASSIGNMENT
 // =============================================
 const approveBtn = document.getElementById("approveAssignmentBtn");
-
 if (approveBtn) {
-
     approveBtn.addEventListener("click", function () {
-
         const assignmentId = document.getElementById("assignmentId").value;
-
         if (!assignmentId) {
             showToast("Assignment not found.", "error");
             return;
         }
 
         fetch("/emission/api/approve-assignment/", {
-
             method: "POST",
-
             headers: {
                 "Content-Type": "application/json",
                 "X-CSRFToken": csrftoken,
             },
-
             body: JSON.stringify({
                 assignment: assignmentId,
             }),
-
         })
         .then(response => response.json())
         .then(result => {
-
             if (result.success) {
-
                 showToast(result.message, "success");
-
                 setTimeout(function () {
                     location.reload();
                 }, 1000);
-
             } else {
-
                 showToast(result.message, "error");
-
             }
-
         })
         .catch(error => {
-
             console.error(error);
-
             showToast("Network error.", "error");
-
         });
-
     });
-
 }
 
 // =============================================
 // REJECT ASSIGNMENT
 // =============================================
 const rejectBtn = document.getElementById("rejectAssignmentBtn");
-
 if (rejectBtn) {
-
     rejectBtn.addEventListener("click", function () {
-
         const assignmentId = document.getElementById("assignmentId").value;
-
         if (!assignmentId) {
             showToast("Assignment not found.", "error");
             return;
         }
 
         const remarks = prompt("Enter rejection remarks:");
-
         if (!remarks) {
             showToast("Remarks are required.", "warning");
             return;
         }
 
         fetch("/emission/api/reject-assignment/", {
-
             method: "POST",
-
             headers: {
                 "Content-Type": "application/json",
                 "X-CSRFToken": csrftoken,
             },
-
             body: JSON.stringify({
                 assignment: assignmentId,
                 remarks: remarks,
             }),
-
         })
-
         .then(response => response.json())
-
         .then(result => {
-
             if (result.success) {
-
                 showToast(result.message, "success");
-
                 setTimeout(function () {
-
                     location.reload();
-
                 }, 1000);
-
             } else {
-
                 showToast(result.message, "error");
-
             }
-
         })
-
         .catch(error => {
-
             console.error(error);
-
             showToast("Network error.", "error");
-
         });
-
     });
-
 }
 
 // =============================================
-// PLANT CHANGE HANDLER - Update Country/State/City
+// PLANT CHANGE HANDLER
 // =============================================
 document.getElementById("plant").addEventListener("change", function () {
-
     const option = this.options[this.selectedIndex];
-
-    // Get values from data attributes
-    const country = option.dataset.country || "";
-    const state = option.dataset.state || "";
-    const city = option.dataset.city || "";
-
-    // Set the values (these fields remain editable)
-    document.getElementById("country").value = country;
-    document.getElementById("state").value = state;
-    document.getElementById("city").value = city;
+    document.getElementById("country").value = option.dataset.country || "";
+    document.getElementById("state").value = option.dataset.state || "";
+    document.getElementById("city").value = option.dataset.city || "";
 });
 
 // =============================================
@@ -3070,7 +2775,6 @@ function clearTransactionRows() {
         const qtyInput = row.querySelector(".quantity");
         const factorInput = row.querySelector(".factor");
         const totalInput = row.querySelector(".total");
-        
         if (qtyInput) qtyInput.value = "";
         if (factorInput) factorInput.value = "";
         if (totalInput) totalInput.value = "";
@@ -3089,47 +2793,27 @@ function loadTransactions() {
     const financialMonth = document.getElementById("financialMonth").value;
     const assignmentId = document.getElementById("assignmentId").value;
 
-    if (
-        !company ||
-        !plant ||
-        !financialYear ||
-        !financialMonth
-    ) {
+    if (!company || !plant || !financialYear || !financialMonth) {
         return;
     }
 
-    let url =
-        `/emission/api/load-transactions/?company=${company}` +
-        `&plant=${plant}` +
-        `&financial_year=${financialYear}` +
-        `&financial_month=${financialMonth}`;
-
+    let url = `/emission/api/load-transactions/?company=${company}&plant=${plant}&financial_year=${financialYear}&financial_month=${financialMonth}`;
     if (assignmentId) {
         url += `&assignment=${assignmentId}`;
     }
 
     fetch(url)
-
     .then(response => response.json())
-
     .then(result => {
-
         if (!result.success) {
             return;
         }
 
         result.transactions.forEach(function(transaction){
-
             const row = document.querySelector(
-
                 `tr[data-activity="${transaction.activity}"][data-source="${transaction.source}"]`
-
             );
-
-
-            if(!row){
-                return;
-            }
+            if(!row) return;
 
             const qtyInput = row.querySelector(".quantity");
             const factorInput = row.querySelector(".factor");
@@ -3140,117 +2824,55 @@ function loadTransactions() {
             if (totalInput) totalInput.value = transaction.total;
 
             updateReviewSummary();
-
+            calculateAllScopeTotals();
         });
-
     });
-
 }
 
 // =============================================
 // CONTEXT CHANGE EVENT LISTENERS
 // =============================================
 document.getElementById("company").addEventListener("change", function(){
-
     loadTransactions();
-
     updateReviewSummary();
-
+    calculateAllScopeTotals();
 });
 
-document.getElementById("plant")
-.addEventListener("change", function(){
-
+document.getElementById("plant").addEventListener("change", function(){
     loadTransactions();
-
     updateReviewSummary();
-
+    calculateAllScopeTotals();
 });
 
-document.getElementById("financialYear")
-.addEventListener("change", function(){
-
+document.getElementById("financialYear").addEventListener("change", function(){
     loadTransactions();
-
     updateReviewSummary();
-
+    calculateAllScopeTotals();
 });
 
-document.getElementById("financialMonth")
-.addEventListener("change", function(){
-
+document.getElementById("financialMonth").addEventListener("change", function(){
     loadTransactions();
-
     updateReviewSummary();
-
+    calculateAllScopeTotals();
 });
 
-document.getElementById("frequency")
-.addEventListener("change", updateReviewSummary);
-
-// =============================================
-// WINDOW LOAD
-// =============================================
-window.addEventListener("load", function () {
-
-    // Set default editable mode first
-    setDefaultEditableMode();
-
-    // Load transactions if available
-    loadTransactions();
-
-    setTimeout(function(){
-
-        updateReviewSummary();
-
-    },300);
-
-    const isAssignmentLocked =
-        document.getElementById("isAssignmentLocked").value === "1";
-
-    if (isAssignmentLocked) {
-        lockWorkspace();
-    }
-
-    // =============================================
-    // AUTO-LOAD FIRST CATEGORY ON PAGE LOAD
-    // =============================================
-    setTimeout(function() {
-        const firstCategory = document.querySelector("#categoryList .category-item");
-        if (firstCategory) {
-            // Add active class
-            firstCategory.classList.add("active");
-            
-            // Load the data directly
-            loadCategoryData(firstCategory);
-        }
-    }, 500);
-
+document.getElementById("frequency").addEventListener("change", function(){
+    updateReviewSummary();
 });
 
 // =============================================
 // LOCK WORKSPACE
 // =============================================
 function lockWorkspace() {
-
     $("input:not([type='hidden'])").prop("disabled", true);
-
     $("select").prop("disabled", true);
-
     $("textarea").prop("disabled", true);
-
     $("#saveDraft").prop("disabled", true);
-
     $("#submitAssignment").prop("disabled", true);
-
     $(".remove-row").prop("disabled", true);
-
     $("#assignTaskBtn").prop("disabled", true);
-
     $("#viewTransactionsBtn").prop("disabled", false);
-
     $("#approveAssignmentBtn").prop("disabled", false);
-
     $("#rejectAssignmentBtn").prop("disabled", false);
 }
 
@@ -3258,166 +2880,103 @@ function lockWorkspace() {
 // REVIEW SUMMARY
 // =============================================
 function updateReviewSummary() {
-
-    // ----------------------------
-    // Company
-    // ----------------------------
     const company = document.getElementById("company");
+    document.getElementById("reviewCompany").innerText = company.options[company.selectedIndex]?.text || "-";
 
-    document.getElementById("reviewCompany").innerText =
-        company.options[company.selectedIndex]?.text || "-";
-
-
-    // ----------------------------
-    // Plant
-    // ----------------------------
     const plant = document.getElementById("plant");
+    document.getElementById("reviewPlant").innerText = plant.value ? plant.options[plant.selectedIndex].text : "-";
 
-    document.getElementById("reviewPlant").innerText =
-        plant.value ?
-        plant.options[plant.selectedIndex].text :
-        "-";
-
-
-    // ----------------------------
-    // Scope
-    // ----------------------------
     const scopeTitle = document.getElementById("scopeTitle");
     if (scopeTitle) {
         document.getElementById("reviewScope").innerText = scopeTitle.innerText;
     }
 
-
-    // ----------------------------
-    // Category - FIXED
-    // ----------------------------
     const activeCategory = document.querySelector(".category-item.active");
-    
     let categoryName = "-";
     if (activeCategory) {
-        // Get the text content directly without any extra spaces
         categoryName = activeCategory.textContent.trim();
-        
-        // Also update the category heading
         const categoryHeading = document.getElementById("categoryHeading");
         if (categoryHeading) {
             categoryHeading.textContent = categoryName;
         }
     }
-    
     document.getElementById("reviewCategory").innerText = categoryName;
     document.getElementById("reviewEmissionCategory").innerText = categoryName;
 
-
-    // ----------------------------
-    // Financial Year
-    // ----------------------------
     const fy = document.getElementById("financialYear");
+    document.getElementById("reviewFinancialYear").innerText = fy.value ? fy.options[fy.selectedIndex].text : "-";
 
-    document.getElementById("reviewFinancialYear").innerText =
-        fy.value ?
-        fy.options[fy.selectedIndex].text :
-        "-";
-
-
-    // ----------------------------
-    // Financial Month
-    // ----------------------------
     const month = document.getElementById("financialMonth");
+    document.getElementById("reviewFinancialMonth").innerText = month.value ? month.options[month.selectedIndex].text : "-";
 
-    document.getElementById("reviewFinancialMonth").innerText =
-        month.value ?
-        month.options[month.selectedIndex].text :
-        "-";
-
-
-    // ----------------------------
-    // Frequency
-    // ----------------------------
     const frequency = document.getElementById("frequency");
+    document.getElementById("reviewFrequency").innerText = frequency.options[frequency.selectedIndex].text;
 
-    document.getElementById("reviewFrequency").innerText =
-        frequency.options[frequency.selectedIndex].text;
-
-
-    // ----------------------------
-    // Totals
-    // ----------------------------
     let totalQuantity = 0;
-    let totalEmission = 0;
+    let totalEmissionKg = 0;
     let activities = 0;
-
     const sources = new Set();
 
-    document.querySelectorAll("#activityTableBody tr")
-        .forEach(function(row){
+    document.querySelectorAll("#activityTableBody tr").forEach(function(row){
+        const qtyInput = row.querySelector(".quantity");
+        const totalInput = row.querySelector(".total");
+        const qty = parseFloat(qtyInput ? qtyInput.value : 0) || 0;
+        const total = parseFloat(totalInput ? totalInput.value : 0) || 0;
 
-            const qtyInput = row.querySelector(".quantity");
-            const totalInput = row.querySelector(".total");
-
-            const qty =
-                parseFloat(qtyInput ? qtyInput.value : 0) || 0;
-
-            const total =
-                parseFloat(totalInput ? totalInput.value : 0) || 0;
-
-            if(qty > 0){
-
-                activities++;
-
-                totalQuantity += qty;
-
-                totalEmission += total;
-
-                if(row.dataset.source){
-                    sources.add(row.dataset.source);
-                }
-
+        if(qty > 0){
+            activities++;
+            totalQuantity += qty;
+            totalEmissionKg += total;
+            if(row.dataset.source){
+                sources.add(row.dataset.source);
             }
+        }
+    });
 
-        });
+    document.getElementById("reviewActivities").innerText = activities;
+    document.getElementById("reviewSources").innerText = sources.size;
+    document.getElementById("reviewQuantity").innerText = totalQuantity.toFixed(4);
 
-    document.getElementById("reviewActivities").innerText =
-        activities;
+    // Calculate tCO₂e from kg CO₂e
+    const totalEmissiontCO2e = totalEmissionKg / 1000;
 
-    document.getElementById("reviewSources").innerText =
-        sources.size;
+    document.getElementById("reviewEmission").innerText = totalEmissionKg.toFixed(2) + " kg CO₂e";
+    document.getElementById("reviewTotalEmission").innerText = totalEmissiontCO2e.toFixed(4) + " tCO₂e";
 
-    document.getElementById("reviewQuantity").innerText =
-        totalQuantity.toFixed(4);
+    // Update category total card
+    const categoryTotalValue = document.getElementById("categoryTotalValue");
+    const categoryTotalKg = document.getElementById("categoryTotalKg");
+    if (categoryTotalValue) {
+        categoryTotalValue.innerHTML = totalEmissiontCO2e.toFixed(4) + ' <span class="category-total-unit">tCO₂e</span>';
+    }
+    if (categoryTotalKg) {
+        categoryTotalKg.textContent = totalEmissionKg.toFixed(2);
+    }
 
-    document.getElementById("reviewEmission").innerText =
-        totalEmission.toFixed(4) + " tCO₂e";
+    // Update category total card color based on scope
+    const categoryTotalCard = document.getElementById("categoryTotalCard");
+    if (categoryTotalCard) {
+        const selectedScope = document.querySelector(".scope-card.selected");
+        if (selectedScope) {
+            categoryTotalCard.className = 'category-total-card ' + selectedScope.dataset.scope.toLowerCase();
+        }
+    }
 
-    document.getElementById("reviewTotalEmission").innerText =
-        totalEmission.toFixed(4) + " tCO₂e";
-
-
-    // =====================================
     // Activity-wise Summary
-    // =====================================
     const tbody = document.getElementById("reviewActivitySummary");
-
     tbody.innerHTML = "";
 
-    document.querySelectorAll("#activityTableBody tr")
-    .forEach(function(row){
-
+    document.querySelectorAll("#activityTableBody tr").forEach(function(row){
         const qtyInput = row.querySelector(".quantity");
         const qty = parseFloat(qtyInput ? qtyInput.value : 0) || 0;
+        if(qty <= 0) return;
 
-        if(qty <= 0){
-            return;
-        }
-
-        // Get cells
         const cells = row.querySelectorAll("td");
         if (cells.length < 5) return;
 
         const activity = cells[1]?.innerText.trim() || '';
-        const source   = cells[2]?.innerText.trim() || '';
-        const unit     = cells[4]?.innerText.trim() || '';
-
+        const source = cells[2]?.innerText.trim() || '';
+        const unit = cells[4]?.innerText.trim() || '';
         const totalInput = row.querySelector(".total");
         const emission = parseFloat(totalInput ? totalInput.value : 0) || 0;
 
@@ -3426,12 +2985,10 @@ function updateReviewSummary() {
                 <td>${activity}</td>
                 <td>${source}</td>
                 <td class="text-end">${qty.toFixed(2)} ${unit}</td>
-                <td class="text-end fw-bold">${emission.toFixed(4)} tCO₂e</td>
+                <td class="text-end fw-bold">${emission.toFixed(2)} kg CO₂e</td>
             </tr>
         `;
-
     });
-
 
     if(tbody.innerHTML === ""){
         tbody.innerHTML = `
@@ -3440,7 +2997,6 @@ function updateReviewSummary() {
             </tr>
         `;
     }
-
 }
 
 // =============================================
@@ -3453,7 +3009,6 @@ function showToast(message, type = 'error') {
         return;
     }
 
-    // ---- Force container to be visible ----
     container.style.display = 'flex';
     container.style.visibility = 'visible';
     container.style.opacity = '1';
@@ -3507,124 +3062,81 @@ const closeAssignBtn = document.getElementById('closeAssignScopeModal');
 const cancelAssignBtn = document.getElementById('cancelAssignScope');
 const assignForm = document.getElementById('assignScopeForm');
 
-// =============================================
-// Load Users Based on Selected Plant
-// =============================================
 const assignPlantSelect = document.getElementById("assignPlantSelect");
-
 if (assignPlantSelect) {
-
     assignPlantSelect.addEventListener("change", function () {
-
         const plantId = this.value;
-
         const assignee = document.getElementById("assigneeSelect");
-
         assignee.innerHTML = '<option value="">Select User</option>';
 
-        if (!plantId) {
-            return;
-        }
+        if (!plantId) return;
 
         fetch(`/emission/api/plant-users/?plant_id=${plantId}`)
             .then(response => response.json())
             .then(result => {
-
-                if (!result.success) {
-                    return;
-                }
-
+                if (!result.success) return;
                 result.users.forEach(function (user) {
-
                     assignee.innerHTML += `
                         <option value="${user.id}">
                             ${user.name} (${user.employee_code})
                         </option>
                     `;
-
                 });
-
             });
-            
     });
-
 }
 
 if (assignBtn) {
-
     assignBtn.addEventListener("click", function () {
-
         const company = document.getElementById("company");
         const plant = document.getElementById("plant");
         const fy = document.getElementById("financialYear");
         const month = document.getElementById("financialMonth");
         const activeCategory = document.querySelector(".category-item.active");
 
-        document.getElementById("assignCompanyName").textContent =
-            company.options[company.selectedIndex]?.text || "-";
-
-        document.getElementById("assignPlantName").textContent =
-            plant.options[plant.selectedIndex]?.text || "-";
-
-        document.getElementById("assignFY").textContent =
-            fy.options[fy.selectedIndex]?.text || "-";
-
-        document.getElementById("assignMonth").textContent =
-            month.options[month.selectedIndex]?.text || "-";
-
-        document.getElementById("assignCategory").textContent =
-            activeCategory ? activeCategory.innerText.trim() : "-";
+        document.getElementById("assignCompanyName").textContent = company.options[company.selectedIndex]?.text || "-";
+        document.getElementById("assignPlantName").textContent = plant.options[plant.selectedIndex]?.text || "-";
+        document.getElementById("assignFY").textContent = fy.options[fy.selectedIndex]?.text || "-";
+        document.getElementById("assignMonth").textContent = month.options[month.selectedIndex]?.text || "-";
+        document.getElementById("assignCategory").textContent = activeCategory ? activeCategory.innerText.trim() : "-";
 
         document.getElementById("assignPlantSelect").value = plant.value;
-
-        document.getElementById("assignPlantSelect")
-            .dispatchEvent(new Event("change"));
+        document.getElementById("assignPlantSelect").dispatchEvent(new Event("change"));
 
         const today = new Date();
         today.setDate(today.getDate() + 7);
-
-        document.getElementById("dueDateInput").value =
-            today.toISOString().split("T")[0];
+        document.getElementById("dueDateInput").value = today.toISOString().split("T")[0];
 
         assignModal.classList.add("active");
-
     });
-
 }
 
-// ---------- Close modal ----------
 function closeAssignModal() {
     assignModal.classList.remove('active');
 }
 if (closeAssignBtn) {
     closeAssignBtn.addEventListener('click', closeAssignModal);
 }
-
 if (cancelAssignBtn) {
     cancelAssignBtn.addEventListener('click', closeAssignModal);
 }
-
 if (assignModal) {
     assignModal.addEventListener('click', function(e) {
         if (e.target === this) closeAssignModal();
     });
 }
 
-// ---------- Form submission ----------
 if (assignForm) {
-
     assignForm.addEventListener('submit', function(e) {
         e.preventDefault();
 
         const activeCategory = document.querySelector(".category-item.active");
-
         const assignee = document.getElementById('assigneeSelect').value;
         const dueDate = document.getElementById('dueDateInput').value;
         const priority = document.getElementById('prioritySelect').value;
         const frequency = document.getElementById('frequencySelect').value;
         const notes = document.getElementById('assignNotes').value;
 
-        // Validations
         if (!assignee) {
             showToast('Please select an assignee.', 'error');
             return;
@@ -3634,57 +3146,29 @@ if (assignForm) {
             return;
         }
 
-        // Build payload
         const sourceIds = [];
-
         document.querySelectorAll("#activityTableBody tr").forEach(function(row){
-
             const checkbox = row.querySelector(".activity-checkbox");
-
-            if (
-                checkbox &&
-                checkbox.checked &&
-                row.dataset.source
-            ){
+            if (checkbox && checkbox.checked && row.dataset.source) {
                 sourceIds.push(parseInt(row.dataset.source));
             }
-
         });
 
-        console.log(sourceIds);
-
         const payload = {
-
             scope_id: document.getElementById("selectedScopeId").value,
-
             source_ids: sourceIds,
-
             company: document.getElementById("company").value,
-
             plant: document.getElementById("assignPlantSelect").value,
-
             financial_year: document.getElementById("financialYear").value,
-
             financial_month: document.getElementById("financialMonth").value,
-
-            category_id: activeCategory
-                ? activeCategory.dataset.categoryId
-                : "",
-
+            category_id: activeCategory ? activeCategory.dataset.categoryId : "",
             assignee: assignee,
-
             due_date: dueDate,
-
             priority: priority.toUpperCase(),
-
             frequency: frequency.toUpperCase(),
-
             notes: notes
-
         };
 
-        console.log(payload);
-        // Send to backend
         fetch('/emission/api/assignment/save/', {
             method: 'POST',
             headers: {
@@ -3698,7 +3182,6 @@ if (assignForm) {
             if (result.success) {
                 showToast('Task assigned successfully!', 'success');
                 closeAssignModal();
-                // Optionally reset the form
                 assignForm.reset();
             } else {
                 showToast(result.message || 'Assignment failed.', 'error');
@@ -3718,15 +3201,13 @@ const viewBtn = document.getElementById('viewTransactionsBtn');
 const viewModal = document.getElementById('viewTransactionsModal');
 const viewCloseBtns = document.querySelectorAll('#closeViewTransactionsModal, #closeViewTransactionsModalFooter');
 
-// Function to populate the modal table with current rows
 function populateViewModal() {
     const rows = document.querySelectorAll('#activityTableBody tr');
     const summaryBody = document.getElementById('viewSummaryBody');
     const detailBody = document.getElementById('viewDetailBody');
 
-    // --- 1. Build detail rows and collect summary data ---
     let detailHtml = '';
-    const sourceMap = {}; // key: source name, value: { totalQty, totalEmission, unit }
+    const sourceMap = {};
 
     if (rows.length === 0) {
         summaryBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">No data entered yet.</td></tr>`;
@@ -3749,7 +3230,6 @@ function populateViewModal() {
         const factor = factorInput?.value || '0';
         const total = parseFloat(totalInput?.value) || 0;
 
-        // Detail row (show all rows)
         detailHtml += `
             <tr>
                 <td>${activity}</td>
@@ -3757,11 +3237,10 @@ function populateViewModal() {
                 <td>${quantity}</td>
                 <td>${unit}</td>
                 <td>${factor}</td>
-                <td>${total.toFixed(4)}</td>
+                <td>${total.toFixed(2)}</td>
             </tr>
         `;
 
-        // Aggregate by source
         if (source) {
             if (!sourceMap[source]) {
                 sourceMap[source] = { totalQty: 0, totalEmission: 0, unit: unit };
@@ -3771,7 +3250,6 @@ function populateViewModal() {
         }
     });
 
-    // --- 2. Build summary rows ---
     let summaryHtml = '';
     const sourceKeys = Object.keys(sourceMap);
     if (sourceKeys.length === 0) {
@@ -3784,11 +3262,10 @@ function populateViewModal() {
                     <td><strong>${src}</strong></td>
                     <td>${data.totalQty.toFixed(2)}</td>
                     <td>${data.unit}</td>
-                    <td>${data.totalEmission.toFixed(4)}</td>
+                    <td>${data.totalEmission.toFixed(2)}</td>
                 </tr>
             `;
         });
-        // Grand total row
         let grandQty = 0, grandEm = 0;
         sourceKeys.forEach(src => {
             grandQty += sourceMap[src].totalQty;
@@ -3799,17 +3276,15 @@ function populateViewModal() {
                 <td><strong>GRAND TOTAL</strong></td>
                 <td>${grandQty.toFixed(2)}</td>
                 <td></td>
-                <td>${grandEm.toFixed(4)}</td>
+                <td>${grandEm.toFixed(2)}</td>
             </tr>
         `;
     }
 
-    // --- 3. Insert into DOM ---
     summaryBody.innerHTML = summaryHtml;
     detailBody.innerHTML = detailHtml;
 }
 
-// Open modal
 if (viewBtn) {
     viewBtn.addEventListener('click', function() {
         populateViewModal();
@@ -3817,7 +3292,6 @@ if (viewBtn) {
     });
 }
 
-// Close modal functions
 function closeViewModal() {
     viewModal.classList.remove('active');
 }
@@ -3830,20 +3304,17 @@ viewModal.addEventListener('click', function(e) {
 // SELECT ALL ACTIVITIES
 // =============================================
 const selectAllActivities = document.getElementById("selectAllActivities");
-
 if (selectAllActivities) {
     selectAllActivities.addEventListener("change", function () {
         const checked = this.checked;
-        document.querySelectorAll(".activity-checkbox")
-            .forEach(cb => cb.checked = checked);
+        document.querySelectorAll(".activity-checkbox").forEach(cb => cb.checked = checked);
     });
 }
 
 // =============================================
-// ADD MANUAL ENTRY BUTTON (Dynamic)
+// ADD MANUAL ENTRY BUTTON
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
-    // Check if manual entry button already exists
     if (!document.getElementById('manualEntryBtn')) {
         const actionButtons = document.querySelector('.d-flex.gap-3');
         if (actionButtons) {
