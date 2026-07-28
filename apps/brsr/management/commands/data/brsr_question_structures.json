@@ -3829,16 +3829,64 @@
             "kind": "table",
             "label": "Stakeholder groups and engagement frequency",
             "name": "stakeholderEngagement",
-            "columns": ["Stakeholder Group", "Whether identified as Vulnerable & Marginalized Group (Yes/No)", "Channels of communication", "Frequency of engagement", "Purpose and scope of engagement"],
+            "allow_add_rows": true,
+            "allow_delete_rows": true,
+            "min_rows": 1,
+            "max_rows": 20,
+            "columns": [
+              "S. No",
+              "Stakeholder Group",
+              "Whether identified as Vulnerable & Marginalized Group (Yes/No)",
+              "Channels of communication (Email, SMS, Newsletters, Pamphlets, Advertisements, Community Meetings, Notice Boards, Website, Other)",
+              "Frequency of engagement (Annually / Half yearly / Quarterly / Others - please specify)",
+              "Purpose and scope of engagement including key topics and concerns raised during such engagement"
+            ],
             "rows": [
               {
                 "label": null,
                 "fields": [
-                  {"column": "Stakeholder Group", "name": "stakeholderGroup", "type": "text", "placeholder": "e.g., Communities"},
-                  {"column": "Whether identified as Vulnerable & Marginalized Group (Yes/No)", "name": "stakeholderVulnerable", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
-                  {"column": "Channels of communication", "name": "stakeholderChannels", "type": "text", "placeholder": "Email, Meetings, etc."},
-                  {"column": "Frequency of engagement", "name": "stakeholderFrequency", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Annually", "label": "Annually"}, {"value": "Half yearly", "label": "Half yearly"}, {"value": "Quarterly", "label": "Quarterly"}, {"value": "Monthly", "label": "Monthly"}, {"value": "Others", "label": "Others"}]},
-                  {"column": "Purpose and scope of engagement", "name": "stakeholderPurpose", "type": "textarea", "placeholder": "Purpose and scope of engagement..."}
+                  {
+                    "column": "Stakeholder Group",
+                    "name": "stakeholderGroup",
+                    "type": "text",
+                    "placeholder": "e.g., Employees, Suppliers, Customers, Industry"
+                  },
+                  {
+                    "column": "Whether identified as Vulnerable & Marginalized Group (Yes/No)",
+                    "name": "stakeholderVulnerable",
+                    "type": "select",
+                    "options": [
+                      {"value": "", "label": "Select"},
+                      {"value": "Yes", "label": "Yes"},
+                      {"value": "No", "label": "No"}
+                    ]
+                  },
+                  {
+                    "column": "Channels of communication (Email, SMS, Newsletters, Pamphlets, Advertisements, Community Meetings, Notice Boards, Website, Other)",
+                    "name": "stakeholderChannels",
+                    "type": "textarea",
+                    "placeholder": "List communication channels used (e.g., Email, Meetings, Newsletters, Surveys)"
+                  },
+                  {
+                    "column": "Frequency of engagement (Annually / Half yearly / Quarterly / Others - please specify)",
+                    "name": "stakeholderFrequency",
+                    "type": "select",
+                    "options": [
+                      {"value": "", "label": "Select Frequency"},
+                      {"value": "Annually", "label": "Annually"},
+                      {"value": "Half yearly", "label": "Half yearly"},
+                      {"value": "Quarterly", "label": "Quarterly"},
+                      {"value": "Monthly", "label": "Monthly"},
+                      {"value": "Weekly", "label": "Weekly"},
+                      {"value": "Others", "label": "Others"}
+                    ]
+                  },
+                  {
+                    "column": "Purpose and scope of engagement including key topics and concerns raised during such engagement",
+                    "name": "stakeholderPurpose",
+                    "type": "textarea",
+                    "placeholder": "Describe purpose, scope, key topics and concerns raised (e.g., Job Satisfaction, Collective bargaining, Quality of products)"
+                  }
                 ]
               }
             ]
@@ -3913,50 +3961,300 @@
             "kind": "table",
             "label": "Human rights training",
             "name": "humanRightsTraining",
-            "columns": ["Category", "FY {FY0} Total (A)", "FY {FY0} No. of employees/workers covered (B)", "FY {FY0} % (B/A)", "FY {FY1} Total (C)", "FY {FY1} No. of employees/workers covered (D)", "FY {FY1} % (D/C)"],
+            "columns": [
+              "Category",
+              "FY {FY0} Total (A)",
+              "FY {FY0} No. of employees/workers covered (B)",
+              "FY {FY0} % (B/A)",
+              "FY {FY1} Total (C)",
+              "FY {FY1} No. of employees/workers covered (D)",
+              "FY {FY1} % (D/C)"
+            ],
             "rows": [
               {
                 "label": "Employees (Executives) Permanent",
                 "fields": [
-                  {"column": "FY {FY0} Total (A)", "name": "e1_emp_perm_total_cy", "type": "number"},
-                  {"column": "FY {FY0} No. of employees/workers covered (B)", "name": "e1_emp_perm_covered_cy", "type": "number"},
-                  {"column": "FY {FY0} % (B/A)", "name": "e1_emp_perm_pct_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} Total (C)", "name": "e1_emp_perm_total_py", "type": "number"},
-                  {"column": "FY {FY1} No. of employees/workers covered (D)", "name": "e1_emp_perm_covered_py", "type": "number"},
-                  {"column": "FY {FY1} % (D/C)", "name": "e1_emp_perm_pct_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {
+                    "column": "FY {FY0} Total (A)",
+                    "name": "e1_emp_perm_total_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY0} No. of employees/workers covered (B)",
+                    "name": "e1_emp_perm_covered_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY0} % (B/A)",
+                    "name": "e1_emp_perm_pct_cy",
+                    "type": "calculated",
+                    "formula": "e1_emp_perm_covered_cy / e1_emp_perm_total_cy * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY1} Total (C)",
+                    "name": "e1_emp_perm_total_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} No. of employees/workers covered (D)",
+                    "name": "e1_emp_perm_covered_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} % (D/C)",
+                    "name": "e1_emp_perm_pct_py",
+                    "type": "calculated",
+                    "formula": "e1_emp_perm_covered_py / e1_emp_perm_total_py * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  }
                 ]
               },
               {
                 "label": "Employees (Executives) Other than permanent",
                 "fields": [
-                  {"column": "FY {FY0} Total (A)", "name": "e1_emp_other_total_cy", "type": "number"},
-                  {"column": "FY {FY0} No. of employees/workers covered (B)", "name": "e1_emp_other_covered_cy", "type": "number"},
-                  {"column": "FY {FY0} % (B/A)", "name": "e1_emp_other_pct_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} Total (C)", "name": "e1_emp_other_total_py", "type": "number"},
-                  {"column": "FY {FY1} No. of employees/workers covered (D)", "name": "e1_emp_other_covered_py", "type": "number"},
-                  {"column": "FY {FY1} % (D/C)", "name": "e1_emp_other_pct_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {
+                    "column": "FY {FY0} Total (A)",
+                    "name": "e1_emp_other_total_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY0} No. of employees/workers covered (B)",
+                    "name": "e1_emp_other_covered_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY0} % (B/A)",
+                    "name": "e1_emp_other_pct_cy",
+                    "type": "calculated",
+                    "formula": "e1_emp_other_covered_cy / e1_emp_other_total_cy * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY1} Total (C)",
+                    "name": "e1_emp_other_total_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} No. of employees/workers covered (D)",
+                    "name": "e1_emp_other_covered_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} % (D/C)",
+                    "name": "e1_emp_other_pct_py",
+                    "type": "calculated",
+                    "formula": "e1_emp_other_covered_py / e1_emp_other_total_py * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  }
+                ]
+              },
+              {
+                "label": "Total Employees (Executives)",
+                "fields": [
+                  {
+                    "column": "FY {FY0} Total (A)",
+                    "name": "e1_emp_total_cy",
+                    "type": "calculated",
+                    "formula": "e1_emp_perm_total_cy + e1_emp_other_total_cy",
+                    "readonly": true,
+                    "format": "number"
+                  },
+                  {
+                    "column": "FY {FY0} No. of employees/workers covered (B)",
+                    "name": "e1_emp_covered_cy",
+                    "type": "calculated",
+                    "formula": "e1_emp_perm_covered_cy + e1_emp_other_covered_cy",
+                    "readonly": true,
+                    "format": "number"
+                  },
+                  {
+                    "column": "FY {FY0} % (B/A)",
+                    "name": "e1_emp_pct_cy",
+                    "type": "calculated",
+                    "formula": "(e1_emp_perm_covered_cy + e1_emp_other_covered_cy) / (e1_emp_perm_total_cy + e1_emp_other_total_cy) * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY1} Total (C)",
+                    "name": "e1_emp_total_py",
+                    "type": "calculated",
+                    "formula": "e1_emp_perm_total_py + e1_emp_other_total_py",
+                    "readonly": true,
+                    "format": "number"
+                  },
+                  {
+                    "column": "FY {FY1} No. of employees/workers covered (D)",
+                    "name": "e1_emp_covered_py",
+                    "type": "calculated",
+                    "formula": "e1_emp_perm_covered_py + e1_emp_other_covered_py",
+                    "readonly": true,
+                    "format": "number"
+                  },
+                  {
+                    "column": "FY {FY1} % (D/C)",
+                    "name": "e1_emp_pct_py",
+                    "type": "calculated",
+                    "formula": "(e1_emp_perm_covered_py + e1_emp_other_covered_py) / (e1_emp_perm_total_py + e1_emp_other_total_py) * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  }
                 ]
               },
               {
                 "label": "Workers (Non-Executives) Permanent",
                 "fields": [
-                  {"column": "FY {FY0} Total (A)", "name": "e1_worker_perm_total_cy", "type": "number"},
-                  {"column": "FY {FY0} No. of employees/workers covered (B)", "name": "e1_worker_perm_covered_cy", "type": "number"},
-                  {"column": "FY {FY0} % (B/A)", "name": "e1_worker_perm_pct_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} Total (C)", "name": "e1_worker_perm_total_py", "type": "number"},
-                  {"column": "FY {FY1} No. of employees/workers covered (D)", "name": "e1_worker_perm_covered_py", "type": "number"},
-                  {"column": "FY {FY1} % (D/C)", "name": "e1_worker_perm_pct_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {
+                    "column": "FY {FY0} Total (A)",
+                    "name": "e1_worker_perm_total_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY0} No. of employees/workers covered (B)",
+                    "name": "e1_worker_perm_covered_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY0} % (B/A)",
+                    "name": "e1_worker_perm_pct_cy",
+                    "type": "calculated",
+                    "formula": "e1_worker_perm_covered_cy / e1_worker_perm_total_cy * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY1} Total (C)",
+                    "name": "e1_worker_perm_total_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} No. of employees/workers covered (D)",
+                    "name": "e1_worker_perm_covered_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} % (D/C)",
+                    "name": "e1_worker_perm_pct_py",
+                    "type": "calculated",
+                    "formula": "e1_worker_perm_covered_py / e1_worker_perm_total_py * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  }
                 ]
               },
               {
                 "label": "Workers (Non-Executives) Other than permanent",
                 "fields": [
-                  {"column": "FY {FY0} Total (A)", "name": "e1_worker_other_total_cy", "type": "number"},
-                  {"column": "FY {FY0} No. of employees/workers covered (B)", "name": "e1_worker_other_covered_cy", "type": "number"},
-                  {"column": "FY {FY0} % (B/A)", "name": "e1_worker_other_pct_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} Total (C)", "name": "e1_worker_other_total_py", "type": "number"},
-                  {"column": "FY {FY1} No. of employees/workers covered (D)", "name": "e1_worker_other_covered_py", "type": "number"},
-                  {"column": "FY {FY1} % (D/C)", "name": "e1_worker_other_pct_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {
+                    "column": "FY {FY0} Total (A)",
+                    "name": "e1_worker_other_total_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY0} No. of employees/workers covered (B)",
+                    "name": "e1_worker_other_covered_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY0} % (B/A)",
+                    "name": "e1_worker_other_pct_cy",
+                    "type": "calculated",
+                    "formula": "e1_worker_other_covered_cy / e1_worker_other_total_cy * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY1} Total (C)",
+                    "name": "e1_worker_other_total_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} No. of employees/workers covered (D)",
+                    "name": "e1_worker_other_covered_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} % (D/C)",
+                    "name": "e1_worker_other_pct_py",
+                    "type": "calculated",
+                    "formula": "e1_worker_other_covered_py / e1_worker_other_total_py * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  }
+                ]
+              },
+              {
+                "label": "Total Workers (Non-Executives)",
+                "fields": [
+                  {
+                    "column": "FY {FY0} Total (A)",
+                    "name": "e1_worker_total_cy",
+                    "type": "calculated",
+                    "formula": "e1_worker_perm_total_cy + e1_worker_other_total_cy",
+                    "readonly": true,
+                    "format": "number"
+                  },
+                  {
+                    "column": "FY {FY0} No. of employees/workers covered (B)",
+                    "name": "e1_worker_covered_cy",
+                    "type": "calculated",
+                    "formula": "e1_worker_perm_covered_cy + e1_worker_other_covered_cy",
+                    "readonly": true,
+                    "format": "number"
+                  },
+                  {
+                    "column": "FY {FY0} % (B/A)",
+                    "name": "e1_worker_pct_cy",
+                    "type": "calculated",
+                    "formula": "(e1_worker_perm_covered_cy + e1_worker_other_covered_cy) / (e1_worker_perm_total_cy + e1_worker_other_total_cy) * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY1} Total (C)",
+                    "name": "e1_worker_total_py",
+                    "type": "calculated",
+                    "formula": "e1_worker_perm_total_py + e1_worker_other_total_py",
+                    "readonly": true,
+                    "format": "number"
+                  },
+                  {
+                    "column": "FY {FY1} No. of employees/workers covered (D)",
+                    "name": "e1_worker_covered_py",
+                    "type": "calculated",
+                    "formula": "e1_worker_perm_covered_py + e1_worker_other_covered_py",
+                    "readonly": true,
+                    "format": "number"
+                  },
+                  {
+                    "column": "FY {FY1} % (D/C)",
+                    "name": "e1_worker_pct_py",
+                    "type": "calculated",
+                    "formula": "(e1_worker_perm_covered_py + e1_worker_other_covered_py) / (e1_worker_perm_total_py + e1_worker_other_total_py) * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  }
                 ]
               }
             ]
@@ -3974,66 +4272,480 @@
             "kind": "table",
             "label": "Minimum wages details",
             "name": "minimumWages",
-            "columns": ["Category", "FY {FY0} Total (A)", "FY {FY0} Equal to minimum wage No. (B)", "FY {FY0} Equal to minimum wage % (B/A)", "FY {FY0} More than minimum wage No. (C)", "FY {FY0} More than minimum wage % (C/A)", "FY {FY1} Total (D)", "FY {FY1} Equal to minimum wage No. (E)", "FY {FY1} Equal to minimum wage % (E/D)", "FY {FY1} More than minimum wage No. (F)", "FY {FY1} More than minimum wage % (F/D)"],
+            "columns": [
+              "Category",
+              "FY {FY0} Total (A)",
+              "FY {FY0} Equal to minimum wage No. (B)",
+              "FY {FY0} Equal to minimum wage % (B/A)",
+              "FY {FY0} More than minimum wage No. (C)",
+              "FY {FY0} More than minimum wage % (C/A)",
+              "FY {FY1} Total (D)",
+              "FY {FY1} Equal to minimum wage No. (E)",
+              "FY {FY1} Equal to minimum wage % (E/D)",
+              "FY {FY1} More than minimum wage No. (F)",
+              "FY {FY1} More than minimum wage % (F/D)"
+            ],
             "rows": [
               {
                 "label": "Employees (Executives) Permanent Male",
                 "fields": [
-                  {"column": "FY {FY0} Total (A)", "name": "e2_emp_perm_male_total_cy", "type": "number"},
-                  {"column": "FY {FY0} Equal to minimum wage No. (B)", "name": "e2_emp_perm_male_eq_cy", "type": "number"},
-                  {"column": "FY {FY0} Equal to minimum wage % (B/A)", "name": "e2_emp_perm_male_eq_pct_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY0} More than minimum wage No. (C)", "name": "e2_emp_perm_male_more_cy", "type": "number"},
-                  {"column": "FY {FY0} More than minimum wage % (C/A)", "name": "e2_emp_perm_male_more_pct_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} Total (D)", "name": "e2_emp_perm_male_total_py", "type": "number"},
-                  {"column": "FY {FY1} Equal to minimum wage No. (E)", "name": "e2_emp_perm_male_eq_py", "type": "number"},
-                  {"column": "FY {FY1} Equal to minimum wage % (E/D)", "name": "e2_emp_perm_male_eq_pct_py", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} More than minimum wage No. (F)", "name": "e2_emp_perm_male_more_py", "type": "number"},
-                  {"column": "FY {FY1} More than minimum wage % (F/D)", "name": "e2_emp_perm_male_more_pct_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {
+                    "column": "FY {FY0} Total (A)",
+                    "name": "e2_emp_perm_male_total_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY0} Equal to minimum wage No. (B)",
+                    "name": "e2_emp_perm_male_eq_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY0} Equal to minimum wage % (B/A)",
+                    "name": "e2_emp_perm_male_eq_pct_cy",
+                    "type": "calculated",
+                    "formula": "e2_emp_perm_male_eq_cy / e2_emp_perm_male_total_cy * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY0} More than minimum wage No. (C)",
+                    "name": "e2_emp_perm_male_more_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY0} More than minimum wage % (C/A)",
+                    "name": "e2_emp_perm_male_more_pct_cy",
+                    "type": "calculated",
+                    "formula": "e2_emp_perm_male_more_cy / e2_emp_perm_male_total_cy * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY1} Total (D)",
+                    "name": "e2_emp_perm_male_total_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} Equal to minimum wage No. (E)",
+                    "name": "e2_emp_perm_male_eq_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} Equal to minimum wage % (E/D)",
+                    "name": "e2_emp_perm_male_eq_pct_py",
+                    "type": "calculated",
+                    "formula": "e2_emp_perm_male_eq_py / e2_emp_perm_male_total_py * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY1} More than minimum wage No. (F)",
+                    "name": "e2_emp_perm_male_more_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} More than minimum wage % (F/D)",
+                    "name": "e2_emp_perm_male_more_pct_py",
+                    "type": "calculated",
+                    "formula": "e2_emp_perm_male_more_py / e2_emp_perm_male_total_py * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  }
                 ]
               },
               {
                 "label": "Employees (Executives) Permanent Female",
                 "fields": [
-                  {"column": "FY {FY0} Total (A)", "name": "e2_emp_perm_female_total_cy", "type": "number"},
-                  {"column": "FY {FY0} Equal to minimum wage No. (B)", "name": "e2_emp_perm_female_eq_cy", "type": "number"},
-                  {"column": "FY {FY0} Equal to minimum wage % (B/A)", "name": "e2_emp_perm_female_eq_pct_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY0} More than minimum wage No. (C)", "name": "e2_emp_perm_female_more_cy", "type": "number"},
-                  {"column": "FY {FY0} More than minimum wage % (C/A)", "name": "e2_emp_perm_female_more_pct_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} Total (D)", "name": "e2_emp_perm_female_total_py", "type": "number"},
-                  {"column": "FY {FY1} Equal to minimum wage No. (E)", "name": "e2_emp_perm_female_eq_py", "type": "number"},
-                  {"column": "FY {FY1} Equal to minimum wage % (E/D)", "name": "e2_emp_perm_female_eq_pct_py", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} More than minimum wage No. (F)", "name": "e2_emp_perm_female_more_py", "type": "number"},
-                  {"column": "FY {FY1} More than minimum wage % (F/D)", "name": "e2_emp_perm_female_more_pct_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {
+                    "column": "FY {FY0} Total (A)",
+                    "name": "e2_emp_perm_female_total_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY0} Equal to minimum wage No. (B)",
+                    "name": "e2_emp_perm_female_eq_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY0} Equal to minimum wage % (B/A)",
+                    "name": "e2_emp_perm_female_eq_pct_cy",
+                    "type": "calculated",
+                    "formula": "e2_emp_perm_female_eq_cy / e2_emp_perm_female_total_cy * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY0} More than minimum wage No. (C)",
+                    "name": "e2_emp_perm_female_more_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY0} More than minimum wage % (C/A)",
+                    "name": "e2_emp_perm_female_more_pct_cy",
+                    "type": "calculated",
+                    "formula": "e2_emp_perm_female_more_cy / e2_emp_perm_female_total_cy * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY1} Total (D)",
+                    "name": "e2_emp_perm_female_total_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} Equal to minimum wage No. (E)",
+                    "name": "e2_emp_perm_female_eq_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} Equal to minimum wage % (E/D)",
+                    "name": "e2_emp_perm_female_eq_pct_py",
+                    "type": "calculated",
+                    "formula": "e2_emp_perm_female_eq_py / e2_emp_perm_female_total_py * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY1} More than minimum wage No. (F)",
+                    "name": "e2_emp_perm_female_more_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} More than minimum wage % (F/D)",
+                    "name": "e2_emp_perm_female_more_pct_py",
+                    "type": "calculated",
+                    "formula": "e2_emp_perm_female_more_py / e2_emp_perm_female_total_py * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  }
+                ]
+              },
+              {
+                "label": "Total Employees (Executives) Permanent",
+                "fields": [
+                  {
+                    "column": "FY {FY0} Total (A)",
+                    "name": "e2_emp_perm_total_cy",
+                    "type": "calculated",
+                    "formula": "e2_emp_perm_male_total_cy + e2_emp_perm_female_total_cy",
+                    "readonly": true,
+                    "format": "number"
+                  },
+                  {
+                    "column": "FY {FY0} Equal to minimum wage No. (B)",
+                    "name": "e2_emp_perm_eq_cy",
+                    "type": "calculated",
+                    "formula": "e2_emp_perm_male_eq_cy + e2_emp_perm_female_eq_cy",
+                    "readonly": true,
+                    "format": "number"
+                  },
+                  {
+                    "column": "FY {FY0} Equal to minimum wage % (B/A)",
+                    "name": "e2_emp_perm_eq_pct_cy",
+                    "type": "calculated",
+                    "formula": "(e2_emp_perm_male_eq_cy + e2_emp_perm_female_eq_cy) / (e2_emp_perm_male_total_cy + e2_emp_perm_female_total_cy) * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY0} More than minimum wage No. (C)",
+                    "name": "e2_emp_perm_more_cy",
+                    "type": "calculated",
+                    "formula": "e2_emp_perm_male_more_cy + e2_emp_perm_female_more_cy",
+                    "readonly": true,
+                    "format": "number"
+                  },
+                  {
+                    "column": "FY {FY0} More than minimum wage % (C/A)",
+                    "name": "e2_emp_perm_more_pct_cy",
+                    "type": "calculated",
+                    "formula": "(e2_emp_perm_male_more_cy + e2_emp_perm_female_more_cy) / (e2_emp_perm_male_total_cy + e2_emp_perm_female_total_cy) * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY1} Total (D)",
+                    "name": "e2_emp_perm_total_py",
+                    "type": "calculated",
+                    "formula": "e2_emp_perm_male_total_py + e2_emp_perm_female_total_py",
+                    "readonly": true,
+                    "format": "number"
+                  },
+                  {
+                    "column": "FY {FY1} Equal to minimum wage No. (E)",
+                    "name": "e2_emp_perm_eq_py",
+                    "type": "calculated",
+                    "formula": "e2_emp_perm_male_eq_py + e2_emp_perm_female_eq_py",
+                    "readonly": true,
+                    "format": "number"
+                  },
+                  {
+                    "column": "FY {FY1} Equal to minimum wage % (E/D)",
+                    "name": "e2_emp_perm_eq_pct_py",
+                    "type": "calculated",
+                    "formula": "(e2_emp_perm_male_eq_py + e2_emp_perm_female_eq_py) / (e2_emp_perm_male_total_py + e2_emp_perm_female_total_py) * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY1} More than minimum wage No. (F)",
+                    "name": "e2_emp_perm_more_py",
+                    "type": "calculated",
+                    "formula": "e2_emp_perm_male_more_py + e2_emp_perm_female_more_py",
+                    "readonly": true,
+                    "format": "number"
+                  },
+                  {
+                    "column": "FY {FY1} More than minimum wage % (F/D)",
+                    "name": "e2_emp_perm_more_pct_py",
+                    "type": "calculated",
+                    "formula": "(e2_emp_perm_male_more_py + e2_emp_perm_female_more_py) / (e2_emp_perm_male_total_py + e2_emp_perm_female_total_py) * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  }
                 ]
               },
               {
                 "label": "Workers (Non-Executives) Permanent Male",
                 "fields": [
-                  {"column": "FY {FY0} Total (A)", "name": "e2_worker_perm_male_total_cy", "type": "number"},
-                  {"column": "FY {FY0} Equal to minimum wage No. (B)", "name": "e2_worker_perm_male_eq_cy", "type": "number"},
-                  {"column": "FY {FY0} Equal to minimum wage % (B/A)", "name": "e2_worker_perm_male_eq_pct_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY0} More than minimum wage No. (C)", "name": "e2_worker_perm_male_more_cy", "type": "number"},
-                  {"column": "FY {FY0} More than minimum wage % (C/A)", "name": "e2_worker_perm_male_more_pct_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} Total (D)", "name": "e2_worker_perm_male_total_py", "type": "number"},
-                  {"column": "FY {FY1} Equal to minimum wage No. (E)", "name": "e2_worker_perm_male_eq_py", "type": "number"},
-                  {"column": "FY {FY1} Equal to minimum wage % (E/D)", "name": "e2_worker_perm_male_eq_pct_py", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} More than minimum wage No. (F)", "name": "e2_worker_perm_male_more_py", "type": "number"},
-                  {"column": "FY {FY1} More than minimum wage % (F/D)", "name": "e2_worker_perm_male_more_pct_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {
+                    "column": "FY {FY0} Total (A)",
+                    "name": "e2_worker_perm_male_total_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY0} Equal to minimum wage No. (B)",
+                    "name": "e2_worker_perm_male_eq_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY0} Equal to minimum wage % (B/A)",
+                    "name": "e2_worker_perm_male_eq_pct_cy",
+                    "type": "calculated",
+                    "formula": "e2_worker_perm_male_eq_cy / e2_worker_perm_male_total_cy * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY0} More than minimum wage No. (C)",
+                    "name": "e2_worker_perm_male_more_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY0} More than minimum wage % (C/A)",
+                    "name": "e2_worker_perm_male_more_pct_cy",
+                    "type": "calculated",
+                    "formula": "e2_worker_perm_male_more_cy / e2_worker_perm_male_total_cy * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY1} Total (D)",
+                    "name": "e2_worker_perm_male_total_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} Equal to minimum wage No. (E)",
+                    "name": "e2_worker_perm_male_eq_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} Equal to minimum wage % (E/D)",
+                    "name": "e2_worker_perm_male_eq_pct_py",
+                    "type": "calculated",
+                    "formula": "e2_worker_perm_male_eq_py / e2_worker_perm_male_total_py * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY1} More than minimum wage No. (F)",
+                    "name": "e2_worker_perm_male_more_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} More than minimum wage % (F/D)",
+                    "name": "e2_worker_perm_male_more_pct_py",
+                    "type": "calculated",
+                    "formula": "e2_worker_perm_male_more_py / e2_worker_perm_male_total_py * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  }
                 ]
               },
               {
                 "label": "Workers (Non-Executives) Permanent Female",
                 "fields": [
-                  {"column": "FY {FY0} Total (A)", "name": "e2_worker_perm_female_total_cy", "type": "number"},
-                  {"column": "FY {FY0} Equal to minimum wage No. (B)", "name": "e2_worker_perm_female_eq_cy", "type": "number"},
-                  {"column": "FY {FY0} Equal to minimum wage % (B/A)", "name": "e2_worker_perm_female_eq_pct_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY0} More than minimum wage No. (C)", "name": "e2_worker_perm_female_more_cy", "type": "number"},
-                  {"column": "FY {FY0} More than minimum wage % (C/A)", "name": "e2_worker_perm_female_more_pct_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} Total (D)", "name": "e2_worker_perm_female_total_py", "type": "number"},
-                  {"column": "FY {FY1} Equal to minimum wage No. (E)", "name": "e2_worker_perm_female_eq_py", "type": "number"},
-                  {"column": "FY {FY1} Equal to minimum wage % (E/D)", "name": "e2_worker_perm_female_eq_pct_py", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} More than minimum wage No. (F)", "name": "e2_worker_perm_female_more_py", "type": "number"},
-                  {"column": "FY {FY1} More than minimum wage % (F/D)", "name": "e2_worker_perm_female_more_pct_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {
+                    "column": "FY {FY0} Total (A)",
+                    "name": "e2_worker_perm_female_total_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY0} Equal to minimum wage No. (B)",
+                    "name": "e2_worker_perm_female_eq_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY0} Equal to minimum wage % (B/A)",
+                    "name": "e2_worker_perm_female_eq_pct_cy",
+                    "type": "calculated",
+                    "formula": "e2_worker_perm_female_eq_cy / e2_worker_perm_female_total_cy * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY0} More than minimum wage No. (C)",
+                    "name": "e2_worker_perm_female_more_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY0} More than minimum wage % (C/A)",
+                    "name": "e2_worker_perm_female_more_pct_cy",
+                    "type": "calculated",
+                    "formula": "e2_worker_perm_female_more_cy / e2_worker_perm_female_total_cy * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY1} Total (D)",
+                    "name": "e2_worker_perm_female_total_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} Equal to minimum wage No. (E)",
+                    "name": "e2_worker_perm_female_eq_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} Equal to minimum wage % (E/D)",
+                    "name": "e2_worker_perm_female_eq_pct_py",
+                    "type": "calculated",
+                    "formula": "e2_worker_perm_female_eq_py / e2_worker_perm_female_total_py * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY1} More than minimum wage No. (F)",
+                    "name": "e2_worker_perm_female_more_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} More than minimum wage % (F/D)",
+                    "name": "e2_worker_perm_female_more_pct_py",
+                    "type": "calculated",
+                    "formula": "e2_worker_perm_female_more_py / e2_worker_perm_female_total_py * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  }
+                ]
+              },
+              {
+                "label": "Total Workers (Non-Executives) Permanent",
+                "fields": [
+                  {
+                    "column": "FY {FY0} Total (A)",
+                    "name": "e2_worker_perm_total_cy",
+                    "type": "calculated",
+                    "formula": "e2_worker_perm_male_total_cy + e2_worker_perm_female_total_cy",
+                    "readonly": true,
+                    "format": "number"
+                  },
+                  {
+                    "column": "FY {FY0} Equal to minimum wage No. (B)",
+                    "name": "e2_worker_perm_eq_cy",
+                    "type": "calculated",
+                    "formula": "e2_worker_perm_male_eq_cy + e2_worker_perm_female_eq_cy",
+                    "readonly": true,
+                    "format": "number"
+                  },
+                  {
+                    "column": "FY {FY0} Equal to minimum wage % (B/A)",
+                    "name": "e2_worker_perm_eq_pct_cy",
+                    "type": "calculated",
+                    "formula": "(e2_worker_perm_male_eq_cy + e2_worker_perm_female_eq_cy) / (e2_worker_perm_male_total_cy + e2_worker_perm_female_total_cy) * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY0} More than minimum wage No. (C)",
+                    "name": "e2_worker_perm_more_cy",
+                    "type": "calculated",
+                    "formula": "e2_worker_perm_male_more_cy + e2_worker_perm_female_more_cy",
+                    "readonly": true,
+                    "format": "number"
+                  },
+                  {
+                    "column": "FY {FY0} More than minimum wage % (C/A)",
+                    "name": "e2_worker_perm_more_pct_cy",
+                    "type": "calculated",
+                    "formula": "(e2_worker_perm_male_more_cy + e2_worker_perm_female_more_cy) / (e2_worker_perm_male_total_cy + e2_worker_perm_female_total_cy) * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY1} Total (D)",
+                    "name": "e2_worker_perm_total_py",
+                    "type": "calculated",
+                    "formula": "e2_worker_perm_male_total_py + e2_worker_perm_female_total_py",
+                    "readonly": true,
+                    "format": "number"
+                  },
+                  {
+                    "column": "FY {FY1} Equal to minimum wage No. (E)",
+                    "name": "e2_worker_perm_eq_py",
+                    "type": "calculated",
+                    "formula": "e2_worker_perm_male_eq_py + e2_worker_perm_female_eq_py",
+                    "readonly": true,
+                    "format": "number"
+                  },
+                  {
+                    "column": "FY {FY1} Equal to minimum wage % (E/D)",
+                    "name": "e2_worker_perm_eq_pct_py",
+                    "type": "calculated",
+                    "formula": "(e2_worker_perm_male_eq_py + e2_worker_perm_female_eq_py) / (e2_worker_perm_male_total_py + e2_worker_perm_female_total_py) * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  },
+                  {
+                    "column": "FY {FY1} More than minimum wage No. (F)",
+                    "name": "e2_worker_perm_more_py",
+                    "type": "calculated",
+                    "formula": "e2_worker_perm_male_more_py + e2_worker_perm_female_more_py",
+                    "readonly": true,
+                    "format": "number"
+                  },
+                  {
+                    "column": "FY {FY1} More than minimum wage % (F/D)",
+                    "name": "e2_worker_perm_more_pct_py",
+                    "type": "calculated",
+                    "formula": "(e2_worker_perm_male_more_py + e2_worker_perm_female_more_py) / (e2_worker_perm_male_total_py + e2_worker_perm_female_total_py) * 100",
+                    "readonly": true,
+                    "format": "percentage"
+                  }
                 ]
               }
             ]
@@ -4289,15 +5001,92 @@
         "fields": [
           {
             "kind": "radio",
-            "label": "Human rights in contracts",
+            "label": "Do human rights requirements form part of your business agreements and contracts?",
             "name": "hrContracts",
-            "options": [{"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]
+            "options": [
+              {"value": "Yes", "label": "Yes"},
+              {"value": "No", "label": "No"}
+            ]
           },
           {
             "kind": "textarea",
-            "label": "Human rights in contracts details",
+            "label": "If yes, provide details of how human rights requirements are incorporated",
             "name": "hrContractsDetails",
-            "placeholder": "Provide details of how human rights requirements are incorporated..."
+            "placeholder": "Provide details of how human rights requirements are incorporated into business agreements and contracts..."
+          },
+          {
+            "kind": "table",
+            "label": "% Of your plants and offices that were assessed (by entity or statutory authorities or third parties)",
+            "name": "hrAssessments",
+            "columns": ["Subject", "% Of your plants and offices that were assessed (by entity or statutory authorities or third parties)"],
+            "rows": [
+              {
+                "label": "Child labor",
+                "fields": [
+                  {
+                    "column": "% Of your plants and offices that were assessed (by entity or statutory authorities or third parties)",
+                    "name": "e9_child_labor_percent",
+                    "type": "number",
+                    "placeholder": "0"
+                  }
+                ]
+              },
+              {
+                "label": "Forced/involuntary labor",
+                "fields": [
+                  {
+                    "column": "% Of your plants and offices that were assessed (by entity or statutory authorities or third parties)",
+                    "name": "e9_forced_labor_percent",
+                    "type": "number",
+                    "placeholder": "0"
+                  }
+                ]
+              },
+              {
+                "label": "Sexual harassment",
+                "fields": [
+                  {
+                    "column": "% Of your plants and offices that were assessed (by entity or statutory authorities or third parties)",
+                    "name": "e9_sexual_harassment_percent",
+                    "type": "number",
+                    "placeholder": "0"
+                  }
+                ]
+              },
+              {
+                "label": "Discrimination at workplace",
+                "fields": [
+                  {
+                    "column": "% Of your plants and offices that were assessed (by entity or statutory authorities or third parties)",
+                    "name": "e9_discrimination_percent",
+                    "type": "number",
+                    "placeholder": "0"
+                  }
+                ]
+              },
+              {
+                "label": "Wages",
+                "fields": [
+                  {
+                    "column": "% Of your plants and offices that were assessed (by entity or statutory authorities or third parties)",
+                    "name": "e9_wages_percent",
+                    "type": "number",
+                    "placeholder": "0"
+                  }
+                ]
+              },
+              {
+                "label": "Others – please specify",
+                "fields": [
+                  {
+                    "column": "% Of your plants and offices that were assessed (by entity or statutory authorities or third parties)",
+                    "name": "e9_others_percent",
+                    "type": "number",
+                    "placeholder": "0"
+                  }
+                ]
+              }
+            ]
           }
         ]
       },
@@ -4309,36 +5098,10 @@
         "help_text": "",
         "fields": [
           {
-            "kind": "table",
-            "label": "Human rights assessments",
-            "name": "hrAssessments",
-            "columns": ["Subject", "% Of your plants and offices that were assessed (by entity or statutory authorities or third parties)"],
-            "rows": [
-              {
-                "label": "Child labor",
-                "fields": [{"column": "% Of your plants and offices that were assessed", "name": "e10_cl_percent", "field_type": "percentage", "type": "text", "placeholder": "%"}]
-              },
-              {
-                "label": "Forced/involuntary labor",
-                "fields": [{"column": "% Of your plants and offices that were assessed", "name": "e10_fl_percent", "field_type": "percentage", "type": "text", "placeholder": "%"}]
-              },
-              {
-                "label": "Sexual harassment",
-                "fields": [{"column": "% Of your plants and offices that were assessed", "name": "e10_sh_percent", "field_type": "percentage", "type": "text", "placeholder": "%"}]
-              },
-              {
-                "label": "Discrimination at workplace",
-                "fields": [{"column": "% Of your plants and offices that were assessed", "name": "e10_disc_percent", "field_type": "percentage", "type": "text", "placeholder": "%"}]
-              },
-              {
-                "label": "Wages",
-                "fields": [{"column": "% Of your plants and offices that were assessed", "name": "e10_wages_percent", "field_type": "percentage", "type": "text", "placeholder": "%"}]
-              },
-              {
-                "label": "Others – please specify",
-                "fields": [{"column": "% Of your plants and offices that were assessed", "name": "e10_others_percent", "field_type": "percentage", "type": "text", "placeholder": "%"}]
-              }
-            ]
+            "kind": "textarea",
+            "label": "Provide details of assessments conducted for human rights issues during the year",
+            "name": "e10_assessments_details",
+            "placeholder": "Provide details of assessments conducted for human rights issues including child labor, forced/involuntary labor, sexual harassment, discrimination at workplace, wages, and others..."
           }
         ]
       },
@@ -4417,27 +5180,69 @@
             "rows": [
               {
                 "label": "Sexual harassment",
-                "fields": [{"column": "% of value chain partners that were assessed", "name": "l4_sh_percent", "field_type": "percentage", "type": "text", "placeholder": "%"}]
+                "fields": [
+                  {
+                    "column": "% of value chain partners (by value of business done with such partners) that were assessed",
+                    "name": "l4_sh_text",
+                    "type": "text",
+                    "placeholder": "Enter percentage and details (e.g., 100% - Great place to work, ISO Audits)"
+                  }
+                ]
               },
               {
                 "label": "Discrimination at workplace",
-                "fields": [{"column": "% of value chain partners that were assessed", "name": "l4_disc_percent", "field_type": "percentage", "type": "text", "placeholder": "%"}]
+                "fields": [
+                  {
+                    "column": "% of value chain partners (by value of business done with such partners) that were assessed",
+                    "name": "l4_disc_text",
+                    "type": "text",
+                    "placeholder": "Enter percentage and details (e.g., 100% - Great place to work, ISO Audits)"
+                  }
+                ]
               },
               {
                 "label": "Child labor",
-                "fields": [{"column": "% of value chain partners that were assessed", "name": "l4_cl_percent", "field_type": "percentage", "type": "text", "placeholder": "%"}]
+                "fields": [
+                  {
+                    "column": "% of value chain partners (by value of business done with such partners) that were assessed",
+                    "name": "l4_cl_text",
+                    "type": "text",
+                    "placeholder": "Enter percentage and details (e.g., 100% - Great place to work, ISO Audits)"
+                  }
+                ]
               },
               {
                 "label": "Forced/involuntary labor",
-                "fields": [{"column": "% of value chain partners that were assessed", "name": "l4_fl_percent", "field_type": "percentage", "type": "text", "placeholder": "%"}]
+                "fields": [
+                  {
+                    "column": "% of value chain partners (by value of business done with such partners) that were assessed",
+                    "name": "l4_fl_text",
+                    "type": "text",
+                    "placeholder": "Enter percentage and details (e.g., 100% - Great place to work, ISO Audits)"
+                  }
+                ]
               },
               {
                 "label": "Wages",
-                "fields": [{"column": "% of value chain partners that were assessed", "name": "l4_wages_percent", "field_type": "percentage", "type": "text", "placeholder": "%"}]
+                "fields": [
+                  {
+                    "column": "% of value chain partners (by value of business done with such partners) that were assessed",
+                    "name": "l4_wages_text",
+                    "type": "text",
+                    "placeholder": "Enter percentage and details (e.g., 100% - Great place to work, ISO Audits)"
+                  }
+                ]
               },
               {
                 "label": "Others – please specify",
-                "fields": [{"column": "% of value chain partners that were assessed", "name": "l4_others_percent", "field_type": "percentage", "type": "text", "placeholder": "%"}]
+                "fields": [
+                  {
+                    "column": "% of value chain partners (by value of business done with such partners) that were assessed",
+                    "name": "l4_others_text",
+                    "type": "text",
+                    "placeholder": "Enter percentage and details"
+                  }
+                ]
               }
             ]
           }
@@ -4477,90 +5282,246 @@
             "name": "energyConsumption",
             "columns": ["Parameter", "FY {FY0} (Current Financial Year)", "FY {FY1} (Previous Financial Year)"],
             "rows": [
-              {"label": "From renewable sources", "fields": []},
+              {
+                "label": "From renewable sources",
+                "fields": []
+              },
               {
                 "label": "Total electricity consumption (A)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e1_renewable_electricity_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "e.g., 1000 kWh"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e1_renewable_electricity_py", "field_type": "number_with_unit", "type": "text", "placeholder": "e.g., 900 kWh"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e1_renewable_electricity_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "e.g., 1000 kWh"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e1_renewable_electricity_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "e.g., 900 kWh"
+                  }
                 ]
               },
               {
                 "label": "Total fuel consumption (B)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e1_renewable_fuel_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "e.g., 1000 kWh"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e1_renewable_fuel_py", "field_type": "number_with_unit", "type": "text", "placeholder": "e.g., 900 kWh"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e1_renewable_fuel_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "e.g., 1000 kWh"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e1_renewable_fuel_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "e.g., 900 kWh"
+                  }
                 ]
               },
               {
                 "label": "Energy consumption through other sources (C)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e1_renewable_other_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "e.g., 1000 kWh"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e1_renewable_other_py", "field_type": "number_with_unit", "type": "text", "placeholder": "e.g., 900 kWh"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e1_renewable_other_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "e.g., 1000 kWh"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e1_renewable_other_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "e.g., 900 kWh"
+                  }
                 ]
               },
               {
                 "label": "Total energy consumed from renewable sources (A+B+C)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e1_renewable_total_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "e.g., 1000 kWh"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e1_renewable_total_py", "field_type": "number_with_unit", "type": "text", "placeholder": "e.g., 900 kWh"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e1_renewable_total_cy",
+                    "type": "calculated",
+                    "formula": "parseFloat(e1_renewable_electricity_cy) + parseFloat(e1_renewable_fuel_cy) + parseFloat(e1_renewable_other_cy)",
+                    "readonly": true,
+                    "format": "number_with_unit",
+                    "placeholder": "Auto-calculated"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e1_renewable_total_py",
+                    "type": "calculated",
+                    "formula": "parseFloat(e1_renewable_electricity_py) + parseFloat(e1_renewable_fuel_py) + parseFloat(e1_renewable_other_py)",
+                    "readonly": true,
+                    "format": "number_with_unit",
+                    "placeholder": "Auto-calculated"
+                  }
                 ]
               },
-              {"label": "From non-renewable sources", "fields": []},
+              {
+                "label": "From non-renewable sources",
+                "fields": []
+              },
               {
                 "label": "Total electricity consumption (D)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e1_nonrenewable_electricity_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "e.g., 1000 kWh"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e1_nonrenewable_electricity_py", "field_type": "number_with_unit", "type": "text", "placeholder": "e.g., 900 kWh"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e1_nonrenewable_electricity_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "e.g., 1000 kWh"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e1_nonrenewable_electricity_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "e.g., 900 kWh"
+                  }
                 ]
               },
               {
                 "label": "Total fuel consumption (E)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e1_nonrenewable_fuel_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "e.g., 1000 kWh"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e1_nonrenewable_fuel_py", "field_type": "number_with_unit", "type": "text", "placeholder": "e.g., 900 kWh"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e1_nonrenewable_fuel_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "e.g., 1000 kWh"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e1_nonrenewable_fuel_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "e.g., 900 kWh"
+                  }
                 ]
               },
               {
                 "label": "Energy consumption through other sources (F)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e1_nonrenewable_other_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "e.g., 1000 kWh"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e1_nonrenewable_other_py", "field_type": "number_with_unit", "type": "text", "placeholder": "e.g., 900 kWh"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e1_nonrenewable_other_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "e.g., 1000 kWh"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e1_nonrenewable_other_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "e.g., 900 kWh"
+                  }
                 ]
               },
               {
                 "label": "Total energy consumed from non-renewable sources (D+E+F)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e1_nonrenewable_total_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "e.g., 1000 kWh"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e1_nonrenewable_total_py", "field_type": "number_with_unit", "type": "text", "placeholder": "e.g., 900 kWh"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e1_nonrenewable_total_cy",
+                    "type": "calculated",
+                    "formula": "parseFloat(e1_nonrenewable_electricity_cy) + parseFloat(e1_nonrenewable_fuel_cy) + parseFloat(e1_nonrenewable_other_cy)",
+                    "readonly": true,
+                    "format": "number_with_unit",
+                    "placeholder": "Auto-calculated"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e1_nonrenewable_total_py",
+                    "type": "calculated",
+                    "formula": "parseFloat(e1_nonrenewable_electricity_py) + parseFloat(e1_nonrenewable_fuel_py) + parseFloat(e1_nonrenewable_other_py)",
+                    "readonly": true,
+                    "format": "number_with_unit",
+                    "placeholder": "Auto-calculated"
+                  }
                 ]
               },
               {
                 "label": "Total energy consumed (A+B+C+D+E+F)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e1_total_energy_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "e.g., 1000 kWh"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e1_total_energy_py", "field_type": "number_with_unit", "type": "text", "placeholder": "e.g., 900 kWh"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e1_total_energy_cy",
+                    "type": "calculated",
+                    "formula": "parseFloat(e1_renewable_electricity_cy) + parseFloat(e1_renewable_fuel_cy) + parseFloat(e1_renewable_other_cy) + parseFloat(e1_nonrenewable_electricity_cy) + parseFloat(e1_nonrenewable_fuel_cy) + parseFloat(e1_nonrenewable_other_cy)",
+                    "readonly": true,
+                    "format": "number_with_unit",
+                    "placeholder": "Auto-calculated"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e1_total_energy_py",
+                    "type": "calculated",
+                    "formula": "parseFloat(e1_renewable_electricity_py) + parseFloat(e1_renewable_fuel_py) + parseFloat(e1_renewable_other_py) + parseFloat(e1_nonrenewable_electricity_py) + parseFloat(e1_nonrenewable_fuel_py) + parseFloat(e1_nonrenewable_other_py)",
+                    "readonly": true,
+                    "format": "number_with_unit",
+                    "placeholder": "Auto-calculated"
+                  }
                 ]
               },
               {
                 "label": "Energy intensity per rupee of turnover",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e1_intensity_turnover_cy", "type": "number"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e1_intensity_turnover_py", "type": "number"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e1_intensity_turnover_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e1_intensity_turnover_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  }
                 ]
               },
               {
                 "label": "Energy intensity per rupee of turnover adjusted for PPP",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e1_intensity_ppp_cy", "type": "number"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e1_intensity_ppp_py", "type": "number"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e1_intensity_ppp_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e1_intensity_ppp_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  }
                 ]
               },
               {
                 "label": "Energy intensity in terms of physical output",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e1_intensity_physical_cy", "type": "text"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e1_intensity_physical_py", "type": "text"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e1_intensity_physical_cy",
+                    "type": "text",
+                    "placeholder": "e.g., 0.5 kWh/unit"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e1_intensity_physical_py",
+                    "type": "text",
+                    "placeholder": "e.g., 0.45 kWh/unit"
+                  }
                 ]
               }
             ]
@@ -4569,7 +5530,10 @@
             "kind": "radio",
             "label": "Independent assessment/evaluation/assurance carried out by an external agency?",
             "name": "e1ExternalAssessment",
-            "options": [{"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]
+            "options": [
+              {"value": "Yes", "label": "Yes"},
+              {"value": "No", "label": "No"}
+            ]
           },
           {
             "kind": "input",
@@ -4614,68 +5578,179 @@
             "name": "waterWithdrawal",
             "columns": ["Parameter", "FY {FY0} (Current Financial Year)", "FY {FY1} (Previous Financial Year)"],
             "rows": [
-              {"label": "Water withdrawal by source (in megaliters)", "fields": []},
+              {
+                "label": "Water withdrawal by source (in megaliters)",
+                "fields": []
+              },
               {
                 "label": "(i) Surface water",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e3_surface_water_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e3_surface_water_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e3_surface_water_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e3_surface_water_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  }
                 ]
               },
               {
                 "label": "(ii) Groundwater",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e3_groundwater_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e3_groundwater_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e3_groundwater_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e3_groundwater_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  }
                 ]
               },
               {
                 "label": "(iii) Third party water",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e3_third_party_water_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e3_third_party_water_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e3_third_party_water_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e3_third_party_water_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  }
                 ]
               },
               {
                 "label": "(iv) Seawater / desalinated water",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e3_seawater_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e3_seawater_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e3_seawater_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e3_seawater_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  }
                 ]
               },
               {
                 "label": "(v) Others",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e3_other_water_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e3_other_water_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e3_other_water_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e3_other_water_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  }
                 ]
               },
               {
                 "label": "Total volume of water withdrawal (in megaliters)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e3_total_withdrawal_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e3_total_withdrawal_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e3_total_withdrawal_cy",
+                    "type": "calculated",
+                    "formula": "parseFloat(e3_surface_water_cy) + parseFloat(e3_groundwater_cy) + parseFloat(e3_third_party_water_cy) + parseFloat(e3_seawater_cy) + parseFloat(e3_other_water_cy)",
+                    "readonly": true,
+                    "format": "number_with_unit",
+                    "placeholder": "Auto-calculated"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e3_total_withdrawal_py",
+                    "type": "calculated",
+                    "formula": "parseFloat(e3_surface_water_py) + parseFloat(e3_groundwater_py) + parseFloat(e3_third_party_water_py) + parseFloat(e3_seawater_py) + parseFloat(e3_other_water_py)",
+                    "readonly": true,
+                    "format": "number_with_unit",
+                    "placeholder": "Auto-calculated"
+                  }
                 ]
               },
               {
                 "label": "Total volume of water consumption (in megaliters)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e3_total_consumption_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e3_total_consumption_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e3_total_consumption_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e3_total_consumption_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  }
                 ]
               },
               {
                 "label": "Water intensity per rupee of turnover",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e3_intensity_turnover_cy", "type": "number"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e3_intensity_turnover_py", "type": "number"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e3_intensity_turnover_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e3_intensity_turnover_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  }
                 ]
               },
               {
                 "label": "Water intensity (optional) (Water consumption/Ton of production)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e3_intensity_production_cy", "type": "number"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e3_intensity_production_py", "type": "number"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e3_intensity_production_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e3_intensity_production_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  }
                 ]
               }
             ]
@@ -4695,82 +5770,221 @@
             "name": "waterDischarge",
             "columns": ["Parameter", "FY {FY0} (Current Financial Year)", "FY {FY1} (Previous Financial Year)"],
             "rows": [
-              {"label": "Water discharged by destination and level of treatment (in megaliters)", "fields": []},
+              {
+                "label": "Water discharged by destination and level of treatment (in megaliters)",
+                "fields": []
+              },
               {
                 "label": "(i) To Surface water - No treatment",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e4_surface_no_treatment_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e4_surface_no_treatment_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e4_surface_no_treatment_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e4_surface_no_treatment_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  }
                 ]
               },
               {
                 "label": "(i) To Surface water - With treatment",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e4_surface_with_treatment_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e4_surface_with_treatment_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e4_surface_with_treatment_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e4_surface_with_treatment_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  }
                 ]
               },
               {
                 "label": "(ii) To Groundwater - No treatment",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e4_ground_no_treatment_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e4_ground_no_treatment_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e4_ground_no_treatment_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e4_ground_no_treatment_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  }
                 ]
               },
               {
                 "label": "(ii) To Groundwater - With treatment",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e4_ground_with_treatment_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e4_ground_with_treatment_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e4_ground_with_treatment_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e4_ground_with_treatment_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  }
                 ]
               },
               {
                 "label": "(iii) To Seawater - No treatment",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e4_sea_no_treatment_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e4_sea_no_treatment_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e4_sea_no_treatment_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e4_sea_no_treatment_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  }
                 ]
               },
               {
                 "label": "(iii) To Seawater - With treatment",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e4_sea_with_treatment_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e4_sea_with_treatment_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e4_sea_with_treatment_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e4_sea_with_treatment_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  }
                 ]
               },
               {
                 "label": "(iv) Sent to third-parties - No treatment",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e4_third_no_treatment_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e4_third_no_treatment_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e4_third_no_treatment_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e4_third_no_treatment_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  }
                 ]
               },
               {
                 "label": "(iv) Sent to third-parties - With treatment",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e4_third_with_treatment_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e4_third_with_treatment_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e4_third_with_treatment_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e4_third_with_treatment_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  }
                 ]
               },
               {
                 "label": "(v) Others - No treatment",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e4_other_no_treatment_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e4_other_no_treatment_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e4_other_no_treatment_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e4_other_no_treatment_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  }
                 ]
               },
               {
                 "label": "(v) Others - With treatment",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e4_other_with_treatment_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e4_other_with_treatment_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e4_other_with_treatment_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e4_other_with_treatment_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  }
                 ]
               },
               {
                 "label": "Total water discharged (in megaliters)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e4_total_discharged_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e4_total_discharged_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e4_total_discharged_cy",
+                    "type": "calculated",
+                    "formula": "parseFloat(e4_surface_no_treatment_cy) + parseFloat(e4_surface_with_treatment_cy) + parseFloat(e4_ground_no_treatment_cy) + parseFloat(e4_ground_with_treatment_cy) + parseFloat(e4_sea_no_treatment_cy) + parseFloat(e4_sea_with_treatment_cy) + parseFloat(e4_third_no_treatment_cy) + parseFloat(e4_third_with_treatment_cy) + parseFloat(e4_other_no_treatment_cy) + parseFloat(e4_other_with_treatment_cy)",
+                    "readonly": true,
+                    "format": "number_with_unit",
+                    "placeholder": "Auto-calculated"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e4_total_discharged_py",
+                    "type": "calculated",
+                    "formula": "parseFloat(e4_surface_no_treatment_py) + parseFloat(e4_surface_with_treatment_py) + parseFloat(e4_ground_no_treatment_py) + parseFloat(e4_ground_with_treatment_py) + parseFloat(e4_sea_no_treatment_py) + parseFloat(e4_sea_with_treatment_py) + parseFloat(e4_third_no_treatment_py) + parseFloat(e4_third_with_treatment_py) + parseFloat(e4_other_no_treatment_py) + parseFloat(e4_other_with_treatment_py)",
+                    "readonly": true,
+                    "format": "number_with_unit",
+                    "placeholder": "Auto-calculated"
+                  }
                 ]
               }
             ]
@@ -4962,68 +6176,183 @@
             "name": "wasteManagement",
             "columns": ["Parameter", "FY {FY0} (Current Financial Year)", "FY {FY1} (Previous Financial Year)"],
             "rows": [
-              {"label": "Total Waste generated (in MT)", "fields": []},
+              {
+                "label": "Total Waste generated (in MT)",
+                "fields": []
+              },
               {
                 "label": "Plastic waste (A)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e9_plastic_waste_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 MT"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e9_plastic_waste_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 MT"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e9_plastic_waste_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 MT"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e9_plastic_waste_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 MT"
+                  }
                 ]
               },
               {
                 "label": "E-waste (B)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e9_ewaste_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 MT"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e9_ewaste_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 MT"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e9_ewaste_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 MT"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e9_ewaste_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 MT"
+                  }
                 ]
               },
               {
                 "label": "Bio-medical waste (C)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e9_biomedical_waste_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 MT"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e9_biomedical_waste_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 MT"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e9_biomedical_waste_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 MT"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e9_biomedical_waste_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 MT"
+                  }
                 ]
               },
               {
                 "label": "Construction and demolition waste (D)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e9_construction_waste_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 MT"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e9_construction_waste_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 MT"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e9_construction_waste_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 MT"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e9_construction_waste_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 MT"
+                  }
                 ]
               },
               {
                 "label": "Battery Waste (E)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e9_battery_waste_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 MT"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e9_battery_waste_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 MT"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e9_battery_waste_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 MT"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e9_battery_waste_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 MT"
+                  }
                 ]
               },
               {
                 "label": "Radioactive waste (F)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e9_radioactive_waste_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 MT"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e9_radioactive_waste_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 MT"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e9_radioactive_waste_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 MT"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e9_radioactive_waste_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 MT"
+                  }
                 ]
               },
               {
                 "label": "Other Hazardous waste. Please specify, if any. (G)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e9_hazardous_waste_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 MT"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e9_hazardous_waste_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 MT"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e9_hazardous_waste_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 MT"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e9_hazardous_waste_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 MT"
+                  }
                 ]
               },
               {
                 "label": "Other Non-hazardous waste generated (H). Please specify, if any. (Break-up by composition i.e. by materials relevant to the sector)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e9_nonhazardous_waste_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 MT"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e9_nonhazardous_waste_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 MT"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e9_nonhazardous_waste_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 MT"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e9_nonhazardous_waste_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 MT"
+                  }
                 ]
               },
               {
                 "label": "Total (A+B+C+D+E+F+G+H)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e9_total_waste_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 MT"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e9_total_waste_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 MT"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e9_total_waste_cy",
+                    "type": "calculated",
+                    "formula": "parseFloat(e9_plastic_waste_cy) + parseFloat(e9_ewaste_cy) + parseFloat(e9_biomedical_waste_cy) + parseFloat(e9_construction_waste_cy) + parseFloat(e9_battery_waste_cy) + parseFloat(e9_radioactive_waste_cy) + parseFloat(e9_hazardous_waste_cy) + parseFloat(e9_nonhazardous_waste_cy)",
+                    "readonly": true,
+                    "format": "number_with_unit",
+                    "placeholder": "Auto-calculated"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e9_total_waste_py",
+                    "type": "calculated",
+                    "formula": "parseFloat(e9_plastic_waste_py) + parseFloat(e9_ewaste_py) + parseFloat(e9_biomedical_waste_py) + parseFloat(e9_construction_waste_py) + parseFloat(e9_battery_waste_py) + parseFloat(e9_radioactive_waste_py) + parseFloat(e9_hazardous_waste_py) + parseFloat(e9_nonhazardous_waste_py)",
+                    "readonly": true,
+                    "format": "number_with_unit",
+                    "placeholder": "Auto-calculated"
+                  }
                 ]
               }
             ]
@@ -5034,94 +6363,256 @@
             "name": "wasteRecovery",
             "columns": ["Parameter", "FY {FY0} (Current Financial Year)", "FY {FY1} (Previous Financial Year)"],
             "rows": [
-              {"label": "For each category of waste generated, total waste recovered through recycling, re-using or other recovery operations (in metric tons)", "fields": []},
-              {"label": "Hazardous waste", "fields": []},
+              {
+                "label": "For each category of waste generated, total waste recovered through recycling, re-using or other recovery operations (in metric tons)",
+                "fields": []
+              },
+              {
+                "label": "Hazardous waste",
+                "fields": []
+              },
               {
                 "label": "(i) Recycled",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e9_hazardous_recycled_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e9_hazardous_recycled_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e9_hazardous_recycled_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e9_hazardous_recycled_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  }
                 ]
               },
               {
                 "label": "(ii) Re-used",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e9_hazardous_reused_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e9_hazardous_reused_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e9_hazardous_reused_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e9_hazardous_reused_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  }
                 ]
               },
               {
                 "label": "(iii) Other recovery operations",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e9_hazardous_recovery_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e9_hazardous_recovery_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e9_hazardous_recovery_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e9_hazardous_recovery_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  }
                 ]
               },
-              {"label": "Non-Hazardous waste", "fields": []},
+              {
+                "label": "Non-Hazardous waste",
+                "fields": []
+              },
               {
                 "label": "(i) Recycled",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e9_nonhazardous_recycled_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e9_nonhazardous_recycled_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e9_nonhazardous_recycled_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e9_nonhazardous_recycled_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  }
                 ]
               },
               {
                 "label": "(ii) Re-used",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e9_nonhazardous_reused_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e9_nonhazardous_reused_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e9_nonhazardous_reused_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e9_nonhazardous_reused_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  }
                 ]
               },
               {
                 "label": "(iii) Other recovery operations",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e9_nonhazardous_recovery_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e9_nonhazardous_recovery_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e9_nonhazardous_recovery_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e9_nonhazardous_recovery_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  }
                 ]
               },
-              {"label": "For each category of waste generated, total waste disposed by nature of disposal method (in metric tons)", "fields": []},
-              {"label": "Hazardous waste", "fields": []},
+              {
+                "label": "For each category of waste generated, total waste disposed by nature of disposal method (in metric tons)",
+                "fields": []
+              },
+              {
+                "label": "Hazardous waste",
+                "fields": []
+              },
               {
                 "label": "(i) Incineration",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e9_hazardous_incineration_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e9_hazardous_incineration_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e9_hazardous_incineration_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e9_hazardous_incineration_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  }
                 ]
               },
               {
                 "label": "(ii) Landfilling",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e9_hazardous_landfill_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e9_hazardous_landfill_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e9_hazardous_landfill_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e9_hazardous_landfill_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  }
                 ]
               },
               {
                 "label": "(iii) Other disposal operations",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e9_hazardous_other_disposal_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e9_hazardous_other_disposal_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e9_hazardous_other_disposal_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e9_hazardous_other_disposal_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  }
                 ]
               },
-              {"label": "Bio-Medical waste", "fields": []},
+              {
+                "label": "Bio-Medical waste",
+                "fields": []
+              },
               {
                 "label": "(i) Incineration",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e9_biomedical_incineration_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e9_biomedical_incineration_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e9_biomedical_incineration_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e9_biomedical_incineration_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  }
                 ]
               },
               {
                 "label": "(ii) Landfilling",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e9_biomedical_landfill_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e9_biomedical_landfill_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e9_biomedical_landfill_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e9_biomedical_landfill_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  }
                 ]
               },
               {
                 "label": "(iii) Other disposal operations",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e9_biomedical_other_disposal_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e9_biomedical_other_disposal_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "e9_biomedical_other_disposal_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "e9_biomedical_other_disposal_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0"
+                  }
                 ]
               }
             ]
@@ -5154,14 +6645,36 @@
             "kind": "table",
             "label": "Ecologically sensitive areas",
             "name": "ecoSensitive",
-            "columns": ["S.No.", "Location of operations", "Type of operations", "Whether the conditions of environmental approval / clearance are being complied with? (Y/N) If no, the reasons thereof and corrective action taken, if any"],
+            "allow_add_rows": true,
+            "allow_delete_rows": true,
+            "columns": [
+              "S.No.",
+              "Location of operations/offices",
+              "Type of operations",
+              "Whether the conditions of environmental approval / clearance are being complied with? (Y/N) If no, the reasons thereof and corrective action taken, if any."
+            ],
             "rows": [
               {
                 "label": "1",
                 "fields": [
-                  {"column": "Location of operations", "name": "e11_location", "type": "text", "placeholder": "Location of operations"},
-                  {"column": "Type of operations", "name": "e11_operation_type", "type": "text", "placeholder": "Type of operations"},
-                  {"column": "Whether the conditions of environmental approval / clearance are being complied with?", "name": "e11_compliance", "type": "textarea", "placeholder": "Compliance status..."}
+                  {
+                    "column": "Location of operations/offices",
+                    "name": "e11_location",
+                    "type": "text",
+                    "placeholder": "Location of operations/offices"
+                  },
+                  {
+                    "column": "Type of operations",
+                    "name": "e11_operation_type",
+                    "type": "text",
+                    "placeholder": "Type of operations"
+                  },
+                  {
+                    "column": "Whether the conditions of environmental approval / clearance are being complied with? (Y/N) If no, the reasons thereof and corrective action taken, if any.",
+                    "name": "e11_compliance",
+                    "type": "textarea",
+                    "placeholder": "Compliance status, reasons and corrective action..."
+                  }
                 ]
               }
             ]
@@ -5179,17 +6692,64 @@
             "kind": "table",
             "label": "Environmental impact assessments",
             "name": "eiaDetails",
-            "columns": ["Name and brief details of project", "EIA Notification No.", "Date", "Whether conducted by independent external agency (Yes / No)", "Results communicated in public domain (Yes / No)", "Relevant Web link"],
+            "allow_add_rows": true,
+            "allow_delete_rows": true,
+            "columns": [
+              "S.No.",
+              "Name and brief details of project",
+              "EIA Notification No.",
+              "Date",
+              "Whether conducted by independent external agency (Yes / No)",
+              "Results communicated in public domain (Yes / No)",
+              "Relevant Web link"
+            ],
             "rows": [
               {
                 "label": "1",
                 "fields": [
-                  {"column": "Name and brief details of project", "name": "e12_project_name", "type": "text", "placeholder": "Project name and details"},
-                  {"column": "EIA Notification No.", "name": "e12_notification_no", "type": "text", "placeholder": "Notification number"},
-                  {"column": "Date", "name": "e12_notification_date", "type": "date"},
-                  {"column": "Whether conducted by independent external agency", "name": "e12_external_agency", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
-                  {"column": "Results communicated in public domain", "name": "e12_public_domain", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
-                  {"column": "Relevant Web link", "name": "e12_weblink", "type": "url", "placeholder": "https://..."}
+                  {
+                    "column": "Name and brief details of project",
+                    "name": "e12_project_name",
+                    "type": "text",
+                    "placeholder": "Project name and details"
+                  },
+                  {
+                    "column": "EIA Notification No.",
+                    "name": "e12_notification_no",
+                    "type": "text",
+                    "placeholder": "Notification number"
+                  },
+                  {
+                    "column": "Date",
+                    "name": "e12_notification_date",
+                    "type": "date"
+                  },
+                  {
+                    "column": "Whether conducted by independent external agency (Yes / No)",
+                    "name": "e12_external_agency",
+                    "type": "select",
+                    "options": [
+                      {"value": "", "label": "Select"},
+                      {"value": "Yes", "label": "Yes"},
+                      {"value": "No", "label": "No"}
+                    ]
+                  },
+                  {
+                    "column": "Results communicated in public domain (Yes / No)",
+                    "name": "e12_public_domain",
+                    "type": "select",
+                    "options": [
+                      {"value": "", "label": "Select"},
+                      {"value": "Yes", "label": "Yes"},
+                      {"value": "No", "label": "No"}
+                    ]
+                  },
+                  {
+                    "column": "Relevant Web link",
+                    "name": "e12_weblink",
+                    "type": "url",
+                    "placeholder": "https://..."
+                  }
                 ]
               }
             ]
@@ -5205,23 +6765,54 @@
         "fields": [
           {
             "kind": "radio",
-            "label": "Is the entity compliant with applicable environmental laws/regulations/guidelines?",
+            "label": "Is the entity compliant with the applicable environmental law/regulations/guidelines in India, such as the Water (Prevention and Control of Pollution) Act, Air (Prevention and Control of Pollution) Act, Environment protection act and rules thereunder (Y/N). If not, provide details of all such non-compliances",
             "name": "envCompliance",
-            "options": [{"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]
+            "options": [
+              {"value": "Yes", "label": "Yes"},
+              {"value": "No", "label": "No"}
+            ]
           },
           {
             "kind": "table",
             "label": "Non-compliances details",
             "name": "envNonCompliances",
-            "columns": ["S. No.", "Specify the law / regulation / guidelines which was not complied with", "Provide details of the non-compliance", "Any fines / penalties / action taken by regulatory agencies", "Corrective action taken if any"],
+            "allow_add_rows": true,
+            "allow_delete_rows": true,
+            "columns": [
+              "S.No.",
+              "Specify the law/regulations/guidelines which was not complied with",
+              "Provide details of the non-compliance",
+              "Any fines / penalties / sanctions taken by regulatory agencies such as pollution control boards or by courts",
+              "Corrective action taken if any"
+            ],
             "rows": [
               {
                 "label": "1",
                 "fields": [
-                  {"column": "Specify the law / regulation / guidelines which was not complied with", "name": "e13_noncompliance_law", "type": "text", "placeholder": "Law/regulation name"},
-                  {"column": "Provide details of the non-compliance", "name": "e13_noncompliance_details", "type": "textarea", "placeholder": "Non-compliance details"},
-                  {"column": "Any fines / penalties / action taken by regulatory agencies", "name": "e13_noncompliance_action", "type": "textarea", "placeholder": "Action taken"},
-                  {"column": "Corrective action taken if any", "name": "e13_noncompliance_corrective", "type": "textarea", "placeholder": "Corrective action"}
+                  {
+                    "column": "Specify the law/regulations/guidelines which was not complied with",
+                    "name": "e13_noncompliance_law",
+                    "type": "text",
+                    "placeholder": "Law/regulation name"
+                  },
+                  {
+                    "column": "Provide details of the non-compliance",
+                    "name": "e13_noncompliance_details",
+                    "type": "textarea",
+                    "placeholder": "Non-compliance details"
+                  },
+                  {
+                    "column": "Any fines / penalties / sanctions taken by regulatory agencies such as pollution control boards or by courts",
+                    "name": "e13_noncompliance_action",
+                    "type": "textarea",
+                    "placeholder": "Fines/penalties/sanctions taken"
+                  },
+                  {
+                    "column": "Corrective action taken if any",
+                    "name": "e13_noncompliance_corrective",
+                    "type": "textarea",
+                    "placeholder": "Corrective action"
+                  }
                 ]
               }
             ]
@@ -5241,61 +6832,162 @@
             "name": "waterStress",
             "columns": ["Parameter", "FY {FY0} (Current Financial Year)", "FY {FY1} (Previous Financial Year)"],
             "rows": [
-              {"label": "Water withdrawal by source (in megaliters)", "fields": []},
+              {
+                "label": "Water withdrawal by source (in megaliters)",
+                "fields": []
+              },
               {
                 "label": "(i) Surface water",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "l1_surface_water_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "l1_surface_water_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "l1_surface_water_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "l1_surface_water_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  }
                 ]
               },
               {
                 "label": "(ii) Groundwater",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "l1_groundwater_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "l1_groundwater_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "l1_groundwater_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "l1_groundwater_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  }
                 ]
               },
               {
                 "label": "(iii) Third party water",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "l1_third_party_water_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "l1_third_party_water_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "l1_third_party_water_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "l1_third_party_water_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  }
                 ]
               },
               {
                 "label": "(iv) Seawater / desalinated water",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "l1_seawater_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "l1_seawater_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "l1_seawater_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "l1_seawater_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  }
                 ]
               },
               {
                 "label": "(v) Others",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "l1_other_water_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "l1_other_water_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "l1_other_water_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "l1_other_water_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  }
                 ]
               },
               {
                 "label": "Total volume of water withdrawal (in megaliters)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "l1_total_withdrawal_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "l1_total_withdrawal_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "l1_total_withdrawal_cy",
+                    "type": "calculated",
+                    "formula": "parseFloat(l1_surface_water_cy) + parseFloat(l1_groundwater_cy) + parseFloat(l1_third_party_water_cy) + parseFloat(l1_seawater_cy) + parseFloat(l1_other_water_cy)",
+                    "readonly": true,
+                    "format": "number_with_unit",
+                    "placeholder": "Auto-calculated"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "l1_total_withdrawal_py",
+                    "type": "calculated",
+                    "formula": "parseFloat(l1_surface_water_py) + parseFloat(l1_groundwater_py) + parseFloat(l1_third_party_water_py) + parseFloat(l1_seawater_py) + parseFloat(l1_other_water_py)",
+                    "readonly": true,
+                    "format": "number_with_unit",
+                    "placeholder": "Auto-calculated"
+                  }
                 ]
               },
               {
                 "label": "Total volume of water consumption (in megaliters)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "l1_total_consumption_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "l1_total_consumption_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 ML"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "l1_total_consumption_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "l1_total_consumption_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 ML"
+                  }
                 ]
               },
               {
                 "label": "Water intensity per rupee of turnover",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "l1_intensity_turnover_cy", "type": "number"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "l1_intensity_turnover_py", "type": "number"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "l1_intensity_turnover_cy",
+                    "type": "number",
+                    "placeholder": "0"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "l1_intensity_turnover_py",
+                    "type": "number",
+                    "placeholder": "0"
+                  }
                 ]
               }
             ]
@@ -5306,82 +6998,221 @@
             "name": "waterStressDischarge",
             "columns": ["Parameter", "FY {FY0} (Current Financial Year)", "FY {FY1} (Previous Financial Year)"],
             "rows": [
-              {"label": "Water discharge by destination and level of treatment (in kiloliters)", "fields": []},
+              {
+                "label": "Water discharge by destination and level of treatment (in kiloliters)",
+                "fields": []
+              },
               {
                 "label": "(i) Into Surface water - No treatment",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "l1_surface_no_treatment_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 kL"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "l1_surface_no_treatment_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 kL"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "l1_surface_no_treatment_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 kL"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "l1_surface_no_treatment_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 kL"
+                  }
                 ]
               },
               {
                 "label": "(i) Into Surface water - With treatment",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "l1_surface_with_treatment_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 kL"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "l1_surface_with_treatment_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 kL"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "l1_surface_with_treatment_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 kL"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "l1_surface_with_treatment_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 kL"
+                  }
                 ]
               },
               {
                 "label": "(ii) Into Groundwater - No treatment",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "l1_ground_no_treatment_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 kL"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "l1_ground_no_treatment_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 kL"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "l1_ground_no_treatment_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 kL"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "l1_ground_no_treatment_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 kL"
+                  }
                 ]
               },
               {
                 "label": "(ii) Into Groundwater - With treatment",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "l1_ground_with_treatment_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 kL"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "l1_ground_with_treatment_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 kL"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "l1_ground_with_treatment_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 kL"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "l1_ground_with_treatment_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 kL"
+                  }
                 ]
               },
               {
                 "label": "(iii) Into Seawater - No treatment",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "l1_sea_no_treatment_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 kL"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "l1_sea_no_treatment_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 kL"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "l1_sea_no_treatment_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 kL"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "l1_sea_no_treatment_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 kL"
+                  }
                 ]
               },
               {
                 "label": "(iii) Into Seawater - With treatment",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "l1_sea_with_treatment_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 kL"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "l1_sea_with_treatment_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 kL"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "l1_sea_with_treatment_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 kL"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "l1_sea_with_treatment_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 kL"
+                  }
                 ]
               },
               {
                 "label": "(iv) Sent to third parties - No treatment",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "l1_third_no_treatment_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 kL"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "l1_third_no_treatment_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 kL"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "l1_third_no_treatment_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 kL"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "l1_third_no_treatment_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 kL"
+                  }
                 ]
               },
               {
                 "label": "(iv) Sent to third parties - With treatment",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "l1_third_with_treatment_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 kL"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "l1_third_with_treatment_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 kL"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "l1_third_with_treatment_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 kL"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "l1_third_with_treatment_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 kL"
+                  }
                 ]
               },
               {
                 "label": "(v) Others - No treatment",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "l1_other_no_treatment_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 kL"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "l1_other_no_treatment_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 kL"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "l1_other_no_treatment_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 kL"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "l1_other_no_treatment_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 kL"
+                  }
                 ]
               },
               {
                 "label": "(v) Others - With treatment",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "l1_other_with_treatment_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 kL"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "l1_other_with_treatment_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 kL"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "l1_other_with_treatment_cy",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 kL"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "l1_other_with_treatment_py",
+                    "field_type": "number_with_unit",
+                    "type": "text",
+                    "placeholder": "0 kL"
+                  }
                 ]
               },
               {
                 "label": "Total water discharged (in kiloliters)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "l1_total_discharged_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "0 kL"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "l1_total_discharged_py", "field_type": "number_with_unit", "type": "text", "placeholder": "0 kL"}
+                  {
+                    "column": "FY {FY0} (Current Financial Year)",
+                    "name": "l1_total_discharged_cy",
+                    "type": "calculated",
+                    "formula": "parseFloat(l1_surface_no_treatment_cy) + parseFloat(l1_surface_with_treatment_cy) + parseFloat(l1_ground_no_treatment_cy) + parseFloat(l1_ground_with_treatment_cy) + parseFloat(l1_sea_no_treatment_cy) + parseFloat(l1_sea_with_treatment_cy) + parseFloat(l1_third_no_treatment_cy) + parseFloat(l1_third_with_treatment_cy) + parseFloat(l1_other_no_treatment_cy) + parseFloat(l1_other_with_treatment_cy)",
+                    "readonly": true,
+                    "format": "number_with_unit",
+                    "placeholder": "Auto-calculated"
+                  },
+                  {
+                    "column": "FY {FY1} (Previous Financial Year)",
+                    "name": "l1_total_discharged_py",
+                    "type": "calculated",
+                    "formula": "parseFloat(l1_surface_no_treatment_py) + parseFloat(l1_surface_with_treatment_py) + parseFloat(l1_ground_no_treatment_py) + parseFloat(l1_ground_with_treatment_py) + parseFloat(l1_sea_no_treatment_py) + parseFloat(l1_sea_with_treatment_py) + parseFloat(l1_third_no_treatment_py) + parseFloat(l1_third_with_treatment_py) + parseFloat(l1_other_no_treatment_py) + parseFloat(l1_other_with_treatment_py)",
+                    "readonly": true,
+                    "format": "number_with_unit",
+                    "placeholder": "Auto-calculated"
+                  }
                 ]
               }
             ]
@@ -5467,6 +7298,8 @@
           {
             "kind": "table",
             "label": "Resource efficiency initiatives",
+            "allow_add_rows": true,
+            "allow_delete_rows": true,
             "name": "resourceEfficiency",
             "columns": ["S. No", "Initiative undertaken", "Details of the initiative", "Outcome of the initiative"],
             "rows": [
@@ -5561,14 +7394,34 @@
           {
             "kind": "table",
             "label": "Trade and industry affiliations",
+            "allow_add_rows": true,
+            "allow_delete_rows": true,
             "name": "tradeAssociations",
-            "columns": ["S. No.", "Name of the trade and industry chambers/ associations", "Reach of trade and industry chambers/ associations (State/National)"],
+            "columns": [
+              "S. No.",
+              "Name of the trade and industry chambers/ associations",
+              "Reach of trade and industry chambers/ associations (State/National)"
+            ],
             "rows": [
               {
                 "label": "1",
                 "fields": [
-                  {"column": "Name of the trade and industry chambers/ associations", "name": "e1_association_name", "type": "text", "placeholder": "Name of association"},
-                  {"column": "Reach of trade and industry chambers/ associations", "name": "e1_association_reach", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "State", "label": "State"}, {"value": "National", "label": "National"}]}
+                  {
+                    "column": "Name of the trade and industry chambers/ associations",
+                    "name": "e1_association_name",
+                    "type": "text",
+                    "placeholder": "Name of association"
+                  },
+                  {
+                    "column": "Reach of trade and industry chambers/ associations (State/National)",
+                    "name": "e1_association_reach",
+                    "type": "select",
+                    "options": [
+                      {"value": "", "label": "Select"},
+                      {"value": "State", "label": "State"},
+                      {"value": "National", "label": "National"}
+                    ]
+                  }
                 ]
               }
             ]
@@ -5618,16 +7471,60 @@
             "kind": "table",
             "label": "Public policy positions",
             "name": "publicPolicy",
-            "columns": ["S. No.", "Public policy advocated", "Method resorted for such advocacy", "Whether information available in the public domain? (Yes/No)", "Frequency of Review by Board", "Web Link, if available"],
+            "allow_add_rows": true,
+            "allow_delete_rows": true,
+            "columns": [
+              "S. No.",
+              "Public policy advocated",
+              "Method resorted for such advocacy",
+              "Whether information available in the public domain? (Yes/No)",
+              "Frequency of Review by Board",
+              "Web Link, if available"
+            ],
             "rows": [
               {
                 "label": "1",
                 "fields": [
-                  {"column": "Public policy advocated", "name": "l1_policy", "type": "textarea", "placeholder": "Public policy advocated"},
-                  {"column": "Method resorted for such advocacy", "name": "l1_method", "type": "textarea", "placeholder": "Method of advocacy"},
-                  {"column": "Whether information available in the public domain?", "name": "l1_public_domain", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
-                  {"column": "Frequency of Review by Board", "name": "l1_review_frequency", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Annually", "label": "Annually"}, {"value": "Half yearly", "label": "Half yearly"}, {"value": "Quarterly", "label": "Quarterly"}, {"value": "Others", "label": "Others"}]},
-                  {"column": "Web Link, if available", "name": "l1_weblink", "type": "url", "placeholder": "https://..."}
+                  {
+                    "column": "Public policy advocated",
+                    "name": "l1_policy",
+                    "type": "textarea",
+                    "placeholder": "Public policy advocated"
+                  },
+                  {
+                    "column": "Method resorted for such advocacy",
+                    "name": "l1_method",
+                    "type": "textarea",
+                    "placeholder": "Method of advocacy"
+                  },
+                  {
+                    "column": "Whether information available in the public domain? (Yes/No)",
+                    "name": "l1_public_domain",
+                    "type": "select",
+                    "options": [
+                      {"value": "", "label": "Select"},
+                      {"value": "Yes", "label": "Yes"},
+                      {"value": "No", "label": "No"}
+                    ]
+                  },
+                  {
+                    "column": "Frequency of Review by Board",
+                    "name": "l1_review_frequency",
+                    "type": "select",
+                    "options": [
+                      {"value": "", "label": "Select"},
+                      {"value": "Annually", "label": "Annually"},
+                      {"value": "Half yearly", "label": "Half yearly"},
+                      {"value": "Quarterly", "label": "Quarterly"},
+                      {"value": "Others", "label": "Others"}
+                    ]
+                  },
+                  {
+                    "column": "Web Link, if available",
+                    "name": "l1_weblink",
+                    "type": "url",
+                    "placeholder": "https://..."
+                  }
                 ]
               }
             ]
@@ -5651,17 +7548,64 @@
             "kind": "table",
             "label": "Social Impact Assessments",
             "name": "socialImpactAssessments",
-            "columns": ["Name and brief details of project", "SIA Notification No.", "Date of notification", "Whether conducted by independent external agency (Yes / No)", "Results communicated in public domain (Yes / No)", "Relevant Web link"],
+            "allow_add_rows": true,
+            "allow_delete_rows": true,
+            "columns": [
+              "S. No.",
+              "Name and brief details of project",
+              "SIA Notification No.",
+              "Date of notification",
+              "Whether conducted by independent external agency (Yes / No)",
+              "Results communicated in public domain (Yes / No)",
+              "Relevant Web link"
+            ],
             "rows": [
               {
                 "label": "1",
                 "fields": [
-                  {"column": "Name and brief details of project", "name": "e1_project_name", "type": "text", "placeholder": "Project name and details"},
-                  {"column": "SIA Notification No.", "name": "e1_notification_no", "type": "text", "placeholder": "Notification number"},
-                  {"column": "Date of notification", "name": "e1_notification_date", "type": "date"},
-                  {"column": "Whether conducted by independent external agency", "name": "e1_external_agency", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
-                  {"column": "Results communicated in public domain", "name": "e1_public_domain", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
-                  {"column": "Relevant Web link", "name": "e1_weblink", "type": "url", "placeholder": "https://..."}
+                  {
+                    "column": "Name and brief details of project",
+                    "name": "e1_project_name",
+                    "type": "text",
+                    "placeholder": "Project name and details"
+                  },
+                  {
+                    "column": "SIA Notification No.",
+                    "name": "e1_notification_no",
+                    "type": "text",
+                    "placeholder": "Notification number"
+                  },
+                  {
+                    "column": "Date of notification",
+                    "name": "e1_notification_date",
+                    "type": "date"
+                  },
+                  {
+                    "column": "Whether conducted by independent external agency (Yes / No)",
+                    "name": "e1_external_agency",
+                    "type": "select",
+                    "options": [
+                      {"value": "", "label": "Select"},
+                      {"value": "Yes", "label": "Yes"},
+                      {"value": "No", "label": "No"}
+                    ]
+                  },
+                  {
+                    "column": "Results communicated in public domain (Yes / No)",
+                    "name": "e1_public_domain",
+                    "type": "select",
+                    "options": [
+                      {"value": "", "label": "Select"},
+                      {"value": "Yes", "label": "Yes"},
+                      {"value": "No", "label": "No"}
+                    ]
+                  },
+                  {
+                    "column": "Relevant Web link",
+                    "name": "e1_weblink",
+                    "type": "url",
+                    "placeholder": "https://..."
+                  }
                 ]
               }
             ]
@@ -5679,17 +7623,59 @@
             "kind": "table",
             "label": "Rehabilitation and Resettlement projects",
             "name": "rehabilitationResettlement",
-            "columns": ["S. No.", "Name of Project for which R&R is ongoing", "State", "District", "No. of Project Affected Families (PAFs)", "% of PAFs covered by R&R", "Amounts paid to PAFs in the FY (In INR)"],
+            "allow_add_rows": true,
+            "allow_delete_rows": true,
+            "columns": [
+              "S. No.",
+              "Name of Project for which R&R is ongoing",
+              "State",
+              "District",
+              "No. of Project Affected Families (PAFs)",
+              "% of PAFs covered by R&R",
+              "Amounts paid to PAFs in the FY (In INR)"
+            ],
             "rows": [
               {
                 "label": "1",
                 "fields": [
-                  {"column": "Name of Project for which R&R is ongoing", "name": "e2_project_name", "type": "text", "placeholder": "Project name"},
-                  {"column": "State", "name": "e2_state", "type": "text", "placeholder": "State"},
-                  {"column": "District", "name": "e2_district", "type": "text", "placeholder": "District"},
-                  {"column": "No. of Project Affected Families (PAFs)", "name": "e2_pafs", "type": "number", "placeholder": "Number of PAFs"},
-                  {"column": "% of PAFs covered by R&R", "name": "e2_paf_percent", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "Amounts paid to PAFs in the FY (In INR)", "name": "e2_amount", "field_type": "number_with_unit", "type": "text", "placeholder": "e.g., 10,000"}
+                  {
+                    "column": "Name of Project for which R&R is ongoing",
+                    "name": "e2_project_name",
+                    "type": "text",
+                    "placeholder": "Project name"
+                  },
+                  {
+                    "column": "State",
+                    "name": "e2_state",
+                    "type": "text",
+                    "placeholder": "State"
+                  },
+                  {
+                    "column": "District",
+                    "name": "e2_district",
+                    "type": "text",
+                    "placeholder": "District"
+                  },
+                  {
+                    "column": "No. of Project Affected Families (PAFs)",
+                    "name": "e2_pafs",
+                    "type": "number",
+                    "placeholder": "Number of PAFs"
+                  },
+                  {
+                    "column": "% of PAFs covered by R&R",
+                    "name": "e2_paf_percent",
+                    "type": "text",
+                    "placeholder": "Enter percentage (e.g., 75%)",
+                    "field_type": "percentage"
+                  },
+                  {
+                    "column": "Amounts paid to PAFs in the FY (In INR)",
+                    "name": "e2_amount",
+                    "type": "text",
+                    "placeholder": "e.g., 10,000",
+                    "field_type": "number_with_unit"
+                  }
                 ]
               }
             ]
@@ -5798,13 +7784,29 @@
             "kind": "table",
             "label": "Social impact mitigation",
             "name": "socialImpactMitigation",
-            "columns": ["Details of negative social impact identified", "Corrective action taken"],
+            "allow_add_rows": true,
+            "allow_delete_rows": true,
+            "columns": [
+              "S. No.",
+              "Details of negative social impact identified",
+              "Corrective action taken"
+            ],
             "rows": [
               {
                 "label": "1",
                 "fields": [
-                  {"column": "Details of negative social impact identified", "name": "l1_impact", "type": "textarea", "placeholder": "Negative social impact identified"},
-                  {"column": "Corrective action taken", "name": "l1_action", "type": "textarea", "placeholder": "Corrective action taken"}
+                  {
+                    "column": "Details of negative social impact identified",
+                    "name": "l1_impact",
+                    "type": "textarea",
+                    "placeholder": "Negative social impact identified"
+                  },
+                  {
+                    "column": "Corrective action taken",
+                    "name": "l1_action",
+                    "type": "textarea",
+                    "placeholder": "Corrective action taken"
+                  }
                 ]
               }
             ]
@@ -5822,14 +7824,37 @@
             "kind": "table",
             "label": "CSR projects in aspirational districts",
             "name": "csrAspirational",
-            "columns": ["S. No.", "State", "Aspirational District", "Amount spent (In INR)"],
+            "allow_add_rows": true,
+            "allow_delete_rows": true,
+            "columns": [
+              "S. No.",
+              "State",
+              "Aspirational District",
+              "Amount spent (In INR)"
+            ],
             "rows": [
               {
                 "label": "1",
                 "fields": [
-                  {"column": "State", "name": "l2_state", "type": "text", "placeholder": "State"},
-                  {"column": "Aspirational District", "name": "l2_district", "type": "text", "placeholder": "Aspirational District"},
-                  {"column": "Amount spent (In INR)", "name": "l2_amount", "field_type": "number_with_unit", "type": "text", "placeholder": "e.g., 10,000"}
+                  {
+                    "column": "State",
+                    "name": "l2_state",
+                    "type": "text",
+                    "placeholder": "State"
+                  },
+                  {
+                    "column": "Aspirational District",
+                    "name": "l2_district",
+                    "type": "text",
+                    "placeholder": "Aspirational District"
+                  },
+                  {
+                    "column": "Amount spent (In INR)",
+                    "name": "l2_amount",
+                    "type": "text",
+                    "placeholder": "e.g., 10,000",
+                    "field_type": "number_with_unit"
+                  }
                 ]
               }
             ]
@@ -5868,15 +7893,51 @@
             "kind": "table",
             "label": "Intellectual property based on traditional knowledge",
             "name": "traditionalKnowledgeIP",
-            "columns": ["S. No.", "Intellectual Property based on traditional knowledge", "Owned/ Acquired (Yes/No)", "Benefit shared (Yes/No)", "Basis of calculating benefit share"],
+            "allow_add_rows": true,
+            "allow_delete_rows": true,
+            "columns": [
+              "S. No.",
+              "Intellectual Property based on traditional knowledge",
+              "Owned/ Acquired (Yes/No)",
+              "Benefit shared (Yes/No)",
+              "Basis of calculating benefit share"
+            ],
             "rows": [
               {
                 "label": "1",
                 "fields": [
-                  {"column": "Intellectual Property based on traditional knowledge", "name": "l4_ip_name", "type": "text", "placeholder": "IP based on traditional knowledge"},
-                  {"column": "Owned/ Acquired", "name": "l4_owned", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
-                  {"column": "Benefit shared", "name": "l4_benefit_shared", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
-                  {"column": "Basis of calculating benefit share", "name": "l4_basis", "type": "textarea", "placeholder": "Basis of calculating benefit share"}
+                  {
+                    "column": "Intellectual Property based on traditional knowledge",
+                    "name": "l4_ip_name",
+                    "type": "text",
+                    "placeholder": "IP based on traditional knowledge"
+                  },
+                  {
+                    "column": "Owned/ Acquired (Yes/No)",
+                    "name": "l4_owned",
+                    "type": "select",
+                    "options": [
+                      {"value": "", "label": "Select"},
+                      {"value": "Yes", "label": "Yes"},
+                      {"value": "No", "label": "No"}
+                    ]
+                  },
+                  {
+                    "column": "Benefit shared (Yes/No)",
+                    "name": "l4_benefit_shared",
+                    "type": "select",
+                    "options": [
+                      {"value": "", "label": "Select"},
+                      {"value": "Yes", "label": "Yes"},
+                      {"value": "No", "label": "No"}
+                    ]
+                  },
+                  {
+                    "column": "Basis of calculating benefit share",
+                    "name": "l4_basis",
+                    "type": "textarea",
+                    "placeholder": "Basis of calculating benefit share"
+                  }
                 ]
               }
             ]
@@ -5894,14 +7955,36 @@
             "kind": "table",
             "label": "IP dispute corrective actions",
             "name": "ipDisputeActions",
-            "columns": ["Name of authority", "Brief of the Case", "Corrective action taken"],
+            "allow_add_rows": true,
+            "allow_delete_rows": true,
+            "columns": [
+              "S. No.",
+              "Name of authority",
+              "Brief of the Case",
+              "Corrective action taken"
+            ],
             "rows": [
               {
                 "label": "1",
                 "fields": [
-                  {"column": "Name of authority", "name": "l5_authority", "type": "text", "placeholder": "Name of authority"},
-                  {"column": "Brief of the Case", "name": "l5_case_brief", "type": "textarea", "placeholder": "Brief of the case"},
-                  {"column": "Corrective action taken", "name": "l5_corrective_action", "type": "textarea", "placeholder": "Corrective action taken"}
+                  {
+                    "column": "Name of authority",
+                    "name": "l5_authority",
+                    "type": "text",
+                    "placeholder": "Name of authority"
+                  },
+                  {
+                    "column": "Brief of the Case",
+                    "name": "l5_case_brief",
+                    "type": "textarea",
+                    "placeholder": "Brief of the case"
+                  },
+                  {
+                    "column": "Corrective action taken",
+                    "name": "l5_corrective_action",
+                    "type": "textarea",
+                    "placeholder": "Corrective action taken"
+                  }
                 ]
               }
             ]
@@ -5919,14 +8002,37 @@
             "kind": "table",
             "label": "CSR beneficiaries",
             "name": "csrBeneficiaries",
-            "columns": ["S. No.", "CSR Project", "No. of persons benefited from CSR Projects", "% Of beneficiaries from vulnerable and marginalized groups"],
+            "allow_add_rows": true,
+            "allow_delete_rows": true,
+            "columns": [
+              "S. No.",
+              "CSR Project",
+              "No. of persons benefited from CSR Projects",
+              "% Of beneficiaries from vulnerable and marginalized groups"
+            ],
             "rows": [
               {
                 "label": "1",
                 "fields": [
-                  {"column": "CSR Project", "name": "l6_project_name", "type": "text", "placeholder": "CSR Project name"},
-                  {"column": "No. of persons benefited", "name": "l6_beneficiaries", "type": "number", "placeholder": "Number of beneficiaries"},
-                  {"column": "% Of beneficiaries from vulnerable and marginalized groups", "name": "l6_vulnerable_percent", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {
+                    "column": "CSR Project",
+                    "name": "l6_project_name",
+                    "type": "text",
+                    "placeholder": "CSR Project name"
+                  },
+                  {
+                    "column": "No. of persons benefited from CSR Projects",
+                    "name": "l6_beneficiaries",
+                    "type": "number",
+                    "placeholder": "Number of beneficiaries"
+                  },
+                  {
+                    "column": "% Of beneficiaries from vulnerable and marginalized groups",
+                    "name": "l6_vulnerable_percent",
+                    "type": "text",
+                    "placeholder": "Enter percentage (e.g., 75%)",
+                    "field_type": "percentage"
+                  }
                 ]
               }
             ]
