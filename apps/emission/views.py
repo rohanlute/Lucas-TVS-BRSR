@@ -658,6 +658,15 @@ class CategoryActivitiesView(View):
                 if not (is_assignee or is_assigner or is_reviewer):
                     return JsonResponse({"activities": []})
 
+                assigned_source_ids = list(
+                    assignment.assignment_sources.values_list(
+                        "source_id",
+                        flat=True,
+                    )
+                )
+
+                print("Assigned Sources :", assigned_source_ids)
+
         activities = (
             EmissionActivity.objects.filter(
                 category_id=category_id,
