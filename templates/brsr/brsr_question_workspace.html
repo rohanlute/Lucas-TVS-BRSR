@@ -977,10 +977,6 @@
             <select class="workspace-select" name="financial_year" id="assignmentFinancialYear"></select>
           </div>
           <div>
-            <label class="tool-label">Submission Frequency</label>
-            <select class="workspace-select" name="data_collection_frequency" id="assignmentFrequency"></select>
-          </div>
-          <div>
             <label class="tool-label">Priority</label>
             <select class="workspace-select" name="priority" id="assignmentPriority">
               <option value="low">Low</option>
@@ -2158,7 +2154,6 @@
   function fillAssignmentOptions(workspace) {
     const plantSelect = document.getElementById('assignmentPlant');
     const fySelect = document.getElementById('assignmentFinancialYear');
-    const frequencySelect = document.getElementById('assignmentFrequency');
     const assignerDisplay = document.getElementById('assignmentAssignerDisplay');
     const assignerHidden = document.getElementById('assignmentAssigner');
     const assigneeSelect = document.getElementById('assignmentAssignee');
@@ -2166,7 +2161,6 @@
 
     plantSelect.innerHTML = workspace.plants.map((plant) => `<option value="${plant.id}">${escapeHtml(plant.name)} (${escapeHtml(plant.code)})</option>`).join('');
     fySelect.innerHTML = workspace.financial_years.map((fy) => `<option value="${escapeHtml(fy.value)}">${escapeHtml(fy.label)}</option>`).join('');
-    frequencySelect.innerHTML = (workspace.frequency_choices || []).map((option) => `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`).join('');
 
     if (workspace.current_user_id) {
       assignerHidden.value = workspace.current_user_id.toString();
@@ -2277,7 +2271,6 @@
       question_ids: selected.map((item) => item.id),
       plant: document.getElementById('assignmentPlant').value,
       financial_year: document.getElementById('assignmentFinancialYear').value,
-      data_collection_frequency: document.getElementById('assignmentFrequency').value,
       priority: document.getElementById('assignmentPriority').value,
       assigner: document.getElementById('assignmentAssigner').value,
       assignee: document.getElementById('assignmentAssignee').value,

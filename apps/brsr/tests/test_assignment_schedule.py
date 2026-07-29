@@ -123,6 +123,8 @@ class DuePeriodsForScheduleTests(TestCase):
 
 class ScheduleGenerationIntegrationTests(TestCase):
     def setUp(self):
+        from apps.accounts.models import Role
+        from apps.companies.models import Company
         from apps.organizations.models import (
             ApprovalConfigurationTemplate, ApprovalConfigurationStage, Plant,
         )
@@ -130,7 +132,15 @@ class ScheduleGenerationIntegrationTests(TestCase):
         self.admin = User.objects.create_user(username="admin", password="x", is_superuser=True)
         self.assignee = User.objects.create_user(username="assignee", password="x")
 
-        self.plant = Plant.objects.create(name="Test Plant", code="TST", is_active=True)
+        # ApprovalConfigurationTemplate.company is a required FK (CASCADE, no null=True).
+        self.company = Company.objects.create(company_name="Test Company")
+
+        # Plant.address and Plant.pincode are required (no blank/null=True) even
+        # though country/state/city are optional.
+        self.plant = Plant.objects.create(
+            name="Test Plant", code="TST", is_active=True,
+            address="123 Test Street", pincode="000000",
+        )
 
         self.section = BRSRSection.objects.create(code="section_a", name="General Disclosures", display_order=1)
         self.question = BRSRQuestion.objects.create(
@@ -139,11 +149,23 @@ class ScheduleGenerationIntegrationTests(TestCase):
         )
 
         self.template = ApprovalConfigurationTemplate.objects.create(
-            name="BRSR Test Template", framework="BRSR", is_active=True,
+            name="BRSR Test Template", framework="BRSR", is_active=True, company=self.company,
         )
+
+        # ApprovalConfigurationStage.role is a required FK (PROTECT, no null=True).
+        self.data_entry_role = Role.objects.create(role_code="DEPT-USER", role_name="Data Entry User")
         ApprovalConfigurationStage.objects.create(
             template=self.template, label="Data Entry", stage_type="data_entry", level=1,
+            role=self.data_entry_role,
         )
+
+        # _create_brsr_assignment -> _resolve_brsr_assignee filters eligible
+        # assignees by (role == stage.role, assigned_plants=plant), so the
+        # assignee needs both set up or generation raises "No eligible
+        # assignee matches the first stage of the configured BRSR workflow."
+        self.assignee.role = self.data_entry_role
+        self.assignee.save(update_fields=["role"])
+        self.assignee.assigned_plants.add(self.plant)
 
     def _create_schedule(self, **overrides):
         defaults = dict(

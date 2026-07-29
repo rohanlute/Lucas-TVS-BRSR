@@ -194,21 +194,28 @@
                   {
                     "column": "Description of Main Activity",
                     "name": "mainActivity1",
+                    "field_type": "alphabetic",
                     "type": "text",
-                    "placeholder": "e.g., Manufacturing"
+                    "placeholder": "e.g., Manufacturing",
+                    "required": true
                   },
                   {
                     "column": "Description of Business Activity",
                     "name": "businessActivity1",
+                    "field_type": "alphabetic",
                     "type": "text",
-                    "placeholder": "Detailed description"
+                    "placeholder": "Detailed description",
+                    "required": true
                   },
                   {
                     "column": "% of Turnover of the entity",
                     "name": "turnoverPercent1",
                     "field_type": "percentage",
-                    "type": "text",
-                    "placeholder": "%"
+                    "type": "number",
+                    "placeholder": "Enter percentage",
+                    "min": 0,
+                    "max": 100,
+                    "required": true
                   }
                 ]
               }
@@ -227,17 +234,63 @@
               {
                 "label": "1",
                 "fields": [
-                  {"column": "Product/Service", "name": "product1", "type": "text", "placeholder": "Product/Service name"},
-                  {"column": "NIC Code", "name": "nicCode1", "type": "text", "placeholder": "NIC Code"},
-                  {"column": "% of total Turnover contributed", "name": "productTurnover1", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {
+                    "column": "Product/Service",
+                    "name": "product1",
+                    "field_type": "alphabetic",
+                    "type": "text",
+                    "placeholder": "Product/Service name",
+                    "required": true
+                  },
+                  {
+                    "column": "NIC Code",
+                    "name": "nicCode1",
+                    "field_type": "number",
+                    "type": "number",
+                    "placeholder": "NIC Code",
+                    "required": true
+                  },
+                  {
+                    "column": "% of total Turnover contributed",
+                    "name": "productTurnover1",
+                    "field_type": "percentage",
+                    "type": "number",
+                    "placeholder": "Enter percentage",
+                    "min": 0,
+                    "max": 100,
+                    "required": true
+                  }
                 ]
               },
               {
                 "label": "2",
                 "fields": [
-                  {"column": "Product/Service", "name": "product2", "type": "text", "placeholder": "Product/Service name"},
-                  {"column": "NIC Code", "name": "nicCode2", "type": "text", "placeholder": "NIC Code"},
-                  {"column": "% of total Turnover contributed", "name": "productTurnover2", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {
+                    "column": "Product/Service",
+                    "name": "product2",
+                    "field_type": "alphabetic",
+                    "type": "text",
+                    "placeholder": "Product/Service name",
+                    "required": true
+                  },
+                  {
+                    "column": "NIC Code",
+                    "name": "nicCode2",
+                    "field_type": "number",
+                    "type": "number",
+                    "placeholder": "NIC Code",
+                    "required": true
+                  },
+                  {
+                    "column": "% of total Turnover contributed",
+                    "name": "productTurnover2",
+                    "field_type": "percentage",
+                    "type": "number",
+                    "placeholder": "Enter percentage",
+                    "min": 0,
+                    "max": 100,
+                    "required": true
+                  }
                 ]
               }
             ]

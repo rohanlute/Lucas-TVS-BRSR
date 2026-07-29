@@ -1,0 +1,246 @@
+# Manual Smoke Test — Frequency-Based Automatic Assignment
+# ================================================================
+# Full, ordered walkthrough: file checks -> Django shell verification ->
+# dashboard check -> Celery check -> cleanup.
+#
+# IMPORTANT NAMING NOTE (from your screenshot):
+# Your project has apps/brsr/services.py (not schedule_services.py).
+# This script uses `apps.brsr.services` throughout. If you renamed the
+# file to schedule_services.py instead, do a find-and-replace of
+# `apps.brsr.services` -> `apps.brsr.schedule_services` in everything
+# below AND in apps/brsr/tasks.py's import line.
+
+
+## ============================================================
+## STEP 0 — Terminal commands (run in PowerShell, NOT in the Django shell)
+## ============================================================
+## Confirm the required files actually exist and aren't empty.
+
+dir apps\brsr\services.py
+dir apps\brsr\tasks.py
+dir apps\brsr\models.py
+
+## Open the files in your editor and eyeball that services.py contains
+## these function names (search for them):
+##   financial_year_for_date
+##   quarter_for_date
+##   quarter_start_date
+##   week_period_code
+##   assignment_exists_for_period
+##   due_periods_for_schedule
+##   create_assignment_from_schedule
+##   run_daily_schedule_generation
+##
+## And that tasks.py imports from the SAME filename you actually have:
+##   from .services import run_daily_schedule_generation
+## (change `.services` to `.schedule_services` if you kept that name instead)
+
+
+## ============================================================
+## STEP 1 — Open the Django shell
+## ============================================================
+
+python manage.py shell
+
+
+## ============================================================
+## STEP 2 — Paste into the shell: imports + look up existing data
+## ============================================================
+## Everything from here on is Python, pasted into the `>>>` prompt.
+
+from datetime import date
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth import get_user_model
+from apps.brsr.models import AssignmentSchedule, BRSRSection, Assignment
+from apps.organizations.models import Plant, ApprovalConfigurationTemplate
+
+User = get_user_model()
+
+admin = User.objects.filter(is_superuser=True).first()
+plant = Plant.objects.first()
+section = BRSRSection.objects.first()
+template = ApprovalConfigurationTemplate.objects.filter(framework="BRSR", is_active=True).first()
+
+print("admin:", admin)
+print("plant:", plant)
+print("section:", section)
+print("template:", template)
+# If ANY of these print None, stop here — that's your actual blocker
+# (e.g. no active BRSR ApprovalConfigurationTemplate exists yet for any
+# company). Create the missing data via the admin site or another shell
+# command before continuing.
+
+
+## ============================================================
+## STEP 3 — Pick a valid assignee (must satisfy the SAME eligibility
+## rule as manual assignment: role matches the workflow's first stage's
+## role, and the user is assigned to `plant`)
+## ============================================================
+
+first_stage = template.first_stage
+print("first_stage:", first_stage, "| required role:", first_stage.role if first_stage else None)
+
+# List candidates that already qualify:
+eligible = User.objects.filter(
+    is_active=True,
+    assigned_plants=plant,
+    role=first_stage.role,
+) if first_stage and first_stage.role_id else User.objects.none()
+
+print("eligible assignees:", list(eligible))
+
+# If `eligible` is empty, either:
+#   (a) pick any real user and wire them up manually, e.g.:
+assignee = User.objects.exclude(pk=admin.pk).first()
+assignee.role = first_stage.role
+assignee.save(update_fields=["role"])
+assignee.assigned_plants.add(plant)
+#   (b) or just use one of the `eligible` users directly:
+# assignee = eligible.first()
+
+print("using assignee:", assignee)
+
+
+## ============================================================
+## STEP 4 — Create the test schedule (annual = "due" every day
+## until one assignment exists for the FY, easiest for on-demand testing)
+## ============================================================
+
+schedule = AssignmentSchedule.objects.create(
+    name="Manual smoke test",
+    plant=plant,
+    section=section,
+    financial_year="2026-2027",
+    workflow_template=template,
+    frequency="annually",
+    priority="medium",
+    created_by=admin,
+    assignee_content_type=ContentType.objects.get_for_model(User),
+    assignee_object_id=assignee.pk,
+)
+schedule.questions.set(section.questions.filter(is_active=True)[:2])
+print("schedule created:", schedule.schedule_id, "| questions:", schedule.questions.count())
+
+if schedule.questions.count() == 0:
+    print("WARNING: no active questions on this section — pick a different section "
+          "or check BRSRQuestion.is_active for this section.")
+
+
+## ============================================================
+## STEP 5 — Confirm nothing has been generated yet
+## ============================================================
+
+print("assignments before generation:", Assignment.objects.filter(schedule=schedule).count())
+# expect: 0
+
+
+## ============================================================
+## STEP 6 — Run generation (this is the exact function Celery Beat calls)
+## ============================================================
+
+from apps.brsr.services import run_daily_schedule_generation
+
+created = run_daily_schedule_generation()
+print("created:", created)
+# expect: a non-empty list, e.g. [<Assignment: TST-2026-0007 -> assignee>]
+#
+# If this raises an exception instead, READ THE ERROR — likely causes:
+#   - "No eligible assignee matches the first stage..." -> Step 3's role/
+#     plant wiring didn't stick, or first_stage.role doesn't match.
+#   - Any NotNullViolation / IntegrityError -> some required field on
+#     Assignment/QuestionResponse isn't being filled; paste the traceback.
+
+
+## ============================================================
+## STEP 7 — Inspect what got created
+## ============================================================
+
+a = Assignment.objects.filter(schedule=schedule).first()
+print("assignment_id:", a.assignment_id)
+print("period_code:", a.period_code)
+print("period_label:", a.period_label)
+print("financial_year:", a.financial_year)
+print("workflow_task:", a.workflow_task)          # should NOT be None
+print("workflow_stage:", a.workflow_stage_label if a.workflow_task else None)
+print("question_count:", a.questions.count())
+print("responses:", list(a.responses.values_list("question__question_id", "status")))
+
+
+## ============================================================
+## STEP 8 — Confirm duplicate prevention (run generation again)
+## ============================================================
+
+created_again = run_daily_schedule_generation()
+print("created_again:", created_again)
+# expect: []
+
+print("assignments after second run:", Assignment.objects.filter(schedule=schedule).count())
+# expect: still 1
+
+
+## ============================================================
+## STEP 9 — Exit the shell
+## ============================================================
+
+exit()
+
+
+## ============================================================
+## STEP 10 — Dashboard check (browser, not shell)
+## ============================================================
+## 1. Log in as the `assignee` user in your browser.
+## 2. Open the Assignment Dashboard — the generated assignment (matching
+##    the assignment_id printed in Step 7) should appear there, looking
+##    identical to a manually created assignment.
+## 3. Open its workspace link and confirm the questions load and can be
+##    answered/saved like normal.
+## 4. If the workflow's next stage is a reviewer/approver, log in as that
+##    user after submitting and confirm it shows on the Approval Dashboard.
+
+
+## ============================================================
+## STEP 11 — Celery check (OPTIONAL — separate terminal windows,
+## NOT the Django shell; these are OS commands)
+## ============================================================
+## Find your actual Celery app name first — open your project's celery.py
+## (usually at <project_folder>/celery.py) and look for:
+##     app = Celery('some_name')
+## Use that exact string in place of PROJECT_NAME below.
+
+## Terminal window 1 (worker):
+celery -A PROJECT_NAME worker -l info --pool=solo
+
+## Terminal window 2 (beat scheduler):
+celery -A PROJECT_NAME beat -l info
+
+## Terminal window 3 (trigger the task once, without waiting for the
+## schedule — run `python manage.py shell` again first):
+python manage.py shell
+>>> from apps.brsr.tasks import generate_scheduled_assignments
+>>> generate_scheduled_assignments.delay()
+>>> exit()
+
+## Watch terminal window 1's log for a line like:
+##   "Generated N scheduled BRSR assignment(s): [...]"
+## Then re-run Step 7's inspection commands to confirm.
+##
+## Note: --pool=solo is a common Windows requirement for Celery workers;
+## the default prefork pool often fails to start on Windows.
+
+
+## ============================================================
+## STEP 12 — Cleanup (Django shell)
+## ============================================================
+
+python manage.py shell
+
+from apps.brsr.models import Assignment, AssignmentSchedule
+
+schedule = AssignmentSchedule.objects.get(name="Manual smoke test")
+Assignment.objects.filter(schedule=schedule).delete()   # SET_NULL means this
+                                                          # won't cascade-delete
+                                                          # from deleting the
+                                                          # schedule, so do it first
+schedule.delete()
+
+exit()
