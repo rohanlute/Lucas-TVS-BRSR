@@ -101,7 +101,6 @@
                             <th class="wd-30">Sr.no</th>
                             <th>Role Code</th>
                             <th>Role Name</th>
-                            <th>Description</th>
                             <th>Permissions</th>
                             <th>Status</th>
                             <th class="text-end">Actions</th>
@@ -113,15 +112,6 @@
                                 <td>{{ forloop.counter }}</td>
                                 <td class="fw-semibold">{{ role.role_code }}</td>
                                 <td>{{ role.role_name }}</td>
-                                <td>
-                                    {% if role.description %}
-                                        <div class="role-description" title="{{ role.description }}">
-                                            {{ role.description }}
-                                        </div>
-                                    {% else %}
-                                        -
-                                    {% endif %}
-                                </td>
                                 <td>
                                     <span class="badge bg-soft-primary text-primary">
                                         {{ role.permissions.count }} assigned

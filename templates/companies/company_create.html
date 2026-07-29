@@ -1,20 +1,24 @@
 {% extends 'base/base.html' %}
 {% load static %}
-{% block title %}Company Create{% endblock %}
+{% block title %}{% if form.instance.pk %}Edit Company{% else %}Create Company{% endif %}{% endblock %}
 
 {% block extra_css %}
 <style>
     .company-create-form .upload-button {
-        opacity: 1 !important;
-        visibility: visible !important;
-        background-color: rgba(255, 255, 255, 0.78);
+        opacity: 0 !important;
+        visibility: hidden !important;
         transition: all 0.3s ease;
+        pointer-events: none;
+        z-index: 5;
+        height: 0;
+        padding: 0;
+        overflow: hidden;
     }
 
     .company-create-form .upload-button:hover {
-        opacity: 1 !important;
-        background-color: rgba(255, 255, 255, 0.9);
+        opacity: 0 !important;
     }
+    
     .your-brand .file-upload {
         position: absolute;
         top: 0;
@@ -25,22 +29,121 @@
         cursor: pointer;
         z-index: 10;
     }
+    
+    .your-brand .position-relative {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+    
+    .wd-100 {
+        width: 120px;
+    }
+    
+    .ht-100 {
+        height: 120px;
+    }
+    
+    /* Fix for file input */
+    input[type="file"] {
+        cursor: pointer;
+    }
+    
+    /* Fix for password field IDs */
+    #id_password, #id_confirm_password {
+        border: none;
+        background: transparent;
+        padding: 0.375rem 0.75rem;
+    }
+    
+    .input-group .form-control {
+        z-index: 0;
+    }
+    
+    /* Logo container hover effect - show border highlight only */
+    .logo-container:hover {
+        border-color: #4A6CF7 !important;
+        box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.1);
+    }
+    
+    .logo-container {
+        position: relative;
+        overflow: hidden;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        background: #f8f9fa;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .logo-container img {
+        object-fit: contain;
+        width: 100%;
+        height: 100%;
+    }
+    
+    /* Password strength indicator */
+    .progress-bar {
+        height: 4px;
+        background: #e9ecef;
+        border-radius: 2px;
+        margin-top: 8px;
+        display: flex;
+        gap: 4px;
+    }
+    
+    .progress-bar div {
+        flex: 1;
+        height: 100%;
+        background: #e9ecef;
+        border-radius: 2px;
+        transition: all 0.3s ease;
+    }
+    
+    .progress-bar div.active.weak {
+        background: #dc3545;
+    }
+    
+    .progress-bar div.active.medium {
+        background: #ffc107;
+    }
+    
+    .progress-bar div.active.strong {
+        background: #28a745;
+    }
+
+    /* Hide browser autofill decoy fields completely (visually + from a11y tree) */
+    .autofill-decoy {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0, 0, 0, 0) !important;
+        white-space: nowrap !important;
+        border: 0 !important;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<form method="POST" enctype="multipart/form-data" novalidate class="company-create-form">
+<form method="POST" enctype="multipart/form-data" novalidate class="company-create-form" autocomplete="off">
     {% csrf_token %}
+
+    <!-- Decoy fields -->
+    <input type="text" name="fakeusernameremembered" class="autofill-decoy" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <input type="password" name="fakepasswordremembered" class="autofill-decoy" tabindex="-1" autocomplete="new-password" aria-hidden="true">
 
     <!-- [ page-header ] start -->
     <div class="page-header">
         <div class="page-header-left d-flex align-items-center">
             <div class="page-header-title">
-                <h5 class="m-b-10">Create Company</h5>
+                <h5 class="m-b-10">{% if form.instance.pk %}Edit Company{% else %}Create Company{% endif %}</h5>
             </div>
             <ul class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{% url 'companies:company_list' %}">Home</a></li>
-                <li class="breadcrumb-item">Create</li>
+                <li class="breadcrumb-item">{% if form.instance.pk %}Edit{% else %}Create{% endif %}</li>
             </ul>
         </div>
         <div class="page-header-right ms-auto">
@@ -65,7 +168,7 @@
         {% if messages %}
             <div class="mb-4">
                 {% for message in messages %}
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <div class="alert alert-{{ message.tags|default:'success' }} alert-dismissible fade show" role="alert">
                         {{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
@@ -110,28 +213,48 @@
                                 <div class="mb-4 d-flex align-items-center justify-content-between">
                                     <h5 class="fw-bold mb-0 me-4">
                                         <span class="d-block mb-2">Company Information:</span>
-                                        <span class="fs-12 fw-normal text-muted text-truncate-1-line">Following information is publicly displayed, be careful! </span>
+                                        <span class="fs-12 fw-normal text-muted text-truncate-1-line">Following information is publicly displayed, be careful!</span>
                                     </h5>
                                 </div>
 
                                 <!-- Company Logo -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">
-                                        <label class="fw-semibold">Company Logo: </label>
+                                        <label class="fw-semibold">Company Logo:</label>
                                     </div>
                                     <div class="col-lg-8">
-                                        <div class="mb-4 mb-md-0 d-flex gap-4 your-brand">
-                                            <div class="wd-100 ht-100 position-relative overflow-hidden border border-gray-2 rounded">
-                                                {% if form.instance.company_logo %}
-                                                    <img src="{{ form.instance.company_logo.url }}" class="upload-pic img-fluid rounded h-100 w-100" alt="Company logo">
+                                        <div class="d-flex gap-4 align-items-start your-brand">
+                                            <div class="logo-container wd-100 ht-100 position-relative">
+                                                {% if form.instance.company_logo and form.instance.company_logo.url %}
+                                                    <img src="{{ form.instance.company_logo.url }}" 
+                                                         class="upload-pic img-fluid" 
+                                                         alt="Company logo"
+                                                         id="logo-preview">
                                                 {% else %}
-                                                    <img src="{% static 'images/company-logo-placeholder.svg' %}" class="upload-pic img-fluid rounded h-100 w-100" alt="Default company logo">
+                                                    <img src="{% static 'images/company-logo-placeholder.svg' %}" 
+                                                         class="upload-pic img-fluid" 
+                                                         alt="Company logo"
+                                                         id="logo-preview">
                                                 {% endif %}
+                                                
                                                 {{ form.company_logo }}
+                                                
+                                                <div class="upload-button position-absolute bottom-0 start-0 w-100 text-center">
+                                                </div>
+                                            </div>
+                                            <div class="d-flex flex-column">
+                                                <small class="text-muted">Recommended: Square image, 200x200px</small>
+                                                <small class="text-muted">Max size: 5MB (JPG, PNG, GIF, WebP)</small>
+                                                {% if form.instance.company_logo %}
+                                                    <small class="text-muted mt-1">
+                                                        <i class="feather-check-circle text-success"></i>
+                                                        Current: {{ form.instance.company_logo.name|truncatechars:30 }}
+                                                    </small>
+                                                {% endif %}
                                             </div>
                                         </div>
                                         {% if form.company_logo.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.company_logo.errors|striptags }}</div>
+                                            <div class="invalid-feedback d-block mt-2">{{ form.company_logo.errors|striptags }}</div>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -139,7 +262,7 @@
                                 <!-- Company Name -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">
-                                        <label for="{{ form.company_name.id_for_label }}" class="fw-semibold">Company: </label>
+                                        <label for="{{ form.company_name.id_for_label }}" class="fw-semibold">Company: <span class="text-danger">*</span></label>
                                     </div>
                                     <div class="col-lg-8">
                                         <div class="input-group">
@@ -155,7 +278,7 @@
                                 <!-- Company Email -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">
-                                        <label for="{{ form.email.id_for_label }}" class="fw-semibold">Company Email: </label>
+                                        <label for="{{ form.email.id_for_label }}" class="fw-semibold">Company Email: <span class="text-danger">*</span></label>
                                     </div>
                                     <div class="col-lg-8">
                                         <div class="input-group">
@@ -171,7 +294,7 @@
                                 <!-- Mobile Number -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">
-                                        <label for="{{ form.mobile_number.id_for_label }}" class="fw-semibold">Office Number: </label>
+                                        <label for="{{ form.mobile_number.id_for_label }}" class="fw-semibold">Office Number:</label>
                                     </div>
                                     <div class="col-lg-8">
                                         <div class="input-group">
@@ -187,7 +310,7 @@
                                 <!-- Website -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">
-                                        <label for="{{ form.website.id_for_label }}" class="fw-semibold">Website: </label>
+                                        <label for="{{ form.website.id_for_label }}" class="fw-semibold">Website:</label>
                                     </div>
                                     <div class="col-lg-8">
                                         <div class="input-group">
@@ -203,19 +326,15 @@
                                 <!-- CIN Number -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">
-                                        <label for="{{ form.cin_number.id_for_label }}" class="fw-semibold">CIN Number: </label>
+                                        <label for="{{ form.cin_number.id_for_label }}" class="fw-semibold">CIN Number:</label>
                                     </div>
                                     <div class="col-lg-8">
                                         <div class="input-group">
-                                            <div class="input-group-text">
-                                                <i class="feather-hash"></i>
-                                            </div>
+                                            <div class="input-group-text"><i class="feather-hash"></i></div>
                                             {{ form.cin_number }}
                                         </div>
                                         {% if form.cin_number.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ form.cin_number.errors|striptags }}
-                                            </div>
+                                            <div class="invalid-feedback d-block">{{ form.cin_number.errors|striptags }}</div>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -223,21 +342,15 @@
                                 <!-- Date of Incorporation -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">
-                                        <label for="{{ form.date_of_incorporation.id_for_label }}" class="fw-semibold">
-                                            Date of Incorporation:
-                                        </label>
+                                        <label for="{{ form.date_of_incorporation.id_for_label }}" class="fw-semibold">Date of Incorporation:</label>
                                     </div>
                                     <div class="col-lg-8">
                                         <div class="input-group">
-                                            <div class="input-group-text">
-                                                <i class="feather-calendar"></i>
-                                            </div>
+                                            <div class="input-group-text"><i class="feather-calendar"></i></div>
                                             {{ form.date_of_incorporation }}
                                         </div>
                                         {% if form.date_of_incorporation.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ form.date_of_incorporation.errors|striptags }}
-                                            </div>
+                                            <div class="invalid-feedback d-block">{{ form.date_of_incorporation.errors|striptags }}</div>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -245,7 +358,7 @@
                                 <!-- GST Number -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">
-                                        <label for="{{ form.gst_number.id_for_label }}" class="fw-semibold">GST Number: </label>
+                                        <label for="{{ form.gst_number.id_for_label }}" class="fw-semibold">GST Number:</label>
                                     </div>
                                     <div class="col-lg-8">
                                         <div class="input-group">
@@ -261,7 +374,7 @@
                                 <!-- About Company -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">
-                                        <label for="{{ form.about_company.id_for_label }}" class="fw-semibold">About Company: </label>
+                                        <label for="{{ form.about_company.id_for_label }}" class="fw-semibold">About Company:</label>
                                     </div>
                                     <div class="col-lg-8">
                                         <div class="input-group">
@@ -277,20 +390,18 @@
                                 <!-- Listed Company -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">
-                                        <label class="fw-semibold">Listed Company: </label>
+                                        <label class="fw-semibold">Listed Company:</label>
                                     </div>
                                     <div class="col-lg-8">
                                         <div class="form-check form-switch">
                                             {{ form.listed_company }}
                                             <label class="form-check-label ms-2" for="{{ form.listed_company.id_for_label }}">
-                                                Active
+                                                {% if form.instance.listed_company %}Yes{% else %}No{% endif %}
                                             </label>
                                             <span class="text-muted fs-12">(Required for BRSR Applicability)</span>
                                         </div>
                                         {% if form.listed_company.errors %}
-                                            <div class="invalid-feedback d-block">
-                                                {{ form.listed_company.errors|striptags }}
-                                            </div>
+                                            <div class="invalid-feedback d-block">{{ form.listed_company.errors|striptags }}</div>
                                         {% endif %}
                                     </div>
                                 </div>
@@ -298,12 +409,14 @@
                                 <!-- Status -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">
-                                        <label class="fw-semibold">Status: </label>
+                                        <label class="fw-semibold">Status:</label>
                                     </div>
                                     <div class="col-lg-8">
                                         <div class="form-check form-switch">
                                             {{ form.is_active }}
-                                            <label class="form-check-label ms-2" for="{{ form.is_active.id_for_label }}">Active</label>
+                                            <label class="form-check-label ms-2" for="{{ form.is_active.id_for_label }}">
+                                                {% if form.instance.is_active %}Active{% else %}Inactive{% endif %}
+                                            </label>
                                         </div>
                                         {% if form.is_active.errors %}
                                             <div class="invalid-feedback d-block">{{ form.is_active.errors|striptags }}</div>
@@ -320,24 +433,46 @@
                                 <div class="mb-4 d-flex align-items-center justify-content-between">
                                     <h5 class="fw-bold mb-0 me-4">
                                         <span class="d-block mb-2">Personal Information:</span>
-                                        <span class="fs-12 fw-normal text-muted text-truncate-1-line">Following information is publicly displayed, be careful! </span>
+                                        <span class="fs-12 fw-normal text-muted text-truncate-1-line">Following information is publicly displayed, be careful!</span>
                                     </h5>
                                 </div>
                                 
-                                <!-- Profile Avatar -->
+                                <!-- Profile Picture - EXACTLY SAME AS COMPANY LOGO -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">
-                                        <label class="fw-semibold">Avatar: </label>
+                                        <label class="fw-semibold">Profile Picture:</label>
                                     </div>
                                     <div class="col-lg-8">
-                                        <div class="mb-4 mb-md-0 d-flex gap-4 your-brand">
-                                            <div class="wd-100 ht-100 position-relative overflow-hidden border border-gray-2 rounded">
-                                                {% if form.profile_image.value %}
-                                                    <img src="{{ form.profile_image.value.url }}" class="upload-pic img-fluid rounded h-100 w-100" alt="Profile Image">
+                                        <div class="d-flex gap-4 align-items-start your-brand">
+                                            <div class="logo-container wd-100 ht-100 position-relative">
+                                                {% if company_admin and company_admin.profile_image %}
+                                                    <img src="{{ company_admin.profile_image.url }}" 
+                                                         class="upload-pic img-fluid" 
+                                                         alt="Profile Picture"
+                                                         id="profile-preview">
                                                 {% else %}
-                                                    <img src="{% static 'images/company-logo-placeholder.svg' %}" class="upload-pic img-fluid rounded h-100 w-100" alt="Company Logo">
+                                                    <img src="{% static 'images/avatar-placeholder.svg' %}" 
+                                                         class="upload-pic img-fluid" 
+                                                         alt="Profile Picture"
+                                                         id="profile-preview">
                                                 {% endif %}
-                                                <input name="profile_image" type="file" accept="image/*" class="file-upload position-absolute top-0 start-0 w-100 h-100" style="opacity:0;cursor:pointer;z-index:100;">
+                                                
+                                                <input name="profile_image" type="file" accept="image/*" 
+                                                       class="file-upload position-absolute top-0 start-0 w-100 h-100"
+                                                       id="profile-image-input">
+                                                
+                                                <div class="upload-button position-absolute bottom-0 start-0 w-100 text-center">
+                                                </div>
+                                            </div>
+                                            <div class="d-flex flex-column">
+                                                <small class="text-muted">Recommended: Square image, 200x200px</small>
+                                                <small class="text-muted">Max size: 5MB (JPG, PNG, GIF, WebP)</small>
+                                                {% if company_admin and company_admin.profile_image %}
+                                                    <small class="text-muted mt-1">
+                                                        <i class="feather-check-circle text-success"></i>
+                                                        Current: {{ company_admin.profile_image.name|truncatechars:30 }}
+                                                    </small>
+                                                {% endif %}
                                             </div>
                                         </div>
                                     </div>
@@ -345,56 +480,67 @@
 
                                 <!-- Profile Fields -->
                                 <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4"><label for="fullnameInput" class="fw-semibold">Name: </label></div>
+                                    <div class="col-lg-4"><label for="fullnameInput" class="fw-semibold">Full Name:</label></div>
                                     <div class="col-lg-8">
                                         <div class="input-group">
                                             <div class="input-group-text"><i class="feather-user"></i></div>
-                                            <input name="profile_full_name" type="text" class="form-control" id="fullnameInput" placeholder="Name">
+                                            <input name="profile_full_name" type="text" class="form-control" 
+                                                   id="fullnameInput" placeholder="Full Name"
+                                                   value="{{ company_admin.full_name|default:'' }}">
                                         </div>
                                     </div>
                                 </div>
                                 <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4"><label for="mailInput" class="fw-semibold">Email: </label></div>
+                                    <div class="col-lg-4"><label for="mailInput" class="fw-semibold">Email:</label></div>
                                     <div class="col-lg-8">
                                         <div class="input-group">
                                             <div class="input-group-text"><i class="feather-mail"></i></div>
-                                            <input name="profile_email" type="text" class="form-control" id="mailInput" placeholder="Email">
+                                            <input name="profile_email" type="email" class="form-control" 
+                                                   id="mailInput" placeholder="Email"
+                                                   value="{{ company_admin.email|default:'' }}">
                                         </div>
                                     </div>
                                 </div>
                                 <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4"><label for="usernameInput" class="fw-semibold">Username: </label></div>
+                                    <div class="col-lg-4"><label for="usernameInput" class="fw-semibold">Username:</label></div>
                                     <div class="col-lg-8">
                                         <div class="input-group">
                                             <div class="input-group-text"><i class="feather-link-2"></i></div>
-                                            <input name="profile_username" type="text" class="form-control" id="usernameInput" placeholder="Username">
+                                            <input name="profile_username" type="text" class="form-control" 
+                                                   id="usernameInput" placeholder="Username"
+                                                   value="{{ company_admin.username|default:'' }}">
                                         </div>
                                     </div>
                                 </div>
                                 <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4"><label for="phoneInput" class="fw-semibold">Phone: </label></div>
+                                    <div class="col-lg-4"><label for="phoneInput" class="fw-semibold">Phone:</label></div>
                                     <div class="col-lg-8">
                                         <div class="input-group">
                                             <div class="input-group-text"><i class="feather-phone"></i></div>
-                                            <input name="profile_phone" type="text" class="form-control" id="phoneInput" placeholder="Phone">
+                                            <input name="profile_phone" type="text" class="form-control" 
+                                                   id="phoneInput" placeholder="Phone"
+                                                   value="{{ company_admin.mobile_number|default:'' }}">
                                         </div>
                                     </div>
                                 </div>
                                 <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4"><label for="designationInput" class="fw-semibold">Designation: </label></div>
+                                    <div class="col-lg-4"><label for="designationInput" class="fw-semibold">Designation:</label></div>
                                     <div class="col-lg-8">
                                         <div class="input-group">
                                             <div class="input-group-text"><i class="feather-briefcase"></i></div>
-                                            <input name="profile_designation" type="text" class="form-control" id="designationInput" placeholder="Designation">
+                                            <input name="profile_designation" type="text" class="form-control" 
+                                                   id="designationInput" placeholder="Designation"
+                                                   value="{{ company_admin.designation|default:'' }}">
                                         </div>
                                     </div>
                                 </div>
                                 <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4"><label for="aboutInput" class="fw-semibold">About: </label></div>
+                                    <div class="col-lg-4"><label for="aboutInput" class="fw-semibold">About:</label></div>
                                     <div class="col-lg-8">
                                         <div class="input-group">
                                             <div class="input-group-text"><i class="feather-type"></i></div>
-                                            <textarea name="profile_about" class="form-control" id="aboutInput" cols="30" rows="5" placeholder="About"></textarea>
+                                            <textarea name="profile_about" class="form-control" id="aboutInput" 
+                                                      cols="30" rows="5" placeholder="About">{{ company_admin.about|default:'' }}</textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -402,43 +548,88 @@
                         </div>
                         {% endif %}
 
-                        <!-- Password Tab - Only for Superadmin -->
+                        <!-- Password Tab -->
                         {% if is_superadmin %}
                         <div class="tab-pane fade" id="passwordTab" role="tabpanel">
                             <div class="card-body pass-info">
                                 <div class="mb-4 d-flex align-items-center justify-content-between">
                                     <h5 class="fw-bold mb-0 me-4">
                                         <span class="d-block mb-2">Password Information:</span>
-                                        <span class="fs-12 fw-normal text-muted text-truncate-1-line">You can only change your password twice within 24 hours! </span>
+                                        <span class="fs-12 fw-normal text-muted text-truncate-1-line">
+                                            {% if form.instance.pk %}
+                                                Leave blank to keep current password
+                                            {% else %}
+                                                Set password for company admin (required)
+                                            {% endif %}
+                                        </span>
                                     </h5>
                                 </div>
                                 <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4"><label for="passwordInput" class="fw-semibold">Password: </label></div>
+                                    <div class="col-lg-4">
+                                        <label for="{{ form.password.id_for_label }}" class="fw-semibold">
+                                            {% if form.instance.pk %}New Password:{% else %}Password: <span class="text-danger">*</span>{% endif %}
+                                        </label>
+                                    </div>
                                     <div class="col-lg-8">
                                         <div class="input-group">
                                             <div class="input-group-text"><i class="feather-key"></i></div>
-                                            <input name="password" type="password" class="form-control" id="passwordInput" placeholder="Password">
-                                            <div class="input-group-text border-start bg-gray-2 c-pointer show-pass" data-target="passwordInput">
+                                            {{ form.password }}
+                                            <div class="input-group-text border-start bg-gray-2 c-pointer show-pass" 
+                                                 data-target="{{ form.password.id_for_label }}">
                                                 <i class="feather-eye"></i>
                                             </div>
                                         </div>
+                                        {% if form.password.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.password.errors|striptags }}</div>
+                                        {% endif %}
+                                        {% if form.password.help_text %}
+                                            <small class="text-muted">{{ form.password.help_text }}</small>
+                                        {% endif %}
+                                        {% if form.instance.pk %}
+                                            <small class="text-muted d-block mt-1">
+                                                <i class="feather-info text-primary"></i> 
+                                                Enter new password only if you want to change it
+                                            </small>
+                                        {% endif %}
                                     </div>
                                 </div>
+                                
                                 <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4"><label for="newPassword" class="fw-semibold">Password Confirm: </label></div>
+                                    <div class="col-lg-4">
+                                        <label for="{{ form.confirm_password.id_for_label }}" class="fw-semibold">
+                                            {% if form.instance.pk %}Confirm New Password:{% else %}Confirm Password: <span class="text-danger">*</span>{% endif %}
+                                        </label>
+                                    </div>
                                     <div class="col-lg-8 generate-pass">
                                         <div class="input-group field">
                                             <div class="input-group-text"><i class="feather-key"></i></div>
-                                            <input name="confirm_password" type="password" class="form-control password" id="newPassword" placeholder="Password Confirm">
-                                            <div class="input-group-text border-start bg-gray-2 c-pointer show-pass" data-target="newPassword">
+                                            {{ form.confirm_password }}
+                                            <div class="input-group-text border-start bg-gray-2 c-pointer show-pass" 
+                                                 data-target="{{ form.confirm_password.id_for_label }}">
                                                 <i class="feather-eye"></i>
                                             </div>
                                         </div>
-                                        <div class="progress-bar mt-2">
-                                            <div></div><div></div><div></div><div></div>
+                                        {% if form.confirm_password.errors %}
+                                            <div class="invalid-feedback d-block">{{ form.confirm_password.errors|striptags }}</div>
+                                        {% endif %}
+                                        {% if form.confirm_password.help_text %}
+                                            <small class="text-muted">{{ form.confirm_password.help_text }}</small>
+                                        {% endif %}
+                                        
+                                        {% if not form.instance.pk %}
+                                        <div class="password-strength mt-2">
+                                            <div class="progress-bar">
+                                                <div id="strength-1"></div>
+                                                <div id="strength-2"></div>
+                                                <div id="strength-3"></div>
+                                                <div id="strength-4"></div>
+                                            </div>
+                                            <small class="text-muted" id="strength-text">Enter a password</small>
                                         </div>
+                                        {% endif %}
                                     </div>
                                 </div>
+                                
                                 <div class="pass-hint">
                                     <p class="fw-bold">Password Requirements:</p>
                                     <ul class="fs-12 ps-1 ms-2 text-muted">
@@ -453,7 +644,7 @@
                                 <div class="mb-4 d-flex align-items-center justify-content-between">
                                     <h5 class="fw-bold mb-0 me-4">
                                         <span class="d-block mb-2">Security preferences:</span>
-                                        <span class="fs-12 fw-normal text-muted text-truncate-1-line">Keep your account more secure with following preferences. </span>
+                                        <span class="fs-12 fw-normal text-muted text-truncate-1-line">Keep your account more secure with following preferences.</span>
                                     </h5>
                                 </div>
                                 <div class="hstack justify-content-between p-4 mb-3 border border-dashed border-gray-3 rounded-1">
@@ -496,31 +687,34 @@
                                     </h5>
                                 </div>
                                 <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4"><label for="addressInput_1" class="fw-semibold">Address: </label></div>
+                                    <div class="col-lg-4"><label for="addressInput_1" class="fw-semibold">Address:</label></div>
                                     <div class="col-lg-8">
                                         <div class="input-group">
                                             <div class="input-group-text"><i class="feather-map-pin"></i></div>
-                                            <textarea name="billing_address" class="form-control" id="addressInput_1" cols="30" rows="3" placeholder="Address"></textarea>
+                                            <textarea name="billing_address" class="form-control" id="addressInput_1" 
+                                                      cols="30" rows="3" placeholder="Address">{{ billing_address|default:'' }}</textarea>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4"><label for="zipCodeInput" class="fw-semibold">Zip Code: </label></div>
+                                    <div class="col-lg-4"><label for="zipCodeInput" class="fw-semibold">Zip Code:</label></div>
                                     <div class="col-lg-8">
                                         <div class="input-group">
                                             <div class="input-group-text"><i class="feather-tag"></i></div>
-                                            <input name="billing_zip_code" type="number" class="form-control" id="zipCodeInput" placeholder="Zip Code">
+                                            <input name="billing_zip_code" type="number" class="form-control" 
+                                                   id="zipCodeInput" placeholder="Zip Code"
+                                                   value="{{ billing_zip_code|default:'' }}">
                                         </div>
                                     </div>
                                 </div>
                                 <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4"><label class="fw-semibold">Country: </label></div>
+                                    <div class="col-lg-4"><label class="fw-semibold">Country:</label></div>
                                     <div class="col-lg-8">
                                         <select name="billing_country" id="billing_country" class="form-control">
                                             <option value="">Select Country</option>
                                             {% for country in countries %}
                                                 <option value="{{ country.id }}"
-                                                    {% if country.name == "India" %}selected{% endif %}>
+                                                    {% if country.id == billing_country_id %}selected{% endif %}>
                                                     {{ country.name }}
                                                 </option>
                                             {% endfor %}
@@ -528,18 +722,30 @@
                                     </div>
                                 </div>
                                 <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4"><label class="fw-semibold">State: </label></div>
+                                    <div class="col-lg-4"><label class="fw-semibold">State:</label></div>
                                     <div class="col-lg-8">
                                         <select name="billing_state" id="billing_state" class="form-control">
                                             <option value="">Select State</option>
+                                            {% for state in states %}
+                                                <option value="{{ state.id }}"
+                                                    {% if state.id == billing_state_id %}selected{% endif %}>
+                                                    {{ state.name }}
+                                                </option>
+                                            {% endfor %}
                                         </select>
                                     </div>
                                 </div>
                                 <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4"><label class="fw-semibold">City: </label></div>
+                                    <div class="col-lg-4"><label class="fw-semibold">City:</label></div>
                                     <div class="col-lg-8">
                                         <select name="billing_city" id="billing_city" class="form-control">
                                             <option value="">Select City</option>
+                                            {% for city in cities %}
+                                                <option value="{{ city.id }}"
+                                                    {% if city.id == billing_city_id %}selected{% endif %}>
+                                                    {{ city.name }}
+                                                </option>
+                                            {% endfor %}
                                         </select>
                                     </div>
                                 </div>
@@ -550,6 +756,7 @@
             </div>
         </div>
     </div>
+    
     {% if form.errors %}
     <div class="alert alert-danger">
         <strong>Form Errors:</strong>
@@ -565,13 +772,60 @@
         </ul>
     </div>
     {% endif %}
-    <!-- [ Main Content ] end -->
 </form>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Company Logo upload
+    const logoInput = document.querySelector('input[type="file"][name="company_logo"]');
+    if (logoInput) {
+        const logoContainer = logoInput.closest('.logo-container');
+        if (logoContainer) {
+            logoContainer.addEventListener('click', function(e) {
+                if (e.target !== logoInput) {
+                    logoInput.click();
+                }
+            });
+        }
+        logoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('logo-preview');
+                    if (preview) preview.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    // Profile Picture upload - SAME AS COMPANY LOGO
+    const profileInput = document.getElementById('profile-image-input');
+    if (profileInput) {
+        const profileContainer = profileInput.closest('.logo-container');
+        if (profileContainer) {
+            profileContainer.addEventListener('click', function(e) {
+                if (e.target !== profileInput) {
+                    profileInput.click();
+                }
+            });
+        }
+        profileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('profile-preview');
+                    if (preview) preview.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
     // Password show/hide toggle
     document.querySelectorAll('.show-pass').forEach(button => {
         button.addEventListener('click', function() {
@@ -591,16 +845,53 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
+    // Password strength indicator (for new companies only)
+    {% if not form.instance.pk %}
+    const passwordInput = document.getElementById('{{ form.password.id_for_label }}');
+    if (passwordInput) {
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+            const strength = checkPasswordStrength(password);
+            updateStrengthIndicator(strength);
+        });
+    }
+    
+    function checkPasswordStrength(password) {
+        let strength = 0;
+        if (password.length >= 8) strength++;
+        if (password.match(/[a-z]/)) strength++;
+        if (password.match(/[A-Z]/)) strength++;
+        if (password.match(/[0-9]/)) strength++;
+        if (password.match(/[^a-zA-Z0-9]/)) strength++;
+        return Math.min(strength, 4);
+    }
+    
+    function updateStrengthIndicator(strength) {
+        const bars = document.querySelectorAll('.password-strength .progress-bar div');
+        const text = document.getElementById('strength-text');
+        bars.forEach((bar, index) => {
+            bar.className = '';
+            if (index < strength) {
+                bar.classList.add('active');
+                if (strength <= 2) bar.classList.add('weak');
+                else if (strength === 3) bar.classList.add('medium');
+                else bar.classList.add('strong');
+            }
+        });
+        const messages = ['Very Weak', 'Weak', 'Medium', 'Strong', 'Very Strong'];
+        text.textContent = messages[strength] || 'Enter a password';
+    }
+    {% endif %}
+    
     if (typeof feather !== 'undefined'){
         feather.replace();
     }
 
-    // Get the default selected country (India)
+    // Country-State-City cascade
     const defaultCountryId = $('#billing_country').val();
-    
-    // If a country is pre-selected (India), load its states on page load
     if (defaultCountryId) {
-        loadStates(defaultCountryId);
+        const selectedStateId = '{{ billing_state_id|default:"" }}';
+        loadStates(defaultCountryId, selectedStateId);
     }
 });
 
@@ -609,17 +900,15 @@ function loadStates(countryId, selectedStateId = null) {
     $.get("/companies/get-states/" + countryId + "/", function(data) {
         const stateSelect = $("#billing_state");
         stateSelect.html('<option value="">Select State</option>');
-        
         if (data && data.length > 0) {
             $.each(data, function(i, state) {
                 const selected = (selectedStateId && state.id == selectedStateId) ? 'selected' : '';
                 stateSelect.append('<option value="' + state.id + '" ' + selected + '>' + state.name + '</option>');
             });
         }
-        
-        // If a state is selected, load its cities
         if (selectedStateId) {
-            loadCities(selectedStateId);
+            const selectedCityId = '{{ billing_city_id|default:"" }}';
+            loadCities(selectedStateId, selectedCityId);
         }
     }).fail(function() {
         console.error('Failed to load states');
@@ -631,7 +920,6 @@ function loadCities(stateId, selectedCityId = null) {
     $.get("/companies/get-cities/" + stateId + "/", function(data) {
         const citySelect = $("#billing_city");
         citySelect.html('<option value="">Select City</option>');
-        
         if (data && data.length > 0) {
             $.each(data, function(i, city) {
                 const selected = (selectedCityId && city.id == selectedCityId) ? 'selected' : '';

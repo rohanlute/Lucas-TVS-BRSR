@@ -184,7 +184,6 @@
                             <th class="wd-30">#</th>
                             <th>Company</th>
                             <th>Email</th>
-                            <th>Mobile</th>
                             <th>GST</th>
                             <th>Status</th>
                             <th class="text-end">Created</th>
@@ -211,7 +210,6 @@
                                     </div>
                                 </td>
                                 <td>{{ company.email }}</td>
-                                <td>{{ company.mobile_number }}</td>
                                 <td>{{ company.gst_number|default:"-" }}</td>
                                 <td>
                                     {% if company.is_active %}
