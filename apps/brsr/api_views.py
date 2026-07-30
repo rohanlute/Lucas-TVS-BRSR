@@ -273,6 +273,8 @@ def _finalize_assignment_submission(assignment, user, *, force=False):
                 next_assignee=next_assignee,
             )
     assignment.refresh_from_db()
+    from .notifications import notify_assignment_submitted
+    notify_assignment_submitted(assignment, next_assignee)
     return {
         "message": f"Assignment {assignment.assignment_id} submitted successfully.",
         "workflow_task": _serialize_task_for_user(assignment.workflow_task, user),
@@ -334,6 +336,9 @@ def _approve_assignment_stage(assignment, user):
             return None, Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
     WorkflowConfigurationEngine.approve(task, user, next_assignee=next_assignee)
     assignment.refresh_from_db()
+    if assignment.workflow_task and assignment.workflow_task.is_completed:
+        from .notifications import notify_assignment_approved
+        notify_assignment_approved(assignment)
     return {
         "message": f"Assignment {assignment.assignment_id} approved successfully.",
         "workflow_task": _serialize_task_for_user(assignment.workflow_task, user),
@@ -378,6 +383,9 @@ def _reject_assignment_stage(assignment, user, remark):
             response.save(update_fields=["status", "reviewed_by", "reviewed_at", "review_remark", "updated_at"])
     response_obj = _serialize_task_for_user(assignment.workflow_task, user)
     assignment.refresh_from_db()
+    from .notifications import notify_assignment_rejected
+    notify_assignment_rejected(assignment, remark)
+    
     return {
         "message": f"Assignment {assignment.assignment_id} rejected and sent back for correction.",
         "workflow_task": response_obj,

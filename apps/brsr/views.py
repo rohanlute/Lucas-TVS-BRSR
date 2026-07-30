@@ -776,6 +776,9 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
         )
     _ensure_assignment_workflow_task(assignment, current_user=user)
     _advance_assignment_to_entry_stage(assignment, actor=user)
+    from .notifications import notify_assignment_created
+    notify_assignment_created(assignment)
+    
     return assignment
 
 def _serialize_task_for_user(task, user):

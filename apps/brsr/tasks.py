@@ -21,3 +21,24 @@ def generate_scheduled_assignments():
     logger.info("Generated %s scheduled BRSR assignment(s): %s",
                 len(created), [a.assignment_id for a in created])
     return [a.assignment_id for a in created]
+
+
+@shared_task(name="brsr.send_assignment_notification")
+def send_assignment_notification(notification_type, assignment_id, **kwargs):
+    from .models import Assignment
+    from . import notifications
+
+    assignment = Assignment.objects.filter(pk=assignment_id).select_related(
+        "plant", "section"
+    ).first()
+    if not assignment:
+        return
+
+    if notification_type == "created":
+        notifications.notify_assignment_created(assignment)
+    elif notification_type == "submitted":
+        next_assignee_id = kwargs.get("next_assignee_id")
+    elif notification_type == "approved":
+        notifications.notify_assignment_approved(assignment)
+    elif notification_type == "rejected":
+        notifications.notify_assignment_rejected(assignment, kwargs.get("remark", ""))

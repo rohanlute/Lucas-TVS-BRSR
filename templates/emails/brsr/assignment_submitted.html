@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BRSR Assignment Submitted</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f4f7fb;padding:32px 16px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:640px;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #e5e7eb;">
+                    <tr>
+                        <td style="padding:32px 32px 24px;background:linear-gradient(135deg,#0f172a 0%,#16a34a 100%);color:#ffffff;">
+                            <div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;opacity:.8;margin-bottom:8px;">Action Required</div>
+                            <h1 style="margin:0;font-size:28px;line-height:1.2;">Assignment Submitted</h1>
+                            <p style="margin:12px 0 0;font-size:15px;line-height:1.6;opacity:.92;">
+                                An assignment is awaiting your review.
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:32px;">
+                            <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">
+                                Hello,
+                            </p>
+                            <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#374151;">
+                                Assignment {{ assignment.assignment_id }} has been submitted and is now awaiting your action at the <strong>{{ assignment.workflow_stage_label }}</strong> stage.
+                            </p>
+
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;margin:0 0 24px;">
+                                <tr>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;width:160px;">Assignment ID</td>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">{{ assignment.assignment_id }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">Current Stage</td>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">{{ assignment.workflow_stage_label }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">Plant</td>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">{{ assignment.plant.name }}</td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">Section</td>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">{{ assignment.section.name }}</td>
+                                </tr>
+                            </table>
+
+                            <div style="text-align:center;margin:28px 0 24px;">
+                                <a href="{{ assignment_url }}" style="display:inline-block;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 28px;border-radius:10px;">
+                                    Review Assignment
+                                </a>
+                            </div>
+
+                            <p style="margin:0 0 12px;font-size:14px;line-height:1.7;color:#4b5563;">
+                                If the button does not work, copy and paste this link into your browser:
+                            </p>
+                            <p style="margin:0 0 24px;font-size:14px;line-height:1.6;word-break:break-all;">
+                                <a href="{{ assignment_url }}" style="color:#16a34a;">{{ assignment_url }}</a>
+                            </p>
+
+                            <p style="margin:0;font-size:14px;line-height:1.7;color:#6b7280;">
+                                Please review the assignment and take the necessary action.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

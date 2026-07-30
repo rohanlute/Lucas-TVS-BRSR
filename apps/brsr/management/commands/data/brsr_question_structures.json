@@ -886,12 +886,11 @@
             "kind": "table",
             "label": "Whether the entity has translated the policy into procedures",
             "name": "policyTranslated",
-            "columns": ["Principle", "Has the policy been translated into procedures?", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9"],
+            "columns": ["Principle", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9"],
             "rows": [
               {
                 "label": "Policy translated into procedures",
                 "fields": [
-                  {"column": "Has the policy been translated into procedures?", "name": "policyTranslatedCheckbox", "type": "checkbox"},
                   {"column": "P1", "name": "procedure_translated_p1", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
                   {"column": "P2", "name": "procedure_translated_p2", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
                   {"column": "P3", "name": "procedure_translated_p3", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
@@ -920,12 +919,11 @@
             "kind": "table",
             "label": "Do the enlisted policies extend to your value chain partners?",
             "name": "valueChainPolicies",
-            "columns": ["Principle", "Do the policies extend to value chain partners?", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9"],
+            "columns": ["Principle", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9"],
             "rows": [
               {
                 "label": "Policies extend to value chain partners",
                 "fields": [
-                  {"column": "Do the policies extend to value chain partners?", "name": "valueChainPolicies", "type": "checkbox"},
                   {"column": "P1", "name": "value_chain_p1", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
                   {"column": "P2", "name": "value_chain_p2", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
                   {"column": "P3", "name": "value_chain_p3", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
@@ -954,27 +952,48 @@
             "kind": "table",
             "label": "Name of the national and international codes/certifications/labels/standards adopted by your entity and mapped to each principle",
             "name": "internationalStandards",
-            "allow_add_rows": true,
-            "allow_delete_rows": true,
-            "columns": ["S. No", "International Standards", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9"],
+            "columns": ["International Standards", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9"],
             "rows": [
               {
+                "label": "ISO 14001:2015 Environmental Management Systems",
                 "fields": [
-                  {
-                    "column": "International Standards",
-                    "name": "standard_name",
-                    "type": "text",
-                    "placeholder": "Enter standard/code/certification/label"
-                  },
-                  {"column": "P1", "name": "standard_p1", "type": "checkbox"},
-                  {"column": "P2", "name": "standard_p2", "type": "checkbox"},
-                  {"column": "P3", "name": "standard_p3", "type": "checkbox"},
-                  {"column": "P4", "name": "standard_p4", "type": "checkbox"},
-                  {"column": "P5", "name": "standard_p5", "type": "checkbox"},
-                  {"column": "P6", "name": "standard_p6", "type": "checkbox"},
-                  {"column": "P7", "name": "standard_p7", "type": "checkbox"},
-                  {"column": "P8", "name": "standard_p8", "type": "checkbox"},
-                  {"column": "P9", "name": "standard_p9", "type": "checkbox"}
+                  {"column": "P1", "name": "iso14001_p1", "type": "checkbox"},
+                  {"column": "P2", "name": "iso14001_p2", "type": "checkbox"},
+                  {"column": "P3", "name": "iso14001_p3", "type": "checkbox"},
+                  {"column": "P4", "name": "iso14001_p4", "type": "checkbox"},
+                  {"column": "P5", "name": "iso14001_p5", "type": "checkbox"},
+                  {"column": "P6", "name": "iso14001_p6", "type": "checkbox"},
+                  {"column": "P7", "name": "iso14001_p7", "type": "checkbox"},
+                  {"column": "P8", "name": "iso14001_p8", "type": "checkbox"},
+                  {"column": "P9", "name": "iso14001_p9", "type": "checkbox"}
+                ]
+              },
+              {
+                "label": "ISO 9001:2015 Quality Management System",
+                "fields": [
+                  {"column": "P1", "name": "iso9001_p1", "type": "checkbox"},
+                  {"column": "P2", "name": "iso9001_p2", "type": "checkbox"},
+                  {"column": "P3", "name": "iso9001_p3", "type": "checkbox"},
+                  {"column": "P4", "name": "iso9001_p4", "type": "checkbox"},
+                  {"column": "P5", "name": "iso9001_p5", "type": "checkbox"},
+                  {"column": "P6", "name": "iso9001_p6", "type": "checkbox"},
+                  {"column": "P7", "name": "iso9001_p7", "type": "checkbox"},
+                  {"column": "P8", "name": "iso9001_p8", "type": "checkbox"},
+                  {"column": "P9", "name": "iso9001_p9", "type": "checkbox"}
+                ]
+              },
+              {
+                "label": "ISO 50001:2018 Energy management systems",
+                "fields": [
+                  {"column": "P1", "name": "iso50001_p1", "type": "checkbox"},
+                  {"column": "P2", "name": "iso50001_p2", "type": "checkbox"},
+                  {"column": "P3", "name": "iso50001_p3", "type": "checkbox"},
+                  {"column": "P4", "name": "iso50001_p4", "type": "checkbox"},
+                  {"column": "P5", "name": "iso50001_p5", "type": "checkbox"},
+                  {"column": "P6", "name": "iso50001_p6", "type": "checkbox"},
+                  {"column": "P7", "name": "iso50001_p7", "type": "checkbox"},
+                  {"column": "P8", "name": "iso50001_p8", "type": "checkbox"},
+                  {"column": "P9", "name": "iso50001_p9", "type": "checkbox"}
                 ]
               }
             ]
@@ -992,83 +1011,22 @@
         "fields": [
           {
             "kind": "table",
-            "label": "Details of specific commitments, goals and targets",
+            "label": "Specific commitments, goals, and targets set by the entity with defined timelines if any",
             "name": "commitments",
-            "allow_add_rows": true,
-            "allow_delete_rows": true,
-            "columns": [
-              "S. No.",
-              "Principle",
-              "Commitment/Goal/Target",
-              "Quantifiable Target (with unit)",
-              "Baseline Year",
-              "Baseline Value",
-              "Target Year",
-              "Target Value",
-              "Status"
-            ],
+            "columns": ["Disclosure Questions", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9"],
             "rows": [
               {
+                "label": "Specific commitments, goals, and targets set by the entity with defined timelines if any",
                 "fields": [
-                  {
-                    "column": "Principle",
-                    "name": "principle",
-                    "type": "select",
-                    "options": [
-                      {"value": "", "label": "Select Principle"},
-                      {"value": "P1", "label": "P1 - Ethics, Transparency and Accountability"},
-                      {"value": "P2", "label": "P2 - Product Lifecycle Sustainability"},
-                      {"value": "P3", "label": "P3 - Employees' Wellbeing"},
-                      {"value": "P4", "label": "P4 - Stakeholder Engagement"},
-                      {"value": "P5", "label": "P5 - Human Rights"},
-                      {"value": "P6", "label": "P6 - Environment"},
-                      {"value": "P7", "label": "P7 - Policy Advocacy"},
-                      {"value": "P8", "label": "P8 - Inclusive Growth"},
-                      {"value": "P9", "label": "P9 - Customer Value"}
-                    ]
-                  },
-                  {
-                    "column": "Commitment/Goal/Target",
-                    "name": "commitment",
-                    "type": "textarea"
-                  },
-                  {
-                    "column": "Quantifiable Target (with unit)",
-                    "name": "quantifiable_target",
-                    "type": "text"
-                  },
-                  {
-                    "column": "Baseline Year",
-                    "name": "baseline_year",
-                    "type": "number"
-                  },
-                  {
-                    "column": "Baseline Value",
-                    "name": "baseline_value",
-                    "type": "text"
-                  },
-                  {
-                    "column": "Target Year",
-                    "name": "target_year",
-                    "type": "number"
-                  },
-                  {
-                    "column": "Target Value",
-                    "name": "target_value",
-                    "type": "text"
-                  },
-                  {
-                    "column": "Status",
-                    "name": "status",
-                    "type": "select",
-                    "options": [
-                      {"value": "", "label": "Select Status"},
-                      {"value": "On Track", "label": "On Track"},
-                      {"value": "Delayed", "label": "Delayed"},
-                      {"value": "Achieved", "label": "Achieved"},
-                      {"value": "Revised", "label": "Revised"}
-                    ]
-                  }
+                  {"column": "P1", "name": "commitments_p1", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
+                  {"column": "P2", "name": "commitments_p2", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
+                  {"column": "P3", "name": "commitments_p3", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
+                  {"column": "P4", "name": "commitments_p4", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
+                  {"column": "P5", "name": "commitments_p5", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
+                  {"column": "P6", "name": "commitments_p6", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
+                  {"column": "P7", "name": "commitments_p7", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
+                  {"column": "P8", "name": "commitments_p8", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
+                  {"column": "P9", "name": "commitments_p9", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]}
                 ]
               }
             ]
@@ -1086,83 +1044,22 @@
         "fields": [
           {
             "kind": "table",
-            "label": "Performance against commitments, goals and targets",
+            "label": "Performance of the entity against the specific commitments, goals, and targets",
             "name": "performance",
-            "allow_add_rows": true,
-            "allow_delete_rows": true,
-            "columns": [
-              "S. No.",
-              "Principle",
-              "Commitment/Goal/Target",
-              "Performance Status",
-              "Actual Achievement",
-              "Performance %",
-              "Reasons for Deviation (if not met)",
-              "Corrective Actions"
-            ],
+            "columns": ["Disclosure Questions", "P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8", "P9"],
             "rows": [
               {
+                "label": "Performance of the entity against the specific commitments, goals, and targets",
                 "fields": [
-                  {
-                    "column": "Principle",
-                    "name": "principle",
-                    "type": "select",
-                    "options": [
-                      {"value": "", "label": "Select Principle"},
-                      {"value": "P1", "label": "P1 - Ethics, Transparency and Accountability"},
-                      {"value": "P2", "label": "P2 - Product Lifecycle Sustainability"},
-                      {"value": "P3", "label": "P3 - Employees' Wellbeing"},
-                      {"value": "P4", "label": "P4 - Stakeholder Engagement"},
-                      {"value": "P5", "label": "P5 - Human Rights"},
-                      {"value": "P6", "label": "P6 - Environment"},
-                      {"value": "P7", "label": "P7 - Policy Advocacy"},
-                      {"value": "P8", "label": "P8 - Inclusive Growth"},
-                      {"value": "P9", "label": "P9 - Customer Value"}
-                    ]
-                  },
-                  {
-                    "column": "Commitment/Goal/Target",
-                    "name": "commitment_goal_target",
-                    "type": "textarea",
-                    "placeholder": "Describe the target/goal"
-                  },
-                  {
-                    "column": "Performance Status",
-                    "name": "performance_status",
-                    "type": "select",
-                    "options": [
-                      {"value": "", "label": "Select Status"},
-                      {"value": "On Track", "label": "On Track"},
-                      {"value": "Delayed", "label": "Delayed"},
-                      {"value": "Achieved", "label": "Achieved"},
-                      {"value": "Revised", "label": "Revised"}
-                    ]
-                  },
-                  {
-                    "column": "Actual Achievement",
-                    "name": "actual_achievement",
-                    "type": "textarea",
-                    "placeholder": "Actual achievement details"
-                  },
-                  {
-                    "column": "Performance %",
-                    "name": "performance_percentage",
-                    "field_type": "percentage",
-                    "type": "text",
-                    "placeholder": "%"
-                  },
-                  {
-                    "column": "Reasons for Deviation (if not met)",
-                    "name": "reasons_for_deviation",
-                    "type": "textarea",
-                    "placeholder": "Reasons for deviation"
-                  },
-                  {
-                    "column": "Corrective Actions",
-                    "name": "corrective_actions",
-                    "type": "textarea",
-                    "placeholder": "Corrective actions"
-                  }
+                  {"column": "P1", "name": "performance_p1", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
+                  {"column": "P2", "name": "performance_p2", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
+                  {"column": "P3", "name": "performance_p3", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
+                  {"column": "P4", "name": "performance_p4", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
+                  {"column": "P5", "name": "performance_p5", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
+                  {"column": "P6", "name": "performance_p6", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
+                  {"column": "P7", "name": "performance_p7", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
+                  {"column": "P8", "name": "performance_p8", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
+                  {"column": "P9", "name": "performance_p9", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]}
                 ]
               }
             ]
@@ -1179,42 +1076,10 @@
         "help_text": "",
         "fields": [
           {
-            "kind": "input",
-            "label": "Director's Name",
-            "type": "text",
-            "name": "director_name",
-            "placeholder": "Director's Name"
-          },
-          {
-            "kind": "input",
-            "label": "Designation",
-            "type": "text",
-            "name": "director_designation",
-            "placeholder": "Designation"
-          },
-          {
             "kind": "textarea",
-            "label": "Statement highlighting ESG related challenges",
-            "name": "esg_challenges",
-            "placeholder": "Describe the key ESG challenges faced by the organization..."
-          },
-          {
-            "kind": "textarea",
-            "label": "Statement highlighting ESG related targets",
-            "name": "esg_targets",
-            "placeholder": "Describe the ESG targets set by the organization..."
-          },
-          {
-            "kind": "textarea",
-            "label": "Statement highlighting ESG related achievements",
-            "name": "esg_achievements",
-            "placeholder": "Describe the ESG achievements of the organization..."
-          },
-          {
-            "kind": "textarea",
-            "label": "Overall Director's Statement",
-            "name": "director_statement",
-            "placeholder": "Enter the overall statement by the director..."
+            "label": "Statement by director responsible for the business responsibility report",
+            "name": "directorStatement",
+            "placeholder": "Enter the statement by director here..."
           }
         ]
       },
@@ -1233,20 +1098,21 @@
             "name": "highestAuthority",
             "allow_add_rows": true,
             "allow_delete_rows": true,
-            "columns": ["S. No.", "Particulars", "Details"],
+            "columns": ["S. No.", "Designation", "Name"],
             "rows": [
               {
                 "fields": [
                   {
-                    "column": "Particulars",
+                    "column": "Designation",
                     "type": "static",
-                    "value": "Enter the value"
+                    "value": "Enter the value",
+                    "placeholder": "Enter the Designation"
                   },
                   {
-                    "column": "Details",
+                    "column": "Name",
                     "name": "dinNumber",
                     "type": "text",
-                    "placeholder": "Enter the details"
+                    "placeholder": "Enter the Name"
                   }
                 ]
               }
@@ -1726,15 +1592,13 @@
             "kind": "table",
             "label": "Details of Appeal/ Revision preferred",
             "name": "appealDetails",
-            "columns": ["S. No.", "Case Details", "Appeal/Revision Filed", "Appeal Authority", "Current Status"],
+            "columns": ["S. No.", "Case Details", "Name of the regulatory/ enforcement agencies/ judicial institutions"],
             "rows": [
               {
                 "label": "1",
                 "fields": [
                   {"column": "Case Details", "name": "e3_case_details", "type": "textarea", "placeholder": "Brief description of the case"},
-                  {"column": "Appeal/Revision Filed", "name": "e3_appeal_filed", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
-                  {"column": "Appeal Authority", "name": "e3_appeal_authority", "type": "text", "placeholder": "Name of the authority"},
-                  {"column": "Current Status", "name": "e3_appeal_status", "type": "text", "placeholder": "Pending/Approved/Rejected"}
+                  {"column": "Name of the regulatory/ enforcement agencies/ judicial institutions", "name": "e3_regulatory_name", "type": "text", "placeholder": "Name of the regulatory"}
                 ]
               }
             ]
@@ -1986,14 +1850,43 @@
             "kind": "table",
             "label": "Awareness programs for value chain partners",
             "name": "valueChainAwareness",
-            "columns": ["Total number of awareness programs held", "Topics / principles covered under the training", "%age of value chain partners covered (by value of business done with such partners) under the awareness programmes"],
+            "allow_add_rows": true,
+            "allow_delete_rows": true,
+            "min_rows": 1,
+            "max_rows": 20,
+            "columns": [
+              "S. No.",
+              "Name of awareness programs held",
+              "Topics / principles covered under the training",
+              "% of value chain partners covered"
+            ],
             "rows": [
               {
-                "label": null,
                 "fields": [
-                  {"column": "Total number of awareness programs held", "name": "l1_total_programs", "type": "number"},
-                  {"column": "Topics / principles covered under the training", "name": "l1_topics_covered", "type": "textarea", "placeholder": "Topics covered"},
-                  {"column": "%age of value chain partners covered (by value of business done with such partners) under the awareness programmes", "name": "l1_percentage_covered", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {
+                    "column": "Name of awareness programs held",
+                    "name": "l1_program_name",
+                    "field_type": "alphabetic",
+                    "type": "text",
+                    "placeholder": "Enter program name"
+                  },
+                  {
+                    "column": "Topics / principles covered under the training",
+                    "name": "l1_topics_covered",
+                    "field_type": "text",
+                    "type": "textarea",
+                    "placeholder": "Enter topics covered",
+                    "required": true
+                  },
+                  {
+                    "column": "% of value chain partners covered",
+                    "name": "l1_percentage_covered",
+                    "field_type": "percentage",
+                    "type": "number",
+                    "placeholder": "Enter percentage",
+                    "min": 0,
+                    "max": 100
+                  }
                 ]
               }
             ]
@@ -2094,7 +1987,9 @@
             "label": "Percentage of inputs sourced sustainably",
             "name": "sustainablePercentage",
             "field_type": "percentage",
-            "type": "text",
+            "type": "number",
+            "min": 0,
+            "max": 100,
             "placeholder": "Enter percentage of inputs sourced sustainably"
           }
         ]
@@ -2221,10 +2116,11 @@
             "kind": "table",
             "label": "Recycled or reused input material",
             "name": "recycledMaterial",
-            "columns": ["Indicate input material", "FY {FY0} Current Financial Year", "FY {FY1} Previous Financial Year"],
+            "allow_add_rows": true,
+            "allow_delete_rows": true,
+            "columns": ["S. No.", "Indicate input material", "FY {FY0} Current Financial Year", "FY {FY1} Previous Financial Year"],
             "rows": [
               {
-                "label": null,
                 "fields": [
                   {"column": "Indicate input material", "name": "l3_material_name", "type": "text", "placeholder": "Material name"},
                   {"column": "FY {FY0} Current Financial Year", "name": "l3_material_cy", "field_type": "number_with_unit", "type": "text", "placeholder": "e.g., 1000 MT"},
@@ -2597,33 +2493,33 @@
               {
                 "label": "PF",
                 "fields": [
-                  {"column": "FY {FY0} Employees covered %", "name": "e3_pf_emp_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY0} Workers covered %", "name": "e3_pf_worker_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
+                  {"column": "FY {FY0} Employees covered %", "name": "e3_pf_emp_cy", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "FY {FY0} Workers covered %", "name": "e3_pf_worker_cy", "field_type": "percentage", "type": "number", "placeholder": "%"},
                   {"column": "FY {FY0} Deducted and deposited with authority", "name": "e3_pf_deposit_cy", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}, {"value": "NA", "label": "NA"}]},
-                  {"column": "FY {FY1} Employees covered %", "name": "e3_pf_emp_py", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} Workers covered %", "name": "e3_pf_worker_py", "field_type": "percentage", "type": "text", "placeholder": "%"},
+                  {"column": "FY {FY1} Employees covered %", "name": "e3_pf_emp_py", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "FY {FY1} Workers covered %", "name": "e3_pf_worker_py", "field_type": "percentage", "type": "number", "placeholder": "%"},
                   {"column": "FY {FY1} Deducted and deposited with authority", "name": "e3_pf_deposit_py", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}, {"value": "NA", "label": "NA"}]}
                 ]
               },
               {
                 "label": "Gratuity",
                 "fields": [
-                  {"column": "FY {FY0} Employees covered %", "name": "e3_gratuity_emp_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY0} Workers covered %", "name": "e3_gratuity_worker_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
+                  {"column": "FY {FY0} Employees covered %", "name": "e3_gratuity_emp_cy", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "FY {FY0} Workers covered %", "name": "e3_gratuity_worker_cy", "field_type": "percentage", "type": "number", "placeholder": "%"},
                   {"column": "FY {FY0} Deducted and deposited with authority", "name": "e3_gratuity_deposit_cy", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}, {"value": "NA", "label": "NA"}]},
-                  {"column": "FY {FY1} Employees covered %", "name": "e3_gratuity_emp_py", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} Workers covered %", "name": "e3_gratuity_worker_py", "field_type": "percentage", "type": "text", "placeholder": "%"},
+                  {"column": "FY {FY1} Employees covered %", "name": "e3_gratuity_emp_py", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "FY {FY1} Workers covered %", "name": "e3_gratuity_worker_py", "field_type": "percentage", "type": "number", "placeholder": "%"},
                   {"column": "FY {FY1} Deducted and deposited with authority", "name": "e3_gratuity_deposit_py", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}, {"value": "NA", "label": "NA"}]}
                 ]
               },
               {
                 "label": "ESI",
                 "fields": [
-                  {"column": "FY {FY0} Employees covered %", "name": "e3_esi_emp_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY0} Workers covered %", "name": "e3_esi_worker_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
+                  {"column": "FY {FY0} Employees covered %", "name": "e3_esi_emp_cy", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "FY {FY0} Workers covered %", "name": "e3_esi_worker_cy", "field_type": "percentage", "type": "number", "placeholder": "%"},
                   {"column": "FY {FY0} Deducted and deposited with authority", "name": "e3_esi_deposit_cy", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}, {"value": "NA", "label": "NA"}]},
-                  {"column": "FY {FY1} Employees covered %", "name": "e3_esi_emp_py", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} Workers covered %", "name": "e3_esi_worker_py", "field_type": "percentage", "type": "text", "placeholder": "%"},
+                  {"column": "FY {FY1} Employees covered %", "name": "e3_esi_emp_py", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "FY {FY1} Workers covered %", "name": "e3_esi_worker_py", "field_type": "percentage", "type": "number", "placeholder": "%"},
                   {"column": "FY {FY1} Deducted and deposited with authority", "name": "e3_esi_deposit_py", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}, {"value": "NA", "label": "NA"}]}
                 ]
               }
@@ -3825,11 +3721,11 @@
             "rows": [
               {
                 "label": "Health and safety conditions",
-                "fields": [{"column": "% Of value chain partners (by value of business done with such partners) that were assessed", "name": "l5_hs_percent", "field_type": "percentage", "type": "text", "placeholder": "%"}]
+                "fields": [{"column": "% Of value chain partners (by value of business done with such partners) that were assessed", "name": "l5_hs_percent", "field_type": "percentage", "type": "number", "placeholder": "%"}]
               },
               {
                 "label": "Working conditions",
-                "fields": [{"column": "% Of value chain partners (by value of business done with such partners) that were assessed", "name": "l5_wc_percent", "field_type": "percentage", "type": "text", "placeholder": "%"}]
+                "fields": [{"column": "% Of value chain partners (by value of business done with such partners) that were assessed", "name": "l5_wc_percent", "field_type": "percentage", "type": "number", "placeholder": "%"}]
               }
             ]
           }
@@ -4865,8 +4761,8 @@
               {
                 "label": "Gross wages paid to females as % of total wages paid by the entity",
                 "fields": [
-                  {"column": "FY {FY0} Current Financial Year", "name": "e3_gross_wages_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} Previous Financial Year", "name": "e3_gross_wages_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "FY {FY0} Current Financial Year", "name": "e3_gross_wages_cy", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "FY {FY1} Previous Financial Year", "name": "e3_gross_wages_py", "field_type": "percentage", "type": "number", "placeholder": "%"}
                 ]
               }
             ]
@@ -5053,34 +4949,24 @@
         "help_text": "",
         "fields": [
           {
-            "kind": "radio",
-            "label": "Do human rights requirements form part of your business agreements and contracts?",
-            "name": "hrContracts",
-            "options": [
-              {"value": "Yes", "label": "Yes"},
-              {"value": "No", "label": "No"}
-            ]
-          },
-          {
-            "kind": "textarea",
-            "label": "If yes, provide details of how human rights requirements are incorporated",
-            "name": "hrContractsDetails",
-            "placeholder": "Provide details of how human rights requirements are incorporated into business agreements and contracts..."
-          },
-          {
             "kind": "table",
             "label": "% Of your plants and offices that were assessed (by entity or statutory authorities or third parties)",
             "name": "hrAssessments",
-            "columns": ["Subject", "% Of your plants and offices that were assessed (by entity or statutory authorities or third parties)"],
+            "columns": ["Subject", "% of plants and offices assessed"],
             "rows": [
               {
                 "label": "Child labor",
                 "fields": [
                   {
-                    "column": "% Of your plants and offices that were assessed (by entity or statutory authorities or third parties)",
+                    "column": "% of plants and offices assessed",
                     "name": "e9_child_labor_percent",
+                    "field_type": "percentage",
                     "type": "number",
-                    "placeholder": "0"
+                    "min": 0,
+                    "max": 100,
+                    "step": "any",
+                    "placeholder": "0",
+                    "required": true
                   }
                 ]
               },
@@ -5088,10 +4974,15 @@
                 "label": "Forced/involuntary labor",
                 "fields": [
                   {
-                    "column": "% Of your plants and offices that were assessed (by entity or statutory authorities or third parties)",
+                    "column": "% of plants and offices assessed",
                     "name": "e9_forced_labor_percent",
+                    "field_type": "percentage",
                     "type": "number",
-                    "placeholder": "0"
+                    "min": 0,
+                    "max": 100,
+                    "step": "any",
+                    "placeholder": "0",
+                    "required": true
                   }
                 ]
               },
@@ -5099,10 +4990,15 @@
                 "label": "Sexual harassment",
                 "fields": [
                   {
-                    "column": "% Of your plants and offices that were assessed (by entity or statutory authorities or third parties)",
+                    "column": "% of plants and offices assessed",
                     "name": "e9_sexual_harassment_percent",
+                    "field_type": "percentage",
                     "type": "number",
-                    "placeholder": "0"
+                    "min": 0,
+                    "max": 100,
+                    "step": "any",
+                    "placeholder": "0",
+                    "required": true
                   }
                 ]
               },
@@ -5110,10 +5006,15 @@
                 "label": "Discrimination at workplace",
                 "fields": [
                   {
-                    "column": "% Of your plants and offices that were assessed (by entity or statutory authorities or third parties)",
+                    "column": "% of plants and offices assessed",
                     "name": "e9_discrimination_percent",
+                    "field_type": "percentage",
                     "type": "number",
-                    "placeholder": "0"
+                    "min": 0,
+                    "max": 100,
+                    "step": "any",
+                    "placeholder": "0",
+                    "required": true
                   }
                 ]
               },
@@ -5121,10 +5022,15 @@
                 "label": "Wages",
                 "fields": [
                   {
-                    "column": "% Of your plants and offices that were assessed (by entity or statutory authorities or third parties)",
+                    "column": "% of plants and offices assessed",
                     "name": "e9_wages_percent",
+                    "field_type": "percentage",
                     "type": "number",
-                    "placeholder": "0"
+                    "min": 0,
+                    "max": 100,
+                    "step": "any",
+                    "placeholder": "0",
+                    "required": true
                   }
                 ]
               },
@@ -5132,10 +5038,15 @@
                 "label": "Others – please specify",
                 "fields": [
                   {
-                    "column": "% Of your plants and offices that were assessed (by entity or statutory authorities or third parties)",
+                    "column": "% of plants and offices assessed",
                     "name": "e9_others_percent",
+                    "field_type": "percentage",
                     "type": "number",
-                    "placeholder": "0"
+                    "min": 0,
+                    "max": 100,
+                    "step": "any",
+                    "placeholder": "0",
+                    "required": true
                   }
                 ]
               }
@@ -5238,7 +5149,9 @@
                     "column": "% of value chain partners (by value of business done with such partners) that were assessed",
                     "name": "l4_sh_text",
                     "type": "text",
-                    "placeholder": "Enter percentage and details (e.g., 100% - Great place to work, ISO Audits)"
+                    "placeholder": "Enter percentage and details (e.g., 100% - Great place to work, ISO Audits)",
+                    "min": 0,
+                    "max": 100
                   }
                 ]
               },
