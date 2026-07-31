@@ -1092,20 +1092,9 @@
 <input type="hidden" id="assignmentId" value="{{ assignment.id|default:'' }}">
 <input type="hidden" id="selectedScopeId" value="{{ scope.id }}">
 <input type="hidden" id="isAssignmentLocked" value="{% if is_assignment_locked %}1{% else %}0{% endif %}">
-
-{% if is_assignment_locked %}
-<div class="alert alert-success mb-3">
-    <strong>Assignment Submitted.</strong>
-    This workspace is now read-only and is waiting for reviewer approval.
-</div>
-{% endif %}
-
-{% if assignment.review_comments %}
-<div class="alert alert-danger mb-3">
-    <strong>Reviewer Comments</strong><br>
-    {{ assignment.review_comments }}
-</div>
-{% endif %}
+<input type="hidden" id="isAssignee" value="{% if is_assignee %}1{% else %}0{% endif %}">
+<input type="hidden" id="assignmentStatus" value="{{ assignment.status|default:'DRAFT' }}">
+<input type="hidden" id="isReviewer" value="{% if is_reviewer %}1{% else %}0{% endif %}">
 
 <div class="page-header">
     <div class="page-header-left d-flex align-items-center">
@@ -1352,7 +1341,9 @@
                                             [ Plant ] <span class="text-danger">*</span>
                                         </label>
                                         <select id="plant" class="workspace-select">
-                                            <option value="ALL">All Plants</option>
+                                            {% if can_view_all_plants %}
+                                                <option value="ALL">All Plants</option>
+                                            {% endif %}
                                             {% for plant in plants %}
                                                 <option value="{{ plant.id }}"
                                                     data-country="{{ plant.country.name|default:'' }}"
@@ -1496,22 +1487,6 @@
                                     <p class="text-muted" style="font-size: 14px;">— Enter activity data below. Emission factors are auto-applied.</p>
                                 </div>
 
-                                <div class="mb-4 p-3 border rounded-3" style="background: #f8fafc; border-color: var(--border);">
-                                    <h6 class="fw-bold mb-2" style="font-size: 13px; color: var(--ink-soft);">AVAILABLE EMISSION FACTORS</h6>
-                                    <div class="d-flex flex-wrap gap-4">
-                                        <div>
-                                            <span class="fw-bold" style="font-size: 18px; color: var(--success);">0.002674</span>
-                                            <span class="text-muted" style="font-size: 12px; display: block;">tCO₂e / litres</span>
-                                            <span class="text-muted" style="font-size: 12px;">Diesel (Road) — IPCC AR6</span>
-                                        </div>
-                                        <div>
-                                            <span class="fw-bold" style="font-size: 18px; color: var(--success);">0.001711</span>
-                                            <span class="text-muted" style="font-size: 12px; display: block;">tCO₂e / litres</span>
-                                            <span class="text-muted" style="font-size: 12px;">Petrol (Road) — IPCC AR6</span>
-                                        </div>
-                                    </div>
-                                </div>
-
                                 <div class="table-container mb-3">
                                     <table class="data-table" style="min-width: 600px;">
                                         <thead>
@@ -1525,7 +1500,6 @@
                                                 <th>UNIT</th>
                                                 <th>EMISSION FACTOR (kg CO₂e/unit)</th>
                                                 <th>TOTAL EMISSION (kg CO₂e)</th>
-                                                <th>ACTION</th>
                                             </tr>
                                         </thead>
                                         <tbody id="activityTableBody">
@@ -1623,58 +1597,152 @@
                                     </div>
                                 </div>
 
-                                <!-- Activity Summary -->
-                                <div class="card border-0 shadow-sm mb-4" style="border-radius: var(--radius);">
-                                    <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
-                                        <h5 class="fw-bold mb-0" style="color:var(--ink);">Activity-wise Emission Summary</h5>
-                                        <button id="viewTransactionsBtn" class="btn btn-brsr secondary btn-sm" style="padding: 6px 16px; font-size: 12px;">
-                                            <i class="feather-eye"></i> View
-                                        </button>
-                                    </div>
-                                    <div class="card-body p-0">
-                                        <div class="table-responsive">
-                                            <table class="table table-bordered mb-0">
-                                                <thead class="table-light">
-                                                    <tr>
-                                                        <th>Activity</th>
-                                                        <th>Source</th>
-                                                        <th class="text-end">Quantity</th>
-                                                        <th class="text-end">Emission (kg CO₂e)</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody id="reviewActivitySummary">
-                                                    <tr>
-                                                        <td colspan="4" class="text-center text-muted">No Data Entered</td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
+                                {% if is_review_mode %}
+                                    <div class="card mt-3 mb-3 border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <h6 class="fw-bold mb-3">Reviewer Comments<span class="text-danger">*</span></h6>
+                                            <textarea id="reviewComments" class="form-control" rows="5" maxlength="1000" placeholder="Enter your review comments here..."></textarea>
+                                            <div class="text-end mt-2">
+                                                <small class="text-muted">
+                                                    <span id="reviewCommentCount">0</span> / 1000
+                                                </small>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
+                                {% endif %}
 
                                 <!-- Action Buttons -->
                                 <div class="d-flex gap-3">
-                                    {% if is_review_mode %}
-                                        <button id="approveAssignmentBtn" class="btn btn-success">
-                                            <i class="feather-check"></i> Approve
-                                        </button>
-                                        <button id="rejectAssignmentBtn" class="btn btn-danger">
-                                            <i class="feather-x"></i> Reject
-                                        </button>
-                                    {% else %}
-                                        {% if assignment %}
-                                            <button id="submitAssignment" class="btn btn-brsr success" style="padding: 10px 30px;">
+
+                                    <!-- ========================= -->
+                                    <!-- REVIEWER -->
+                                    <!-- ========================= -->
+                                    {% if is_reviewer %}
+
+                                        {% if assignment.status == "SUBMITTED" %}
+
+                                            <button id="approveAssignmentBtn" class="btn btn-success">
+                                                <i class="feather-check"></i> Approve
+                                            </button>
+
+                                            <button id="rejectAssignmentBtn" class="btn btn-danger">
+                                                <i class="feather-x"></i> Reject
+                                            </button>
+
+                                        {% elif assignment.status == "IN_PROGRESS" %}
+
+                                            <div class="alert alert-warning w-100 mb-0">
+                                                <h6 class="mb-1">
+                                                    <i class="feather-corner-up-left"></i>
+                                                    Assignment Returned
+                                                </h6>
+
+                                                <div>
+                                                    This assignment has been returned to the assignee for correction.
+                                                </div>
+                                            </div>
+
+                                        {% elif assignment.status == "APPROVED" %}
+
+                                            <div class="alert alert-success w-100 mb-0">
+                                                <h6 class="mb-1">
+                                                    <i class="feather-check-circle"></i>
+                                                    Assignment Approved
+                                                </h6>
+
+                                                <div>
+                                                    You have already approved this assignment.
+                                                </div>
+                                            </div>
+
+                                        {% endif %}
+
+
+                                    <!-- ========================= -->
+                                    <!-- ASSIGNEE -->
+                                    <!-- ========================= -->
+                                    {% elif is_assignee %}
+
+                                        {% if assignment.status == "SUBMITTED" %}
+
+                                            <div class="alert alert-info w-100 mb-0">
+                                                <h6 class="mb-1">
+                                                    <i class="feather-clock"></i>
+                                                    Waiting for Approval
+                                                </h6>
+
+                                                <div>
+                                                    Your submission has been sent for review.
+                                                </div>
+
+                                                <div class="mt-2">
+                                                    <strong>Reviewer :</strong>
+                                                    {{ reviewer_name }}
+                                                </div>
+                                            </div>
+
+                                        {% elif assignment.status == "APPROVED" %}
+
+                                            <div class="alert alert-success w-100 mb-0">
+                                                <h6 class="mb-1">
+                                                    <i class="feather-check-circle"></i>
+                                                    Assignment Approved
+                                                </h6>
+
+                                                <div>
+                                                    Your submission has been approved by
+                                                    <strong>{{ reviewer_name }}</strong>.
+                                                </div>
+                                            </div>
+
+                                        {% else %}
+
+                                            <button id="submitAssignment"
+                                                    class="btn btn-brsr success"
+                                                    style="padding:10px 30px;">
                                                 Submit for Review
                                             </button>
-                                        {% else %}
-                                            <button id="assignTaskBtn" class="btn btn-brsr primary" style="padding: 10px 30px;">
-                                                <i class="feather-user-plus"></i> Assign Task
+
+                                            <button id="saveDraft"
+                                                    class="btn btn-brsr secondary"
+                                                    style="padding:10px 30px;">
+                                                Save Draft
                                             </button>
+
                                         {% endif %}
-                                        <button id="saveDraft" class="btn btn-brsr secondary" style="padding: 10px 30px;">
-                                            Save Draft
-                                        </button>
+
+
+                                    <!-- ========================= -->
+                                    <!-- ASSIGNER / ADMIN -->
+                                    <!-- ========================= -->
+                                    {% else %}
+
+                                        {% if assignment %}
+
+                                            <div class="alert alert-secondary w-100 mb-0">
+                                                <h6 class="mb-1">
+                                                    <i class="feather-eye"></i>
+                                                    Read Only
+                                                </h6>
+
+                                                <div>
+                                                    You are viewing this assignment.
+                                                </div>
+                                            </div>
+
+                                        {% else %}
+
+                                            <button id="assignTaskBtn"
+                                                    class="btn btn-brsr primary"
+                                                    style="padding:10px 30px;">
+                                                <i class="feather-user-plus"></i>
+                                                Assign Task
+                                            </button>
+
+                                        {% endif %}
+
                                     {% endif %}
+
                                 </div>
                             </div>
                         </div>
@@ -1771,58 +1839,6 @@
     </div>
 </div>
 
-<!-- VIEW TRANSACTIONS MODAL -->
-<div class="modal-backdrop-brsr" id="viewTransactionsModal">
-    <div class="modal-card" style="max-width: 900px;">
-        <div class="modal-head">
-            <h3><i class="feather-list"></i> All Transactions</h3>
-            <button type="button" class="btn-brsr secondary" id="closeViewTransactionsModal">Close</button>
-        </div>
-        <div class="modal-body" style="max-height: 70vh; overflow-y: auto; padding: 0;">
-            <div style="padding: 12px 16px; border-bottom: 1px solid var(--border);">
-                <h6 class="fw-bold mb-2" style="color: var(--ink);">Summary by Source</h6>
-                <div class="table-container" style="border: none; border-radius: 0; margin-bottom: 0;">
-                    <table class="data-table" style="min-width: 500px; width: 100%;">
-                        <thead>
-                            <tr>
-                                <th>Source</th>
-                                <th>Total Quantity</th>
-                                <th>Unit</th>
-                                <th>Total Emission (kg CO₂e)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="viewSummaryBody">
-                            <tr><td colspan="4" class="text-center text-muted">No data</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div style="padding: 12px 16px;">
-                <h6 class="fw-bold mb-2" style="color: var(--ink);">Detailed Transactions</h6>
-                <div class="table-container" style="border: none; border-radius: 0;">
-                    <table class="data-table" style="min-width: 700px; width: 100%;">
-                        <thead>
-                            <tr>
-                                <th>Activity</th>
-                                <th>Source</th>
-                                <th>Quantity</th>
-                                <th>Unit</th>
-                                <th>Emission Factor (kg CO₂e/unit)</th>
-                                <th>Total Emission (kg CO₂e)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="viewDetailBody">
-                            <tr><td colspan="6" class="text-center text-muted">No data</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-        <div class="modal-actions" style="padding: 12px 20px; border-top: 1px solid var(--border);">
-            <button type="button" class="btn-brsr secondary" id="closeViewTransactionsModalFooter">Close</button>
-        </div>
-    </div>
-</div>
 
 <!-- Toast container -->
 <div id="toastContainer" class="toast-container"></div>
@@ -1891,7 +1907,7 @@ document.querySelectorAll(".scope-card").forEach(function(card){
             } else {
                 document.getElementById("activityTableBody").innerHTML = `
                     <tr>
-                        <td colspan="8" class="text-center text-muted">
+                        <td colspan="7" class="text-center text-muted">
                             No categories found for this scope.
                         </td>
                     </tr>
@@ -1939,7 +1955,7 @@ function loadCategoryData(category) {
     const tbody = document.getElementById("activityTableBody");
     tbody.innerHTML = `
         <tr>
-            <td colspan="8" class="text-center text-muted">
+            <td colspan="7" class="text-center text-muted">
                 <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                 Loading activities...
             </td>
@@ -1967,7 +1983,6 @@ function loadCategoryData(category) {
                                 <td>${activity.unit}</td>
                                 <td><input class="workspace-input factor" readonly></td>
                                 <td><input class="workspace-input total" readonly></td>
-                                <td></td>
                             </tr>
                         `;
                     } else {
@@ -1981,7 +1996,6 @@ function loadCategoryData(category) {
                                     <td>${activity.unit}</td>
                                     <td><input class="workspace-input factor" readonly></td>
                                     <td><input class="workspace-input total" readonly></td>
-                                    <td><button type="button" class="btn btn-sm btn-outline-danger remove-row" disabled><i class="feather-trash"></i></button></td>
                                 </tr>
                             `;
                         });
@@ -1990,7 +2004,7 @@ function loadCategoryData(category) {
             } else {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="8" class="text-center text-muted">
+                        <td colspan="7" class="text-center text-muted">
                             No activities found for this category.
                         </td>
                     </tr>
@@ -2026,17 +2040,26 @@ function loadCategoryData(category) {
             loadTransactions();
             applyUploadedRows();
             toggleQuantityFields();
+            updatePlantLocation();
+            lockContextInformation();
 
             setTimeout(function () {
                 updateReviewSummary();
                 calculateAllScopeTotals();
             }, 300);
+
+            // Lock again after rebuilding the table
+            const isLocked = document.getElementById("isAssignmentLocked").value === "1";
+            const isReviewer = document.getElementById("isReviewer").value === "1";
+            if (isLocked || isReviewer) {
+                lockWorkspace();
+            }
         })
         .catch(error => {
             console.error("Error loading category data:", error);
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="text-center text-danger">
+                    <td colspan="7" class="text-center text-danger">
                         Error loading activities. Please try again.
                     </td>
                 </tr>
@@ -2193,17 +2216,6 @@ function makeAllInputsReadOnly(isReadOnly) {
         }
     });
 
-    document.querySelectorAll(".btn-brsr.secondary, .remove-row").forEach(function(btn) {
-        btn.disabled = isReadOnly;
-        if (isReadOnly) {
-            btn.style.opacity = "0.6";
-            btn.style.cursor = "not-allowed";
-        } else {
-            btn.style.opacity = "1";
-            btn.style.cursor = "pointer";
-        }
-    });
-
     const fieldsToDisableOnImport = ['company', 'plant', 'financialYear', 'financialMonth', 'collectionMethod'];
     fieldsToDisableOnImport.forEach(function(id) {
         const el = document.getElementById(id);
@@ -2265,6 +2277,8 @@ function makeAllInputsReadOnly(isReadOnly) {
 // =============================================
 window.addEventListener("load", function () {
     makeAllInputsReadOnly(false);
+    updatePlantLocation();
+    lockContextInformation();
     loadTransactions();
 
     setTimeout(function(){
@@ -2301,11 +2315,6 @@ function switchToManualMode() {
         input.style.opacity = "1";
     });
 
-    document.querySelectorAll(".btn-brsr.secondary, .remove-row").forEach(function(btn) {
-        btn.disabled = false;
-        btn.style.opacity = "1";
-        btn.style.cursor = "pointer";
-    });
 
     const collectionMethod = document.getElementById("collectionMethod");
     if (collectionMethod) {
@@ -2653,35 +2662,84 @@ if (saveDraftBtn) {
 // =============================================
 const submitBtn = document.getElementById("submitAssignment");
 if (submitBtn) {
-    submitBtn.addEventListener("click", function () {
+    submitBtn.addEventListener("click", async function () {
         const assignmentId = document.getElementById("assignmentId").value;
         if (!assignmentId) {
             showToast("Assignment not found.", "error");
             return;
         }
+        // Build rows
+        const rows = [];
+        document.querySelectorAll("#activityTableBody tr").forEach(function (row) {
+            const quantity = parseFloat(row.querySelector(".quantity").value) || 0;
+            if (quantity <= 0) return;
+            rows.push({
+                activity: parseInt(row.dataset.activity),
+                source: parseInt(row.dataset.source),
+                unit: parseInt(row.dataset.unit),
+                quantity: quantity,
+                factor: parseFloat(row.querySelector(".factor").value) || 0,
+                total: parseFloat(row.querySelector(".total").value) || 0,
+            });
+        });
+        if (rows.length === 0) {
+            showToast("Please enter at least one quantity.", "warning");
+            return;
+        }
+        try {
+            // -------------------------
+            // STEP 1 : SAVE
+            // -------------------------
+            let response = await fetch("/emission/api/save-transactions/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrftoken,
+                },
+                body: JSON.stringify({
+                    company: document.getElementById("company").value,
+                    plant: document.getElementById("plant").value,
+                    financial_year: document.getElementById("financialYear").value,
+                    financial_month: document.getElementById("financialMonth").value,
+                    assignment: assignmentId,
+                    rows: rows,
+                }),
+            });
+            let result = await response.json();
+            if (!result.success) {
+                showToast(result.message, "error");
+                return;
+            }
+            // -------------------------
+            // STEP 2 : SUBMIT
+            // -------------------------
+            response = await fetch("/emission/api/submit-assignment/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrftoken,
+                },
 
-        fetch("/emission/api/submit-assignment/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": csrftoken,
-            },
-            body: JSON.stringify({
-                assignment: assignmentId,
-            }),
-        })
-        .then(response => response.json())
-        .then(result => {
+                body: JSON.stringify({
+                    assignment: assignmentId
+                })
+            });
+            result = await response.json();
             if (result.success) {
                 showToast(result.message, "success");
+                lockWorkspace();
+                updateReviewSummary();
+                setTimeout(function () {
+                    location.reload();
+                }, 1000);
             } else {
                 showToast(result.message, "error");
             }
-        })
-        .catch(error => {
+        }
+        catch (error) {
             console.error(error);
             showToast("Network error.", "error");
-        });
+        }
     });
 }
 
@@ -2692,6 +2750,13 @@ const approveBtn = document.getElementById("approveAssignmentBtn");
 if (approveBtn) {
     approveBtn.addEventListener("click", function () {
         const assignmentId = document.getElementById("assignmentId").value;
+
+        const comments = document.getElementById("reviewComments").value.trim();
+        if (!comments) {
+            showToast("Reviewer comments are required before approval.", "warning");
+            document.getElementById("reviewComments").focus();
+            return;
+        }
         if (!assignmentId) {
             showToast("Assignment not found.", "error");
             return;
@@ -2705,6 +2770,7 @@ if (approveBtn) {
             },
             body: JSON.stringify({
                 assignment: assignmentId,
+                comments: comments,
             }),
         })
         .then(response => response.json())
@@ -2737,9 +2803,10 @@ if (rejectBtn) {
             return;
         }
 
-        const remarks = prompt("Enter rejection remarks:");
-        if (!remarks) {
-            showToast("Remarks are required.", "warning");
+        const comments = document.getElementById("reviewComments").value.trim();
+        if (!comments) {
+            showToast("Reviewer comments are required before rejection.", "warning");
+            document.getElementById("reviewComments").focus();
             return;
         }
 
@@ -2751,7 +2818,7 @@ if (rejectBtn) {
             },
             body: JSON.stringify({
                 assignment: assignmentId,
-                remarks: remarks,
+                comments: comments,
             }),
         })
         .then(response => response.json())
@@ -2775,11 +2842,15 @@ if (rejectBtn) {
 // =============================================
 // PLANT CHANGE HANDLER
 // =============================================
-document.getElementById("plant").addEventListener("change", function () {
-    const option = this.options[this.selectedIndex];
+function updatePlantLocation() {
+    const plant = document.getElementById("plant");
+    const option = plant.options[plant.selectedIndex];
     document.getElementById("country").value = option.dataset.country || "";
     document.getElementById("state").value = option.dataset.state || "";
     document.getElementById("city").value = option.dataset.city || "";
+}
+document.getElementById("plant").addEventListener("change", function () {
+    updatePlantLocation();
 });
 
 // =============================================
@@ -2878,17 +2949,41 @@ document.getElementById("frequency").addEventListener("change", function(){
 // =============================================
 // LOCK WORKSPACE
 // =============================================
+// =============================================
+// LOCK EMISSION DATA ENTRY ONLY
+// =============================================
 function lockWorkspace() {
-    $("input:not([type='hidden'])").prop("disabled", true);
-    $("select").prop("disabled", true);
-    $("textarea").prop("disabled", true);
-    $("#saveDraft").prop("disabled", true);
-    $("#submitAssignment").prop("disabled", true);
-    $(".remove-row").prop("disabled", true);
-    $("#assignTaskBtn").prop("disabled", true);
-    $("#viewTransactionsBtn").prop("disabled", false);
-    $("#approveAssignmentBtn").prop("disabled", false);
-    $("#rejectAssignmentBtn").prop("disabled", false);
+
+    // Import section
+    $("#downloadTemplateBtn").prop("disabled", true);
+    $("#uploadTemplateBtn").prop("disabled", true);
+
+    // Context
+    $("#company,#plant,#financialYear,#financialMonth,#frequency,#consolidation")
+        .prop("disabled", true);
+
+    $("#country,#state,#city,#baseYear,#reportingStandard,#recalculationContext,#collectionMethod")
+        .prop("disabled", true);
+
+    // Activity table
+    $("#activityTableBody")
+        .find("input, select, textarea, button")
+        .prop("disabled", true)
+        .prop("readonly", true);
+
+    $("#selectAllActivities").prop("disabled", true);
+    $(".activity-checkbox").prop("disabled", true);
+
+    // Buttons
+    $("#saveDraft,#submitAssignment,#manualEntryBtn")
+        .prop("disabled", true)
+        .hide();
+
+    $("#activityTableBody .quantity").css({
+        background: "#f3f4f6",
+        cursor: "not-allowed",
+        opacity: "0.8"
+    });
 }
 
 // =============================================
@@ -2926,6 +3021,42 @@ function updateReviewSummary() {
 
     const frequency = document.getElementById("frequency");
     document.getElementById("reviewFrequency").innerText = frequency.options[frequency.selectedIndex].text;
+
+    const status = document.getElementById("assignmentStatus")?.value || "DRAFT";
+
+    const statusElement = document.getElementById("reviewStatus");
+
+    switch (status) {
+
+        case "ASSIGNED":
+            statusElement.innerHTML = "Assigned";
+            statusElement.className = "fw-bold text-primary";
+            break;
+
+        case "IN_PROGRESS":
+            statusElement.innerHTML = "In Progress";
+            statusElement.className = "fw-bold text-info";
+            break;
+
+        case "SUBMITTED":
+            statusElement.innerHTML = "Waiting for Review";
+            statusElement.className = "fw-bold text-warning";
+            break;
+
+        case "APPROVED":
+            statusElement.innerHTML = "Approved";
+            statusElement.className = "fw-bold text-success";
+            break;
+
+        case "REJECTED":
+            statusElement.innerHTML = "Rejected";
+            statusElement.className = "fw-bold text-danger";
+            break;
+
+        default:
+            statusElement.innerHTML = "Draft";
+            statusElement.className = "fw-bold text-secondary";
+    }
 
     let totalQuantity = 0;
     let totalEmissionKg = 0;
@@ -2977,41 +3108,6 @@ function updateReviewSummary() {
         }
     }
 
-    // Activity-wise Summary
-    const tbody = document.getElementById("reviewActivitySummary");
-    tbody.innerHTML = "";
-
-    document.querySelectorAll("#activityTableBody tr").forEach(function(row){
-        const qtyInput = row.querySelector(".quantity");
-        const qty = parseFloat(qtyInput ? qtyInput.value : 0) || 0;
-        if(qty <= 0) return;
-
-        const cells = row.querySelectorAll("td");
-        if (cells.length < 5) return;
-
-        const activity = cells[1]?.innerText.trim() || '';
-        const source = cells[2]?.innerText.trim() || '';
-        const unit = cells[4]?.innerText.trim() || '';
-        const totalInput = row.querySelector(".total");
-        const emission = parseFloat(totalInput ? totalInput.value : 0) || 0;
-
-        tbody.innerHTML += `
-            <tr>
-                <td>${activity}</td>
-                <td>${source}</td>
-                <td class="text-end">${qty.toFixed(2)} ${unit}</td>
-                <td class="text-end fw-bold">${emission.toFixed(2)} kg CO₂e</td>
-            </tr>
-        `;
-    });
-
-    if(tbody.innerHTML === ""){
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="4" class="text-center text-muted">No Data Entered</td>
-            </tr>
-        `;
-    }
 }
 
 // =============================================
@@ -3368,111 +3464,6 @@ if (assignForm) {
     });
 }
 
-// =============================================
-// VIEW TRANSACTIONS MODAL
-// =============================================
-const viewBtn = document.getElementById('viewTransactionsBtn');
-const viewModal = document.getElementById('viewTransactionsModal');
-const viewCloseBtns = document.querySelectorAll('#closeViewTransactionsModal, #closeViewTransactionsModalFooter');
-
-function populateViewModal() {
-    const rows = document.querySelectorAll('#activityTableBody tr');
-    const summaryBody = document.getElementById('viewSummaryBody');
-    const detailBody = document.getElementById('viewDetailBody');
-
-    let detailHtml = '';
-    const sourceMap = {};
-
-    if (rows.length === 0) {
-        summaryBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">No data entered yet.</td></tr>`;
-        detailBody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">No data entered yet.</td></tr>`;
-        return;
-    }
-
-    rows.forEach(row => {
-        const cells = row.querySelectorAll("td");
-        if (cells.length < 5) return;
-        
-        const activity = cells[1]?.innerText.trim() || '';
-        const source = cells[2]?.innerText.trim() || '';
-        const quantityInput = row.querySelector('.quantity');
-        const unit = cells[4]?.innerText.trim() || '';
-        const factorInput = row.querySelector('.factor');
-        const totalInput = row.querySelector('.total');
-
-        const quantity = parseFloat(quantityInput?.value) || 0;
-        const factor = factorInput?.value || '0';
-        const total = parseFloat(totalInput?.value) || 0;
-
-        detailHtml += `
-            <tr>
-                <td>${activity}</td>
-                <td>${source}</td>
-                <td>${quantity}</td>
-                <td>${unit}</td>
-                <td>${factor}</td>
-                <td>${total.toFixed(2)}</td>
-            </tr>
-        `;
-
-        if (source) {
-            if (!sourceMap[source]) {
-                sourceMap[source] = { totalQty: 0, totalEmission: 0, unit: unit };
-            }
-            sourceMap[source].totalQty += quantity;
-            sourceMap[source].totalEmission += total;
-        }
-    });
-
-    let summaryHtml = '';
-    const sourceKeys = Object.keys(sourceMap);
-    if (sourceKeys.length === 0) {
-        summaryHtml = `<tr><td colspan="4" class="text-center text-muted">No data with quantity > 0.</td></tr>`;
-    } else {
-        sourceKeys.forEach(src => {
-            const data = sourceMap[src];
-            summaryHtml += `
-                <tr>
-                    <td><strong>${src}</strong></td>
-                    <td>${data.totalQty.toFixed(2)}</td>
-                    <td>${data.unit}</td>
-                    <td>${data.totalEmission.toFixed(2)}</td>
-                </tr>
-            `;
-        });
-        let grandQty = 0, grandEm = 0;
-        sourceKeys.forEach(src => {
-            grandQty += sourceMap[src].totalQty;
-            grandEm += sourceMap[src].totalEmission;
-        });
-        summaryHtml += `
-            <tr style="font-weight: 700; background: #f8fafc;">
-                <td><strong>GRAND TOTAL</strong></td>
-                <td>${grandQty.toFixed(2)}</td>
-                <td></td>
-                <td>${grandEm.toFixed(2)}</td>
-            </tr>
-        `;
-    }
-
-    summaryBody.innerHTML = summaryHtml;
-    detailBody.innerHTML = detailHtml;
-}
-
-if (viewBtn) {
-    viewBtn.addEventListener('click', function() {
-        populateViewModal();
-        viewModal.classList.add('active');
-    });
-}
-
-function closeViewModal() {
-    viewModal.classList.remove('active');
-}
-viewCloseBtns.forEach(btn => btn.addEventListener('click', closeViewModal));
-viewModal.addEventListener('click', function(e) {
-    if (e.target === this) closeViewModal();
-});
 
 // =============================================
 // SELECT ALL ACTIVITIES
@@ -3488,26 +3479,35 @@ if (selectAllActivities) {
 // =============================================
 // ADD MANUAL ENTRY BUTTON
 // =============================================
-document.addEventListener('DOMContentLoaded', function() {
-    if (!document.getElementById('manualEntryBtn')) {
-        const actionButtons = document.querySelector('.d-flex.gap-3');
-        if (actionButtons) {
-            const manualBtn = document.createElement('button');
-            manualBtn.id = 'manualEntryBtn';
-            manualBtn.className = 'btn btn-brsr secondary';
-            manualBtn.style.padding = '10px 30px';
-            manualBtn.innerHTML = '<i class="feather-edit"></i> Switch to Manual Entry';
-            manualBtn.addEventListener('click', function() {
-                if (window.isImportedFromExcel) {
-                    if (confirm('Switching to manual entry will clear all imported data. Continue?')) {
-                        switchToManualMode();
-                    }
-                } else {
-                    showToast('Already in Manual Entry mode.', 'info');
+document.addEventListener("DOMContentLoaded", function () {
+    const isLocked =
+        document.getElementById("isAssignmentLocked").value === "1";
+    const isAssignee =
+        document.getElementById("isAssignee").value === "1";
+    // Only assignee can use manual entry
+    if (isLocked || !isAssignee) {
+        return;
+    }
+    if (!document.getElementById("manualEntryBtn")) {
+        const actionButtons = document.querySelector(".d-flex.gap-3");
+        if (!actionButtons) return;
+        const manualBtn = document.createElement("button");
+        manualBtn.id = "manualEntryBtn";
+        manualBtn.className = "btn btn-brsr secondary";
+        manualBtn.style.padding = "10px 30px";
+        manualBtn.innerHTML =
+            '<i class="feather-edit"></i> Switch to Manual Entry';
+
+        manualBtn.onclick = function () {
+            if (window.isImportedFromExcel) {
+                if (confirm("Switching to manual entry will clear imported data. Continue?")) {
+                    switchToManualMode();
                 }
-            });
-            actionButtons.appendChild(manualBtn);
-        }
+            } else {
+                showToast("Already in Manual Entry mode.", "info");
+            }
+        };
+        actionButtons.appendChild(manualBtn);
     }
 });
 
@@ -3561,6 +3561,48 @@ function removeAssignedSource(assignmentId, sourceId) {
     }
 
     showToast("Source removed from current selection.", "success");
+}
+
+// Locking data once submited for approval
+$(document).ready(function () {
+    {% if is_assignment_locked %}
+        lockWorkspace();
+    {% endif %}
+});
+
+
+function lockContextInformation() {
+
+    const isAssignee =
+        document.getElementById("isAssignee").value === "1";
+
+    if (!isAssignee) {
+        return;
+    }
+
+    // Disable dropdowns
+    $("#company").prop("disabled", true);
+    $("#plant").prop("disabled", true);
+    $("#financialYear").prop("disabled", true);
+    $("#financialMonth").prop("disabled", true);
+    $("#frequency").prop("disabled", true);
+    $("#consolidation").prop("disabled", true);
+
+    // Readonly inputs
+    $("#country").prop("disabled", true);
+    $("#state").prop("disabled", true);
+    $("#city").prop("disabled", true);
+    $("#baseYear").prop("disabled", true);
+    $("#reportingStandard").prop("disabled", true);
+    $("#recalculationContext").prop("disabled", true);
+}
+
+const reviewComments = document.getElementById("reviewComments");
+if (reviewComments) {
+    reviewComments.addEventListener("input", function () {
+        document.getElementById("reviewCommentCount").innerText =
+            this.value.length;
+    });
 }
 </script>
 {% endblock %}
