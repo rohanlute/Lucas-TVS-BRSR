@@ -195,23 +195,29 @@ class EmissionAssignmentDashboardView(LoginRequiredMixin, TemplateView):
         assignment_id = self.request.GET.get('assignment')
         
         # Get all assignments
+        if user.role.role_code == "COMPANYADMIN":
+            assignments = EmissionAssignment.objects.filter(company=user.company)
+
+        elif user.role.role_code == "ESG-HEAD":
+            assignments = EmissionAssignment.objects.filter(company=user.company)
+
+        elif user.role.role_code == "ESG-COORD":
+            assignments = EmissionAssignment.objects.filter(company=user.company,plant__in=user.assigned_plants.all()).distinct()
+
+        elif user.role.role_code in ["DEPT-APPR", "PLANT-COORD"]:
+            assignments = EmissionAssignment.objects.filter(company=user.company,reviewer=user)
+        
+        elif user.role.role_code == "DEPT-USER":
+            assignments = EmissionAssignment.objects.filter(company=user.company,assignee=user)
+
+        else:
+            assignments = EmissionAssignment.objects.none()
+
         assignments = (
-            EmissionAssignment.objects
-            .select_related(
-                "company",
-                "plant",
-                "financial_year",
-                "financial_month",
-                "scope",
-                "assignee",
-                "assigner",
-            )
-            .prefetch_related(
-                "transactions",
-                "assignment_sources__source__activity",
-            )
-            .order_by('-created_at')
-        )
+            assignments
+            .select_related("company","plant","financial_year","financial_month","scope","assignee",
+                            "assigner","reviewer",).prefetch_related("transactions","assignment_sources__source__activity",)
+                            .order_by("-created_at"))
         
         # Validate assignment_id
         highlight_assignment_id = None
@@ -342,6 +348,8 @@ class SaveEmissionAssignmentAPIView(APIView):
                 assignee_id=data.get("assignee"),
 
                 assigner=request.user,
+
+                reviewer_id=data.get("reviewer"),
 
                 due_date=data.get("due_date"),
 
@@ -506,9 +514,8 @@ class ScopeDashboardView(ListView):
 
             # Change this according to your Role model
             is_reviewer = (
-                hasattr(self.request.user, "role")
-                and self.request.user.role
-                and self.request.user.role.role_code == "REVIEWER"
+                assignment is not None
+                and assignment.reviewer == self.request.user
             )
 
             if not (is_assignee or is_assigner or is_reviewer):
@@ -516,7 +523,11 @@ class ScopeDashboardView(ListView):
 
         context["assignment"] = assignment
 
-        context["is_review_mode"] = (assignment is not None and assignment.status == "SUBMITTED")
+        context["is_review_mode"] = (
+            assignment is not None
+            and assignment.status == "SUBMITTED"
+            and assignment.reviewer == self.request.user
+        )
 
         context["is_assignee"] = (
             assignment is not None
@@ -530,10 +541,17 @@ class ScopeDashboardView(ListView):
 
         context["is_reviewer"] = (
             assignment is not None
-            and hasattr(self.request.user, "role")
-            and self.request.user.role
-            and self.request.user.role.role_code == "REVIEWER"
+            and assignment.reviewer == self.request.user
         )
+
+        context["reviewer_name"] = (
+            assignment.reviewer.get_full_name()
+            if assignment and assignment.reviewer
+            else ""
+        )
+
+        if assignment and assignment.reviewer and not context["reviewer_name"]:
+            context["reviewer_name"] = assignment.reviewer.username
 
         
 
@@ -572,7 +590,32 @@ class ScopeDashboardView(ListView):
             "company_name"
         )
 
-        context["plants"] = Plant.objects.filter(is_active=True).order_by("name")
+        user = self.request.user
+
+        if user.role.role_code in ["COMPANYADMIN", "ESG-HEAD"]:
+            # Can access all company plants
+            context["plants"] = (
+                Plant.objects.filter(
+                    company=user.company,
+                    is_active=True,
+                ).order_by("name")
+            )
+
+        else:
+            # Only assigned plants
+            context["plants"] = (
+                user.assigned_plants.filter(
+                    is_active=True,
+                ).order_by("name")
+            )
+
+        context["can_view_all_plants"] = (
+            self.request.user.role.role_code in [
+                "COMPANYADMIN",
+                "ESG-HEAD",
+                "ESG-COORD",
+            ]
+        )
 
         context["financial_years"] = FinancialYear.objects.all()
 
@@ -615,7 +658,7 @@ class ScopeDashboardView(ListView):
 
         context["current_financial_year"] = current_financial_year
         context["current_financial_month"] = current_financial_month
-        context["is_assignment_locked"] = (assignment is not None and assignment.status == "SUBMITTED")
+        context["is_assignment_locked"] = (assignment is not None and assignment.status in ["SUBMITTED", "APPROVED"])
 
         return context
     

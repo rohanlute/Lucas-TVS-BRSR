@@ -472,10 +472,26 @@
                                         warn
                                     {% elif assignment.status == 'IN_PROGRESS' %}
                                         brand
+                                    {% elif assignment.status == 'ASSIGNED' %}
+                                        brand
                                     {% else %}
                                         muted
                                     {% endif %}">
-                                    {{ assignment.get_status_display }}
+                                    {% if assignment.status == "DRAFT" %}
+                                        Draft
+                                    {% elif assignment.status == "ASSIGNED" %}
+                                        Assigned
+                                    {% elif assignment.status == "IN_PROGRESS" %}
+                                        In Progress
+                                    {% elif assignment.status == "SUBMITTED" %}
+                                        Waiting for Review
+                                    {% elif assignment.status == "APPROVED" %}
+                                        Approved
+                                    {% elif assignment.status == "REJECTED" %}
+                                        Rejected
+                                    {% else %}
+                                        {{ assignment.get_status_display }}
+                                    {% endif %}
                                 </span>
                                 {% if assignment.is_overdue %}
                                     <span class="pill danger">Overdue</span>
