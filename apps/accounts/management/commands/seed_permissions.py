@@ -33,7 +33,10 @@ class Command(BaseCommand):
              'VIEW', 3),
             ('DELETE_USER', 'Delete User', 'Can delete user', 
              'DELETE', 4),
-            
+
+            #BRSR Module
+            ('ACCESS_BRSR_MODULE', 'Access BRSR Module', 'Can access BRSR module', 'MODULE_ACCESS', 0),
+            ('VIEW_ALL_BRSR_DATA', 'View All BRSR Data', 'Can view all BRSR data', 'VIEW', 1),
         ]
 
         created = 0

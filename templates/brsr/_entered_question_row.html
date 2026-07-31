@@ -1,0 +1,48 @@
+<div class="question-container" id="question-{{ q.question_id }}">
+  <div class="question-header">
+    <div class="question-header-left">
+      <div>
+        <h3 class="question-title"><span class="question-number">{{ q.number }}.</span>{{ q.title }}</h3>
+      </div>
+    </div>
+    {% if is_company_view %}
+      <span class="status-badge {{ q.dot_status|default:'draft' }}">{{ q.plant_entries|length }} plant{{ q.plant_entries|length|pluralize }}</span>
+    {% else %}
+      {% for entry in q.plant_entries %}
+        <span class="status-badge {{ entry.status }}">{{ entry.status_display }}</span>
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  <div class="question-content">
+    {% for entry in q.plant_entries %}
+      <div class="plant-entry-block">
+        <div class="plant-entry-head">
+          {% if is_company_view %}
+            <span class="plant-name">{{ entry.plant_name }} <small>({{ entry.plant_code }})</small></span>
+          {% else %}
+            <span class="plant-name">{{ entry.financial_year }}</span>
+          {% endif %}
+          <span class="status-badge {{ entry.status }}">{{ entry.status_display }}</span>
+        </div>
+        <div class="plant-entry-body">
+          {% if entry.response_html %}
+            {{ entry.response_html|safe }}
+          {% else %}
+            <div class="form-group">
+              <label class="form-label">Response</label>
+              <textarea class="workspace-textarea form-textarea" readonly>{{ entry.response_value|default:"—" }}</textarea>
+            </div>
+          {% endif %}
+
+          {% if entry.reviewed_by %}
+            <div class="review-comment-box">
+              <span class="review-label">Reviewed By</span>
+              <p>{{ entry.reviewed_by }}</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
