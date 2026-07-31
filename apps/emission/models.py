@@ -223,6 +223,7 @@ class EmissionAssignment(models.Model):
         ("ASSIGNED", "Assigned"),
         ("IN_PROGRESS", "In Progress"),
         ("SUBMITTED", "Submitted"),
+        ("REVIEW_APPROVED", "Reviewer Approved"),
         ("APPROVED", "Approved"),
         ("REJECTED", "Rejected"),
     ]
@@ -320,6 +321,11 @@ class EmissionAssignment(models.Model):
     )
 
     review_comments = models.TextField(
+        blank=True,
+        null=True
+    )
+
+    coordinator_comments = models.TextField(
         blank=True,
         null=True
     )

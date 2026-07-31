@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -210,16 +211,13 @@ class EmissionAssignmentCreateAPIView(APIView):
             )
         
 
-
-
-
-
-class ApproveAssignmentView(APIView):
+class CoordinatorApproveAssignmentView(APIView):
 
     @transaction.atomic
     def post(self, request):
 
         assignment_id = request.data.get("assignment")
+        comments = request.data.get("comments", "").strip()
 
         if not assignment_id:
             return Response(
@@ -231,13 +229,13 @@ class ApproveAssignmentView(APIView):
             )
 
         try:
-
             assignment = EmissionAssignment.objects.get(
-                id=assignment_id
+                id=assignment_id,
+                assigner=request.user,
+                status="REVIEW_APPROVED",
             )
 
         except EmissionAssignment.DoesNotExist:
-
             return Response(
                 {
                     "success": False,
@@ -246,19 +244,91 @@ class ApproveAssignmentView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+        if assignment.status != "REVIEW_APPROVED":
+            return Response(
+                {
+                    "success": False,
+                    "message": "Assignment is not ready for final approval."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         EmissionTransaction.objects.filter(
             assignment=assignment
         ).update(
-            status="APPROVED"
+            status="APPROVED",
+            approved_by=request.user,
+            approved_at=timezone.now(),
         )
 
         assignment.status = "APPROVED"
-        assignment.save(update_fields=["status"])
+        assignment.coordinator_comments = comments
+
+        assignment.save(
+            update_fields=[
+                "status",
+                "coordinator_comments",
+            ]
+        )
 
         return Response(
             {
                 "success": True,
                 "message": "Assignment approved successfully."
+            }
+        )
+
+
+
+class ApproveAssignmentView(APIView):
+
+    @transaction.atomic
+    def post(self, request):
+
+        assignment_id = request.data.get("assignment")
+        comments = request.data.get("comments", "").strip()
+
+        if not assignment_id:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Assignment not found."
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            assignment = EmissionAssignment.objects.get(
+                id=assignment_id,
+                reviewer=request.user,
+                status="SUBMITTED",
+            )
+
+        except EmissionAssignment.DoesNotExist:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Assignment does not exist."
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        assignment.status = "REVIEW_APPROVED"
+        assignment.review_comments = comments
+        assignment.reviewer = request.user
+
+        assignment.save(
+            update_fields=[
+                "status",
+                "review_comments",
+                "reviewer",
+            ]
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": "Assignment sent to ESG Coordinator for approval."
             }
         )
     
@@ -272,6 +342,7 @@ class RejectAssignmentView(APIView):
         
         assignment_id = request.data.get("assignment")
         remarks = request.data.get("remarks", "").strip()
+        comments = request.data.get("comments", "").strip()
 
         if not assignment_id:
             return Response(
@@ -304,10 +375,17 @@ class RejectAssignmentView(APIView):
             status="DRAFT"
         )
 
-        assignment.review_comments = remarks
+        assignment.review_comments = comments
+        assignment.reviewer = request.user
         assignment.status = "IN_PROGRESS"
 
-        assignment.save(update_fields=["status","review_comments",])
+        assignment.save(
+            update_fields=[
+                "status",
+                "review_comments",
+                "reviewer",
+            ]
+        )
 
         return Response(
             {

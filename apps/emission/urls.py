@@ -1,6 +1,6 @@
 from django.urls import path
 from .views_excel import download_scope_template, upload_scope_template
-from .api_views import ApproveAssignmentView, RejectAssignmentView
+from .api_views import ApproveAssignmentView, RejectAssignmentView, CoordinatorApproveAssignmentView
 from .views import (
     EmissionAssignmentDashboardView,
     EmissionsDashboardView, 
@@ -44,7 +44,10 @@ urlpatterns = [
     path("api/assignment/save/",SaveEmissionAssignmentAPIView.as_view(),name="save-emission-assignment"),
     path("api/submit-assignment/",SubmitAssignmentView.as_view(),name="submit_assignment"),
     path("assignments/<int:assignment_id>/",EmissionAssignmentDetailView.as_view(),name="assignment_detail"),
+    # Reviwer Approval
     path("api/approve-assignment/",ApproveAssignmentView.as_view(),name="approve_assignment"),
+    # Coordinator 
+    path("api/coordinator-approve-assignment/",CoordinatorApproveAssignmentView.as_view(),name="coordinator_approve_assignment"),
     path("api/reject-assignment/",RejectAssignmentView.as_view(),name="reject_assignment"),
     path("api/scope-template/download/", download_scope_template,name="download_scope_template"),
     path("api/scope-template/upload/", upload_scope_template,name="upload_scope_template"),
