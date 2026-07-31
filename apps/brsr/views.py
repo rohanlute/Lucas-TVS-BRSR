@@ -734,7 +734,7 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
     assignee = _resolve_brsr_assignee(
         plant,
         workflow_template,
-        selected_assignee=cleaned_data["assignee"],
+        selected_assignee=cleaned_data.get("assignee"),
         current_user=user,
     )
     if assignee is None:
@@ -748,6 +748,13 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
         selected_reviewer=cleaned_data.get("reviewer"),
         current_user=user,
     )
+
+    if cleaned_data.get("reviewer") is not None and reviewer is None:
+        raise ValueError(
+            "The selected reviewer is not eligible for the review stage of this "
+            "workflow (role/plant mismatch). Choose a different reviewer or "
+            "update the workflow template's review-stage role."
+        )
 
     user_ct = ContentType.objects.get_for_model(User)
     assigner = cleaned_data.get("assigner") or user

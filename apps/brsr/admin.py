@@ -5,6 +5,7 @@ from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from django.db.models import Count, Q
+from django.utils import timezone
 from .models import *
 
 class QuestionInline(admin.TabularInline):
@@ -55,13 +56,25 @@ class RevisionInline(admin.TabularInline):
     ordering = ('-revision_number',)
 
 
-class ReviewerInline(GenericTabularInline):
-    """Generic inline for assignment reviewers."""
+class ReviewerInline(admin.TabularInline):
+    """Inline for displaying assignment reviewers (read-only)."""
     model = AssignmentReviewer
-    extra = 1
-    fields = ('reviewer',)
-    ct_field = 'reviewer_content_type'
-    ct_fk_field = 'reviewer_object_id'
+    extra = 0
+    can_delete = True
+    readonly_fields = ('reviewer_display',)
+    fields = ('reviewer_display',)
+    verbose_name = 'Reviewer'
+    verbose_name_plural = 'Reviewers'
+
+    def reviewer_display(self, obj):
+        """Display the reviewer."""
+        if obj.reviewer:
+            return str(obj.reviewer)
+        return '-'
+    reviewer_display.short_description = 'Reviewer'
+
+    def has_add_permission(self, request, obj=None):
+        return False  # Disable adding reviewers through inline
 
 
 # ============================================================================
@@ -176,7 +189,7 @@ class AssignmentAdmin(admin.ModelAdmin):
     """Admin interface for Assignments."""
     list_display = (
         'assignment_id', 'plant', 'principle', 'section', 'workflow_template_display', 'workflow_stage_display',
-        'assignee',
+        'assignee_display',
         'priority', 'due_date_display', 'overall_status_display',
         'question_count'
     )
@@ -187,7 +200,7 @@ class AssignmentAdmin(admin.ModelAdmin):
     search_fields = (
         'assignment_id', 'plant__name', 'principle__principle_name'
     )
-    readonly_fields = ('assignment_id', 'created_at', 'updated_at')
+    readonly_fields = ('assignment_id', 'created_at', 'updated_at', 'assigner_display', 'assignee_display')
     raw_id_fields = ('plant', 'principle', 'section')
     inlines = [ReviewerInline, ResponseInline]
     fieldsets = (
@@ -199,7 +212,7 @@ class AssignmentAdmin(admin.ModelAdmin):
         }),
         ('Assignment Details', {
             'fields': (
-                'parent', 'assigner', 'assignee', 'due_date',
+                'parent', 'assigner_display', 'assignee_display', 'due_date',
                 'priority', 'notes'
             )
         }),
@@ -215,6 +228,20 @@ class AssignmentAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+
+    def assigner_display(self, obj):
+        """Display assigner information."""
+        if obj.assigner:
+            return str(obj.assigner)
+        return '-'
+    assigner_display.short_description = 'Assigner'
+    
+    def assignee_display(self, obj):
+        """Display assignee information."""
+        if obj.assignee:
+            return str(obj.assignee)
+        return '-'
+    assignee_display.short_description = 'Assignee'
 
     def due_date_display(self, obj):
         if obj.due_date:
@@ -449,4 +476,3 @@ class AssignmentScheduleAdmin(admin.ModelAdmin):
     readonly_fields = ("schedule_id", "created_at", "updated_at")
     filter_horizontal = ("questions",)
     actions = [activate_schedules, deactivate_schedules]
- 

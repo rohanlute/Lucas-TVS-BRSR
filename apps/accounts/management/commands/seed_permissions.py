@@ -37,6 +37,9 @@ class Command(BaseCommand):
             #BRSR Module
             ('ACCESS_BRSR_MODULE', 'Access BRSR Module', 'Can access BRSR module', 'MODULE_ACCESS', 0),
             ('VIEW_ALL_BRSR_DATA', 'View All BRSR Data', 'Can view all BRSR data', 'VIEW', 1),
+            ('CAN_ASSIGN_QUESTIONS', 'Can Assign Questions', 'Can assign questions to users', 'ASSIGN', 2),
+            ('VIEW_BRSR_ASSIGNMENT_DASHBOARD', 'View Assignment Dashboard', 'View all BRSR assignments and their status', 'VIEW', 3),
+            ('VIEW_BRSR_APPROVAL_DASHBOARD', 'View Approval Dashboard', 'View BRSR assignments pending for review and approval', 'VIEW', 4),
         ]
 
         created = 0

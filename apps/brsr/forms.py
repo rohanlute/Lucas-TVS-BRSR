@@ -1,7 +1,8 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.contrib.contenttypes.models import ContentType
 from apps.organizations.models import FinancialYear, Plant
-from .models import Assignment, BRSRQuestion, AssignmentSchedule
+from .models import Assignment, BRSRQuestion, AssignmentSchedule, AssignmentReviewer
 
 
 User = get_user_model()
@@ -15,19 +16,39 @@ class BRSRAssignmentForm(forms.Form):
         choices=(),
         widget=forms.Select(attrs={"class": "form-select"}),
     )
-    assigner = forms.ModelChoiceField(
-        queryset=User.objects.none(),
+    # For GenericForeignKey, we need to use content_type and object_id
+    assigner_content_type = forms.ModelChoiceField(
+        queryset=ContentType.objects.all(),
         required=False,
         widget=forms.Select(attrs={"class": "form-select"}),
+        label="Assigner Type"
     )
-    assignee = forms.ModelChoiceField(
-        queryset=User.objects.none(),
-        widget=forms.Select(attrs={"class": "form-select"}),
+    assigner_object_id = forms.IntegerField(
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+        label="Assigner ID"
     )
-    reviewer = forms.ModelChoiceField(
-        queryset=User.objects.none(),
+    assignee_content_type = forms.ModelChoiceField(
+        queryset=ContentType.objects.all(),
         required=False,
         widget=forms.Select(attrs={"class": "form-select"}),
+        label="Assignee Type"
+    )
+    assignee_object_id = forms.IntegerField(
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+        label="Assignee ID"
+    )
+    reviewer_content_type = forms.ModelChoiceField(
+        queryset=ContentType.objects.all(),
+        required=False,
+        widget=forms.Select(attrs={"class": "form-select"}),
+        label="Reviewer Type"
+    )
+    reviewer_object_id = forms.IntegerField(
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "form-control"}),
+        label="Reviewer ID"
     )
     data_collection_frequency = forms.ChoiceField(
         choices=Assignment.FREQUENCY_CHOICES,
@@ -63,11 +84,6 @@ class BRSRAssignmentForm(forms.Form):
         super().__init__(*args, **kwargs)
 
         self.fields["plant"].queryset = plant_queryset or Plant.objects.filter(is_active=True)
-        self.fields["assigner"].queryset = user_queryset or User.objects.filter(is_active=True)
-        self.fields["assignee"].queryset = user_queryset or User.objects.filter(is_active=True)
-        self.fields["reviewer"].queryset = user_queryset or User.objects.filter(is_active=True)
-        # parent_assignment removed from the form — parent assignment delegation
-        # is not used in the current workflow.
         self.fields["question_ids"].queryset = question_queryset or BRSRQuestion.objects.none()
 
         financial_year_qs = financial_year_queryset or FinancialYear.objects.all()
@@ -89,14 +105,28 @@ class AssignmentScheduleForm(forms.ModelForm):
     task does that when a configured period becomes due.
     """
  
-    assignee = forms.ModelChoiceField(
-        queryset=User.objects.none(),
-        widget=forms.Select(attrs={"class": "workspace-select"}),
-    )
-    reviewer = forms.ModelChoiceField(
-        queryset=User.objects.none(),
+    # For GenericForeignKey, use content_type and object_id
+    assignee_content_type = forms.ModelChoiceField(
+        queryset=ContentType.objects.all(),
         required=False,
         widget=forms.Select(attrs={"class": "workspace-select"}),
+        label="Assignee Type"
+    )
+    assignee_object_id = forms.IntegerField(
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "workspace-input"}),
+        label="Assignee ID"
+    )
+    reviewer_content_type = forms.ModelChoiceField(
+        queryset=ContentType.objects.all(),
+        required=False,
+        widget=forms.Select(attrs={"class": "workspace-select"}),
+        label="Reviewer Type"
+    )
+    reviewer_object_id = forms.IntegerField(
+        required=False,
+        widget=forms.NumberInput(attrs={"class": "workspace-input"}),
+        label="Reviewer ID"
     )
     question_ids = forms.ModelMultipleChoiceField(
         queryset=BRSRQuestion.objects.none(),
@@ -138,8 +168,6 @@ class AssignmentScheduleForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
  
         self.fields["plant"].queryset = plant_queryset or Plant.objects.filter(is_active=True)
-        self.fields["assignee"].queryset = user_queryset or User.objects.filter(is_active=True)
-        self.fields["reviewer"].queryset = user_queryset or User.objects.filter(is_active=True)
         self.fields["question_ids"].queryset = question_queryset or BRSRQuestion.objects.none()
  
         financial_year_qs = financial_year_queryset or FinancialYear.objects.all()
@@ -162,7 +190,7 @@ class AssignmentScheduleForm(forms.ModelForm):
             if start_day is None or end_day is None:
                 self.add_error(None, "Weekly frequency requires both a Start Day and an End Day.")
             elif start_day > end_day:
-                self.add_error(None, "Start Day must come before End Day (e.g. Monday \u2192 Friday).")
+                self.add_error(None, "Start Day must come before End Day (e.g. Monday → Friday).")
  
         elif frequency == "monthly":
             months = cleaned.get("selected_months") or []
