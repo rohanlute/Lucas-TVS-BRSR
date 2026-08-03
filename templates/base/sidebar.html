@@ -70,6 +70,7 @@
                     </ul>
                 </li>
                 {% endif %}
+                {% if request.user|has_perm:'ACCESS_BRSR_MODULE' %}
                 <li class="nxl-item nxl-hasmenu">
                     <a href="javascript:void(0);" class="nxl-link">
                         <span class="nxl-micon">
@@ -82,25 +83,37 @@
                     </a>
 
                     <ul class="nxl-submenu">
+                        {% if request.user|has_perm:'CAN_ASSIGN_QUESTIONS' %}
                         <li class="nxl-item">
                             <a class="nxl-link" href="{% url 'brsr:brsr_list' %}">
                                 Dashboard
                             </a>
                         </li>
-
+                        {% endif %}
+                        {% if request.user|has_perm:'VIEW_BRSR_ASSIGNMENT_DASHBOARD' %}
                         <li class="nxl-item">
                             <a class="nxl-link" href="{% url 'brsr:assignment_dashboard' %}">
                                 Assignment Dashboard
                             </a>
                         </li>
-
+                        {% endif %}
+                        {% if request.user|has_perm:'VIEW_BRSR_APPROVAL_DASHBOARD' %}
                         <li class="nxl-item">
                             <a class="nxl-link" href="{% url 'brsr:approval_dashboard' %}">
                                 Approval Dashboard
                             </a>
                         </li>
+                        {% endif %}
+                        {% if request.user|has_perm:'VIEW_ALL_BRSR_DATA' %}
+                        <li class="nxl-item">
+                            <a class="nxl-link" href="{% url 'brsr:brsr_data_dashboard' %}">
+                               Data Dashboard
+                            </a>
+                        </li>
+                        {% endif %}
                     </ul>
                 </li>
+                {% endif %}
                <li class="nxl-item nxl-hasmenu">
                     <a href="javascript:void(0);" class="nxl-link">
                         <span class="nxl-micon">

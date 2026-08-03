@@ -1,0 +1,907 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root{
+    --ink:#24304a;
+    --ink-soft:#42516f;
+    --muted:#6f7b91;
+    --surface:#ffffff;
+    --bg:#f5f7fb;
+    --border:#e3e8f0;
+    --border-strong:#cfd7e6;
+    --brand:#2563eb;
+    --brand-bg:#eaf1ff;
+    --success:#16a34a;
+    --success-bg:#e7f8ee;
+    --warn:#d97706;
+    --warn-bg:#fff5e6;
+    --danger:#dc2626;
+    --danger-bg:#fdecec;
+    --radius:12px;
+    --shadow:0 18px 40px rgba(28,44,73,.08);
+    --font-display:'Space Grotesk','Segoe UI',sans-serif;
+    --font-body:'Inter','Segoe UI',sans-serif;
+  }
+
+  .brsr-shell{
+    min-height:calc(100vh - 140px);
+    display:grid;
+    grid-template-columns:330px 1fr;
+    gap:0;
+    border:1px solid var(--border);
+    border-radius:18px;
+    overflow:hidden;
+    background:linear-gradient(180deg,#f9fbff 0%, #f4f7fc 100%);
+    box-shadow:var(--shadow);
+  }
+
+  .brsr-sidebar{
+    background:var(--surface);
+    border-right:1px solid var(--border);
+    display:flex;
+    flex-direction:column;
+    min-height:0;
+  }
+
+  .sidebar-head{
+    padding:18px 18px 14px;
+    border-bottom:1px solid var(--border);
+    background:
+      radial-gradient(circle at top right, rgba(37,99,235,.12), transparent 38%),
+      linear-gradient(180deg,#fff 0%, #fbfcff 100%);
+  }
+
+  .brand-row{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:12px;
+  }
+
+  .brand-row h3{
+    margin:0;
+    font-family:var(--font-display);
+    font-size:18px;
+    font-weight:700;
+    color:var(--ink);
+  }
+
+  .brand-row small{
+    display:block;
+    margin-top:3px;
+    font-size:12px;
+    color:var(--muted);
+  }
+
+  .progress-label{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:7px;
+  }
+
+  .progress-track{
+    height:6px;
+    border-radius:999px;
+    background:var(--border);
+    overflow:hidden;
+  }
+
+  .progress-fill{
+    height:100%;
+    border-radius:999px;
+    background:linear-gradient(90deg,#2563eb,#60a5fa);
+    transition:width .25s ease;
+  }
+
+  .sidebar-tools{
+    padding:14px 18px 16px;
+    border-bottom:1px solid var(--border);
+    display:grid;
+    gap:12px;
+  }
+
+  .tool-label{
+    display:block;
+    margin-bottom:6px;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+
+  .workspace-select,
+  .workspace-input,
+  .workspace-textarea{
+    width:100%;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:#fff;
+    color:var(--ink);
+    font-size:13px;
+    padding:10px 12px;
+    outline:none;
+    appearance:auto;
+    -webkit-appearance:auto;
+  }
+
+  .workspace-select:focus{
+    border-color:var(--brand);
+    box-shadow:0 0 0 3px rgba(37,99,235,.12);
+  }
+
+  .question-scroll{
+    flex:1;
+    overflow:auto;
+    padding:14px 10px 18px;
+  }
+
+  .nav-group{
+    margin-bottom:16px;
+  }
+
+  .nav-group-head{
+    font-family:var(--font-display);
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink);
+    margin:0 0 8px;
+    padding-left:6px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+
+  .nav-group-head .pill{
+    font-size:10px;
+    padding:3px 7px;
+  }
+
+  .question-item{
+    position:relative;
+    padding:10px 12px 10px 14px;
+    margin-bottom:4px;
+    border-radius:10px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    font-size:13.5px;
+    line-height:1.35;
+    transition:background .15s ease,color .15s ease,transform .15s ease;
+  }
+
+  .question-item:hover{
+    background:var(--bg);
+    transform:translateX(2px);
+  }
+
+  .question-item.active{
+    background:var(--brand-bg);
+    color:var(--brand);
+    font-weight:600;
+  }
+
+  .question-dot{
+    position:absolute;
+    left:-24px;
+    top:13px;
+    width:14px;
+    height:14px;
+    border-radius:50%;
+    border:2px solid var(--border-strong);
+    background:var(--surface);
+  }
+
+  .question-dot.todo{border-color:var(--border-strong);}
+  .question-dot.in-progress{border-color:#f59e0b;background:var(--warn-bg);}
+  .question-dot.in-progress::after{
+    content:'';
+    width:6px;
+    height:6px;
+    background:#f59e0b;
+    border-radius:50%;
+    display:block;
+    margin:2px auto 0;
+  }
+  .question-dot.approved{border-color:var(--success);background:var(--success);}
+  .question-dot.approved::after{
+    content:'\2713';
+    color:#fff;
+    display:block;
+    text-align:center;
+    line-height:10px;
+    font-size:9px;
+    font-weight:700;
+  }
+  .question-dot.rejected{border-color:var(--danger);background:var(--danger-bg);}
+  .question-dot.rejected::after{
+    content:'!';
+    color:var(--danger);
+    display:block;
+    text-align:center;
+    line-height:10px;
+    font-size:10px;
+    font-weight:700;
+  }
+
+  .brsr-main{
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    background:linear-gradient(180deg,#fff 0%, #fbfcff 100%);
+  }
+
+  .workspace-top{
+    padding:18px 20px 0;
+  }
+
+  .status-banner{
+    padding:12px 14px;
+    border-radius:14px;
+    background:var(--brand-bg);
+    color:var(--brand);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    font-size:13px;
+    margin-bottom:14px;
+  }
+
+  .workspace-banner-actions{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .main-panel{
+    margin:0 20px 20px;
+    border:1px solid var(--border);
+    border-radius:16px;
+    background:var(--surface);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    box-shadow:0 10px 24px rgba(28,44,73,.05);
+  }
+
+  .panel-header{
+    padding:18px 20px;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    justify-content:space-between;
+    gap:16px;
+    align-items:flex-start;
+    flex-wrap:wrap;
+  }
+
+  .panel-title h2{
+    margin:0;
+    font-family:var(--font-display);
+    font-size:21px;
+    color:var(--ink);
+  }
+
+  .panel-title p{
+    margin:8px 0 0;
+    color:var(--muted);
+    font-size:13px;
+  }
+
+  .pill-row{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+    align-items:center;
+  }
+
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:6px 10px;
+    font-size:12px;
+    font-weight:600;
+    color:var(--ink-soft);
+    background:#fff;
+  }
+
+  .pill.brand{border-color:var(--brand);background:var(--brand-bg);color:var(--brand);}
+  .pill.success{border-color:var(--success);background:var(--success-bg);color:var(--success);}
+  .pill.warn{border-color:var(--warn);background:var(--warn-bg);color:var(--warn);}
+  .pill.muted{background:#eef2f7;color:var(--muted);border-color:var(--border);}
+
+  .panel-body{
+    flex:1;
+    overflow:auto;
+    padding:18px 20px 24px;
+  }
+
+  .group-block{
+    margin-bottom:16px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    overflow:hidden;
+  }
+
+  .group-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    padding:12px 16px;
+    background:#f8fbff;
+    border-bottom:1px solid var(--border);
+  }
+
+  .group-head h3{
+    margin:0;
+    font-family:var(--font-display);
+    font-size:14px;
+    color:var(--ink);
+  }
+
+  .group-body{
+    padding:16px;
+  }
+
+  .principle-tag{
+    padding:12px 16px;
+    background:#fbfcff;
+    font-size:12px;
+    font-weight:700;
+    color:var(--brand);
+    border-bottom:1px solid var(--border);
+  }
+
+  .question-container{
+    border:1px solid var(--border);
+    border-radius:14px;
+    overflow:hidden;
+    background:#fff;
+    margin-bottom:14px;
+    scroll-margin-top:16px;
+  }
+
+  .question-header{
+    padding:15px 16px;
+    background:#fafcff;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+  }
+
+  .question-header-left{
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    min-width:0;
+  }
+
+  .question-title{
+    margin:0;
+    font-size:15px;
+    font-weight:700;
+    color:var(--ink);
+    line-height:1.45;
+  }
+
+  .question-number{
+    color:var(--brand);
+    margin-right:6px;
+  }
+
+  .question-content{
+    padding:18px 16px 16px;
+    min-width:0;
+    overflow-x:auto;
+  }
+
+  .plant-entry-block{
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:#fbfcff;
+    margin-bottom:14px;
+    overflow:hidden;
+  }
+  .plant-entry-block:last-child{margin-bottom:0;}
+
+  .plant-entry-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    padding:10px 14px;
+    background:#f4f7fc;
+    border-bottom:1px solid var(--border);
+    flex-wrap:wrap;
+  }
+
+  .plant-entry-head .plant-name{
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink-soft);
+  }
+
+  .plant-entry-body{
+    padding:14px;
+    overflow-x:auto;
+  }
+
+  .status-badge{
+    flex-shrink:0;
+    padding:5px 9px;
+    border-radius:999px;
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+  }
+  .status-badge.draft{background:#eef2f7;color:#64748b;}
+  .status-badge.submitted, .status-badge.resubmitted{background:var(--warn-bg);color:var(--warn);}
+  .status-badge.approved{background:var(--success-bg);color:var(--success);}
+  .status-badge.rejected{background:var(--danger-bg);color:var(--danger);}
+
+  .form-group{
+    margin-bottom:14px;
+  }
+  .form-group:last-child{margin-bottom:0;}
+
+  .form-label{
+    display:block;
+    margin-bottom:8px;
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink-soft);
+  }
+
+  .form-textarea{
+    width:100%;
+    min-height:80px;
+    resize:vertical;
+  }
+
+  .workspace-input[readonly],
+  .workspace-textarea[readonly]{
+    background-color:#f3f4f6;
+    color:#6b7280;
+    border:1px solid #cbd5e1;
+    cursor:not-allowed;
+    font-weight:600;
+  }
+
+  /* Table Container - Fixed Scrolling */
+  .table-container {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #fff;
+    -webkit-overflow-scrolling: touch;
+    margin: 8px 0;
+    position: relative;
+  }
+
+  /* Scrollbar styling for table container */
+  .table-container::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+
+  .table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+
+  .table-container::-webkit-scrollbar-thumb {
+    background: #c1c7d0;
+    border-radius: 4px;
+  }
+
+  .table-container::-webkit-scrollbar-thumb:hover {
+    background: #a0a7b0;
+  }
+
+  .table-container table {
+    width: 100%;
+    min-width: 600px;
+    border-collapse: collapse;
+    table-layout: auto;
+    font-size: 13px;
+  }
+
+  .table-container table th,
+  .table-container table td {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    vertical-align: top;
+    white-space: nowrap;
+    color: var(--ink-soft);
+    font-family: var(--font-body), 'Segoe UI', sans-serif;
+    min-height: 44px;
+  }
+
+  .table-container table th {
+    background: #f8fafc;
+    color: var(--ink);
+    font-weight: 700;
+    font-family: var(--font-display), 'Segoe UI', sans-serif;
+    text-align: left;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  /* Data table alternative */
+  .data-table-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #fff;
+    -webkit-overflow-scrolling: touch;
+    margin: 8px 0;
+    position: relative;
+  }
+
+  .data-table-wrapper::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+
+  .data-table-wrapper::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
+
+  .data-table-wrapper::-webkit-scrollbar-thumb {
+    background: #c1c7d0;
+    border-radius: 4px;
+  }
+
+  .data-table-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #a0a7b0;
+  }
+
+  .data-table-wrapper table {
+    width: 100%;
+    min-width: 600px;
+    border-collapse: collapse;
+    table-layout: auto;
+    font-size: 13px;
+  }
+
+  .data-table-wrapper table th,
+  .data-table-wrapper table td {
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    vertical-align: top;
+    white-space: nowrap;
+    color: var(--ink-soft);
+    font-family: var(--font-body), 'Segoe UI', sans-serif;
+    min-height: 44px;
+  }
+
+  .data-table-wrapper table th {
+    background: #f8fafc;
+    color: var(--ink);
+    font-weight: 700;
+    font-family: var(--font-display), 'Segoe UI', sans-serif;
+    text-align: left;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+
+  /* For table inputs */
+  .table-container table input,
+  .table-container table select,
+  .data-table-wrapper table input,
+  .data-table-wrapper table select {
+    width: 100%;
+    min-width: 140px;
+    box-sizing: border-box;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 13px;
+    background: #fff;
+  }
+
+  .kv-container .kv-row{display:flex; gap:8px; padding:6px 0; border-bottom:1px dashed var(--border); font-size:13px;}
+  .kv-container .kv-row:last-child{border-bottom:none;}
+  .kv-container .kv-key{font-weight:700; color:var(--ink); min-width:160px;}
+  .kv-container .kv-value{color:var(--ink-soft);}
+  .sub-section-title{font-size:12px; font-weight:700; color:var(--brand); margin:10px 0 4px;}
+
+  .review-comment-box{
+    margin-top:14px;
+    padding:14px;
+    border:1px solid #fed7aa;
+    border-radius:14px;
+    background:#fffaf3;
+  }
+  .review-comment-box .review-label{font-size:12px; font-weight:700; color:var(--warn); text-transform:uppercase; letter-spacing:.04em;}
+  .review-comment-box p{margin:6px 0 0; font-size:13px; color:var(--ink-soft); line-height:1.5;}
+
+  .fy-form{display:flex; align-items:center; gap:10px;}
+
+  .empty-state{
+    padding:40px 20px;
+    text-align:center;
+    color:var(--muted);
+    border:1px dashed var(--border-strong);
+    border-radius:14px;
+    background:#fbfcff;
+  }
+
+  @media (max-width: 1200px){
+    .brsr-shell{grid-template-columns:1fr;}
+    .brsr-sidebar{border-right:none;border-bottom:1px solid var(--border);}
+  }
+  .choice-stack{
+    display:grid;
+    gap:10px;
+  }
+
+  .choice-item{
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    padding:10px 12px;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:#fff;
+  }
+
+  .choice-item input{
+    margin-top:3px;
+    flex-shrink:0;
+  }
+
+  .choice-item span{
+    font-size:13px;
+    color:var(--ink-soft);
+    line-height:1.4;
+  }
+
+  .workspace-select:disabled,
+  .workspace-input[readonly],
+  .workspace-textarea[readonly]{
+    background-color:#f3f4f6;
+    color:#6b7280;
+    border:1px solid #cbd5e1;
+    cursor:not-allowed;
+    font-weight:600;
+  }
+
+  /* Responsive table handling */
+  @media (max-width: 768px) {
+    .table-container table,
+    .data-table-wrapper table {
+      min-width: 500px;
+      font-size: 12px;
+    }
+    
+    .table-container table th,
+    .table-container table td,
+    .data-table-wrapper table th,
+    .data-table-wrapper table td {
+      padding: 8px 10px;
+      white-space: normal;
+      min-width: 80px;
+    }
+    
+    .table-container table input,
+    .table-container table select,
+    .data-table-wrapper table input,
+    .data-table-wrapper table select {
+      min-width: 100px;
+      font-size: 12px;
+      padding: 6px 8px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .table-container table,
+    .data-table-wrapper table {
+      min-width: 400px;
+      font-size: 11px;
+    }
+    
+    .table-container table th,
+    .table-container table td,
+    .data-table-wrapper table th,
+    .data-table-wrapper table td {
+      padding: 6px 8px;
+      min-width: 60px;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title">
+      <h5 class="m-b-10">{{ page_title }}</h5>
+    </div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'accounts:dashboard' %}">Home</a></li>
+      <li class="breadcrumb-item"><a href="{{ dashboard_url }}">BRSR Data</a></li>
+      <li class="breadcrumb-item">{% if is_company_view %}Company Overview{% else %}{{ plant.name }}{% endif %}</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="brsr-shell">
+    <aside class="brsr-sidebar">
+      <div class="sidebar-head">
+        <div class="brand-row">
+          <div>
+            <h3>{% if is_company_view %}{{ company_name }}{% else %}{{ plant.name }}{% endif %}</h3>
+            <small>{% if is_company_view %}All plants combined{% else %}{{ plant.code }} · Entered BRSR data{% endif %}</small>
+          </div>
+          <span class="pill brand">Read Only</span>
+        </div>
+        <div class="progress-label">
+          <span>Approved Progress</span>
+          <strong id="progressLabel">{{ stats.approved }} of {{ stats.entered }}</strong>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" style="width:{{ stats.progress }}%"></div>
+        </div>
+      </div>
+
+      <div class="sidebar-tools">
+        <div>
+          <label class="tool-label">Jump to Section</label>
+          <select class="workspace-select" id="sectionJump">
+            <option value="">All Sections</option>
+            {% for group in section_groups %}
+              <option value="section-{{ group.section.code }}">{{ group.section.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="tool-label">Financial Year</label>
+          <form method="get" class="fy-form" id="fyForm">
+            <select class="workspace-select" name="financial_year" id="fySelect" onchange="document.getElementById('fyForm').submit()">
+              <option value="">All Years</option>
+              {% for fy in financial_years %}
+                <option value="{{ fy }}" {% if fy == selected_fy %}selected{% endif %}>{{ fy }}</option>
+              {% endfor %}
+            </select>
+          </form>
+        </div>
+      </div>
+
+      <div class="question-scroll">
+        <div id="sidebarGroups">
+          {% for group in section_groups %}
+            <div class="nav-group">
+              <div class="nav-group-head">
+                <span>{{ group.section.name }}</span>
+                <span class="pill muted">
+                  {{ group.questions|length }}{% for p in group.principles %}{{ p.questions|length }}{% endfor %}
+                </span>
+              </div>
+              {% for q in group.questions %}
+                <div class="question-item" data-target="question-{{ q.question_id }}">
+                  <span class="question-dot {{ q.dot_status|default:'todo' }}"></span>
+                  {{ q.number }}. {{ q.title|truncatechars:60 }}
+                </div>
+              {% endfor %}
+              {% for p in group.principles %}
+                {% for q in p.questions %}
+                  <div class="question-item" data-target="question-{{ q.question_id }}">
+                    <span class="question-dot {{ q.dot_status|default:'todo' }}"></span>
+                    {{ q.number }}. {{ q.title|truncatechars:60 }}
+                  </div>
+                {% endfor %}
+              {% endfor %}
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </aside>
+
+    <main class="brsr-main">
+      <div class="workspace-top">
+        <div class="status-banner">
+          <div>{% if is_company_view %}Company-wide combined data{% else %}{{ plant.name }} entered data{% endif %}{% if selected_fy %} · {{ selected_fy }}{% endif %}</div>
+          <div class="workspace-banner-actions">
+            <div>{{ stats.approved }} approved · {{ stats.pending_review }} pending review · {{ stats.rejected }} rejected</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="main-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <h2>{% if is_company_view %}All Plants — Combined BRSR Data{% else %}{{ plant.name }} — Entered BRSR Data{% endif %}</h2>
+            <p>Read-only view of already submitted responses{% if selected_fy %} for {{ selected_fy }}{% endif %}.</p>
+          </div>
+          <div class="pill-row">
+            <span class="pill brand">{{ stats.entered }} Entered</span>
+            <span class="pill success">{{ stats.approved }} Approved</span>
+            {% if stats.pending_review %}<span class="pill warn">{{ stats.pending_review }} Pending</span>{% endif %}
+          </div>
+        </div>
+
+        <div class="panel-body" id="questionDeck">
+          {% if section_groups %}
+            {% for group in section_groups %}
+            <div class="group-block" id="section-{{ group.section.code }}">
+              <div class="group-head">
+                <h3>{{ group.section.name }}</h3>
+                <span class="pill">{{ group.section.name }}</span>
+              </div>
+              <div class="group-body">
+                {% for q in group.questions %}
+                  {% include "brsr/_entered_question_row.html" with q=q is_company_view=is_company_view %}
+                {% endfor %}
+
+                {% for p in group.principles %}
+                  <div class="principle-tag">P{{ p.principle.principle_number }} · {{ p.principle.principle_name }}</div>
+                  {% for q in p.questions %}
+                    {% include "brsr/_entered_question_row.html" with q=q is_company_view=is_company_view %}
+                  {% endfor %}
+                {% endfor %}
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-state">No BRSR data has been entered yet{% if selected_fy %} for {{ selected_fy }}{% endif %}.</div>
+          {% endif %}
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.querySelectorAll('.question-item').forEach((item) => {
+    item.addEventListener('click', () => {
+      const targetId = item.getAttribute('data-target');
+      const target = document.getElementById(targetId);
+      if (!target) return;
+      document.querySelectorAll('.question-item.active').forEach((el) => el.classList.remove('active'));
+      item.classList.add('active');
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  const sectionJump = document.getElementById('sectionJump');
+  if (sectionJump) {
+    sectionJump.addEventListener('change', () => {
+      const targetId = sectionJump.value;
+      if (!targetId) return;
+      const target = document.getElementById(targetId);
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+</script>
+{% endblock %}

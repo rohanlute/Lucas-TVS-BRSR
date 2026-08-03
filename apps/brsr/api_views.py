@@ -1,3 +1,4 @@
+import json
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
@@ -8,7 +9,6 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-import json
 from apps.organizations.models import FinancialYear, Plant
 from apps.organizations.workflow_configuration_engine import WorkflowConfigurationEngine
 from .forms import BRSRAssignmentForm, AssignmentScheduleForm
@@ -483,7 +483,6 @@ class BRSRWorkspaceDataAPIView(APIView):
                 {"value": value, "label": label}
                 for value, label in Assignment.FREQUENCY_CHOICES
             ],
-            # parent_assignments removed from payload — delegation not used
             "latest_assignment": (
                 {
                     "id": assignment_bundle["latest_assignment"].id,
@@ -533,6 +532,7 @@ class BRSRWorkspaceDataAPIView(APIView):
             ),
         }
         return Response(payload)
+
 
 class AssignmentOptionsAPIView(APIView):
     def get(self, request):
@@ -913,6 +913,18 @@ class AssignmentCreateAPIView(APIView):
         else:
             questions = questions.filter(principle__isnull=True)
 
+        # Get the reviewer from request data before creating the form
+        reviewer_id = request.data.get("reviewer")
+        reviewer = None
+        if reviewer_id:
+            try:
+                reviewer = User.objects.get(id=reviewer_id)
+            except User.DoesNotExist:
+                return Response(
+                    {"detail": f"Reviewer with ID {reviewer_id} not found."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
         form = BRSRAssignmentForm(
             request.data,
             plant_queryset=_company_scope_plants(request.user),
@@ -924,6 +936,10 @@ class AssignmentCreateAPIView(APIView):
         )
         if not form.is_valid():
             return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # Add reviewer to cleaned_data if it exists
+        if reviewer:
+            form.cleaned_data['reviewer'] = reviewer
 
         try:
             assignment = _create_brsr_assignment(
@@ -942,6 +958,7 @@ class AssignmentCreateAPIView(APIView):
                 "id": assignment.id,
                 "assignment_id": assignment.assignment_id,
                 "question_count": selected_questions.count(),
+                "reviewer_saved": bool(assignment.reviewer_links.exists()),
                 "message": f"Assignment {assignment.assignment_id} created successfully.",
             },
             status=status.HTTP_201_CREATED,

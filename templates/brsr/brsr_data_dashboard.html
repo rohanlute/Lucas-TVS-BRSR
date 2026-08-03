@@ -1,0 +1,106 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}BRSR Data Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root{
+    --ink:#24304a; --ink-soft:#42516f; --muted:#6f7b91;
+    --surface:#ffffff; --bg:#f5f7fb; --border:#e3e8f0; --border-strong:#cfd7e6;
+    --brand:#2563eb; --brand-bg:#eaf1ff;
+    --success:#16a34a; --success-bg:#e7f8ee;
+    --radius:14px; --shadow:0 18px 40px rgba(28,44,73,.08);
+    --font-display:'Space Grotesk','Segoe UI',sans-serif;
+    --font-body:'Inter','Segoe UI',sans-serif;
+  }
+  .brsr-data-page{font-family:var(--font-body);}
+  .company-card{
+    display:flex; justify-content:space-between; align-items:center; gap:16px;
+    padding:22px 24px; margin-bottom:22px; border-radius:var(--radius);
+    background:linear-gradient(135deg,#1d4ed8 0%, #2563eb 55%, #4f8bff 100%);
+    color:#fff; box-shadow:var(--shadow); text-decoration:none;
+  }
+  .company-card:hover{ filter:brightness(1.03); text-decoration:none; color:#fff;}
+  .company-card h3{margin:0 0 4px; font-family:var(--font-display); font-size:20px;}
+  .company-card p{margin:0; font-size:13px; opacity:.9;}
+  .company-card .metrics{display:flex; gap:22px; text-align:right;}
+  .company-card .metric strong{display:block; font-size:22px; font-family:var(--font-display);}
+  .company-card .metric span{font-size:11px; opacity:.85; text-transform:uppercase; letter-spacing:.05em;}
+
+  .plant-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:18px;}
+  .plant-card{
+    display:block; border:1px solid var(--border); border-radius:var(--radius);
+    background:var(--surface); padding:20px; box-shadow:0 8px 20px rgba(28,44,73,.05);
+    text-decoration:none; color:inherit; transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .plant-card:hover{ transform:translateY(-2px); box-shadow:0 14px 30px rgba(28,44,73,.1); text-decoration:none; color:inherit;}
+  .plant-card-head{display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:14px;}
+  .plant-card-head h4{margin:0; font-family:var(--font-display); font-size:16px; color:var(--ink);}
+  .plant-card-head small{color:var(--muted); font-size:12px;}
+  .plant-code-pill{font-size:11px; font-weight:700; padding:4px 8px; border-radius:999px; background:var(--brand-bg); color:var(--brand);}
+  .plant-progress-track{height:6px; border-radius:999px; background:var(--border); overflow:hidden; margin-bottom:8px;}
+  .plant-progress-fill{height:100%; border-radius:999px; background:linear-gradient(90deg,#16a34a,#4ade80);}
+  .plant-stats-row{display:flex; justify-content:space-between; font-size:12px; color:var(--muted);}
+  .plant-stats-row strong{color:var(--ink-soft);}
+  .empty-state{
+    padding:40px 20px; text-align:center; color:var(--muted); border:1px dashed var(--border-strong);
+    border-radius:var(--radius); background:#fbfcff;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left d-flex align-items-center">
+    <div class="page-header-title"><h5 class="m-b-10">BRSR Data Dashboard</h5></div>
+    <ul class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'accounts:dashboard' %}">Home</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'brsr:brsr_list' %}">BRSR</a></li>
+      <li class="breadcrumb-item">Data Dashboard</li>
+    </ul>
+  </div>
+</div>
+
+<div class="main-content brsr-data-page">
+  {% if has_view_all and company_stats %}
+  <a class="company-card" href="{{ company_url }}">
+    <div>
+      <h3>Overall Company Data</h3>
+      <p>Combined BRSR data across all {{ plant_cards|length }} plant{{ plant_cards|length|pluralize }} in your company.</p>
+    </div>
+    <div class="metrics">
+      <div class="metric"><strong>{{ company_stats.entered }}</strong><span>Entered</span></div>
+      <div class="metric"><strong>{{ company_stats.approved }}</strong><span>Approved</span></div>
+      <div class="metric"><strong>{{ company_stats.progress }}%</strong><span>Progress</span></div>
+    </div>
+  </a>
+  {% endif %}
+
+  {% if plant_cards %}
+  <div class="plant-grid">
+    {% for card in plant_cards %}
+    <a class="plant-card" href="{{ card.url }}">
+      <div class="plant-card-head">
+        <div>
+          <h4>{{ card.plant.name }}</h4>
+          <small>{{ card.plant.city.name|default:"" }}{% if card.plant.city and card.plant.state %}, {% endif %}{{ card.plant.state.name|default:"" }}</small>
+        </div>
+        <span class="plant-code-pill">{{ card.plant.code }}</span>
+      </div>
+      <div class="plant-progress-track">
+        <div class="plant-progress-fill" style="width:{{ card.stats.progress }}%"></div>
+      </div>
+      <div class="plant-stats-row">
+        <span><strong>{{ card.stats.entered }}</strong> entered</span>
+        <span><strong>{{ card.stats.approved }}</strong> approved</span>
+        <span><strong>{{ card.stats.pending_review }}</strong> pending</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">No plants are assigned to your account yet. Contact your administrator for access.</div>
+  {% endif %}
+</div>
+{% endblock %}

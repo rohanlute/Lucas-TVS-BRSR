@@ -9,11 +9,15 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.generic import TemplateView
 from apps.accounts.models import Department
+from apps.accounts.models.permission import Permissions
 from apps.organizations.models import ApprovalConfigurationTemplate, FinancialYear, Plant
 from apps.organizations.workflow_configuration_engine import WorkflowConfigurationEngine
 from .forms import BRSRAssignmentForm, AssignmentScheduleForm
 from .models import Assignment, AssignmentReviewer, BRSRPrinciple, BRSRQuestion, BRSRSection, QuestionResponse, QuestionResponseDocument, AssignmentSchedule
 from django.db.models import Case, When, Value, IntegerField
+from django.core.exceptions import PermissionDenied
+from django.utils.html import escape
+from datetime import date
 
 
 User = get_user_model()
@@ -730,7 +734,7 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
     assignee = _resolve_brsr_assignee(
         plant,
         workflow_template,
-        selected_assignee=cleaned_data["assignee"],
+        selected_assignee=cleaned_data.get("assignee"),
         current_user=user,
     )
     if assignee is None:
@@ -744,6 +748,13 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
         selected_reviewer=cleaned_data.get("reviewer"),
         current_user=user,
     )
+
+    if cleaned_data.get("reviewer") is not None and reviewer is None:
+        raise ValueError(
+            "The selected reviewer is not eligible for the review stage of this "
+            "workflow (role/plant mismatch). Choose a different reviewer or "
+            "update the workflow template's review-stage role."
+        )
 
     user_ct = ContentType.objects.get_for_model(User)
     assigner = cleaned_data.get("assigner") or user
@@ -883,6 +894,420 @@ def _format_response_data(response_json):
     
     # Fallback: return as string
     return f'<div class="response-body response-value">{json.dumps(response_json, indent=2)}</div>'
+
+def _fy_placeholders():
+    today = date.today()
+    start_year = today.year if today.month >= 4 else today.year - 1
+    return {
+        "{FY0}": f"{start_year}-{str(start_year + 1)[-2:]}",
+        "{FY1}": f"{start_year - 1}-{str(start_year)[-2:]}",
+        "{FY2}": f"{start_year - 2}-{str(start_year - 1)[-2:]}",
+    }
+
+
+def _replace_fy(text):
+    if not isinstance(text, str) or not text:
+        return text
+    for token, value in _fy_placeholders().items():
+        text = text.replace(token, value)
+    return text
+
+
+def _cell_text(value):
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    return str(value)
+
+
+def _readonly_table_html(field, response_json):
+    columns = [_replace_fy(c) for c in (field.get("columns") or [])]
+    rows = field.get("rows") or []
+    has_groups = any((row.get("group") or "").strip() for row in rows)
+
+    header_html = "<tr>" + "".join(f"<th>{escape(col)}</th>" for col in columns) + "</tr>"
+
+    grouped = []
+    sentinel = object()
+    current_group = sentinel
+    current_rows = []
+    for row in rows:
+        group_value = row.get("group")
+        if group_value != current_group:
+            if current_rows:
+                grouped.append((current_group, current_rows))
+            current_group = group_value
+            current_rows = [row]
+        else:
+            current_rows.append(row)
+    if current_rows:
+        grouped.append((current_group, current_rows))
+
+    body_html = ""
+    for group_value, group_rows in grouped:
+        row_count = len(group_rows)
+        for idx, row in enumerate(group_rows):
+            is_first = idx == 0
+            row_label = _replace_fy(row.get("label") or "")
+            row_html = "<tr>"
+            for col_idx, col in enumerate(columns):
+                if col_idx == 0:
+                    if has_groups:
+                        if is_first:
+                            row_html += f'<td class="group-cell" rowspan="{row_count}">{escape(_replace_fy(group_value or ""))}</td>'
+                    else:
+                        row_html += f"<td>{escape(row_label)}</td>"
+                elif col_idx == 1 and has_groups:
+                    row_html += f'<td class="metrics-cell">{escape(row_label)}</td>'
+                else:
+                    field_data = next(
+                        (f for f in (row.get("fields") or []) if _replace_fy(f.get("column")) == col),
+                        None,
+                    )
+                    if field_data:
+                        if field_data.get("type") == "static":
+                            cell_value = field_data.get("value", "")
+                        else:
+                            raw_value = response_json.get(field_data.get("name"), "") if isinstance(response_json, dict) else ""
+                            if field_data.get("type") == "select" and field_data.get("options"):
+                                match = next(
+                                    (opt for opt in field_data["options"] if str(opt.get("value", opt)) == str(raw_value)),
+                                    None,
+                                )
+                                cell_value = match.get("label", raw_value) if match else raw_value
+                            else:
+                                cell_value = raw_value
+                        cell_value = _cell_text(cell_value)
+                        row_html += f"<td>{escape(cell_value) or '&mdash;'}</td>"
+                    else:
+                        row_html += "<td></td>"
+            row_html += "</tr>"
+            body_html += row_html
+
+    return f'''<div class="form-group" data-field-type="table">
+      <label class="form-label">{escape(_replace_fy(field.get("label") or ""))}</label>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>{header_html}</thead>
+          <tbody>{body_html}</tbody>
+        </table>
+      </div>
+    </div>'''
+
+
+def _readonly_field_html(field, response_json):
+    field_name = field.get("name") or ""
+    field_label = _replace_fy(field.get("label") or field.get("name") or "")
+    field_type = field.get("field_type") or field.get("type") or "text"
+    kind = field.get("kind")
+    value = response_json.get(field_name, "") if isinstance(response_json, dict) else ""
+
+    if kind == "select":
+        options = field.get("options") or []
+        opts_html = "".join(
+            f'<option value="{escape(_cell_text(opt.get("value", opt)))}" {"selected" if str(opt.get("value", opt)) == str(value) else ""}>{escape(_cell_text(opt.get("label", opt.get("value", opt))))}</option>'
+            for opt in options
+        )
+        return f'''<div class="form-group" data-field-type="{escape(field_type)}">
+          <label class="form-label">{escape(field_label)}</label>
+          <select class="workspace-select" disabled>{opts_html}</select>
+        </div>'''
+
+    if kind == "radio":
+        options = field.get("options") or []
+        items = "".join(
+            f'''<label class="choice-item"><input type="radio" disabled {"checked" if str(opt.get("value", opt)) == str(value) else ""}><span>{escape(_cell_text(opt.get("label", opt.get("value", opt))))}</span></label>'''
+            for opt in options
+        )
+        return f'''<div class="form-group" data-field-type="{escape(field_type)}">
+          <label class="form-label">{escape(field_label)}</label>
+          <div class="choice-stack">{items}</div>
+        </div>'''
+
+    if kind == "checkbox_group":
+        selected = value if isinstance(value, list) else [v.strip() for v in str(value or "").split(",") if v.strip()]
+        selected = [str(s) for s in selected]
+        items_list = field.get("items") or []
+        items = "".join(
+            f'''<label class="choice-item"><input type="checkbox" disabled {"checked" if str(item.get("value", item)) in selected else ""}><span>{escape(_cell_text(item.get("label", item.get("value", item))))}</span></label>'''
+            for item in items_list
+        )
+        return f'''<div class="form-group" data-field-type="{escape(field_type)}">
+          <label class="form-label">{escape(field_label)}</label>
+          <div class="choice-stack">{items}</div>
+        </div>'''
+
+    if kind == "textarea":
+        return f'''<div class="form-group" data-field-type="{escape(field_type)}">
+          <label class="form-label">{escape(field_label)}</label>
+          <textarea class="workspace-textarea form-textarea" readonly>{escape(_cell_text(value))}</textarea>
+        </div>'''
+
+    if kind == "input":
+        input_type = "text" if field.get("type") == "calculated" else (field.get("type") or "text")
+        return f'''<div class="form-group" data-field-type="{escape(field_type)}">
+          <label class="form-label">{escape(field_label)}</label>
+          <input class="workspace-input" type="{escape(input_type)}" value="{escape(_cell_text(value))}" readonly>
+        </div>'''
+
+    if kind == "table":
+        return _readonly_table_html(field, response_json)
+
+    return f'''<div class="form-group" data-field-type="{escape(field_type)}">
+      <label class="form-label">{escape(field_label)}</label>
+      <textarea class="workspace-textarea form-textarea" readonly>{escape(_cell_text(value))}</textarea>
+    </div>'''
+
+
+def _render_question_readonly_html(question, response):
+    """
+    Render a QuestionResponse read-only, using the exact same field
+    definitions (validation_rules['fields']) the workspace uses, so the
+    entered-data view looks identical to the workspace inputs — just
+    disabled/readonly instead of editable.
+    """
+    if not response:
+        return ""
+
+    response_value = response.response_value or ""
+    response_json = response.response_json or {}
+    rules = question.validation_rules or {}
+    fields = rules.get("fields") or []
+
+    if fields:
+        return '<div class="choice-stack">' + "".join(
+            _readonly_field_html(field, response_json) for field in fields
+        ) + '</div>'
+
+    qtype = question.question_type
+    options = question.options or []
+
+    if qtype in ("textarea", "text"):
+        return f'<div class="form-group"><textarea class="workspace-textarea form-textarea" readonly>{escape(response_value)}</textarea></div>'
+
+    if qtype in ("number", "decimal", "currency", "percentage", "year", "email", "url", "date", "phone"):
+        return f'<div class="form-group"><input class="workspace-input" type="text" value="{escape(response_value)}" readonly></div>'
+
+    if qtype in ("radio", "yes_no"):
+        items = "".join(
+            f'''<label class="choice-item"><input type="radio" disabled {"checked" if str(opt.get("value", opt)) == str(response_value) else ""}><span>{escape(_cell_text(opt.get("label", opt.get("value", opt))))}</span></label>'''
+            for opt in options
+        )
+        return f'<div class="form-group"><div class="choice-stack">{items}</div></div>'
+
+    if qtype in ("checkbox", "multi_select"):
+        selected = [v.strip() for v in str(response_value or "").split(",") if v.strip()]
+        items = "".join(
+            f'''<label class="choice-item"><input type="checkbox" disabled {"checked" if str(opt.get("value", opt)) in selected else ""}><span>{escape(_cell_text(opt.get("label", opt.get("value", opt))))}</span></label>'''
+            for opt in options
+        )
+        return f'<div class="form-group"><div class="choice-stack">{items}</div></div>'
+
+    if response_json:
+        return _format_response_data(response_json)
+
+    return f'<div class="form-group"><textarea class="workspace-textarea form-textarea" readonly>{escape(response_value)}</textarea></div>'
+
+def _user_has_permission(user, code):
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if user.is_superuser or getattr(user, "is_super_admin", False):
+        return True
+    role = getattr(user, "role", None)
+    if not role:
+        return False
+    return role.permissions.filter(code=code).exists()
+
+
+def _dashboard_plant_queryset(user):
+    """
+    Plants shown on the BRSR data dashboard:
+      - superuser -> every active plant
+      - user with VIEW_ALL_BRSR_DATA -> every active plant in their company
+      - everyone else -> only plants assigned to them
+    """
+    if user.is_superuser or getattr(user, "is_super_admin", False):
+        return Plant.objects.filter(is_active=True).order_by("name")
+
+    try:
+        view_all_perm = Permissions.objects.get(code='VIEW_ALL_BRSR_DATA')
+        has_view_all = _user_has_permission(user, view_all_perm.code)
+    except Permissions.DoesNotExist:
+        has_view_all = False
+
+    return user.assigned_plants.filter(is_active=True).order_by("name")
+
+
+def _can_view_plant_brsr_data(user, plant):
+    if user.is_superuser or getattr(user, "is_super_admin", False):
+        return True
+    if _user_has_permission(user, BRSR_VIEW_ALL_PERMISSION_CODE):
+        plant_company_id = getattr(getattr(plant, "created_by", None), "company_id", None)
+        return bool(plant_company_id) and plant_company_id == getattr(user, "company_id", None)
+    return user.assigned_plants.filter(pk=plant.pk, is_active=True).exists()
+
+
+def _aggregate_response_stats(responses_qs):
+    """Reduce a QuestionResponse queryset down to dashboard-friendly counts."""
+    responses = list(
+        responses_qs.only("question_id", "status", "response_value", "response_json", "updated_at")
+    )
+    entered_qids, approved_qids, pending_qids, rejected_qids = set(), set(), set(), set()
+    last_updated = None
+
+    for r in responses:
+        has_data = bool((r.response_value or "").strip()) or bool(r.response_json)
+        if not has_data:
+            continue
+        entered_qids.add(r.question_id)
+        if r.status == "approved":
+            approved_qids.add(r.question_id)
+        elif r.status in ("submitted", "resubmitted"):
+            pending_qids.add(r.question_id)
+        elif r.status == "rejected":
+            rejected_qids.add(r.question_id)
+        if last_updated is None or (r.updated_at and r.updated_at > last_updated):
+            last_updated = r.updated_at
+
+    total = len(entered_qids)
+    approved = len(approved_qids)
+    return {
+        "entered": total,
+        "approved": approved,
+        "pending_review": len(pending_qids),
+        "rejected": len(rejected_qids),
+        "progress": round((approved / total * 100), 1) if total else 0,
+        "last_updated": last_updated,
+    }
+
+
+def _plant_brsr_stats(plant, financial_year=None):
+    responses = QuestionResponse.objects.filter(assignment__plant=plant)
+    if financial_year:
+        responses = responses.filter(assignment__financial_year=financial_year)
+    return _aggregate_response_stats(responses)
+
+
+def _company_brsr_stats(plants, financial_year=None):
+    responses = QuestionResponse.objects.filter(assignment__plant__in=plants)
+    if financial_year:
+        responses = responses.filter(assignment__financial_year=financial_year)
+    return _aggregate_response_stats(responses)
+
+
+def _build_brsr_data_groups(plants, financial_year=None):
+    """
+    Builds Section -> (Principle) -> Question rows of *already entered* data
+    for the given plants. Works for a single plant (plant detail page) or
+    many plants at once (company overview) — each question row carries a
+    list of per-plant entries so the same structure serves both views.
+    """
+    assignments = Assignment.objects.filter(plant__in=plants)
+    if financial_year:
+        assignments = assignments.filter(financial_year=financial_year)
+    assignments = assignments.select_related("plant").prefetch_related(
+        "questions",
+        "questions__section",
+        "questions__principle",
+        "responses",
+        "responses__question",
+    )
+
+    question_meta = {}          # question_id -> BRSRQuestion
+    question_plant_data = {}    # question_id -> plant_id -> best entry
+
+    for assignment in assignments:
+        responses_by_qid = {r.question_id: r for r in assignment.responses.all()}
+        for question in assignment.questions.all():
+            response = responses_by_qid.get(question.id)
+            if not response:
+                continue
+            has_data = bool((response.response_value or "").strip()) or bool(response.response_json)
+            if not has_data:
+                continue
+
+            question_meta[question.id] = question
+            plant_bucket = question_plant_data.setdefault(question.id, {})
+            existing = plant_bucket.get(assignment.plant_id)
+            if not existing or (response.updated_at and response.updated_at > existing["updated_at"]):
+                plant_bucket[assignment.plant_id] = {
+                    "plant": assignment.plant,
+                    "response": response,
+                    "financial_year": assignment.financial_year,
+                    "updated_at": response.updated_at,
+                }
+
+    sections = {}
+    for qid, question in question_meta.items():
+        section = question.section
+        principle = question.principle
+        bucket = sections.setdefault(
+            section.id, {"section": section, "principle_map": {}, "questions": []}
+        )
+
+        plant_entries = sorted(question_plant_data[qid].values(), key=lambda e: e["plant"].name)
+
+        entries_payload = [
+                {
+                    "plant_name": e["plant"].name,
+                    "plant_code": e["plant"].code,
+                    "financial_year": e["financial_year"],
+                    "status": e["response"].status,
+                    "status_display": e["response"].get_status_display(),
+                    "response_value": e["response"].response_value or "",
+                    "response_html": _render_question_readonly_html(question, e["response"]),
+                    "reviewed_by": str(e["response"].reviewed_by) if e["response"].reviewed_by else "",
+                }
+                for e in plant_entries
+        ]
+        row = {
+            "question_id": question.question_id,
+            "number": question.question_number,
+            "display_order": question.display_order,
+            "title": question.question_text,
+            "sub_section": question.sub_section or "",
+            "dot_status": _aggregate_question_dot_status(entries_payload),
+            "plant_entries": entries_payload,
+        }
+
+        if principle:
+            p_bucket = bucket["principle_map"].setdefault(
+                principle.id, {"principle": principle, "questions": []}
+            )
+            p_bucket["questions"].append(row)
+        else:
+            bucket["questions"].append(row)
+
+    ordered_sections = []
+    for bucket in sections.values():
+        bucket["questions"].sort(key=lambda r: (r["display_order"], r["number"]))
+        principles = list(bucket["principle_map"].values())
+        for p in principles:
+            p["questions"].sort(key=lambda r: (r["display_order"], r["number"]))
+        principles.sort(key=lambda p: p["principle"].principle_number)
+        ordered_sections.append(
+            {"section": bucket["section"], "principles": principles, "questions": bucket["questions"]}
+        )
+    ordered_sections.sort(key=lambda s: (s["section"].display_order, s["section"].code))
+    return ordered_sections
+
+_STATUS_DOT_PRIORITY = {"rejected": 3, "submitted": 2, "resubmitted": 2, "draft": 1, "approved": 0}
+
+
+def _aggregate_question_dot_status(plant_entries):
+    """Pick one representative status across all plant entries for a question,
+    so the sidebar dot shows the most attention-worthy state."""
+    if not plant_entries:
+        return "draft"
+    worst = plant_entries[0]["status"]
+    worst_rank = _STATUS_DOT_PRIORITY.get(worst, 1)
+    for entry in plant_entries[1:]:
+        rank = _STATUS_DOT_PRIORITY.get(entry["status"], 1)
+        if rank > worst_rank:
+            worst = entry["status"]
+            worst_rank = rank
+    return worst
 
 class BRSRDashboardView(LoginRequiredMixin, TemplateView):
     login_url = "accounts:login"
@@ -1565,6 +1990,119 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
         )
         return render(request, self.template_name, context)
 
+class BRSRDataDashboardView(LoginRequiredMixin, TemplateView):
+    login_url = "accounts:login"
+    template_name = "brsr/brsr_data_dashboard.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        has_view_all = _user_has_permission(user, 'VIEW_ALL_BRSR_DATA')
+        plants = list(_dashboard_plant_queryset(user))
+
+        plant_cards = [
+            {
+                "plant": plant,
+                "stats": _plant_brsr_stats(plant),
+                "url": reverse("brsr:brsr_plant_data", kwargs={"plant_id": plant.id}),
+            }
+            for plant in plants
+        ]
+
+        context["plant_cards"] = plant_cards
+        context["has_view_all"] = has_view_all
+        if has_view_all and plants:
+            context["company_stats"] = _company_brsr_stats(plants)
+            context["company_url"] = reverse("brsr:brsr_company_data")
+        return context
+
+
+class BRSRPlantDataView(LoginRequiredMixin, TemplateView):
+    login_url = "accounts:login"
+    template_name = "brsr/brsr_entered_data.html"
+
+    def get(self, request, *args, **kwargs):
+        plant = get_object_or_404(
+            Plant.objects.select_related("created_by__company"),
+            pk=kwargs["plant_id"],
+            is_active=True,
+        )
+        if not _can_view_plant_brsr_data(request.user, plant):
+            messages.error(request, "You do not have permission to view this plant's BRSR data.")
+            return redirect("brsr:brsr_data_dashboard")
+        self.plant = plant
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        plant = self.plant
+
+        financial_years = list(
+            Assignment.objects.filter(plant=plant)
+            .order_by("-financial_year")
+            .values_list("financial_year", flat=True)
+            .distinct()
+        )
+        selected_fy = self.request.GET.get("financial_year", "")
+        if selected_fy and selected_fy not in financial_years:
+            selected_fy = ""
+
+        context.update({
+            "is_company_view": False,
+            "plant": plant,
+            "financial_years": financial_years,
+            "selected_fy": selected_fy,
+            "section_groups": _build_brsr_data_groups([plant], financial_year=selected_fy or None),
+            "sections_nav": [{"code": g["section"].code, "name": g["section"].name} for g in _build_brsr_data_groups([plant] if not kwargs.get("is_company") else plants, financial_year=selected_fy or None)],
+            "stats": _plant_brsr_stats(plant, financial_year=selected_fy or None),
+            "dashboard_url": reverse("brsr:brsr_data_dashboard"),
+            "page_title": f"{plant.name} — Entered BRSR Data",
+        })
+        return context
+
+
+class BRSRCompanyDataView(LoginRequiredMixin, TemplateView):
+    login_url = "accounts:login"
+    template_name = "brsr/brsr_entered_data.html"
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        try:
+            view_all_perm = Permissions.objects.get(code='VIEW_ALL_BRSR_DATA')
+            has_view_all = _user_has_permission(user, view_all_perm.code)
+        except Permissions.DoesNotExist:
+            has_view_all = False
+        return super().get(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        plants = list(_dashboard_plant_queryset(user))
+
+        financial_years = list(
+            Assignment.objects.filter(plant__in=plants)
+            .order_by("-financial_year")
+            .values_list("financial_year", flat=True)
+            .distinct()
+        )
+        selected_fy = self.request.GET.get("financial_year", "")
+        if selected_fy and selected_fy not in financial_years:
+            selected_fy = ""
+
+        company = getattr(getattr(plants[0], "created_by", None), "company", None) if plants else None
+
+        context.update({
+            "is_company_view": True,
+            "plant": None,
+            "company_name": company.company_name if company else "All Plants",
+            "financial_years": financial_years,
+            "selected_fy": selected_fy,
+            "section_groups": _build_brsr_data_groups(plants, financial_year=selected_fy or None),
+            "stats": _company_brsr_stats(plants, financial_year=selected_fy or None),
+            "dashboard_url": reverse("brsr:brsr_data_dashboard"),
+            "page_title": "Company-wide BRSR Data",
+        })
+        return context
 
 def brsr_list(request):
     return BRSRDashboardView.as_view()(request)

@@ -31,4 +31,7 @@ urlpatterns = [
     path("api/assignment-schedules/", AssignmentScheduleCreateAPIView.as_view(), name="assignment_schedule_create_api",),
     path("api/assignment-schedules/list/", AssignmentScheduleListAPIView.as_view(), name="assignment_schedule_list_api",),
     path("api/assignment-schedules/<int:schedule_id>/toggle/", AssignmentScheduleToggleAPIView.as_view(), name="assignment_schedule_toggle_api",),
+    path("data/", BRSRDataDashboardView.as_view(), name="brsr_data_dashboard"),
+    path("data/plant/<int:plant_id>/", BRSRPlantDataView.as_view(), name="brsr_plant_data"),
+    path("data/company/", BRSRCompanyDataView.as_view(), name="brsr_company_data"),
 ]
