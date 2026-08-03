@@ -1,47 +1,120 @@
 <div class="question-container" id="question-{{ q.question_id }}">
   <div class="question-header">
     <div class="question-header-left">
-      <div>
-        <h3 class="question-title"><span class="question-number">{{ q.number }}.</span>{{ q.title }}</h3>
+      <div style="min-width:0; flex:1;">
+        <h3 class="question-title">
+          <span class="question-number">{{ q.number }}.</span>
+          <span style="word-wrap:break-word; overflow-wrap:break-word;">{{ q.title }}</span>
+        </h3>
+        {% if q.sub_section %}
+          <small style="color:var(--muted); font-size:11px; display:block; margin-top:4px; word-wrap:break-word; overflow-wrap:break-word;">
+            {{ q.sub_section }}
+          </small>
+        {% endif %}
       </div>
     </div>
-    {% if is_company_view %}
-      <span class="status-badge {{ q.dot_status|default:'draft' }}">{{ q.plant_entries|length }} plant{{ q.plant_entries|length|pluralize }}</span>
-    {% else %}
-      {% for entry in q.plant_entries %}
-        <span class="status-badge {{ entry.status }}">{{ entry.status_display }}</span>
-      {% endfor %}
-    {% endif %}
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; flex-shrink:0;">
+      {% if is_company_view %}
+        <span class="status-badge {{ q.dot_status|default:'draft' }}">
+          {{ q.plant_entries|length }} plant{{ q.plant_entries|length|pluralize }}
+        </span>
+      {% else %}
+        {% for entry in q.plant_entries %}
+          <span class="status-badge {{ entry.status }}">{{ entry.status_display }}</span>
+        {% endfor %}
+      {% endif %}
+    </div>
   </div>
 
   <div class="question-content">
     {% for entry in q.plant_entries %}
       <div class="plant-entry-block">
         <div class="plant-entry-head">
-          {% if is_company_view %}
-            <span class="plant-name">{{ entry.plant_name }} <small>({{ entry.plant_code }})</small></span>
-          {% else %}
-            <span class="plant-name">{{ entry.financial_year }}</span>
-          {% endif %}
-          <span class="status-badge {{ entry.status }}">{{ entry.status_display }}</span>
+          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; min-width:0; flex:1;">
+            <span class="plant-name" style="word-wrap:break-word; overflow-wrap:break-word;">
+              {% if is_company_view %}
+                {{ entry.plant_name }} <small>({{ entry.plant_code }})</small>
+              {% else %}
+                {{ entry.financial_year }}
+              {% endif %}
+            </span>
+            {% if entry.frequency %}
+              <span class="frequency-badge {{ entry.frequency }}">
+                {{ entry.frequency }}
+              </span>
+            {% endif %}
+            {% if entry.period_code and entry.period_code != 'default' %}
+              <span class="period-info" style="word-wrap:break-word; overflow-wrap:break-word;">
+                📅 {{ entry.period_label }}
+              </span>
+            {% endif %}
+          </div>
+          <span class="status-badge {{ entry.status }}" style="flex-shrink:0;">{{ entry.status_display }}</span>
         </div>
+        
+        {% if entry.has_multiple_periods %}
+        <div class="period-selector">
+          <label for="period-select-{{ q.question_id }}-{{ entry.plant_code }}" style="flex-shrink:0;">
+            📊 View Period:
+          </label>
+          <select id="period-select-{{ q.question_id }}-{{ entry.plant_code }}" 
+                  class="js-period-select" 
+                  data-question-id="{{ q.question_id }}" 
+                  data-plant-code="{{ entry.plant_code }}">
+            <option value="__all__">All Periods (Aggregated)</option>
+            {% for period in entry.periods %}
+              <option value="{{ period.code }}">
+                {{ period.label }}
+                {% if period.status %} · {{ period.status }}{% endif %}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+        
         <div class="plant-entry-body">
-          {% if entry.response_html %}
-            {{ entry.response_html|safe }}
-          {% else %}
-            <div class="form-group">
-              <label class="form-label">Response</label>
-              <textarea class="workspace-textarea form-textarea" readonly>{{ entry.response_value|default:"—" }}</textarea>
-            </div>
-          {% endif %}
-
+          <!-- Content container - shows aggregated view by default -->
+          <div class="js-period-content" 
+               data-question-id="{{ q.question_id }}" 
+               data-plant-code="{{ entry.plant_code }}">
+            {% if entry.response_html %}
+              {{ entry.response_html|safe }}
+            {% else %}
+              <div class="form-group">
+                <label class="form-label">Response</label>
+                <textarea class="workspace-textarea form-textarea" readonly>{{ entry.response_value|default:"—" }}</textarea>
+              </div>
+            {% endif %}
+          </div>
+          
+          <!-- Period store - hidden, contains HTML for each individual period -->
+          <div class="js-period-store" 
+               data-question-id="{{ q.question_id }}" 
+               data-plant-code="{{ entry.plant_code }}" 
+               style="display:none;">
+            {% for period in entry.periods %}
+              <div data-period="{{ period.code }}">
+                {{ period.response_html|safe }}
+              </div>
+            {% endfor %}
+          </div>
+          
           {% if entry.reviewed_by %}
             <div class="review-comment-box">
-              <span class="review-label">Reviewed By</span>
+              <span class="review-label">✅ Reviewed By</span>
               <p>{{ entry.reviewed_by }}</p>
+              {% if entry.reviewed_at %}
+                <small style="color:var(--muted); font-size:11px; display:block; margin-top:4px;">
+                  Reviewed on {{ entry.reviewed_at|date:"M d, Y H:i" }}
+                </small>
+              {% endif %}
             </div>
           {% endif %}
         </div>
+      </div>
+    {% empty %}
+      <div class="empty-state" style="padding:20px; font-size:13px;">
+        No data entered for this question yet.
       </div>
     {% endfor %}
   </div>

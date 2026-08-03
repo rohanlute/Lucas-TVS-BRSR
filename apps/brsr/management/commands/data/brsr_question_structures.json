@@ -24,8 +24,7 @@
             "name": "entityName",
             "field_type": "alphabetic",
             "type": "text",
-            "placeholder": "Enter company name",
-            "required": true
+            "placeholder": "Enter company name"
           },
           {
             "kind": "input",
@@ -61,8 +60,7 @@
             "name": "telephone",
             "field_type": "telephone",
             "type": "text",
-            "placeholder": "Enter telephone number",
-            "required": true
+            "placeholder": "Enter telephone number"
           },
           {
             "kind": "input",
@@ -102,8 +100,7 @@
             "name": "paidUpCapital",
             "field_type": "number_with_unit",
             "type": "text",
-            "placeholder": "Enter amount (e.g., 34.567 cr, 34,567cr, 100 lakh)",
-            "required": true
+            "placeholder": "Enter amount (e.g., 34.567 cr, 34,567cr, 100 lakh)"
           },
           {
             "kind": "input",
@@ -111,8 +108,7 @@
             "name": "contactPersonName",
             "field_type": "alphabetic",
             "type": "text",
-            "placeholder": "Name",
-            "required": true
+            "placeholder": "Name"
           },
           {
             "kind": "input",
@@ -120,8 +116,7 @@
             "name": "contactPersonDesignation",
             "field_type": "alphabetic",
             "type": "text",
-            "placeholder": "Designation",
-            "required": true
+            "placeholder": "Designation"
           },
           {
             "kind": "input",
@@ -196,16 +191,14 @@
                     "name": "mainActivity1",
                     "field_type": "alphabetic",
                     "type": "text",
-                    "placeholder": "e.g., Manufacturing",
-                    "required": true
+                    "placeholder": "e.g., Manufacturing"
                   },
                   {
                     "column": "Description of Business Activity",
                     "name": "businessActivity1",
                     "field_type": "alphabetic",
                     "type": "text",
-                    "placeholder": "Detailed description",
-                    "required": true
+                    "placeholder": "Detailed description"
                   },
                   {
                     "column": "% of Turnover of the entity",
@@ -214,8 +207,7 @@
                     "type": "number",
                     "placeholder": "Enter percentage",
                     "min": 0,
-                    "max": 100,
-                    "required": true
+                    "max": 100
                   }
                 ]
               }
@@ -239,16 +231,14 @@
                     "name": "product1",
                     "field_type": "alphabetic",
                     "type": "text",
-                    "placeholder": "Product/Service name",
-                    "required": true
+                    "placeholder": "Product/Service name"
                   },
                   {
                     "column": "NIC Code",
                     "name": "nicCode1",
                     "field_type": "number",
                     "type": "number",
-                    "placeholder": "NIC Code",
-                    "required": true
+                    "placeholder": "NIC Code"
                   },
                   {
                     "column": "% of total Turnover contributed",
@@ -257,8 +247,7 @@
                     "type": "number",
                     "placeholder": "Enter percentage",
                     "min": 0,
-                    "max": 100,
-                    "required": true
+                    "max": 100
                   }
                 ]
               },
@@ -270,16 +259,14 @@
                     "name": "product2",
                     "field_type": "alphabetic",
                     "type": "text",
-                    "placeholder": "Product/Service name",
-                    "required": true
+                    "placeholder": "Product/Service name"
                   },
                   {
                     "column": "NIC Code",
                     "name": "nicCode2",
                     "field_type": "number",
                     "type": "number",
-                    "placeholder": "NIC Code",
-                    "required": true
+                    "placeholder": "NIC Code"
                   },
                   {
                     "column": "% of total Turnover contributed",
@@ -288,8 +275,7 @@
                     "type": "number",
                     "placeholder": "Enter percentage",
                     "min": 0,
-                    "max": 100,
-                    "required": true
+                    "max": 100
                   }
                 ]
               }
@@ -1875,8 +1861,7 @@
                     "name": "l1_topics_covered",
                     "field_type": "text",
                     "type": "textarea",
-                    "placeholder": "Enter topics covered",
-                    "required": true
+                    "placeholder": "Enter topics covered"
                   },
                   {
                     "column": "% of value chain partners covered",
@@ -4965,8 +4950,7 @@
                     "min": 0,
                     "max": 100,
                     "step": "any",
-                    "placeholder": "0",
-                    "required": true
+                    "placeholder": "0"
                   }
                 ]
               },
@@ -4981,8 +4965,7 @@
                     "min": 0,
                     "max": 100,
                     "step": "any",
-                    "placeholder": "0",
-                    "required": true
+                    "placeholder": "0"
                   }
                 ]
               },
@@ -4997,8 +4980,7 @@
                     "min": 0,
                     "max": 100,
                     "step": "any",
-                    "placeholder": "0",
-                    "required": true
+                    "placeholder": "0"
                   }
                 ]
               },
@@ -5013,8 +4995,7 @@
                     "min": 0,
                     "max": 100,
                     "step": "any",
-                    "placeholder": "0",
-                    "required": true
+                    "placeholder": "0"
                   }
                 ]
               },
@@ -5029,8 +5010,7 @@
                     "min": 0,
                     "max": 100,
                     "step": "any",
-                    "placeholder": "0",
-                    "required": true
+                    "placeholder": "0"
                   }
                 ]
               },
@@ -5045,8 +5025,7 @@
                     "min": 0,
                     "max": 100,
                     "step": "any",
-                    "placeholder": "0",
-                    "required": true
+                    "placeholder": "0"
                   }
                 ]
               }
