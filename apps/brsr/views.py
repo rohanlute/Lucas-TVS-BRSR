@@ -1,5 +1,4 @@
 import json
-
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -18,6 +17,7 @@ from django.db.models import Case, When, Value, IntegerField
 from django.core.exceptions import PermissionDenied
 from django.utils.html import escape
 from datetime import date
+from django.utils import timezone
 
 
 User = get_user_model()
@@ -1147,6 +1147,101 @@ def _can_view_plant_brsr_data(user, plant):
         return bool(plant_company_id) and plant_company_id == getattr(user, "company_id", None)
     return user.assigned_plants.filter(pk=plant.pk, is_active=True).exists()
 
+_MONTH_ORDER = {
+    "JAN": 1, "FEB": 2, "MAR": 3, "APR": 4, "MAY": 5, "JUN": 6,
+    "JUL": 7, "AUG": 8, "SEP": 9, "OCT": 10, "NOV": 11, "DEC": 12,
+}
+_QUARTER_ORDER = {"Q1": 1, "Q2": 2, "Q3": 3, "Q4": 4}
+
+
+def _period_sort_key(period_code):
+    code = (period_code or "").upper()
+    if code in _MONTH_ORDER:
+        return (0, _MONTH_ORDER[code])
+    if code in _QUARTER_ORDER:
+        return (0, _QUARTER_ORDER[code])
+    if code.startswith("WEEK-"):
+        try:
+            return (0, int(code.split("-")[1]))
+        except (IndexError, ValueError):
+            return (1, code)
+    return (1, code)
+
+
+def _try_float(value):
+    if value is None or value == "":
+        return None
+    try:
+        return float(str(value).replace(",", "").strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _aggregate_response_values(values):
+    """Sum a list of response_value strings if every non-empty one is
+    numeric; otherwise fall back to the last non-empty value."""
+    non_empty = [v for v in values if v not in (None, "")]
+    numeric = [_try_float(v) for v in non_empty]
+    if non_empty and all(n is not None for n in numeric):
+        total = sum(numeric)
+        return str(int(total)) if total == int(total) else str(total)
+    for v in reversed(values):
+        if v not in (None, ""):
+            return v
+    return ""
+
+
+def _aggregate_response_jsons(response_jsons):
+    """Merge a list of response_json dicts field-by-field:
+    - numeric leaves are summed
+    - list-of-dict values (table rows) are summed cell-by-cell where numeric,
+      matched by row index
+    - everything else: last non-empty value wins
+    Works uniformly regardless of field 'kind' (input/textarea/radio/
+    checkbox_group/select/table) since it only looks at the flat stored shape.
+    """
+    aggregated = {}
+    for rj in response_jsons:
+        if not isinstance(rj, dict):
+            continue
+        for key, value in rj.items():
+            if isinstance(value, list):
+                existing = aggregated.get(key)
+                if not isinstance(existing, list):
+                    aggregated[key] = [dict(row) if isinstance(row, dict) else row for row in value]
+                    continue
+                merged_rows = []
+                for idx, row in enumerate(value):
+                    if idx < len(existing) and isinstance(existing[idx], dict) and isinstance(row, dict):
+                        merged_row = dict(existing[idx])
+                        for cell_key, cell_val in row.items():
+                            n_existing = _try_float(merged_row.get(cell_key))
+                            n_new = _try_float(cell_val)
+                            if n_existing is not None and n_new is not None:
+                                merged_row[cell_key] = n_existing + n_new
+                            elif cell_val not in (None, ""):
+                                merged_row[cell_key] = cell_val
+                        merged_rows.append(merged_row)
+                    else:
+                        merged_rows.append(row)
+                aggregated[key] = merged_rows
+            else:
+                n_existing = _try_float(aggregated.get(key))
+                n_new = _try_float(value)
+                if n_existing is not None and n_new is not None:
+                    aggregated[key] = n_existing + n_new
+                elif value not in (None, ""):
+                    aggregated[key] = value
+    return aggregated
+
+
+class _AggregatedResponse:
+    """Lightweight stand-in for a QuestionResponse so the existing
+    _render_question_readonly_html(question, response) renderer can be
+    reused unchanged for the synthetic 'All periods' aggregate."""
+    def __init__(self, response_value, response_json):
+        self.response_value = response_value
+        self.response_json = response_json
 
 def _aggregate_response_stats(responses_qs):
     """Reduce a QuestionResponse queryset down to dashboard-friendly counts."""
@@ -1199,9 +1294,10 @@ def _company_brsr_stats(plants, financial_year=None):
 def _build_brsr_data_groups(plants, financial_year=None):
     """
     Builds Section -> (Principle) -> Question rows of *already entered* data
-    for the given plants. Works for a single plant (plant detail page) or
-    many plants at once (company overview) — each question row carries a
-    list of per-plant entries so the same structure serves both views.
+    for the given plants. Each question row carries, per plant, every
+    frequency period that has data (e.g. each month for a monthly-frequency
+    assignment) plus an aggregated 'All periods' view — the template turns
+    this into a period-selector dropdown per plant block.
     """
     assignments = Assignment.objects.filter(plant__in=plants)
     if financial_year:
@@ -1214,11 +1310,16 @@ def _build_brsr_data_groups(plants, financial_year=None):
         "responses__question",
     )
 
-    question_meta = {}          # question_id -> BRSRQuestion
-    question_plant_data = {}    # question_id -> plant_id -> best entry
+    question_meta = {}
+    # question_id -> plant_id -> period_key -> entry
+    question_plant_period_data = {}
 
     for assignment in assignments:
         responses_by_qid = {r.question_id: r for r in assignment.responses.all()}
+        frequency = assignment.data_collection_frequency or ""
+        period_code = assignment.period_code or ""
+        period_label = assignment.period_label or period_code or assignment.financial_year
+
         for question in assignment.questions.all():
             response = responses_by_qid.get(question.id)
             if not response:
@@ -1228,14 +1329,19 @@ def _build_brsr_data_groups(plants, financial_year=None):
                 continue
 
             question_meta[question.id] = question
-            plant_bucket = question_plant_data.setdefault(question.id, {})
-            existing = plant_bucket.get(assignment.plant_id)
+            plant_bucket = question_plant_period_data.setdefault(question.id, {})
+            period_bucket = plant_bucket.setdefault(assignment.plant_id, {})
+            key = period_code or f"__single__{assignment.id}"
+            existing = period_bucket.get(key)
             if not existing or (response.updated_at and response.updated_at > existing["updated_at"]):
-                plant_bucket[assignment.plant_id] = {
+                period_bucket[key] = {
                     "plant": assignment.plant,
                     "response": response,
                     "financial_year": assignment.financial_year,
                     "updated_at": response.updated_at,
+                    "frequency": frequency,
+                    "period_code": period_code,
+                    "period_label": period_label,
                 }
 
     sections = {}
@@ -1246,29 +1352,73 @@ def _build_brsr_data_groups(plants, financial_year=None):
             section.id, {"section": section, "principle_map": {}, "questions": []}
         )
 
-        plant_entries = sorted(question_plant_data[qid].values(), key=lambda e: e["plant"].name)
+        plant_period_map = question_plant_period_data[qid]
 
-        entries_payload = [
+        all_frequencies = {
+            entry["frequency"]
+            for periods in plant_period_map.values()
+            for entry in periods.values()
+            if entry["frequency"]
+        }
+        has_frequency = bool(all_frequencies)
+
+        plant_entries_payload = []
+        for plant_id, periods in plant_period_map.items():
+            period_entries = sorted(periods.values(), key=lambda e: _period_sort_key(e["period_code"]))
+            plant = period_entries[0]["plant"]
+            has_multiple_periods = len(period_entries) > 1
+
+            period_payload = [
                 {
-                    "plant_name": e["plant"].name,
-                    "plant_code": e["plant"].code,
-                    "financial_year": e["financial_year"],
-                    "status": e["response"].status,
-                    "status_display": e["response"].get_status_display(),
-                    "response_value": e["response"].response_value or "",
-                    "response_html": _render_question_readonly_html(question, e["response"]),
-                    "reviewed_by": str(e["response"].reviewed_by) if e["response"].reviewed_by else "",
+                    "code": entry["period_code"] or "default",
+                    "label": entry["period_label"],
+                    "status": entry["response"].status,
+                    "status_display": entry["response"].get_status_display(),
+                    "response_html": _render_question_readonly_html(question, entry["response"]),
+                    "reviewed_by": str(entry["response"].reviewed_by) if entry["response"].reviewed_by else "",
+                    "financial_year": entry["financial_year"],
                 }
-                for e in plant_entries
-        ]
+                for entry in period_entries
+            ]
+
+            if has_multiple_periods:
+                aggregated_response = _AggregatedResponse(
+                    _aggregate_response_values([e["response"].response_value or "" for e in period_entries]),
+                    _aggregate_response_jsons([e["response"].response_json or {} for e in period_entries]),
+                )
+                aggregated_html = _render_question_readonly_html(question, aggregated_response)
+            else:
+                aggregated_html = period_payload[0]["response_html"]
+
+            latest_entry = max(period_entries, key=lambda e: e["updated_at"] or timezone.now())
+
+            plant_entries_payload.append(
+                {
+                    "plant_name": plant.name,
+                    "plant_code": plant.code,
+                    "financial_year": latest_entry["financial_year"],
+                    "frequency": latest_entry["frequency"],
+                    "status": latest_entry["response"].status,
+                    "status_display": latest_entry["response"].get_status_display(),
+                    "response_value": latest_entry["response"].response_value or "",
+                    "response_html": aggregated_html,
+                    "reviewed_by": str(latest_entry["response"].reviewed_by) if latest_entry["response"].reviewed_by else "",
+                    "has_multiple_periods": has_multiple_periods,
+                    "periods": period_payload,
+                }
+            )
+
+        plant_entries_payload.sort(key=lambda e: e["plant_name"])
+
         row = {
             "question_id": question.question_id,
             "number": question.question_number,
             "display_order": question.display_order,
             "title": question.question_text,
             "sub_section": question.sub_section or "",
-            "dot_status": _aggregate_question_dot_status(entries_payload),
-            "plant_entries": entries_payload,
+            "dot_status": _aggregate_question_dot_status(plant_entries_payload),
+            "has_frequency": has_frequency,
+            "plant_entries": plant_entries_payload,
         }
 
         if principle:
