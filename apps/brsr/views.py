@@ -12,7 +12,7 @@ from apps.accounts.models.permission import Permissions
 from apps.organizations.models import ApprovalConfigurationTemplate, FinancialYear, Plant
 from apps.organizations.workflow_configuration_engine import WorkflowConfigurationEngine
 from .forms import BRSRAssignmentForm, AssignmentScheduleForm
-from .models import Assignment, AssignmentReviewer, BRSRPrinciple, BRSRQuestion, BRSRSection, QuestionResponse, QuestionResponseDocument, AssignmentSchedule
+from .models import *
 from django.db.models import Case, When, Value, IntegerField
 from django.core.exceptions import PermissionDenied
 from django.utils.html import escape
@@ -725,6 +725,9 @@ def _assignment_context(section, principle, questions, assignment=None, user=Non
 
 def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_queryset, workflow_template_override=None):
     plant = cleaned_data["plant"]
+    financial_year = cleaned_data["financial_year"]
+    period_code = cleaned_data.get("period_code")
+    force_create = cleaned_data.get("force_create", False)
     workflow_template = workflow_template_override or _resolve_brsr_workflow_template(user=user, plant=plant)
     if not workflow_template:
         raise ValueError("No active BRSR workflow template is configured for this company.")
@@ -758,6 +761,23 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
 
     user_ct = ContentType.objects.get_for_model(User)
     assigner = cleaned_data.get("assigner") or user
+    existing = Assignment.objects.filter(
+        plant=plant,
+        section=section,
+        principle=principle,
+        financial_year=financial_year,
+        period_code=period_code,
+    ).order_by("-created_at").first()
+    if existing:
+        if existing.overall_status != 'completed':
+            raise ValueError(
+                "An active assignment already exists for this period. Please complete or close the existing  assignment first."
+            )
+        if not force_create:
+            raise ValueError(
+                "This assignment has already been submitted for this period. "
+                "Please confirm if you want to create another assignment."
+            )
     assignment = Assignment.objects.create(
         plant=plant,
         principle=principle,
@@ -772,6 +792,8 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
         due_date=cleaned_data.get("due_date"),
         priority=cleaned_data["priority"],
         notes=cleaned_data.get("notes"),
+        period_code=period_code,
+        period_label=cleaned_data.get("period_label"),
     )
     assignment.questions.set(question_queryset)
     if reviewer is not None:
@@ -1136,15 +1158,32 @@ def _dashboard_plant_queryset(user):
     except Permissions.DoesNotExist:
         has_view_all = False
 
+    if has_view_all:
+        company_id = getattr(user, "company_id", None)
+        if company_id:
+            return Plant.objects.filter(
+                created_by__company_id=company_id,
+                is_active=True,
+            ).select_related("created_by__company").order_by("name")
+        return Plant.objects.none()
+
     return user.assigned_plants.filter(is_active=True).order_by("name")
 
 
 def _can_view_plant_brsr_data(user, plant):
     if user.is_superuser or getattr(user, "is_super_admin", False):
         return True
-    if _user_has_permission(user, BRSR_VIEW_ALL_PERMISSION_CODE):
+
+    try:
+        view_all_perm = Permissions.objects.get(code='VIEW_ALL_BRSR_DATA')
+        has_view_all = _user_has_permission(user, view_all_perm.code)
+    except Permissions.DoesNotExist:
+        has_view_all = False
+
+    if has_view_all:
         plant_company_id = getattr(getattr(plant, "created_by", None), "company_id", None)
         return bool(plant_company_id) and plant_company_id == getattr(user, "company_id", None)
+
     return user.assigned_plants.filter(pk=plant.pk, is_active=True).exists()
 
 _MONTH_ORDER = {
@@ -2203,7 +2242,7 @@ class BRSRPlantDataView(LoginRequiredMixin, TemplateView):
             "financial_years": financial_years,
             "selected_fy": selected_fy,
             "section_groups": _build_brsr_data_groups([plant], financial_year=selected_fy or None),
-            "sections_nav": [{"code": g["section"].code, "name": g["section"].name} for g in _build_brsr_data_groups([plant] if not kwargs.get("is_company") else plants, financial_year=selected_fy or None)],
+            "sections_nav": [{"code": g["section"].code, "name": g["section"].name} for g in _build_brsr_data_groups([plant], financial_year=selected_fy or None)],
             "stats": _plant_brsr_stats(plant, financial_year=selected_fy or None),
             "dashboard_url": reverse("brsr:brsr_data_dashboard"),
             "page_title": f"{plant.name} — Entered BRSR Data",
