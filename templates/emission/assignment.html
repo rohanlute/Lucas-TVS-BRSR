@@ -398,6 +398,26 @@
         .justify-content-center {
             justify-content: center;
         }
+
+        .stat-card {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            cursor: pointer;
+            transition: all .2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--brand);
+            background: content-box;
+        }
+
+        .stat-card.active {
+            border: 2px solid var(--brand);
+            background: var(--brand-soft);
+            background: content-box;
+        }
     </style>
 {% endblock %}
 
@@ -418,26 +438,26 @@
 
         <!-- stats -->
         <div class="stats-grid">
-            <div class="stat-card">
+            <a href="?status=all" class="stat-card {% if current_filter == 'all' %}active{% endif %}">
                 <div class="stat-label">Total Assignments</div>
                 <div class="stat-value">{{ assignment_count }}</div>
-                <div class="stat-note">Scope: {{ assignment_scope|upper }}</div>
-            </div>
-            <div class="stat-card">
+                <div class="stat-note">All Assignments</div>
+            </a>
+            <a href="?status=open" class="stat-card {% if current_filter == 'open' %}active{% endif %}">
                 <div class="stat-label">Open</div>
                 <div class="stat-value">{{ open_count }}</div>
                 <div class="stat-note">Waiting for submission or review</div>
-            </div>
-            <div class="stat-card">
+            </a>
+            <a href="?status=completed" class="stat-card {% if current_filter == 'completed' %}active{% endif %}">
                 <div class="stat-label">Completed</div>
                 <div class="stat-value">{{ completed_count }}</div>
                 <div class="stat-note">Assignments fully approved</div>
-            </div>
-            <div class="stat-card">
+            </a>
+            <a href="?status=overdue" class="stat-card {% if current_filter == 'overdue' %}active{% endif %}">
                 <div class="stat-label">Overdue</div>
                 <div class="stat-value">{{ overdue_count }}</div>
                 <div class="stat-note">Past due date and still open</div>
-            </div>
+            </a>
         </div>
 
         <!-- assignment list -->

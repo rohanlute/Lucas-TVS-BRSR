@@ -244,15 +244,6 @@ class CoordinatorApproveAssignmentView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        if assignment.status != "REVIEW_APPROVED":
-            return Response(
-                {
-                    "success": False,
-                    "message": "Assignment is not ready for final approval."
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
         EmissionTransaction.objects.filter(
             assignment=assignment
         ).update(
@@ -279,6 +270,61 @@ class CoordinatorApproveAssignmentView(APIView):
         )
 
 
+class CoordinatorRejectAssignmentView(APIView):
+
+    @transaction.atomic
+    def post(self, request):
+
+        assignment_id = request.data.get("assignment")
+        comments = request.data.get("comments", "").strip()
+
+        if not assignment_id:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Assignment not found."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            assignment = EmissionAssignment.objects.get(
+                id=assignment_id,
+                assigner=request.user,
+                status="REVIEW_APPROVED",
+            )
+
+        except EmissionAssignment.DoesNotExist:
+            return Response(
+                {
+                    "success": False,
+                    "message": "Assignment does not exist."
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        EmissionTransaction.objects.filter(
+            assignment=assignment
+        ).update(
+            status="DRAFT"
+        )
+
+        assignment.status = "IN_PROGRESS"
+        assignment.coordinator_comments = comments
+
+        assignment.save(
+            update_fields=[
+                "status",
+                "coordinator_comments",
+            ]
+        )
+
+        return Response(
+            {
+                "success": True,
+                "message": "Assignment returned to Department User."
+            }
+        )
 
 class ApproveAssignmentView(APIView):
 
