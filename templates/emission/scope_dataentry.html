@@ -1609,10 +1609,23 @@
                                             </div>
                                         </div>
                                     </div>
+                                {% elif is_coordinator_review %}
+                                    <div class="card mt-3 mb-3 border-0 shadow-sm">
+                                        <div class="card-body">
+                                            <h6 class="fw-bold mb-3">ESG Coordinator Comments<span class="text-danger">*</span></h6>
+                                            <textarea id="coordinatorComments" class="form-control" rows="5" maxlength="1000"
+                                            placeholder="Enter final approval comments..."></textarea>
+                                            <div class="text-end mt-2">
+                                                <small class="text-muted">
+                                                    <span id="reviewCommentCount">0</span> / 1000
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
                                 {% endif %}
 
                                 <!-- Action Buttons -->
-                                <div class="d-flex gap-3">
+                                {% comment %} <div class="d-flex gap-3">
 
                                     <!-- ========================= -->
                                     <!-- REVIEWER -->
@@ -1740,6 +1753,123 @@
                                             </button>
 
                                         {% endif %}
+
+                                    {% endif %}
+
+                                </div> {% endcomment %}
+
+                                <div class="d-flex gap-3">
+
+                                    {# ---------------- Reviewer ---------------- #}
+                                    {% if is_review_mode %}
+
+                                        <button id="approveAssignmentBtn"
+                                                class="btn btn-success">
+                                            <i class="feather-check"></i>
+                                            Approve
+                                        </button>
+
+                                        <button id="rejectAssignmentBtn"
+                                                class="btn btn-danger">
+                                            <i class="feather-x"></i>
+                                            Reject
+                                        </button>
+
+                                    {# ---------------- ESG Coordinator ---------------- #}
+                                    {% elif is_coordinator_review %}
+
+                                        <button id="coordinatorApproveBtn"
+                                                class="btn btn-success">
+                                            <i class="feather-check-circle"></i>
+                                            Final Approve
+                                        </button>
+
+                                        <button id="coordinatorRejectBtn"
+                                                class="btn btn-danger">
+                                            <i class="feather-x-circle"></i>
+                                            Reject
+                                        </button>
+
+                                    {# ---------------- Assignee Waiting for Reviewer ---------------- #}
+                                    {% elif assignment.status == "SUBMITTED" and is_assignee %}
+
+                                        <div class="alert alert-info w-100">
+
+                                            <h6>
+                                                <i class="feather-clock"></i>
+                                                Waiting for Reviewer
+                                            </h6>
+
+                                            <div>
+                                                Your submission has been sent for review.
+                                            </div>
+
+                                            <div class="mt-2">
+                                                <strong>Reviewer :</strong>
+                                                {{ reviewer_name }}
+                                            </div>
+
+                                        </div>
+
+                                    {# ---------------- Assignee Waiting for ESG Coordinator ---------------- #}
+                                    {% elif assignment.status == "REVIEW_APPROVED" and is_assignee %}
+
+                                        <div class="alert alert-primary w-100">
+
+                                            <h6>
+                                                <i class="feather-user-check"></i>
+                                                Waiting for ESG Coordinator
+                                            </h6>
+
+                                            <div>
+                                                Your submission has been approved by the Reviewer.
+                                            </div>
+
+                                            <div class="mt-2">
+                                                <strong>ESG Coordinator :</strong>
+                                                {{ coordinator_name }}
+                                            </div>
+
+                                        </div>
+
+                                    {# ---------------- Final Approved ---------------- #}
+                                    {% elif assignment.status == "APPROVED" %}
+
+                                        <div class="alert alert-success w-100">
+
+                                            <h6>
+                                                <i class="feather-check-circle"></i>
+                                                Final Approved
+                                            </h6>
+
+                                            <div>
+                                                This assignment has completed all approval stages.
+                                            </div>
+
+                                        </div>
+
+                                    {% else %}
+
+                                        {% if assignment %}
+
+                                            <button id="submitAssignment"
+                                                    class="btn btn-brsr success">
+                                                Submit for Review
+                                            </button>
+
+                                        {% else %}
+
+                                            <button id="assignTaskBtn"
+                                                    class="btn btn-brsr primary">
+                                                Assign Task
+                                            </button>
+
+                                        {% endif %}
+
+                                        <button id="saveDraft"
+                                                class="btn btn-brsr secondary">
+                                            Save Draft
+                                        </button>
 
                                     {% endif %}
 
@@ -3603,6 +3733,123 @@ if (reviewComments) {
         document.getElementById("reviewCommentCount").innerText =
             this.value.length;
     });
+}
+
+const coordinatorApproveBtn = document.getElementById("coordinatorApproveBtn");
+
+if (coordinatorApproveBtn) {
+
+    coordinatorApproveBtn.addEventListener("click", function () {
+
+        const assignmentId = document.getElementById("assignmentId").value;
+
+        const comments = document.getElementById("coordinatorComments").value.trim();
+
+        if (!comments) {
+            showToast("Coordinator comments are required.", "warning");
+            document.getElementById("coordinatorComments").focus();
+            return;
+        }
+
+        fetch("/emission/api/coordinator-approve-assignment/", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrftoken,
+            },
+
+            body: JSON.stringify({
+                assignment: assignmentId,
+                comments: comments,
+            }),
+
+        })
+
+        .then(response => response.json())
+
+        .then(result => {
+
+            if (result.success) {
+
+                showToast(result.message, "success");
+
+                setTimeout(function () {
+                    location.reload();
+                }, 1000);
+
+            } else {
+
+                showToast(result.message, "error");
+
+            }
+
+        })
+
+        .catch(function(error){
+
+            console.error(error);
+
+            showToast("Network error.", "error");
+
+        });
+
+    });
+
+}
+
+
+const coordinatorRejectBtn = document.getElementById("coordinatorRejectBtn");
+
+if (coordinatorRejectBtn) {
+
+    coordinatorRejectBtn.addEventListener("click", function () {
+
+        const assignmentId = document.getElementById("assignmentId").value;
+        const comments = document.getElementById("coordinatorComments").value.trim();
+
+        if (!comments) {
+            showToast("Coordinator comments are required.", "warning");
+            return;
+        }
+
+        fetch("/emission/api/coordinator-reject/", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrftoken,
+            },
+
+            body: JSON.stringify({
+                assignment: assignmentId,
+                comments: comments,
+            }),
+
+        })
+        .then(response => response.json())
+        .then(result => {
+
+            if (result.success) {
+
+                showToast(result.message, "success");
+
+                setTimeout(function () {
+                    location.reload();
+                }, 1000);
+
+            } else {
+
+                showToast(result.message, "error");
+
+            }
+
+        });
+
+    });
+
 }
 </script>
 {% endblock %}
