@@ -84,6 +84,145 @@
     border:1px solid var(--brand);
   }
 
+  .btn-secondary-link{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    border-radius:12px;
+    padding:11px 16px;
+    font-size:13px;
+    font-weight:700;
+    text-decoration:none;
+    background:var(--surface);
+    color:var(--muted);
+    border:1px solid var(--border);
+  }
+
+  .btn-secondary-link:hover {
+    background:var(--bg);
+    color:var(--ink);
+  }
+
+  .filter-bar {
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:22px;
+    padding:16px 20px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:18px;
+    box-shadow:var(--shadow);
+    align-items:center;
+  }
+
+  .filter-group {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex:1 1 160px;
+    min-width:140px;
+  }
+
+  .filter-group label {
+    font-size:12px;
+    font-weight:700;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    white-space:nowrap;
+  }
+
+  .filter-group select,
+  .filter-group input {
+    flex:1;
+    padding:8px 12px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--bg);
+    font-size:13px;
+    color:var(--ink);
+    transition:border-color .2s;
+    min-width:100px;
+  }
+
+  .filter-group select:focus,
+  .filter-group input:focus {
+    outline:none;
+    border-color:var(--brand);
+    box-shadow:0 0 0 3px rgba(29,78,216,.1);
+  }
+
+  .filter-group select {
+    cursor:pointer;
+    appearance:auto;
+  }
+
+  .filter-group input::placeholder {
+    color:var(--muted);
+  }
+
+  .filter-actions {
+    display:flex;
+    gap:8px;
+    margin-left:auto;
+  }
+
+  .filter-actions .btn-filter {
+    padding:8px 18px;
+    border-radius:10px;
+    border:none;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+    transition:all .2s;
+  }
+
+  .btn-filter.apply {
+    background:var(--brand);
+    color:#fff;
+  }
+
+  .btn-filter.apply:hover {
+    background:#1a3fa8;
+    transform:translateY(-1px);
+  }
+
+  .btn-filter.reset {
+    background:var(--bg);
+    color:var(--muted);
+  }
+
+  .btn-filter.reset:hover {
+    background:var(--border);
+    color:var(--ink);
+  }
+
+  .active-filter-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 12px;
+    background: var(--brand-soft);
+    color: var(--brand);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .active-filter-badge .remove-filter {
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    font-weight: 700;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .active-filter-badge .remove-filter:hover {
+    opacity: 1;
+  }
+
   .stats-grid{
     display:grid;
     grid-template-columns:repeat(4,minmax(0,1fr));
@@ -522,6 +661,21 @@
     font-size:12px;
   }
 
+  .no-results {
+    padding: 40px 24px;
+    text-align: center;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: 18px;
+  }
+
+  .no-results h3 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    color: var(--ink);
+  }
+
   @media (max-width: 1200px){
     .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
     .assignment-grid{grid-template-columns:1fr;}
@@ -534,6 +688,9 @@
     .assignment-card-head{flex-direction:column;}
     .assignment-quick-stats { flex-wrap: wrap; }
     .assignment-grid{grid-template-columns:1fr;}
+    .filter-bar{flex-direction:column;align-items:stretch;}
+    .filter-group{flex:1 1 auto;}
+    .filter-actions{margin-left:0;}
   }
 </style>
 {% endblock %}
@@ -552,6 +709,81 @@
     </div>
   </div>
 
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <form method="GET" action="" id="filterForm" style="display:contents; width:100%;">
+      <div class="filter-group">
+        <label for="plantFilter">Plant</label>
+        <select id="plantFilter" name="plant">
+          <option value="">All Plants</option>
+          {% for plant in plants %}
+            <option value="{{ plant.id }}" {% if selected_plant == plant.id|stringformat:"s" %}selected{% endif %}>
+              {{ plant.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="stageFilter">Stage</label>
+        <select id="stageFilter" name="stage">
+          <option value="">All Stages</option>
+          {% for stage in stages %}
+            <option value="{{ stage }}" {% if selected_stage == stage %}selected{% endif %}>
+              {{ stage|title }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-group" style="flex:2 1 200px;">
+        <label for="searchFilter">Search</label>
+        <input type="text" id="searchFilter" name="search" 
+               placeholder="Search by code, user, reviewer..." 
+               value="{{ search_query }}">
+      </div>
+
+      <div class="filter-actions">
+        <button type="submit" class="btn-filter apply">Apply Filters</button>
+        <a href="{% url 'brsr:approval_dashboard' %}" class="btn-filter reset" style="text-decoration:none;text-align:center;">Reset</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Active Filters Display -->
+  {% if selected_company or selected_plant or selected_stage or search_query %}
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+    {% if selected_plant %}
+      {% for plant in plants %}
+        {% if plant.id|stringformat:"s" == selected_plant %}
+          <span class="active-filter-badge">
+            Plant: {{ plant.name }}
+            <a href="?{% if selected_company %}company={{ selected_company }}&{% endif %}{% if selected_stage %}stage={{ selected_stage }}&{% endif %}{% if search_query %}search={{ search_query }}{% endif %}" 
+               class="remove-filter">×</a>
+          </span>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+    
+    {% if selected_stage %}
+      <span class="active-filter-badge">
+        Stage: {{ selected_stage|title }}
+        <a href="?{% if selected_company %}company={{ selected_company }}&{% endif %}{% if selected_plant %}plant={{ selected_plant }}&{% endif %}{% if search_query %}search={{ search_query }}{% endif %}" 
+           class="remove-filter">×</a>
+      </span>
+    {% endif %}
+    
+    {% if search_query %}
+      <span class="active-filter-badge">
+        Search: "{{ search_query }}"
+        <a href="?{% if selected_company %}company={{ selected_company }}&{% endif %}{% if selected_plant %}plant={{ selected_plant }}&{% endif %}{% if selected_stage %}stage={{ selected_stage }}{% endif %}" 
+           class="remove-filter">×</a>
+      </span>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Stats Grid -->
   <div class="stats-grid">
     <div class="stat-card">
       <div class="stat-label">Total Assignments</div>
@@ -578,154 +810,152 @@
   </div>
 
   {% if grouped_assignments %}
-    {% for company_name, plants in grouped_assignments.items %}
+    {% for company_name, company_data in grouped_assignments.items %}
     <div class="company-group">
-      <div class="company-group-header">
-        <h2>{{ company_name }}</h2>
-        <span class="pill brand">{{ plants|length }} plant{{ plants|length|pluralize }}</span>
-      </div>
 
-      {% for plant_name, entries in plants.items %}
-      <div class="plant-group">
-        <div class="plant-group-header">
-          <h3>{{ plant_name }}</h3>
-          <span class="pill muted">{{ entries|length }} assignment{{ entries|length|pluralize }}</span>
-        </div>
+      {% for plant_name, plant_data in company_data.items %}
+        {% if plant_name != "_company_id" %}
+        <div class="plant-group">
+          <div class="plant-group-header">
+            <h3>{{ plant_name }}</h3>
+            <span class="pill muted">{{ plant_data.entries|length }} assignment{{ plant_data.entries|length|pluralize }}</span>
+          </div>
 
-        <div class="assignment-list">
-          {% for entry in entries %}
-          {% with assignment=entry.assignment questions=entry.questions %}
-          <article class="assignment-card {% if forloop.parentloop.first and forloop.first %}expanded{% endif %}" data-assignment-id="{{ assignment.id }}">
-            <div class="assignment-card-head" role="button" tabindex="0" aria-expanded="{% if forloop.parentloop.first and forloop.first %}true{% else %}false{% endif %}">
-              <div class="assignment-meta">
-                <h3>{{ assignment.assignment_id }}</h3>
-                <p>{{ assignment.plant }} · {{ assignment.section }}{% if assignment.principle %} · {{ assignment.principle }}{% endif %}</p>
-                <div class="assignment-quick-stats">
-                  <span>📋 {{ assignment.question_count }} questions</span>
-                  <span>📅 {{ assignment.due_date|default:"No due date" }}</span>
-                  <span>
-                    <span class="dot review"></span>
-                    {{ assignment.workflow_status_label|default:"Pending" }}
+          <div class="assignment-list">
+            {% for entry in plant_data.entries %}
+            {% with assignment=entry.assignment questions=entry.questions %}
+            <article class="assignment-card {% if forloop.parentloop.parentloop.first and forloop.parentloop.first and forloop.first %}expanded{% endif %}" data-assignment-id="{{ assignment.id }}">
+              <div class="assignment-card-head" role="button" tabindex="0" aria-expanded="{% if forloop.parentloop.parentloop.first and forloop.parentloop.first and forloop.first %}true{% else %}false{% endif %}">
+                <div class="assignment-meta">
+                  <h3>{{ assignment.assignment_id }}</h3>
+                  <p>{{ assignment.plant }} · {{ assignment.section }}{% if assignment.principle %} · {{ assignment.principle }}{% endif %}</p>
+                  <div class="assignment-quick-stats">
+                    <span>📋 {{ assignment.question_count }} questions</span>
+                    <span>📅 {{ assignment.due_date|default:"No due date" }}</span>
+                    <span>
+                      <span class="dot review"></span>
+                      {{ assignment.workflow_status_label|default:"Pending" }}
+                    </span>
+                    {% if assignment.is_overdue %}
+                    <span style="color: var(--danger);">⚠️ Overdue</span>
+                    {% endif %}
+                    {% if assignment.is_assigned_reviewer %}
+                    <span class="reviewer-badge">👤 You are a reviewer</span>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="pill-row">
+                  <span class="pill brand">{{ assignment.assignee_type|default:"user" }}</span>
+                  <span class="pill {% if assignment.workflow_stage_type == 'review' %}review{% elif assignment.workflow_stage_type == 'final_approval' %}success{% elif assignment.workflow_stage_type == 'pre_final_approval' or assignment.workflow_stage_type == 'approval' %}warn{% else %}muted{% endif %}">
+                    {{ assignment.workflow_stage|default:"Pending" }}
                   </span>
                   {% if assignment.is_overdue %}
-                  <span style="color: var(--danger);">⚠️ Overdue</span>
+                  <span class="pill danger">Overdue</span>
                   {% endif %}
-                  {% if assignment.is_assigned_reviewer %}
-                  <span class="reviewer-badge">👤 You are a reviewer</span>
+                  {% if assignment.priority %}
+                  <span class="pill muted">{{ assignment.priority }}</span>
                   {% endif %}
+                  <span class="expand-icon" aria-hidden="true">▼</span>
                 </div>
               </div>
-              <div class="pill-row">
-                <span class="pill brand">{{ assignment.assignee_type|default:"user" }}</span>
-                <span class="pill {% if assignment.workflow_stage_type == 'review' %}review{% elif assignment.workflow_stage_type == 'final_approval' %}success{% elif assignment.workflow_stage_type == 'pre_final_approval' or assignment.workflow_stage_type == 'approval' %}warn{% else %}muted{% endif %}">
-                  {{ assignment.workflow_stage|default:"Pending" }}
-                </span>
-                {% if assignment.is_overdue %}
-                <span class="pill danger">Overdue</span>
-                {% endif %}
-                {% if assignment.priority %}
-                <span class="pill muted">{{ assignment.priority }}</span>
-                {% endif %}
-                <span class="expand-icon" aria-hidden="true">▼</span>
-              </div>
-            </div>
 
-            <div class="assignment-grid">
-              <div class="question-box">
-                <span class="section-label">Questions</span>
-                <ul class="question-list">
-                  {% for question in questions %}
-                  <li class="question-item">
-                    <div>
-                      <strong>{{ question.number }}. {{ question.title }}</strong>
-                      <small>{{ question.question_id }}{% if question.workflow_stage %} · {{ question.workflow_stage }}{% endif %}</small>
+              <div class="assignment-grid">
+                <div class="question-box">
+                  <span class="section-label">Questions</span>
+                  <ul class="question-list">
+                    {% for question in questions %}
+                    <li class="question-item">
+                      <div>
+                        <strong>{{ question.number }}. {{ question.title }}</strong>
+                        <small>{{ question.question_id }}{% if question.workflow_stage %} · {{ question.workflow_stage }}{% endif %}</small>
+                      </div>
+                      <span class="status-chip {{ question.status|default:'pending' }}">{{ question.status_display|default:question.status|default:"pending" }}</span>
+                    </li>
+                    {% endfor %}
+                  </ul>
+                </div>
+
+                <div>
+                  <div class="assignment-summary-box">
+                    <span class="section-label">Assignment Details</span>
+                    <div class="mb-3">
+                      <div class="fw-semibold text-dark">Assigned To</div>
+                      <div class="text-muted">{{ assignment.assignee|default:"-" }}</div>
                     </div>
-                    <span class="status-chip {{ question.status|default:'pending' }}">{{ question.status_display|default:question.status|default:"pending" }}</span>
-                  </li>
-                  {% endfor %}
-                </ul>
-              </div>
+                    <div class="mb-3">
+                      <div class="fw-semibold text-dark">Assigned By</div>
+                      <div class="text-muted">{{ assignment.assigner|default:"-" }}</div>
+                    </div>
+                    <div class="mb-3">
+                      <div class="fw-semibold text-dark">Financial Year</div>
+                      <div class="text-muted">{{ assignment.financial_year }}</div>
+                    </div>
+                    <div class="mb-3">
+                      <div class="fw-semibold text-dark">Workflow Template</div>
+                      <div class="text-muted">{{ assignment.workflow_template|default:"-" }}</div>
+                    </div>
+                    <div class="mb-3">
+                      <div class="fw-semibold text-dark">Current Stage</div>
+                      <div class="text-muted">{{ assignment.workflow_stage|default:"-" }}</div>
+                    </div>
+                    <div class="mb-3">
+                      <div class="fw-semibold text-dark">Due Date</div>
+                      <div class="text-muted">{{ assignment.due_date|default:"-" }}</div>
+                    </div>
+                    <div class="mb-3">
+                      <div class="fw-semibold text-dark">Questions</div>
+                      <div class="text-muted">{{ assignment.question_count }}</div>
+                    </div>
+                    <div class="card-action-row">
+                      {% if assignment.current_user_role == "review" %}
+                          <a class="btn-primary-link"
+                            href="{% url 'brsr:assignment_review_comments' assignment_id=assignment.id %}">
+                              Review &amp; Take Action
+                          </a>
+                      {% elif assignment.current_user_role == "approval" %}
+                          <a class="btn-primary-link"
+                            href="{% url 'brsr:assignment_detail' assignment_id=assignment.id %}">
+                              Approve or Reject
+                          </a>
+                      {% endif %}
+                  </div>
+                  </div>
+                  <!-- Review Comments Section -->
+                  <div class="review-comments-box" style="margin-top: 16px;">
+                    <span class="section-label">Review Comments</span>
 
-              <div>
-                <div class="assignment-summary-box">
-                  <span class="section-label">Assignment Details</span>
-                  <div class="mb-3">
-                    <div class="fw-semibold text-dark">Assigned To</div>
-                    <div class="text-muted">{{ assignment.assignee|default:"-" }}</div>
-                  </div>
-                  <div class="mb-3">
-                    <div class="fw-semibold text-dark">Assigned By</div>
-                    <div class="text-muted">{{ assignment.assigner|default:"-" }}</div>
-                  </div>
-                  <div class="mb-3">
-                    <div class="fw-semibold text-dark">Financial Year</div>
-                    <div class="text-muted">{{ assignment.financial_year }}</div>
-                  </div>
-                  <div class="mb-3">
-                    <div class="fw-semibold text-dark">Workflow Template</div>
-                    <div class="text-muted">{{ assignment.workflow_template|default:"-" }}</div>
-                  </div>
-                  <div class="mb-3">
-                    <div class="fw-semibold text-dark">Current Stage</div>
-                    <div class="text-muted">{{ assignment.workflow_stage|default:"-" }}</div>
-                  </div>
-                  <div class="mb-3">
-                    <div class="fw-semibold text-dark">Due Date</div>
-                    <div class="text-muted">{{ assignment.due_date|default:"-" }}</div>
-                  </div>
-                  <div class="mb-3">
-                    <div class="fw-semibold text-dark">Questions</div>
-                    <div class="text-muted">{{ assignment.question_count }}</div>
-                  </div>
-                  <div class="card-action-row">
-                    {% if assignment.current_user_role == "review" %}
-                        <a class="btn-primary-link"
-                          href="{% url 'brsr:assignment_review_comments' assignment_id=assignment.id %}">
-                            Review &amp; Take Action
-                        </a>
-                    {% elif assignment.current_user_role == "approval" %}
-                        <a class="btn-primary-link"
-                          href="{% url 'brsr:assignment_detail' assignment_id=assignment.id %}">
-                            Approve or Reject
-                        </a>
-                    {% endif %}
-                </div>
-                </div>
-                <!-- Review Comments Section -->
-                <div class="review-comments-box" style="margin-top: 16px;">
-                  <span class="section-label">Review Comments</span>
-
-                  <div class="review-comment-list">
-                  {% for question in questions %}
-                    {% if question.review_remark %}
-                    <div class="review-comment-item">
-                      <div class="review-comment-header">
-                        <span class="review-comment-question">
-                          Q{{ question.number }}: {{ question.title|truncatechars:50 }}
-                        </span>
-                        <span class="review-comment-meta">
-                          <span class="status-chip {{ question.status|default:'pending' }}" style="font-size: 9px; padding: 2px 6px;">
-                            {{ question.status_display|default:question.status|default:"pending" }}
+                    <div class="review-comment-list">
+                    {% for question in questions %}
+                      {% if question.review_remark %}
+                      <div class="review-comment-item">
+                        <div class="review-comment-header">
+                          <span class="review-comment-question">
+                            Q{{ question.number }}: {{ question.title|truncatechars:50 }}
                           </span>
-                        </span>
+                          <span class="review-comment-meta">
+                            <span class="status-chip {{ question.status|default:'pending' }}" style="font-size: 9px; padding: 2px 6px;">
+                              {{ question.status_display|default:question.status|default:"pending" }}
+                            </span>
+                          </span>
+                        </div>
+                        <div class="review-comment-text">
+                          {{ question.review_remark }}
+                        </div>
                       </div>
-                      <div class="review-comment-text">
-                        {{ question.review_remark }}
-                      </div>
+                      {% endif %}
+                    {% empty %}
+                      <div class="no-comments">No questions on this assignment yet.</div>
+                    {% endfor %}
                     </div>
-                    {% endif %}
-                  {% empty %}
-                    <div class="no-comments">No questions on this assignment yet.</div>
-                  {% endfor %}
                   </div>
                 </div>
               </div>
-            </div>
-          </article>
-          {% endwith %}
-          {% endfor %}
+            </article>
+            {% endwith %}
+            {% endfor %}
+          </div>
         </div>
-      </div>
+        {% endif %}
       {% endfor %}
     </div>
     {% endfor %}
@@ -769,6 +999,25 @@
           header.click();
         }
       });
+    });
+
+    // Auto-submit filter form on select change
+    const filterForm = document.getElementById('filterForm');
+    const selectElements = filterForm.querySelectorAll('select');
+    
+    selectElements.forEach(select => {
+      select.addEventListener('change', function() {
+        filterForm.submit();
+      });
+    });
+
+    // Search input with Enter key
+    const searchInput = document.getElementById('searchFilter');
+    searchInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        filterForm.submit();
+      }
     });
 
     // Fill in a placeholder for assignments with no review comments

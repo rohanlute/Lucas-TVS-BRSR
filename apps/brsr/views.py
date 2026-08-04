@@ -1547,6 +1547,12 @@ class AssignmentDashboardView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
+        
+        plant_filter = self.request.GET.get('plant', '')
+        status_filter = self.request.GET.get('status', '')
+        stage_filter = self.request.GET.get('stage', '')
+        search_query = self.request.GET.get('search', '').strip()
+        
         assignments = list(
             _assignment_scope_queryset(user)
             .select_related(
@@ -1567,18 +1573,53 @@ class AssignmentDashboardView(LoginRequiredMixin, TemplateView):
                 "reviewer_links__reviewer_content_type",
             )
         )
+        
+        if plant_filter:
+            assignments = [a for a in assignments if a.plant_id and str(a.plant_id) == plant_filter]
+        
+        if status_filter:
+            assignments = [a for a in assignments if a.overall_status == status_filter]
+        
+        if stage_filter:
+            assignments = [a for a in assignments if a.workflow_stage_type == stage_filter]
+        
+        if search_query:
+            search_lower = search_query.lower()
+            assignments = [
+                a for a in assignments
+                if search_lower in a.assignment_id.lower()
+                or (a.assignee and search_lower in str(a.assignee).lower())
+                or any(
+                    search_lower in str(link.reviewer).lower()
+                    for link in a.reviewer_links.all()
+                    if link.reviewer
+                )
+            ]
+        
         assignments.sort(key=lambda x: (x.overall_status == "completed", -x.created_at.timestamp()))
-
+        plants = _company_scope_plants(user)
+        statuses = sorted(set(a.overall_status for a in assignments if a.overall_status))
+        stages = sorted(set(a.workflow_stage_type for a in assignments if a.workflow_stage_type))    
         serialized_assignments = [
-            _serialize_assignment_with_reviewers(assignment, user)  # Use updated serializer
+            _serialize_assignment_with_reviewers(assignment, user)
             for assignment in assignments
         ]
-        context["assignments"] = serialized_assignments
-        context["assignment_count"] = len(serialized_assignments)
-        context["open_count"] = sum(1 for item in serialized_assignments if item["overall_status"] != "completed")
-        context["completed_count"] = sum(1 for item in serialized_assignments if item["overall_status"] == "completed")
-        context["overdue_count"] = sum(1 for item in serialized_assignments if item["is_overdue"])
-        context["assignment_scope"] = _get_assignment_scope(user)
+        
+        context.update({
+            "assignments": serialized_assignments,
+            "assignment_count": len(serialized_assignments),
+            "open_count": sum(1 for item in serialized_assignments if item["overall_status"] != "completed"),
+            "completed_count": sum(1 for item in serialized_assignments if item["overall_status"] == "completed"),
+            "overdue_count": sum(1 for item in serialized_assignments if item["is_overdue"]),
+            "assignment_scope": _get_assignment_scope(user),
+            "plants": plants,
+            "statuses": statuses,
+            "stages": stages,
+            "selected_plant": plant_filter,
+            "selected_status": status_filter,
+            "selected_stage": stage_filter,
+            "search_query": search_query,
+        })
         return context
 
 
@@ -1589,11 +1630,43 @@ class ApprovalDashboardView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
+        company_filter = self.request.GET.get('company', '')
+        plant_filter = self.request.GET.get('plant', '')
+        stage_filter = self.request.GET.get('stage', '')
+        search_query = self.request.GET.get('search', '').strip()
+        
         assignments = [
             assignment
             for assignment in _approval_stage_queryset(user)
             if not assignment.workflow_task or not assignment.workflow_task.is_completed
         ]
+        
+        if company_filter:
+            assignments = [
+                a for a in assignments
+                if getattr(getattr(a.plant, "created_by", None), "company", None) 
+                and str(getattr(getattr(a.plant, "created_by", None), "company", None).id) == company_filter
+            ]
+        
+        if plant_filter:
+            assignments = [a for a in assignments if a.plant_id and str(a.plant_id) == plant_filter]
+        
+        if stage_filter:
+            assignments = [a for a in assignments if a.workflow_stage_type == stage_filter]
+        
+        if search_query:
+            search_lower = search_query.lower()
+            assignments = [
+                a for a in assignments
+                if search_lower in a.assignment_id.lower()
+                or (a.assignee and search_lower in str(a.assignee).lower())
+                or any(
+                    search_lower in str(link.reviewer).lower()
+                    for link in a.reviewer_links.all()
+                    if link.reviewer
+                )
+            ]
+        
         grouped = {}
         total_questions = 0
         stage_counts = {
@@ -1602,15 +1675,31 @@ class ApprovalDashboardView(LoginRequiredMixin, TemplateView):
             "pre_final_approval": 0,
             "final_approval": 0,
         }
+        
+        companies = set()
+        plants = set()
+        
         for assignment in assignments:
             stage_type = assignment.workflow_stage_type or ""
             if stage_type in stage_counts:
                 stage_counts[stage_type] += 1
+            
             company = getattr(getattr(assignment.plant, "created_by", None), "company", None)
             company_key = company.company_name if company else "Unknown Company"
+            company_id = str(company.id) if company else ""
+            
+            companies.add((company_id, company_key))
+            
             plant_key = assignment.plant.name if assignment.plant_id else "Unknown Plant"
+            plant_id = str(assignment.plant.id) if assignment.plant_id else ""
+            plants.add((plant_id, plant_key))
+            
             company_bucket = grouped.setdefault(company_key, {})
-            plant_bucket = company_bucket.setdefault(plant_key, [])
+            company_bucket["_company_id"] = company_id
+            plant_bucket = company_bucket.setdefault(plant_key, {})
+            plant_bucket["_plant_id"] = plant_id
+            entries = plant_bucket.setdefault("entries", [])
+            
             questions = list(
                 assignment.questions.select_related("section", "principle").order_by("display_order", "question_number")
             )
@@ -1637,22 +1726,36 @@ class ApprovalDashboardView(LoginRequiredMixin, TemplateView):
                     }
                 )
             total_questions += len(question_rows)
-            plant_bucket.append(
+            entries.append(
                 {
                     "assignment": _serialize_assignment(assignment, user),
                     "questions": question_rows,
                 }
             )
-
-        context["grouped_assignments"] = grouped
-        context["assignment_count"] = len(assignments)
-        context["question_count"] = total_questions
-        context["stage_counts"] = stage_counts
-        context["approval_stage_count"] = (
-            stage_counts["approval"]
-            + stage_counts["pre_final_approval"]
-            + stage_counts["final_approval"]
-        )
+        
+        plants_list = sorted([{"id": p_id, "name": p_name} for p_id, p_name in plants if p_id], key=lambda x: x["name"])
+        companies_list = sorted([{"id": c_id, "name": c_name} for c_id, c_name in companies if c_id], key=lambda x: x["name"])
+        
+        stages = sorted([s for s in stage_counts.keys() if stage_counts[s] > 0])
+        
+        context.update({
+            "grouped_assignments": grouped,
+            "assignment_count": len(assignments),
+            "question_count": total_questions,
+            "stage_counts": stage_counts,
+            "approval_stage_count": (
+                stage_counts["approval"]
+                + stage_counts["pre_final_approval"]
+                + stage_counts["final_approval"]
+            ),
+            "companies": companies_list,
+            "plants": plants_list,
+            "stages": stages,
+            "selected_company": company_filter,
+            "selected_plant": plant_filter,
+            "selected_stage": stage_filter,
+            "search_query": search_query,
+        })
         return context
 
 class AssignmentDetailView(LoginRequiredMixin, TemplateView):
