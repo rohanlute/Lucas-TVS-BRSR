@@ -220,6 +220,41 @@ class CompanyUpdateView(LoginRequiredMixin, UpdateView):
     login_url = 'accounts:login'
     success_url = reverse_lazy('companies:company_list')
 
+    def get_form_kwargs(self):
+        """Ensure the instance is passed to the form"""
+        kwargs = super().get_form_kwargs()
+        # The instance is already set by UpdateView
+        return kwargs
+
+    def get_initial(self):
+        """Pre-populate form with existing data"""
+        initial = super().get_initial()
+        company = self.object
+        
+        # Ensure all required fields have values
+        initial['company_name'] = company.company_name or ''
+        initial['email'] = company.email or ''
+        initial['mobile_number'] = company.mobile_number or ''
+        initial['website'] = company.website or ''
+        initial['gst_number'] = company.gst_number or ''
+        initial['cin_number'] = company.cin_number or ''
+        initial['date_of_incorporation'] = company.date_of_incorporation
+        initial['contact_person'] = company.contact_person or ''
+        initial['billing_address'] = company.billing_address or ''
+        initial['billing_zip_code'] = company.billing_zip_code or ''
+        initial['billing_country'] = company.billing_country_id
+        initial['billing_state'] = company.billing_state_id
+        initial['billing_city'] = company.billing_city_id
+        initial['about_company'] = company.about_company or ''
+        initial['listed_company'] = company.listed_company
+        initial['is_active'] = company.is_active
+        
+        # Password fields should always be empty
+        initial['password'] = ''
+        initial['confirm_password'] = ''
+        
+        return initial
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['company_admin'] = User.objects.filter(company=self.object, is_company_user=True).first()
@@ -249,37 +284,43 @@ class CompanyUpdateView(LoginRequiredMixin, UpdateView):
         context["billing_state_id"] = company.billing_state_id
         context["billing_city_id"] = company.billing_city_id
         
+        # Debug: Check if form has initial values
+        if 'form' in context:
+            print("Form initial:", context['form'].initial)
+            print("Form instance:", context['form'].instance)
+            print("Form data:", context['form'].data)
+        
         return context
 
-    def get_initial(self):
-        """Pre-populate form with existing data"""
-        initial = super().get_initial()
-        company = self.object
+    def get(self, request, *args, **kwargs):
+        """Handle GET request - ensure form is properly initialized"""
+        self.object = self.get_object()
+        form = self.get_form()
         
-        initial['company_name'] = company.company_name
-        initial['email'] = company.email
-        initial['mobile_number'] = company.mobile_number
-        initial['website'] = company.website
-        initial['gst_number'] = company.gst_number
-        initial['cin_number'] = company.cin_number
-        initial['date_of_incorporation'] = company.date_of_incorporation
-        initial['contact_person'] = company.contact_person
-        initial['billing_address'] = company.billing_address
-        initial['billing_zip_code'] = company.billing_zip_code
-        initial['billing_country'] = company.billing_country_id
-        initial['billing_state'] = company.billing_state_id
-        initial['billing_city'] = company.billing_city_id
-        initial['about_company'] = company.about_company
-        initial['listed_company'] = company.listed_company
-        initial['is_active'] = company.is_active
+        # Debug: Check what's in the form
+        print("GET - Form initial:", form.initial)
+        print("GET - Form instance:", form.instance)
         
-        # ✅ Ensure password fields are always empty
-        initial['password'] = ''
-        initial['confirm_password'] = ''
+        return self.render_to_response(self.get_context_data(form=form))
+
+    def post(self, request, *args, **kwargs):
+        """Handle POST request"""
+        self.object = self.get_object()
+        form = self.get_form()
         
-        return initial
+        # Debug: Check what's being submitted
+        print("POST - Form data:", request.POST)
+        print("POST - Form files:", request.FILES)
+        
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            # Print form errors for debugging
+            print("Form errors:", form.errors)
+            return self.form_invalid(form)
 
     def form_valid(self, form):
+        # Rest of your form_valid code...
         password = (self.request.POST.get('password') or '').strip()
         confirm_password = (self.request.POST.get('confirm_password') or '').strip()
 
