@@ -9,6 +9,7 @@ app_name = "brsr"
 urlpatterns = [
     path("", brsr_list, name="brsr_list"),
     path("brsr-list/", brsr_list, name="brsr_list_legacy"),
+    path("pre-final/send/", send_pre_final_approval, name="send_pre_final_approval"),
     path("workspace/", brsr_workspace, name="question_workspace"),
     path("workspace/<slug:section_code>/", brsr_workspace, name="question_workspace_section"),
     path("workspace/<slug:section_code>/<slug:principle_slug>/", brsr_workspace, name="question_workspace_principle",),

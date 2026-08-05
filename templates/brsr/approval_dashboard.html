@@ -961,6 +961,76 @@
     <p>There are no assignments currently in a review or approval stage for your scope.</p>
   </div>
   {% endif %}
+
+  {% if consolidated_pre_final_groups %}
+  <div class="company-group" style="margin-top: 24px;">
+    <div class="company-group-header">
+      <h2>Consolidated Pre-Final Approval</h2>
+      <span class="pill brand">Company / Section / Principle</span>
+    </div>
+    {% for item in consolidated_pre_final_groups %}
+    <div class="plant-group">
+      <div class="plant-group-header">
+        <h3>{{ item.company_name }}</h3>
+        <span class="pill muted">{{ item.section_name }} · {{ item.principle_name|default:"Section-wide" }}</span>
+      </div>
+      <div class="assignment-list">
+        <article class="assignment-card expanded" data-assignment-id="{{ item.company_id }}-{{ item.section_name|slugify }}-{{ item.principle_name|default:'section-wide'|slugify }}">
+          <div class="assignment-card-head">
+            <div class="assignment-meta">
+              <h3>{{ item.section_name }}{% if item.principle_name %} · {{ item.principle_name }}{% endif %}</h3>
+              <p>{{ item.company_name }} · {{ item.plant_names|join:", " }}</p>
+              <div class="assignment-quick-stats">
+                <span>📋 {{ item.assignment_count }} assigned plants</span>
+                <span>🧾 Consolidated view for the company</span>
+              </div>
+            </div>
+            <div class="pill-row">
+              <span class="pill warn">Pre-Final Approval</span>
+              <span class="expand-icon" aria-hidden="true">▼</span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if consolidated_final_groups %}
+  <div class="company-group" style="margin-top: 24px;">
+    <div class="company-group-header">
+      <h2>Final Approval</h2>
+      <span class="pill success">Single Company Report</span>
+    </div>
+    {% for item in consolidated_final_groups %}
+    <div class="plant-group">
+      <div class="plant-group-header">
+        <h3>{{ item.company_name }}</h3>
+        <span class="pill muted">Entire Company report</span>
+      </div>
+      <div class="assignment-list">
+        <article class="assignment-card expanded" data-assignment-id="{{ item.company_id }}-final">
+          <div class="assignment-card-head">
+            <div class="assignment-meta">
+              <h3>{{ item.company_name }} — Final Approval</h3>
+              <p>{{ item.section_name }} · {{ item.principle_name|default:"Section-wide" }} · {{ item.plant_names|join:", " }}</p>
+              <div class="assignment-quick-stats">
+                <span>📋 {{ item.assignment_count }} consolidated approvals</span>
+                <span>🔒 One final approval per company</span>
+              </div>
+            </div>
+            <div class="pill-row">
+              <span class="pill success">Final Approval</span>
+              <span class="expand-icon" aria-hidden="true">▼</span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
 </div>
 
 <script>

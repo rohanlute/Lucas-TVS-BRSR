@@ -272,6 +272,19 @@ def _is_approval_stage(stage_type):
     return stage_type in {"review", "approval", "pre_final_approval", "final_approval"}
 
 
+def _can_user_act_on_assignment(user, assignment):
+    if not assignment:
+        return False
+
+    _ensure_assignment_workflow_task(assignment, current_user=user)
+    task = assignment.workflow_task
+    if not task:
+        return False
+
+    task_info = _serialize_task_for_user(task, user)
+    return bool(task_info and task_info.get("can_act"))
+
+
 def _approval_stage_queryset(user):
     assignments = _assignment_queryset_for_user(user).select_related(
         "plant",
@@ -288,10 +301,82 @@ def _approval_stage_queryset(user):
     )
     actionable = []
     for assignment in assignments:
-        _ensure_assignment_workflow_task(assignment, current_user=user)
         if assignment.workflow_stage_type and _is_approval_stage(assignment.workflow_stage_type):
-            actionable.append(assignment)
+            if _can_user_act_on_assignment(user, assignment):
+                actionable.append(assignment)
     return actionable
+
+
+def _build_brsr_selection_filters(user, request):
+    plants = list(_company_scope_plants(user))
+    selected_plant = None
+    selected_plant_id = request.GET.get("plant", "")
+    if selected_plant_id:
+        selected_plant = next((plant for plant in plants if str(plant.id) == str(selected_plant_id)), None)
+    if not selected_plant and plants:
+        selected_plant = plants[0]
+
+    financial_years = list(
+        Assignment.objects.filter(plant__in=plants)
+        .order_by("-financial_year")
+        .values_list("financial_year", flat=True)
+        .distinct()
+    )
+    selected_financial_year = request.GET.get("financial_year", "")
+    if selected_financial_year and selected_financial_year not in financial_years:
+        selected_financial_year = ""
+    if not selected_financial_year and financial_years:
+        selected_financial_year = financial_years[0]
+
+    return {
+        "plants": plants,
+        "selected_plant": selected_plant,
+        "selected_plant_id": getattr(selected_plant, "id", None),
+        "financial_years": financial_years,
+        "selected_financial_year": selected_financial_year,
+    }
+
+
+def _is_assignment_ready_for_pre_final(assignment):
+    task = assignment.workflow_task
+    if not task:
+        return False
+    if task.is_completed:
+        return False
+    current_stage = task.current_stage
+    return bool(
+        current_stage
+        and current_stage.stage_type == "pre_final_approval"
+        and assignment.overall_status == "completed"
+    )
+
+
+def _section_principle_ready_for_pre_final(user, plant, section, principle, financial_year):
+    if not plant or not section or not financial_year:
+        return False, 0
+
+    assignments = list(
+        _assignment_queryset_for_user(user)
+        .filter(
+            plant_id=plant.id,
+            section_id=section.id,
+            financial_year=financial_year,
+        )
+        .select_related("plant", "section", "principle", "workflow_template")
+    )
+    if principle:
+        assignments = [assignment for assignment in assignments if assignment.principle_id == principle.id]
+    else:
+        assignments = [assignment for assignment in assignments if assignment.principle_id is None]
+
+    if not assignments:
+        return False, 0
+
+    for assignment in assignments:
+        _ensure_assignment_workflow_task(assignment, current_user=user)
+        if not _is_assignment_ready_for_pre_final(assignment):
+            return False, len(assignments)
+    return True, len(assignments)
 
 
 def _serialize_workflow_task(task):
@@ -1504,22 +1589,46 @@ class BRSRDashboardView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        user = self.request.user
+        filters = _build_brsr_selection_filters(user, self.request)
+        selected_plant = filters["selected_plant"]
+        selected_financial_year = filters["selected_financial_year"]
         sections = _section_scope_queryset()
         principles = _principle_queryset()
 
         section_cards = []
         for section in sections:
             question_count = _question_queryset(section).count()
+            send_enabled, assignment_count = _section_principle_ready_for_pre_final(
+                user,
+                selected_plant,
+                section,
+                None,
+                selected_financial_year,
+            )
             section_cards.append(
                 {
                     "section": section,
                     "question_count": question_count,
                     "url": reverse("brsr:question_workspace_section", kwargs={"section_code": section.code}),
+                    "send_enabled": send_enabled,
+                    "assignment_count": assignment_count,
+                    "ready_for_pre_final": send_enabled,
+                    "selected_plant_id": filters["selected_plant_id"],
+                    "selected_financial_year": selected_financial_year,
+                    "send_url": reverse("brsr:send_pre_final_approval"),
                 }
             )
 
         principle_cards = []
         for principle in principles:
+            send_enabled, assignment_count = _section_principle_ready_for_pre_final(
+                user,
+                selected_plant,
+                _get_default_section(),
+                principle,
+                selected_financial_year,
+            )
             principle_cards.append(
                 {
                     "principle": principle,
@@ -1528,6 +1637,12 @@ class BRSRDashboardView(LoginRequiredMixin, TemplateView):
                         "brsr:question_workspace_principle",
                         kwargs={"section_code": "section_c", "principle_slug": principle.slug},
                     ),
+                    "send_enabled": send_enabled,
+                    "assignment_count": assignment_count,
+                    "ready_for_pre_final": send_enabled,
+                    "selected_plant_id": filters["selected_plant_id"],
+                    "selected_financial_year": selected_financial_year,
+                    "send_url": reverse("brsr:send_pre_final_approval"),
                 }
             )
 
@@ -1537,6 +1652,11 @@ class BRSRDashboardView(LoginRequiredMixin, TemplateView):
         context["total_questions"] = _pdf_questions_queryset().count()
         context["total_sections"] = sections.count()
         context["total_principles"] = principles.count()
+        context["plants"] = filters["plants"]
+        context["financial_years"] = filters["financial_years"]
+        context["selected_plant"] = selected_plant
+        context["selected_plant_id"] = filters["selected_plant_id"]
+        context["selected_financial_year"] = selected_financial_year
         return context
 
 
@@ -1623,6 +1743,51 @@ class AssignmentDashboardView(LoginRequiredMixin, TemplateView):
         return context
 
 
+def send_pre_final_approval(request):
+    if request.method != "POST":
+        return redirect("brsr:brsr_list")
+
+    user = request.user
+    plant_id = request.POST.get("plant_id")
+    section_code = request.POST.get("section_code")
+    principle_slug = request.POST.get("principle_slug")
+    financial_year = request.POST.get("financial_year")
+
+    plant = get_object_or_404(_company_scope_plants(user), pk=plant_id) if plant_id else None
+    section = get_object_or_404(BRSRSection, code=section_code, is_active=True) if section_code else None
+    principle = get_object_or_404(BRSRPrinciple, slug=principle_slug, is_active=True) if principle_slug else None
+
+    if not plant or not section or not financial_year:
+        messages.error(request, "Incomplete pre-final approval bundle.")
+        return redirect("brsr:brsr_list")
+
+    ready, assignment_count = _section_principle_ready_for_pre_final(user, plant, section, principle, financial_year)
+    if not ready:
+        messages.error(request, "This section/principle is not ready to be sent for Pre-Final Approval yet.")
+        return redirect("brsr:brsr_list")
+
+    company = getattr(getattr(plant, "created_by", None), "company", None)
+    marker = {
+        "company_id": company.id if company else None,
+        "company_name": company.company_name if company else "Unknown Company",
+        "plant_id": plant.id,
+        "plant_name": plant.name,
+        "section_code": section.code,
+        "section_name": section.name,
+        "principle_slug": principle.slug if principle else None,
+        "principle_name": principle.principle_name if principle else None,
+        "financial_year": financial_year,
+        "assignment_count": assignment_count,
+    }
+    session_markers = request.session.setdefault("brsr_pre_final_ready", [])
+    if marker not in session_markers:
+        session_markers.append(marker)
+        request.session.modified = True
+
+    messages.success(request, "This Plant/Section/Principle bundle has been marked ready for the consolidated Pre-Final Approval dashboard.")
+    return redirect("brsr:approval_dashboard")
+
+
 class ApprovalDashboardView(LoginRequiredMixin, TemplateView):
     login_url = "accounts:login"
     template_name = "brsr/approval_dashboard.html"
@@ -1675,6 +1840,8 @@ class ApprovalDashboardView(LoginRequiredMixin, TemplateView):
             "pre_final_approval": 0,
             "final_approval": 0,
         }
+        consolidated_pre_final_groups = []
+        consolidated_final_groups = []
         
         companies = set()
         plants = set()
@@ -1693,6 +1860,60 @@ class ApprovalDashboardView(LoginRequiredMixin, TemplateView):
             plant_key = assignment.plant.name if assignment.plant_id else "Unknown Plant"
             plant_id = str(assignment.plant.id) if assignment.plant_id else ""
             plants.add((plant_id, plant_key))
+
+            if stage_type == "pre_final_approval":
+                section_key = assignment.section.name if assignment.section else "Unknown Section"
+                principle_key = assignment.principle.principle_name if assignment.principle else "Section-wide"
+                entry = next(
+                    (
+                        item for item in consolidated_pre_final_groups
+                        if item["company_name"] == company_key
+                        and item["section_name"] == section_key
+                        and item["principle_name"] == principle_key
+                    ),
+                    None,
+                )
+                if entry is None:
+                    consolidated_pre_final_groups.append(
+                        {
+                            "company_name": company_key,
+                            "company_id": company_id,
+                            "section_name": section_key,
+                            "principle_name": principle_key,
+                            "plant_names": set([plant_key]),
+                            "assignment_count": 1,
+                        }
+                    )
+                else:
+                    entry["plant_names"].add(plant_key)
+                    entry["assignment_count"] += 1
+
+            if stage_type == "final_approval":
+                section_key = assignment.section.name if assignment.section else "Unknown Section"
+                principle_key = assignment.principle.principle_name if assignment.principle else "Section-wide"
+                entry = next(
+                    (
+                        item for item in consolidated_final_groups
+                        if item["company_name"] == company_key
+                        and item["section_name"] == section_key
+                        and item["principle_name"] == principle_key
+                    ),
+                    None,
+                )
+                if entry is None:
+                    consolidated_final_groups.append(
+                        {
+                            "company_name": company_key,
+                            "company_id": company_id,
+                            "section_name": section_key,
+                            "principle_name": principle_key,
+                            "plant_names": set([plant_key]),
+                            "assignment_count": 1,
+                        }
+                    )
+                else:
+                    entry["plant_names"].add(plant_key)
+                    entry["assignment_count"] += 1
             
             company_bucket = grouped.setdefault(company_key, {})
             company_bucket["_company_id"] = company_id
@@ -1735,11 +1956,26 @@ class ApprovalDashboardView(LoginRequiredMixin, TemplateView):
         
         plants_list = sorted([{"id": p_id, "name": p_name} for p_id, p_name in plants if p_id], key=lambda x: x["name"])
         companies_list = sorted([{"id": c_id, "name": c_name} for c_id, c_name in companies if c_id], key=lambda x: x["name"])
-        
+        consolidated_pre_final_groups = [
+            {
+                **item,
+                "plant_names": sorted(item["plant_names"]),
+            }
+            for item in consolidated_pre_final_groups
+        ]
+        consolidated_final_groups = [
+            {
+                **item,
+                "plant_names": sorted(item["plant_names"]),
+            }
+            for item in consolidated_final_groups
+        ]
         stages = sorted([s for s in stage_counts.keys() if stage_counts[s] > 0])
         
         context.update({
             "grouped_assignments": grouped,
+            "consolidated_pre_final_groups": consolidated_pre_final_groups,
+            "consolidated_final_groups": consolidated_final_groups,
             "assignment_count": len(assignments),
             "question_count": total_questions,
             "stage_counts": stage_counts,

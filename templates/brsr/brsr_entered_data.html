@@ -978,7 +978,7 @@
           <label class="tool-label">Financial Year</label>
           <form method="get" class="fy-form" id="fyForm">
             <select class="workspace-select" name="financial_year" id="fySelect" onchange="document.getElementById('fyForm').submit()">
-              <option value="">All Years</option>
+              <option value="">-------</option>
               {% for fy in financial_years %}
                 <option value="{{ fy }}" {% if fy == selected_fy %}selected{% endif %}>{{ fy }}</option>
               {% endfor %}

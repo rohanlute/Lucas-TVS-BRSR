@@ -16,6 +16,25 @@ class WorkflowConfigurationEngine:
         return bool(stage and stage.role_id and getattr(user, "role_id", None) == stage.role_id)
 
     @staticmethod
+    def assignments_ready_for_pre_final(assignments):
+        if not assignments:
+            return False
+        for assignment in assignments:
+            task = getattr(assignment, "workflow_task", None)
+            if not task or task.is_completed:
+                return False
+            stage = getattr(task, "current_stage", None)
+            if not stage or stage.stage_type != "pre_final_approval":
+                return False
+        return True
+
+    @staticmethod
+    def company_report_ready_for_final(company, financial_year, section=None, principle=None):
+        if not company or not financial_year:
+            return False
+        return True
+
+    @staticmethod
     def _actor_ref(actor):
         if actor is None:
             return None, None
