@@ -1,5 +1,6 @@
 {% extends 'base/base.html' %}
 {% load static %}
+{% load permission_tags  %}
 
 {% block title %}BRSR Questions{% endblock %}
 
@@ -138,6 +139,30 @@
   .workspace-textarea:focus{
     border-color:var(--brand);
     box-shadow:0 0 0 3px rgba(37,99,235,.12);
+  }
+
+  /* REQUIRED FIELD STYLES - Assignment Modal Only */
+  .assignment-required .workspace-select:required,
+  .assignment-required .workspace-input:required {
+    border-left: 3px solid var(--brand);
+  }
+
+  .assignment-required .workspace-select:required:invalid,
+  .assignment-required .workspace-input:required:invalid {
+    border-left-color: var(--danger);
+  }
+
+  .assignment-required .required-star {
+    color: var(--danger);
+    font-weight: 700;
+    margin-left: 2px;
+  }
+
+  .assignment-required .field-required-text {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 400;
+    margin-left: 4px;
   }
 
   .question-scroll{
@@ -1004,6 +1029,7 @@
 
         <div class="panel-body" id="questionDeck"></div>
 
+        {% if request.user|has_perm:'CAN_ASSIGN_QUESTIONS' %}
         <div class="assignment-launcher" id="assignmentLauncher" style="display:none;">
           <div class="assignment-summary">
             <div>
@@ -1015,6 +1041,7 @@
             </button>
           </div>
         </div>
+        {% endif %}
       </div>
     </main>
   </div>
@@ -1030,15 +1057,27 @@
       <button type="button" class="btn-brsr secondary" id="closeAssignModalBtn">Close</button>
     </div>
     <div class="modal-body">
-      <form id="assignmentForm">
+      <form id="assignmentForm" class="assignment-required" novalidate>
         <div class="assignment-grid">
           <div>
-            <label class="tool-label">Plant</label>
-            <select class="workspace-select" name="plant" id="assignmentPlant"></select>
+            <label class="tool-label">
+              Plant <span class="required-star">*</span>
+              <span class="field-required-text">required</span>
+            </label>
+            <select class="workspace-select" name="plant" id="assignmentPlant" required>
+              <option value="">Select a plant</option>
+            </select>
+            <div class="invalid-feedback">Please select a plant.</div>
           </div>
           <div>
-            <label class="tool-label">Financial Year</label>
-            <select class="workspace-select" name="financial_year" id="assignmentFinancialYear"></select>
+            <label class="tool-label">
+              Financial Year <span class="required-star">*</span>
+              <span class="field-required-text">required</span>
+            </label>
+            <select class="workspace-select" name="financial_year" id="assignmentFinancialYear" required>
+              <option value="">Select financial year</option>
+            </select>
+            <div class="invalid-feedback">Please select a financial year.</div>
           </div>
           <div>
             <label class="tool-label">Priority</label>
@@ -1050,25 +1089,45 @@
             </select>
           </div>
           <div>
-            <label class="tool-label">Assigner</label>
-            <input class="workspace-input" type="text" id="assignmentAssignerDisplay" readonly>
+            <label class="tool-label">
+              Assigner <span class="required-star">*</span>
+              <span class="field-required-text">required</span>
+            </label>
+            <input class="workspace-input" type="text" id="assignmentAssignerDisplay" readonly required>
             <input type="hidden" name="assigner" id="assignmentAssigner">
+            <div class="invalid-feedback">Assigner information is required.</div>
           </div>
           <div>
-            <label class="tool-label">Assign To</label>
-            <select class="workspace-select" name="assignee" id="assignmentAssignee"></select>
+            <label class="tool-label">
+              Assign To <span class="required-star">*</span>
+              <span class="field-required-text">required</span>
+            </label>
+            <select class="workspace-select" name="assignee" id="assignmentAssignee" required>
+              <option value="">Select assignee</option>
+            </select>
+            <div class="invalid-feedback">Please select an assignee.</div>
           </div>
           <div>
-            <label class="tool-label">Reviewer</label>
-            <select class="workspace-select" name="reviewer" id="assignmentReviewer"></select>
+            <label class="tool-label">
+              Reviewer <span class="required-star">*</span>
+              <span class="field-required-text">required</span>
+            </label>
+            <select class="workspace-select" name="reviewer" id="assignmentReviewer" required>
+              <option value="">Select reviewer</option>
+            </select>
+            <div class="invalid-feedback">Please select a reviewer.</div>
           </div>
           <div>
-            <label class="tool-label">Due Date</label>
-            <input class="workspace-input" type="date" name="due_date" id="assignmentDueDate">
+            <label class="tool-label">
+              Due Date <span class="required-star">*</span>
+              <span class="field-required-text">required</span>
+            </label>
+            <input class="workspace-input" type="date" name="due_date" id="assignmentDueDate" required>
+            <div class="invalid-feedback">Please select a due date.</div>
           </div>
           <div class="full">
             <label class="tool-label">Notes</label>
-            <textarea class="workspace-textarea" rows="3" name="notes" id="assignmentNotes" placeholder="Assignment notes"></textarea>
+            <textarea class="workspace-textarea" rows="3" name="notes" id="assignmentNotes" placeholder="Assignment notes (optional)"></textarea>
           </div>
           <div class="full">
             <label class="tool-label" style="display:flex;align-items:center;gap:8px;">
@@ -1086,17 +1145,26 @@
           <div class="full" id="scheduleFieldsWrap" style="display:none;">
             <div class="assignment-grid" style="padding:14px;border:1px dashed var(--border-strong);border-radius:12px;background:#fbfcff;">
               <div>
-                <label class="tool-label">Schedule Name</label>
-                <input class="workspace-input" type="text" id="scheduleName" placeholder="e.g. Monthly Energy Data">
+                <label class="tool-label">
+                  Schedule Name <span class="required-star">*</span>
+                  <span class="field-required-text">required</span>
+                </label>
+                <input class="workspace-input" type="text" id="scheduleName" placeholder="e.g. Monthly Energy Data" required>
+                <div class="invalid-feedback">Please enter a schedule name.</div>
               </div>
               <div>
-                <label class="tool-label">Frequency</label>
-                <select class="workspace-select" id="scheduleFrequency">
+                <label class="tool-label">
+                  Frequency <span class="required-star">*</span>
+                  <span class="field-required-text">required</span>
+                </label>
+                <select class="workspace-select" id="scheduleFrequency" required>
+                  <option value="">Select frequency</option>
                   <option value="weekly">Weekly</option>
                   <option value="monthly">Monthly</option>
                   <option value="quarterly">Quarterly</option>
                   <option value="annually">Annually</option>
                 </select>
+                <div class="invalid-feedback">Please select a frequency.</div>
               </div>
 
               <div class="half schedule-freq-fields" data-freq="weekly" style="display:none;">
@@ -1152,8 +1220,12 @@
             </div>
           </div>
           <div class="full">
-            <label class="tool-label">Selected Questions</label>
+            <label class="tool-label">
+              Selected Questions <span class="required-star">*</span>
+              <span class="field-required-text">required</span>
+            </label>
             <ul class="selected-list" id="selectedQuestionList"></ul>
+            <div class="invalid-feedback" style="margin-top:8px;">Please select at least one question.</div>
           </div>
         </div>
         <div class="modal-actions">
@@ -2292,8 +2364,10 @@
     const assigneeSelect = document.getElementById('assignmentAssignee');
     const reviewerSelect = document.getElementById('assignmentReviewer');
 
-    plantSelect.innerHTML = workspace.plants.map((plant) => `<option value="${plant.id}">${escapeHtml(plant.name)} (${escapeHtml(plant.code)})</option>`).join('');
-    fySelect.innerHTML = workspace.financial_years.map((fy) => `<option value="${escapeHtml(fy.value)}">${escapeHtml(fy.label)}</option>`).join('');
+    plantSelect.innerHTML = '<option value="">Select a plant</option>' + 
+      workspace.plants.map((plant) => `<option value="${plant.id}">${escapeHtml(plant.name)} (${escapeHtml(plant.code)})</option>`).join('');
+    fySelect.innerHTML = '<option value="">Select financial year</option>' + 
+      workspace.financial_years.map((fy) => `<option value="${escapeHtml(fy.value)}">${escapeHtml(fy.label)}</option>`).join('');
 
     if (workspace.current_user_id) {
       assignerHidden.value = workspace.current_user_id.toString();
@@ -2312,7 +2386,11 @@
     const assigneeSelect = document.getElementById('assignmentAssignee');
     const reviewerSelect = document.getElementById('assignmentReviewer');
     const plantId = plantSelect.value;
-    if (!plantId) { assigneeSelect.innerHTML = '<option value="">Select Plant First</option>'; reviewerSelect.innerHTML = '<option value="">Select Plant First</option>'; return; }
+    if (!plantId) { 
+      assigneeSelect.innerHTML = '<option value="">Select Plant First</option>'; 
+      reviewerSelect.innerHTML = '<option value="">Select Plant First</option>'; 
+      return; 
+    }
 
     try {
       const params = new URLSearchParams({ plant_id: plantId });
@@ -2323,8 +2401,12 @@
       const reviewers = payload.reviewers || [];
       const defaultReviewer = payload.default_reviewer || null;
 
-      assigneeSelect.innerHTML = assignees.length ? ['<option value="">Select Assign To</option>'].concat(assignees.map((item) => `<option value="${item.id}">${escapeHtml(item.name)}${item.department_name ? ` (${escapeHtml(item.department_name)})` : ''}</option>`)).join('') : '<option value="">No eligible assignee found</option>';
-      reviewerSelect.innerHTML = reviewers.length ? ['<option value="">Select Reviewer</option>'].concat(reviewers.map((item) => `<option value="${item.id}">${escapeHtml(item.name)}${item.department_name ? ` (${escapeHtml(item.department_name)})` : ''}</option>`)).join('') : '<option value="">No eligible reviewer found</option>';
+      assigneeSelect.innerHTML = assignees.length ? 
+        ['<option value="">Select Assign To</option>'].concat(assignees.map((item) => `<option value="${item.id}">${escapeHtml(item.name)}${item.department_name ? ` (${escapeHtml(item.department_name)})` : ''}</option>`)).join('') : 
+        '<option value="">No eligible assignee found</option>';
+      reviewerSelect.innerHTML = reviewers.length ? 
+        ['<option value="">Select Reviewer</option>'].concat(reviewers.map((item) => `<option value="${item.id}">${escapeHtml(item.name)}${item.department_name ? ` (${escapeHtml(item.department_name)})` : ''}</option>`)).join('') : 
+        '<option value="">No eligible reviewer found</option>';
 
       if (defaultAssignee || assignees[0]) assigneeSelect.value = (defaultAssignee || assignees[0]).id.toString();
       if (defaultReviewer) reviewerSelect.value = defaultReviewer.id.toString();
@@ -2349,15 +2431,122 @@
 
   function refreshSelectedList() {
     const selected = getSelectedQuestions();
-    document.getElementById('selectedQuestionList').innerHTML = selected.length ? selected.map((item) => `<li>${escapeHtml(item.title)} <small>(${escapeHtml(item.id)})</small></li>`).join('') : '<li>No questions selected yet.</li>';
+    const listEl = document.getElementById('selectedQuestionList');
+    if (selected.length) {
+      listEl.innerHTML = selected.map((item) => `<li>${escapeHtml(item.title)} <small>(${escapeHtml(item.id)})</small></li>`).join('');
+      // Remove the "Please select" message if present
+      const feedback = listEl.closest('.full')?.querySelector('.invalid-feedback');
+      if (feedback) feedback.style.display = 'none';
+    } else {
+      listEl.innerHTML = '<li>No questions selected yet.</li>';
+      const feedback = listEl.closest('.full')?.querySelector('.invalid-feedback');
+      if (feedback) feedback.style.display = 'block';
+    }
     return selected;
   }
 
-  function openModal() { refreshSelectedList(); document.getElementById('assignModal').classList.add('active'); }
+  function openModal() { 
+    refreshSelectedList(); 
+    document.getElementById('assignModal').classList.add('active'); 
+    // Reset form validation state
+    document.getElementById('assignmentForm').classList.remove('was-validated');
+    document.querySelectorAll('#assignmentForm .is-invalid').forEach(el => el.classList.remove('is-invalid'));
+  }
   function closeModal() { document.getElementById('assignModal').classList.remove('active'); }
+
+  // ============================================================
+  // Enhanced Assignment Validation
+  // ============================================================
+  function validateAssignmentForm() {
+    const form = document.getElementById('assignmentForm');
+    let isValid = true;
+    
+    // Clear previous validation states
+    form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+    
+    // Validate Plant
+    const plant = document.getElementById('assignmentPlant');
+    if (!plant.value) {
+      plant.classList.add('is-invalid');
+      isValid = false;
+    }
+    
+    // Validate Financial Year
+    const fy = document.getElementById('assignmentFinancialYear');
+    if (!fy.value) {
+      fy.classList.add('is-invalid');
+      isValid = false;
+    }
+    
+    // Validate Assigner (hidden field)
+    const assigner = document.getElementById('assignmentAssigner');
+    if (!assigner.value) {
+      document.getElementById('assignmentAssignerDisplay').classList.add('is-invalid');
+      isValid = false;
+    }
+    
+    // Validate Assignee
+    const assignee = document.getElementById('assignmentAssignee');
+    if (!assignee.value) {
+      assignee.classList.add('is-invalid');
+      isValid = false;
+    }
+    
+    // Validate Reviewer
+    const reviewer = document.getElementById('assignmentReviewer');
+    if (!reviewer.value) {
+      reviewer.classList.add('is-invalid');
+      isValid = false;
+    }
+    
+    // Validate Due Date
+    const dueDate = document.getElementById('assignmentDueDate');
+    if (!dueDate.value) {
+      dueDate.classList.add('is-invalid');
+      isValid = false;
+    }
+    
+    // Validate Selected Questions
+    const selected = getSelectedQuestions();
+    if (!selected.length) {
+      const listEl = document.getElementById('selectedQuestionList');
+      const feedback = listEl.closest('.full')?.querySelector('.invalid-feedback');
+      if (feedback) feedback.style.display = 'block';
+      isValid = false;
+    }
+    
+    // Validate recurring schedule fields if enabled
+    if (document.getElementById('scheduleRecurringToggle').checked) {
+      const scheduleName = document.getElementById('scheduleName');
+      if (!scheduleName.value.trim()) {
+        scheduleName.classList.add('is-invalid');
+        isValid = false;
+      }
+      const frequency = document.getElementById('scheduleFrequency');
+      if (!frequency.value) {
+        frequency.classList.add('is-invalid');
+        isValid = false;
+      }
+    }
+    
+    return isValid;
+  }
 
   async function submitAssignment(event) {
     event.preventDefault();
+    
+    // Validate the form
+    if (!validateAssignmentForm()) {
+      // Scroll to first invalid field
+      const firstInvalid = document.querySelector('#assignmentForm .is-invalid');
+      if (firstInvalid) {
+        firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        firstInvalid.focus();
+      }
+      showWorkspaceMessage('Please fill in all required fields before creating the assignment.', 'error');
+      return;
+    }
+    
     const submitBtn = document.getElementById('createAssignmentBtn');
     const overlay = document.getElementById('modalLoadingOverlay');
     
@@ -2366,14 +2555,40 @@
 
     try {
       const selected = refreshSelectedList();
-      if (!selected.length) { alert('Please select at least one question.'); setButtonLoading(submitBtn, false); overlay.classList.remove('active'); return; }
-      if (!document.getElementById('assignmentAssigner').value) { alert('No assigner could be resolved for your login.'); setButtonLoading(submitBtn, false); overlay.classList.remove('active'); return; }
-      if (!document.getElementById('assignmentAssignee').value) { alert('No assignee could be resolved for the selected plant.'); setButtonLoading(submitBtn, false); overlay.classList.remove('active'); return; }
+      if (!selected.length) { 
+        showWorkspaceMessage('Please select at least one question.', 'error');
+        setButtonLoading(submitBtn, false); 
+        overlay.classList.remove('active'); 
+        return; 
+      }
+      
+      if (!document.getElementById('assignmentAssigner').value) { 
+        showWorkspaceMessage('No assigner could be resolved for your login.', 'error');
+        setButtonLoading(submitBtn, false); 
+        overlay.classList.remove('active'); 
+        return; 
+      }
+      
+      if (!document.getElementById('assignmentAssignee').value) { 
+        showWorkspaceMessage('No assignee could be resolved for the selected plant.', 'error');
+        setButtonLoading(submitBtn, false); 
+        overlay.classList.remove('active'); 
+        return; 
+      }
 
+      // Check for schedule toggle
       if (document.getElementById('scheduleRecurringToggle').checked) {
         const frequency = document.getElementById('scheduleFrequency').value;
+        if (!frequency) {
+          showWorkspaceMessage('Please select a frequency for the recurring schedule.', 'error');
+          setButtonLoading(submitBtn, false);
+          overlay.classList.remove('active');
+          return;
+        }
+        
         const schedulePayload = {
-          section_code: state.sectionCode, principle_slug: state.principleSlug,
+          section_code: state.sectionCode, 
+          principle_slug: state.principleSlug,
           question_ids: selected.map((item) => item.id),
           name: document.getElementById('scheduleName').value,
           plant: document.getElementById('assignmentPlant').value,
@@ -2399,13 +2614,15 @@
           closeModal();
           window.location.href = "{{ assignment_dashboard_url|escapejs }}";
         } else {
-          alert(data.detail || JSON.stringify(data) || 'Unable to create schedule.');
+          showWorkspaceMessage(data.detail || JSON.stringify(data) || 'Unable to create schedule.', 'error');
         }
         return;
       }
 
+      // Regular assignment payload
       const payload = {
-        section_code: state.sectionCode, principle_slug: state.principleSlug,
+        section_code: state.sectionCode, 
+        principle_slug: state.principleSlug,
         question_ids: selected.map((item) => item.id),
         plant: document.getElementById('assignmentPlant').value,
         financial_year: document.getElementById('assignmentFinancialYear').value,
@@ -2415,6 +2632,7 @@
         reviewer: document.getElementById('assignmentReviewer').value,
         due_date: document.getElementById('assignmentDueDate').value,
         notes: document.getElementById('assignmentNotes').value,
+        force_create:false
       };
 
       const response = await fetch(API_ASSIGN, {
@@ -2424,18 +2642,42 @@
       });
       const data = await response.json().catch(() => ({}));
       
-      if (response.ok) {
+      if (response.status === 409) {
+        if (confirm(data.message)) {
+            payload.force_create = true;
+            const retry = await fetch(API_ASSIGN,{
+                method:"POST",
+                headers:{
+                    "Content-Type":"application/json",
+                    "X-CSRFToken":getCookie("csrftoken")
+                },
+                body:JSON.stringify(payload)
+            });
+            const retryData = await retry.json();
+            if(retry.ok){
+                sessionStorage.setItem(
+                    "brsr_workspace_message",
+                    retryData.message
+                );
+                closeModal();
+                window.location.href="{{ assignment_dashboard_url|escapejs }}";
+            }
+            return;
+        }
+        return;
+    }
+    if(response.ok){
         const message = data.message || 'Assignment created successfully.';
         const reviewerSaved = data.reviewer_saved ? '✅ Reviewer was saved.' : '⚠️ No reviewer was saved.';
         sessionStorage.setItem('brsr_workspace_message', `${message} ${reviewerSaved}`);
         closeModal();
         window.location.href = "{{ assignment_dashboard_url|escapejs }}";
       } else {
-        alert(data.detail || JSON.stringify(data) || 'Unable to create assignment.');
+        showWorkspaceMessage(data.detail || JSON.stringify(data) || 'Unable to create assignment.', 'error');
       }
     } catch (error) {
       console.error('Error creating assignment:', error);
-      alert('An error occurred while creating the assignment.');
+      showWorkspaceMessage('An error occurred while creating the assignment.', 'error');
     } finally {
       setButtonLoading(submitBtn, false);
       overlay.classList.remove('active');
@@ -2506,7 +2748,7 @@
       refreshSelectedList();
     } catch (error) {
       console.error('Error loading workspace:', error);
-      alert('Error loading workspace. Please refresh the page.');
+      showWorkspaceMessage('Error loading workspace. Please refresh the page.', 'error');
     }
   }
 

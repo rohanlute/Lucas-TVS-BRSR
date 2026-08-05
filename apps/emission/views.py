@@ -258,31 +258,73 @@ class EmissionAssignmentDashboardView(LoginRequiredMixin, TemplateView):
             title__icontains='Timesheet'
         ).count()
         
-        # Get stats
+        # ==========================================================
+        # Dashboard Statistics & Filtering
+        # ==========================================================
+
         today = timezone.now().date()
+
+        # Keep original queryset for dashboard counts
+        all_assignments = assignments
+
+        # Dashboard cards counts (Always show total counts)
         assignment_stats = {
-            "assignment_count": assignments.count(),
-            "open_count": assignments.filter(
+            "assignment_count": all_assignments.count(),
+            "open_count": all_assignments.filter(
                 status__in=["ASSIGNED", "IN_PROGRESS", "SUBMITTED"]
             ).count(),
-            "completed_count": assignments.filter(status="APPROVED").count(),
-            "overdue_count": assignments.filter(
+            "completed_count": all_assignments.filter(
+                status="APPROVED"
+            ).count(),
+            "overdue_count": all_assignments.filter(
                 due_date__lt=today
-            ).exclude(status="APPROVED").count(),
+            ).exclude(
+                status="APPROVED"
+            ).count(),
         }
-        
-        # Update context
+
+        # ==========================================================
+        # Apply Dashboard Filter
+        # ==========================================================
+
+        status_filter = self.request.GET.get("status", "all")
+
+        if status_filter == "open":
+            assignments = all_assignments.filter(
+                status__in=["ASSIGNED", "IN_PROGRESS", "SUBMITTED"]
+            )
+
+        elif status_filter == "completed":
+            assignments = all_assignments.filter(
+                status="APPROVED"
+            )
+
+        elif status_filter == "overdue":
+            assignments = all_assignments.filter(
+                due_date__lt=today
+            ).exclude(
+                status="APPROVED"
+            )
+
+        else:
+            assignments = all_assignments
+
+        # ==========================================================
+        # Update Context
+        # ==========================================================
+
         context.update({
             "assignments": assignments,
             "assignment_scope": "ALL ASSIGNMENTS",
+            "current_filter": status_filter,
             "highlight_assignment_id": highlight_assignment_id,
-            "timesheets": timesheets,  # ALL timesheets
-            "timesheet_count": timesheet_count,  # Only unread count
+            "timesheets": timesheets,
+            "timesheet_count": timesheet_count,
             "navbar_notifications": navbar_notifications,
             "navbar_notification_count": navbar_notification_count,
             **assignment_stats,
         })
-        
+
         return context
 
 
@@ -529,6 +571,12 @@ class ScopeDashboardView(ListView):
             and assignment.reviewer == self.request.user
         )
 
+        context["is_coordinator_review"] = (
+            assignment is not None
+            and assignment.status == "REVIEW_APPROVED"
+            and assignment.assigner == self.request.user
+        )
+
         context["is_assignee"] = (
             assignment is not None
             and assignment.assignee == self.request.user
@@ -549,6 +597,15 @@ class ScopeDashboardView(ListView):
             if assignment and assignment.reviewer
             else ""
         )
+
+        context["coordinator_name"] = (
+            assignment.assigner.get_full_name()
+            if assignment and assignment.assigner
+            else ""
+        )
+
+        if assignment and assignment.assigner and not context["coordinator_name"]:
+            context["coordinator_name"] = assignment.assigner.username
 
         if assignment and assignment.reviewer and not context["reviewer_name"]:
             context["reviewer_name"] = assignment.reviewer.username
@@ -596,7 +653,6 @@ class ScopeDashboardView(ListView):
             # Can access all company plants
             context["plants"] = (
                 Plant.objects.filter(
-                    company=user.company,
                     is_active=True,
                 ).order_by("name")
             )
@@ -658,8 +714,8 @@ class ScopeDashboardView(ListView):
 
         context["current_financial_year"] = current_financial_year
         context["current_financial_month"] = current_financial_month
-        context["is_assignment_locked"] = (assignment is not None and assignment.status in ["SUBMITTED", "APPROVED"])
-
+        context["is_assignment_locked"] = (assignment is not None
+            and assignment.status in ["SUBMITTED","REVIEW_APPROVED","APPROVED",])
         return context
     
 

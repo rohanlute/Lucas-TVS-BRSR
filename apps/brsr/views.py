@@ -12,7 +12,7 @@ from apps.accounts.models.permission import Permissions
 from apps.organizations.models import ApprovalConfigurationTemplate, FinancialYear, Plant
 from apps.organizations.workflow_configuration_engine import WorkflowConfigurationEngine
 from .forms import BRSRAssignmentForm, AssignmentScheduleForm
-from .models import Assignment, AssignmentReviewer, BRSRPrinciple, BRSRQuestion, BRSRSection, QuestionResponse, QuestionResponseDocument, AssignmentSchedule
+from .models import *
 from django.db.models import Case, When, Value, IntegerField
 from django.core.exceptions import PermissionDenied
 from django.utils.html import escape
@@ -725,6 +725,9 @@ def _assignment_context(section, principle, questions, assignment=None, user=Non
 
 def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_queryset, workflow_template_override=None):
     plant = cleaned_data["plant"]
+    financial_year = cleaned_data["financial_year"]
+    period_code = cleaned_data.get("period_code")
+    force_create = cleaned_data.get("force_create", False)
     workflow_template = workflow_template_override or _resolve_brsr_workflow_template(user=user, plant=plant)
     if not workflow_template:
         raise ValueError("No active BRSR workflow template is configured for this company.")
@@ -758,6 +761,23 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
 
     user_ct = ContentType.objects.get_for_model(User)
     assigner = cleaned_data.get("assigner") or user
+    existing = Assignment.objects.filter(
+        plant=plant,
+        section=section,
+        principle=principle,
+        financial_year=financial_year,
+        period_code=period_code,
+    ).order_by("-created_at").first()
+    if existing:
+        if existing.overall_status != 'completed':
+            raise ValueError(
+                "An active assignment already exists for this period. Please complete or close the existing  assignment first."
+            )
+        if not force_create:
+            raise ValueError(
+                "This assignment has already been submitted for this period. "
+                "Please confirm if you want to create another assignment."
+            )
     assignment = Assignment.objects.create(
         plant=plant,
         principle=principle,
@@ -772,6 +792,8 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
         due_date=cleaned_data.get("due_date"),
         priority=cleaned_data["priority"],
         notes=cleaned_data.get("notes"),
+        period_code=period_code,
+        period_label=cleaned_data.get("period_label"),
     )
     assignment.questions.set(question_queryset)
     if reviewer is not None:
@@ -1136,15 +1158,32 @@ def _dashboard_plant_queryset(user):
     except Permissions.DoesNotExist:
         has_view_all = False
 
+    if has_view_all:
+        company_id = getattr(user, "company_id", None)
+        if company_id:
+            return Plant.objects.filter(
+                created_by__company_id=company_id,
+                is_active=True,
+            ).select_related("created_by__company").order_by("name")
+        return Plant.objects.none()
+
     return user.assigned_plants.filter(is_active=True).order_by("name")
 
 
 def _can_view_plant_brsr_data(user, plant):
     if user.is_superuser or getattr(user, "is_super_admin", False):
         return True
-    if _user_has_permission(user, BRSR_VIEW_ALL_PERMISSION_CODE):
+
+    try:
+        view_all_perm = Permissions.objects.get(code='VIEW_ALL_BRSR_DATA')
+        has_view_all = _user_has_permission(user, view_all_perm.code)
+    except Permissions.DoesNotExist:
+        has_view_all = False
+
+    if has_view_all:
         plant_company_id = getattr(getattr(plant, "created_by", None), "company_id", None)
         return bool(plant_company_id) and plant_company_id == getattr(user, "company_id", None)
+
     return user.assigned_plants.filter(pk=plant.pk, is_active=True).exists()
 
 _MONTH_ORDER = {
@@ -1508,6 +1547,12 @@ class AssignmentDashboardView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
+        
+        plant_filter = self.request.GET.get('plant', '')
+        status_filter = self.request.GET.get('status', '')
+        stage_filter = self.request.GET.get('stage', '')
+        search_query = self.request.GET.get('search', '').strip()
+        
         assignments = list(
             _assignment_scope_queryset(user)
             .select_related(
@@ -1528,18 +1573,53 @@ class AssignmentDashboardView(LoginRequiredMixin, TemplateView):
                 "reviewer_links__reviewer_content_type",
             )
         )
+        
+        if plant_filter:
+            assignments = [a for a in assignments if a.plant_id and str(a.plant_id) == plant_filter]
+        
+        if status_filter:
+            assignments = [a for a in assignments if a.overall_status == status_filter]
+        
+        if stage_filter:
+            assignments = [a for a in assignments if a.workflow_stage_type == stage_filter]
+        
+        if search_query:
+            search_lower = search_query.lower()
+            assignments = [
+                a for a in assignments
+                if search_lower in a.assignment_id.lower()
+                or (a.assignee and search_lower in str(a.assignee).lower())
+                or any(
+                    search_lower in str(link.reviewer).lower()
+                    for link in a.reviewer_links.all()
+                    if link.reviewer
+                )
+            ]
+        
         assignments.sort(key=lambda x: (x.overall_status == "completed", -x.created_at.timestamp()))
-
+        plants = _company_scope_plants(user)
+        statuses = sorted(set(a.overall_status for a in assignments if a.overall_status))
+        stages = sorted(set(a.workflow_stage_type for a in assignments if a.workflow_stage_type))    
         serialized_assignments = [
-            _serialize_assignment_with_reviewers(assignment, user)  # Use updated serializer
+            _serialize_assignment_with_reviewers(assignment, user)
             for assignment in assignments
         ]
-        context["assignments"] = serialized_assignments
-        context["assignment_count"] = len(serialized_assignments)
-        context["open_count"] = sum(1 for item in serialized_assignments if item["overall_status"] != "completed")
-        context["completed_count"] = sum(1 for item in serialized_assignments if item["overall_status"] == "completed")
-        context["overdue_count"] = sum(1 for item in serialized_assignments if item["is_overdue"])
-        context["assignment_scope"] = _get_assignment_scope(user)
+        
+        context.update({
+            "assignments": serialized_assignments,
+            "assignment_count": len(serialized_assignments),
+            "open_count": sum(1 for item in serialized_assignments if item["overall_status"] != "completed"),
+            "completed_count": sum(1 for item in serialized_assignments if item["overall_status"] == "completed"),
+            "overdue_count": sum(1 for item in serialized_assignments if item["is_overdue"]),
+            "assignment_scope": _get_assignment_scope(user),
+            "plants": plants,
+            "statuses": statuses,
+            "stages": stages,
+            "selected_plant": plant_filter,
+            "selected_status": status_filter,
+            "selected_stage": stage_filter,
+            "search_query": search_query,
+        })
         return context
 
 
@@ -1550,11 +1630,43 @@ class ApprovalDashboardView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
+        company_filter = self.request.GET.get('company', '')
+        plant_filter = self.request.GET.get('plant', '')
+        stage_filter = self.request.GET.get('stage', '')
+        search_query = self.request.GET.get('search', '').strip()
+        
         assignments = [
             assignment
             for assignment in _approval_stage_queryset(user)
             if not assignment.workflow_task or not assignment.workflow_task.is_completed
         ]
+        
+        if company_filter:
+            assignments = [
+                a for a in assignments
+                if getattr(getattr(a.plant, "created_by", None), "company", None) 
+                and str(getattr(getattr(a.plant, "created_by", None), "company", None).id) == company_filter
+            ]
+        
+        if plant_filter:
+            assignments = [a for a in assignments if a.plant_id and str(a.plant_id) == plant_filter]
+        
+        if stage_filter:
+            assignments = [a for a in assignments if a.workflow_stage_type == stage_filter]
+        
+        if search_query:
+            search_lower = search_query.lower()
+            assignments = [
+                a for a in assignments
+                if search_lower in a.assignment_id.lower()
+                or (a.assignee and search_lower in str(a.assignee).lower())
+                or any(
+                    search_lower in str(link.reviewer).lower()
+                    for link in a.reviewer_links.all()
+                    if link.reviewer
+                )
+            ]
+        
         grouped = {}
         total_questions = 0
         stage_counts = {
@@ -1563,15 +1675,31 @@ class ApprovalDashboardView(LoginRequiredMixin, TemplateView):
             "pre_final_approval": 0,
             "final_approval": 0,
         }
+        
+        companies = set()
+        plants = set()
+        
         for assignment in assignments:
             stage_type = assignment.workflow_stage_type or ""
             if stage_type in stage_counts:
                 stage_counts[stage_type] += 1
+            
             company = getattr(getattr(assignment.plant, "created_by", None), "company", None)
             company_key = company.company_name if company else "Unknown Company"
+            company_id = str(company.id) if company else ""
+            
+            companies.add((company_id, company_key))
+            
             plant_key = assignment.plant.name if assignment.plant_id else "Unknown Plant"
+            plant_id = str(assignment.plant.id) if assignment.plant_id else ""
+            plants.add((plant_id, plant_key))
+            
             company_bucket = grouped.setdefault(company_key, {})
-            plant_bucket = company_bucket.setdefault(plant_key, [])
+            company_bucket["_company_id"] = company_id
+            plant_bucket = company_bucket.setdefault(plant_key, {})
+            plant_bucket["_plant_id"] = plant_id
+            entries = plant_bucket.setdefault("entries", [])
+            
             questions = list(
                 assignment.questions.select_related("section", "principle").order_by("display_order", "question_number")
             )
@@ -1598,22 +1726,36 @@ class ApprovalDashboardView(LoginRequiredMixin, TemplateView):
                     }
                 )
             total_questions += len(question_rows)
-            plant_bucket.append(
+            entries.append(
                 {
                     "assignment": _serialize_assignment(assignment, user),
                     "questions": question_rows,
                 }
             )
-
-        context["grouped_assignments"] = grouped
-        context["assignment_count"] = len(assignments)
-        context["question_count"] = total_questions
-        context["stage_counts"] = stage_counts
-        context["approval_stage_count"] = (
-            stage_counts["approval"]
-            + stage_counts["pre_final_approval"]
-            + stage_counts["final_approval"]
-        )
+        
+        plants_list = sorted([{"id": p_id, "name": p_name} for p_id, p_name in plants if p_id], key=lambda x: x["name"])
+        companies_list = sorted([{"id": c_id, "name": c_name} for c_id, c_name in companies if c_id], key=lambda x: x["name"])
+        
+        stages = sorted([s for s in stage_counts.keys() if stage_counts[s] > 0])
+        
+        context.update({
+            "grouped_assignments": grouped,
+            "assignment_count": len(assignments),
+            "question_count": total_questions,
+            "stage_counts": stage_counts,
+            "approval_stage_count": (
+                stage_counts["approval"]
+                + stage_counts["pre_final_approval"]
+                + stage_counts["final_approval"]
+            ),
+            "companies": companies_list,
+            "plants": plants_list,
+            "stages": stages,
+            "selected_company": company_filter,
+            "selected_plant": plant_filter,
+            "selected_stage": stage_filter,
+            "search_query": search_query,
+        })
         return context
 
 class AssignmentDetailView(LoginRequiredMixin, TemplateView):
@@ -2203,7 +2345,7 @@ class BRSRPlantDataView(LoginRequiredMixin, TemplateView):
             "financial_years": financial_years,
             "selected_fy": selected_fy,
             "section_groups": _build_brsr_data_groups([plant], financial_year=selected_fy or None),
-            "sections_nav": [{"code": g["section"].code, "name": g["section"].name} for g in _build_brsr_data_groups([plant] if not kwargs.get("is_company") else plants, financial_year=selected_fy or None)],
+            "sections_nav": [{"code": g["section"].code, "name": g["section"].name} for g in _build_brsr_data_groups([plant], financial_year=selected_fy or None)],
             "stats": _plant_brsr_stats(plant, financial_year=selected_fy or None),
             "dashboard_url": reverse("brsr:brsr_data_dashboard"),
             "page_title": f"{plant.name} — Entered BRSR Data",

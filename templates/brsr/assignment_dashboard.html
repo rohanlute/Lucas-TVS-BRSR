@@ -84,6 +84,120 @@
     border:1px solid var(--brand);
   }
 
+  .btn-secondary-link{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    border-radius:12px;
+    padding:11px 16px;
+    font-size:13px;
+    font-weight:700;
+    text-decoration:none;
+    background:var(--surface);
+    color:var(--muted);
+    border:1px solid var(--border);
+  }
+
+  .btn-secondary-link:hover {
+    background:var(--bg);
+    color:var(--ink);
+  }
+
+  .filter-bar {
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:22px;
+    padding:16px 20px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:18px;
+    box-shadow:var(--shadow);
+    align-items:center;
+  }
+
+  .filter-group {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex:1 1 180px;
+    min-width:150px;
+  }
+
+  .filter-group label {
+    font-size:12px;
+    font-weight:700;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    white-space:nowrap;
+  }
+
+  .filter-group select,
+  .filter-group input {
+    flex:1;
+    padding:8px 12px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--bg);
+    font-size:13px;
+    color:var(--ink);
+    transition:border-color .2s;
+    min-width:120px;
+  }
+
+  .filter-group select:focus,
+  .filter-group input:focus {
+    outline:none;
+    border-color:var(--brand);
+    box-shadow:0 0 0 3px rgba(29,78,216,.1);
+  }
+
+  .filter-group select {
+    cursor:pointer;
+    appearance:auto;
+  }
+
+  .filter-group input::placeholder {
+    color:var(--muted);
+  }
+
+  .filter-actions {
+    display:flex;
+    gap:8px;
+    margin-left:auto;
+  }
+
+  .filter-actions .btn-filter {
+    padding:8px 18px;
+    border-radius:10px;
+    border:none;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+    transition:all .2s;
+  }
+
+  .btn-filter.apply {
+    background:var(--brand);
+    color:#fff;
+  }
+
+  .btn-filter.apply:hover {
+    background:#1a3fa8;
+    transform:translateY(-1px);
+  }
+
+  .btn-filter.reset {
+    background:var(--bg);
+    color:var(--muted);
+  }
+
+  .btn-filter.reset:hover {
+    background:var(--border);
+    color:var(--ink);
+  }
+
   .stats-grid{
     display:grid;
     grid-template-columns:repeat(4,minmax(0,1fr));
@@ -307,7 +421,6 @@
   .status-chip.rejected{background:var(--danger-soft);color:var(--danger);}
   .status-chip.review{background:var(--review-bg);color:var(--brand);}
 
-  /* Review Comments Styles */
   .review-comment-item {
     padding: 12px 14px;
     background: #fff;
@@ -405,6 +518,7 @@
     margin-top: 8px;
     font-size: 12px;
     color: var(--muted);
+    flex-wrap: wrap;
   }
 
   .assignment-quick-stats span {
@@ -452,6 +566,44 @@
     font-weight: 700;
   }
 
+  .no-results {
+    padding: 40px 24px;
+    text-align: center;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: 18px;
+  }
+
+  .no-results h3 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    color: var(--ink);
+  }
+
+  .active-filter-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 12px;
+    background: var(--brand-soft);
+    color: var(--brand);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .active-filter-badge .remove-filter {
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    font-weight: 700;
+  }
+
+  .active-filter-badge .remove-filter:hover {
+    opacity: 1;
+  }
+
   @media (max-width: 1200px){
     .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
     .assignment-grid{grid-template-columns:1fr;}
@@ -464,6 +616,9 @@
     .assignment-card-head{flex-direction:column;}
     .assignment-quick-stats { flex-wrap: wrap; }
     .assignment-grid{grid-template-columns:1fr;}
+    .filter-bar{flex-direction:column;align-items:stretch;}
+    .filter-group{flex:1 1 auto;}
+    .filter-actions{margin-left:0;}
   }
 </style>
 {% endblock %}
@@ -471,17 +626,97 @@
 {% block content %}
 <div class="assignment-dashboard-page">
   <div class="dashboard-toast-stack" id="dashboardToastStack" aria-live="polite" aria-atomic="true"></div>
+  
   <div class="dashboard-header">
     <div class="dashboard-title">
       <h1>Assignment Dashboard</h1>
       <p>Assignments visible to the logged-in user based on plant, department, and direct user scope.</p>
     </div>
-    <div class="header-actions">
-      <a class="btn-soft" href="{% url 'brsr:brsr_list' %}">BRSR Home</a>
-      <a class="btn-primary-link" href="{% url 'brsr:question_workspace' %}">Open Workspace</a>
-    </div>
   </div>
 
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <form method="GET" action="" id="filterForm" style="display:contents; width:100%;">
+      <div class="filter-group">
+        <label for="plantFilter">Plant</label>
+        <select id="plantFilter" name="plant">
+          <option value="">All Plants</option>
+          {% for plant in plants %}
+            <option value="{{ plant.id }}" {% if selected_plant == plant.id|stringformat:"s" %}selected{% endif %}>
+              {{ plant.name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="statusFilter">Status</label>
+        <select id="statusFilter" name="status">
+          <option value="">All Statuses</option>
+          {% for status in statuses %}
+            <option value="{{ status }}" {% if selected_status == status %}selected{% endif %}>
+              {{ status|title }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-group" style="flex:2 1 220px;">
+        <label for="searchFilter">Search</label>
+        <input type="text" id="searchFilter" name="search" 
+               placeholder="Search by code, user, reviewer..." 
+               value="{{ search_query }}">
+      </div>
+
+      <div class="filter-actions">
+        <button type="submit" class="btn-filter apply">Apply Filters</button>
+        <a href="{% url 'brsr:assignment_dashboard' %}" class="btn-filter reset" style="text-decoration:none;text-align:center;">Reset</a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Active Filters Display -->
+  {% if selected_plant or selected_status or selected_stage or search_query %}
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+    {% if selected_plant %}
+      {% for plant in plants %}
+        {% if plant.id|stringformat:"s" == selected_plant %}
+          <span class="active-filter-badge">
+            Plant: {{ plant.name }}
+            <a href="?{% if selected_status %}status={{ selected_status }}&{% endif %}{% if selected_stage %}stage={{ selected_stage }}&{% endif %}{% if search_query %}search={{ search_query }}{% endif %}" 
+               class="remove-filter" style="text-decoration:none;color:inherit;">×</a>
+          </span>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+    
+    {% if selected_status %}
+      <span class="active-filter-badge">
+        Status: {{ selected_status|title }}
+        <a href="?{% if selected_plant %}plant={{ selected_plant }}&{% endif %}{% if selected_stage %}stage={{ selected_stage }}&{% endif %}{% if search_query %}search={{ search_query }}{% endif %}" 
+           class="remove-filter" style="text-decoration:none;color:inherit;">×</a>
+      </span>
+    {% endif %}
+    
+    {% if selected_stage %}
+      <span class="active-filter-badge">
+        Stage: {{ selected_stage|title }}
+        <a href="?{% if selected_plant %}plant={{ selected_plant }}&{% endif %}{% if selected_status %}status={{ selected_status }}&{% endif %}{% if search_query %}search={{ search_query }}{% endif %}" 
+           class="remove-filter" style="text-decoration:none;color:inherit;">×</a>
+      </span>
+    {% endif %}
+    
+    {% if search_query %}
+      <span class="active-filter-badge">
+        Search: "{{ search_query }}"
+        <a href="?{% if selected_plant %}plant={{ selected_plant }}&{% endif %}{% if selected_status %}status={{ selected_status }}&{% endif %}{% if selected_stage %}stage={{ selected_stage }}{% endif %}" 
+           class="remove-filter" style="text-decoration:none;color:inherit;">×</a>
+      </span>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Stats Grid -->
   <div class="stats-grid">
     <div class="stat-card">
       <div class="stat-label">Total Assignments</div>
@@ -505,6 +740,7 @@
     </div>
   </div>
 
+  <!-- Assignment List -->
   {% if assignments %}
   <div class="assignment-list">
     {% for assignment in assignments %}
@@ -641,9 +877,9 @@
     {% endfor %}
   </div>
   {% else %}
-  <div class="empty-state">
+  <div class="no-results">
     <h3>No assignments found</h3>
-    <p>There are no assignments available for your current login and scope yet.</p>
+    <p>No assignments match your current filters. Try adjusting your search or filters.</p>
   </div>
   {% endif %}
 </div>
@@ -664,14 +900,6 @@
         
         const isExpanded = card.classList.contains('expanded');
         
-        // Close all other cards (optional - uncomment for accordion behavior)
-        // assignmentCards.forEach(otherCard => {
-        //   if (otherCard !== card && otherCard.classList.contains('expanded')) {
-        //     otherCard.classList.remove('expanded');
-        //     otherCard.querySelector('.assignment-card-head').setAttribute('aria-expanded', 'false');
-        //   }
-        // });
-        
         if (isExpanded) {
           card.classList.remove('expanded');
           header.setAttribute('aria-expanded', 'false');
@@ -688,6 +916,25 @@
           header.click();
         }
       });
+    });
+
+    // Auto-submit filter form on select change (optional)
+    const filterForm = document.getElementById('filterForm');
+    const selectElements = filterForm.querySelectorAll('select');
+    
+    selectElements.forEach(select => {
+      select.addEventListener('change', function() {
+        filterForm.submit();
+      });
+    });
+
+    // Search input with Enter key
+    const searchInput = document.getElementById('searchFilter');
+    searchInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        filterForm.submit();
+      }
     });
 
     // Show dashboard messages

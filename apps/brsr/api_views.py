@@ -756,64 +756,91 @@ class QuestionReviewCommentAPIView(APIView):
         question = get_object_or_404(_pdf_questions_queryset(), question_id=question_id)
         assignment_id = request.data.get("assignment_id")
         remark = (request.data.get("remark") or "").strip()
+        
         if not assignment_id:
-            return Response({"detail": "Create an assignment before saving a review comment."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Create an assignment before saving a review comment."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        assignment = get_object_or_404(_assignment_queryset_for_user(request.user), pk=assignment_id)
+        assignment = get_object_or_404(
+            _assignment_queryset_for_user(request.user), 
+            pk=assignment_id
+        )
+        
         from .views import _ensure_assignment_workflow_task
         _ensure_assignment_workflow_task(assignment, current_user=request.user)
 
         task = assignment.workflow_task
         if not task:
-            return Response({"detail": "No workflow task found for this response."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "No workflow task found for this response."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
         if task.is_completed:
             return _completed_task_response()
 
+        # Check if current stage is review
         if task.current_stage.stage_type != "review":
             return Response(
-                {"detail": "Comments can only be added during the Review stage."},
+                {"detail": f"Comments can only be added during the Review stage. Current stage: {task.current_stage.stage_type}"},
                 status=status.HTTP_409_CONFLICT,
             )
 
+        # Check if user is the assigned reviewer
         if not _is_assigned_reviewer(request.user, assignment):
             return Response(
                 {"detail": "Only the assigned reviewer can add comments."},
                 status=status.HTTP_403_FORBIDDEN,
             )
+            
         if not remark:
-            return Response({"detail": "Reviewer comment is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Reviewer comment is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         # Save the comment
-        response = get_object_or_404(QuestionResponse, assignment=assignment, question=question)
+        response = get_object_or_404(
+            QuestionResponse, 
+            assignment=assignment, 
+            question=question
+        )
         response.review_remark = remark
         response.reviewed_by = request.user
         response.reviewed_at = timezone.now()
         response.save(update_fields=["review_remark", "reviewed_by", "reviewed_at", "updated_at"])
         response.refresh_from_db()
 
-        # ADVANCE THE WORKFLOW TO NEXT STAGE
+        # Advance workflow to next stage
         from .views import _first_workflow_assignee_for_stage, _next_non_review_stage
+        from django.urls import reverse
         
-        # Get the next stage
         next_stage = task.current_stage.next_stage() if task.current_stage_id else None
         
-        # If there's no next stage, the workflow is complete
         if not next_stage:
+            # Complete the workflow
             WorkflowConfigurationEngine.complete(task, request.user, remark="Review completed.")
-            return Response(
-                {
-                    "status": response.status,
-                    "review_remark": response.review_remark or "",
-                    "workflow_task": _serialize_task_for_user(assignment.workflow_task, request.user),
-                    "message": "Review comment saved and workflow completed successfully.",
-                }
-            )
+            
+            # Update assignment status
+            assignment.assignment_status = "approved"
+            assignment.save(update_fields=["assignment_status", "updated_at"])
+            
+            return Response({
+                "status": "completed",
+                "review_remark": response.review_remark or "",
+                "workflow_task": _serialize_task_for_user(assignment.workflow_task, request.user),
+                "message": "Review completed successfully.",
+                "redirect_url": reverse("brsr:approval_dashboard"),
+                "should_redirect": True,
+            })
         
         # Skip any other review stages
         if next_stage.stage_type == "review":
             next_stage = _next_non_review_stage(next_stage)
         
-        # Determine the next assignee
+        # Determine next assignee
         next_assignee = None
         if next_stage:
             try:
@@ -824,7 +851,6 @@ class QuestionReviewCommentAPIView(APIView):
                     assignment=assignment,
                 )
             except ValueError:
-                # If no assignee found, try to find the next non-review stage
                 next_stage = _next_non_review_stage(next_stage) if next_stage else None
                 if next_stage:
                     try:
@@ -845,19 +871,22 @@ class QuestionReviewCommentAPIView(APIView):
             next_assignee=next_assignee,
         )
 
-        # Update assignment status
         assignment.assignment_status = "in_progress"
         assignment.save(update_fields=["assignment_status", "updated_at"])
 
-        return Response(
-            {
-                "status": response.status,
-                "review_remark": response.review_remark or "",
-                "workflow_task": _serialize_task_for_user(assignment.workflow_task, request.user),
-                "message": "Review comment saved and workflow advanced successfully.",
-                "next_stage": next_stage.label if next_stage else "Completed",
-            }
-        )
+        # Determine if we should redirect
+        should_redirect = next_stage is None or next_stage.stage_type in ["approval", "final_approval"]
+        redirect_url = reverse("brsr:approval_dashboard") if should_redirect else None
+
+        return Response({
+            "status": response.status,
+            "review_remark": response.review_remark or "",
+            "workflow_task": _serialize_task_for_user(assignment.workflow_task, request.user),
+            "message": "Review comment saved and workflow advanced successfully.",
+            "next_stage": next_stage.label if next_stage else "Completed",
+            "redirect_url": redirect_url,
+            "should_redirect": should_redirect,
+        })
 
 
 class AssignmentApproveAPIView(APIView):

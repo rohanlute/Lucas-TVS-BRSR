@@ -1042,6 +1042,7 @@
   const COMMENT_URL = "{% url 'brsr:question_comment_api' question_id='__question__' %}";
   const APPROVE_URL = "{{ assignment_approve_api_url|escapejs }}";
   const REJECT_URL = "{{ assignment_reject_api_url|escapejs }}";
+  const REDIRECT_URL = "{% url 'brsr:approval_dashboard' %}";
 
   function apiUrl(template, questionId) {
     return template.replace('__question__', encodeURIComponent(questionId));
@@ -1073,6 +1074,19 @@
     }, 2800);
   }
 
+  function setButtonLoading(button, loading = true, text = '') {
+    if (!button) return;
+    if (loading) {
+      const originalText = button.textContent || 'Submit';
+      button.dataset.originalText = originalText;
+      button.disabled = true;
+      button.textContent = text || 'Processing...';
+    } else {
+      button.disabled = false;
+      button.textContent = button.dataset.originalText || 'Submit';
+    }
+  }
+
   async function postAction(url, payload) {
     const response = await fetch(url, {
       method: 'POST',
@@ -1101,6 +1115,14 @@
         assignment_id: assignmentId,
         remark: remark,
       });
+      
+      // Check if we should redirect
+      if (data.should_redirect && data.redirect_url) {
+        showReviewMessage(data.message || 'Review finalized. Redirecting...', 'success');
+        window.location.href = data.redirect_url;
+        return;
+      }
+      
       showReviewMessage(data.message || 'Comment saved successfully.', 'success');
 
       // Update the footer note if it exists
@@ -1162,11 +1184,10 @@
     }
   });
 
-  // Finalize review
+  // Finalize review - UPDATED with redirect handling
   document.getElementById('finalizeReviewBtn').addEventListener('click', async () => {
     const button = document.getElementById('finalizeReviewBtn');
-    const originalText = button.textContent;
-
+    
     // Check if all questions have comments
     const textareas = document.querySelectorAll('.js-review-comment-input:not([disabled])');
     let emptyComments = [];
@@ -1184,18 +1205,67 @@
       }
     }
 
-    button.disabled = true;
-    button.textContent = 'Finalizing...';
+    setButtonLoading(button, true, 'Finalizing...');
 
     try {
-      const data = await postAction(APPROVE_URL, {});
+      // First, save all pending comments
+      const saveButtons = document.querySelectorAll('.js-save-comment:not([disabled])');
+      for (const saveBtn of saveButtons) {
+        const questionId = saveBtn.getAttribute('data-question-id');
+        try {
+          await saveComment(questionId);
+        } catch (error) {
+          console.warn('Error saving comment for question', questionId, error);
+        }
+      }
+      
+      // Get the assignment ID
+      const assignmentId = "{{ assignment.id }}";
+      
+      // Call the finalize review API
+      const response = await fetch(`/brsr/api/assignments/${assignmentId}/finalize-review/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({})
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        if (data.missing_comments) {
+          const missingList = data.missing_comments.map(q => 
+            `${q.question_number}. ${q.title}`
+          ).join('\n');
+          alert(`Please add comments for these questions:\n\n${missingList}`);
+          setButtonLoading(button, false);
+          return;
+        }
+        throw new Error(data.detail || data.message || 'Failed to finalize review.');
+      }
+      
       showReviewMessage(data.message || 'Review finalized successfully.', 'success');
-      window.location.href = "{% url 'brsr:approval_dashboard' %}";
+      
+      // Handle redirect
+      if (data.should_redirect && data.redirect_url) {
+        setTimeout(() => {
+          window.location.href = data.redirect_url;
+        }, 1500);
+      } else if (data.redirect_url) {
+        setTimeout(() => {
+          window.location.href = data.redirect_url;
+        }, 1500);
+      } else {
+        // Fallback redirect to approval dashboard
+        setTimeout(() => {
+          window.location.href = REDIRECT_URL;
+        }, 1500);
+      }
     } catch (error) {
       showReviewMessage(error.message, 'error');
-    } finally {
-      button.disabled = false;
-      button.textContent = originalText;
+      setButtonLoading(button, false);
     }
   });
 

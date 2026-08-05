@@ -1,6 +1,6 @@
 from django.urls import path
 from .views_excel import download_scope_template, upload_scope_template
-from .api_views import ApproveAssignmentView, RejectAssignmentView, CoordinatorApproveAssignmentView
+from .api_views import ApproveAssignmentView, RejectAssignmentView, CoordinatorApproveAssignmentView,CoordinatorRejectAssignmentView
 from .views import (
     EmissionAssignmentDashboardView,
     EmissionsDashboardView, 
@@ -48,6 +48,7 @@ urlpatterns = [
     path("api/approve-assignment/",ApproveAssignmentView.as_view(),name="approve_assignment"),
     # Coordinator 
     path("api/coordinator-approve-assignment/",CoordinatorApproveAssignmentView.as_view(),name="coordinator_approve_assignment"),
+    path("api/coordinator-reject/",CoordinatorRejectAssignmentView.as_view(),name="coordinator_reject"),
     path("api/reject-assignment/",RejectAssignmentView.as_view(),name="reject_assignment"),
     path("api/scope-template/download/", download_scope_template,name="download_scope_template"),
     path("api/scope-template/upload/", upload_scope_template,name="upload_scope_template"),
