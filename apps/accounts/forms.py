@@ -2,6 +2,7 @@ from django import forms
 from .models import User, Role, Department
 from apps.accounts.models.permission import Permissions
 from apps.companies.models import Company
+import re
 
 class UserCreateForm(forms.ModelForm):
     password = forms.CharField(
@@ -160,7 +161,7 @@ class UserCreateForm(forms.ModelForm):
             # For new users, password is required
             self.fields['password'].required = True
             self.fields['confirm_password'].required = True
-            self.fields['password'].help_text = "Password is required for new users"
+            self.fields['password'].help_text = "Password must contain uppercase, lowercase, numbers, and be at least 8 characters"
             self.fields['confirm_password'].help_text = "Please confirm the password"
             
             # For new users: Set ALL fields to empty string
@@ -186,6 +187,56 @@ class UserCreateForm(forms.ModelForm):
             self.fields['designation'].widget.attrs['value'] = ''
             self.fields['employee_code'].widget.attrs['value'] = ''
 
+    def validate_password_strength(self, password):
+        """
+        Comprehensive password validation with detailed error messages
+        """
+        errors = []
+        
+        # Check minimum length
+        if len(password) < 8:
+            errors.append("Password must be at least 8 characters long.")
+        
+        # Check for uppercase letter
+        if not any(char.isupper() for char in password):
+            errors.append("Password must contain at least one uppercase letter (A-Z).")
+        
+        # Check for lowercase letter
+        if not any(char.islower() for char in password):
+            errors.append("Password must contain at least one lowercase letter (a-z).")
+        
+        # Check for digit
+        if not any(char.isdigit() for char in password):
+            errors.append("Password must contain at least one number (0-9).")
+        
+        # Check for special character
+        special_chars = r'[!@#$%^&*(),.?":{}|<>]'
+        if not re.search(special_chars, password):
+            errors.append("Password must contain at least one special character (!@#$%^&*(),.?\":{}|<>).")
+        
+        # Check for common weak passwords
+        common_passwords = [
+            'password', 'password123', '12345678', 'qwerty', 'abc123',
+            'admin123', 'welcome', 'letmein', 'iloveyou', 'sunshine',
+            '123456789', 'password1', '1234567890', 'admin', 'qwerty123',
+            'welcome123', 'monkey', 'dragon', 'master', 'hello'
+        ]
+        if password.lower() in common_passwords:
+            errors.append("This password is too common. Please choose a stronger password.")
+        
+        # Check if password contains username or email parts (if available)
+        username = self.cleaned_data.get('username', '')
+        if username and username.lower() in password.lower():
+            errors.append("Password cannot contain your username.")
+        
+        email = self.cleaned_data.get('email', '')
+        if email:
+            email_parts = email.split('@')[0]
+            if email_parts and email_parts.lower() in password.lower():
+                errors.append("Password cannot contain your email username.")
+        
+        return errors
+
     def clean(self):
         cleaned_data = super().clean()
         password = cleaned_data.get('password')
@@ -194,20 +245,22 @@ class UserCreateForm(forms.ModelForm):
         # Check if this is a new user or existing
         is_editing = self.instance and self.instance.pk
         
-        # ✅ For new users, password is required
+        # For new users, password is required
         if not is_editing and not password:
             self.add_error('password', "Password is required for new users.")
             return cleaned_data
         
-        # ✅ For editing, skip validation if both are empty
+        # For editing, skip validation if both are empty
         if is_editing and not password and not confirm_password:
             return cleaned_data
         
-        # ✅ Only validate if password is provided
+        # Only validate if password is provided
         if password:
-            # Check password length
-            if len(password) < 8:
-                self.add_error('password', "Password must be at least 8 characters.")
+            # Validate password strength
+            password_errors = self.validate_password_strength(password)
+            
+            for error in password_errors:
+                self.add_error('password', error)
             
             # Check if passwords match
             if password != confirm_password:

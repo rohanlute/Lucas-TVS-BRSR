@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'apps.organizations',
     'apps.calculator',
     'apps.emission',
+    'apps.goals',
     # 
     'rest_framework',
     'channels',
