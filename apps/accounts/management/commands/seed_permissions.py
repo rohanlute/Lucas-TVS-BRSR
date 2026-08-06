@@ -40,6 +40,10 @@ class Command(BaseCommand):
             ('CAN_ASSIGN_QUESTIONS', 'Can Assign Questions', 'Can assign questions to users', 'ASSIGN', 2),
             ('VIEW_BRSR_ASSIGNMENT_DASHBOARD', 'View Assignment Dashboard', 'View all BRSR assignments and their status', 'VIEW', 3),
             ('VIEW_BRSR_APPROVAL_DASHBOARD', 'View Approval Dashboard', 'View BRSR assignments pending for review and approval', 'VIEW', 4),
+            
+            #Goal Module
+            ('ACCESS_GOAL_MODULE','Access Goal Module', 'Can access goal module',
+             'MODULE_ACCESS', 0),
         ]
 
         created = 0

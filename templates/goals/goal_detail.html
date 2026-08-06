@@ -22,7 +22,7 @@
         gap: 16px;
         background: #ffffff;
         border-radius: 16px;
-        padding: 16px 20px;
+        padding: 16px 24px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     }
 
@@ -30,43 +30,99 @@
         display: flex;
         align-items: center;
         flex-wrap: wrap;
-        gap: 28px;
+        gap: 14px;
+        flex: 1;
+        width: 100%;
     }
 
     .gd-field-group {
         display: flex;
         align-items: center;
         gap: 10px;
-    }
-
-    .gd-field-group label {
-        font-size: 14px;
-        font-weight: 700;
-        color: #1a2332;
-        white-space: nowrap;
-        margin: 0;
-    }
-
-    .gd-field-group select {
-        border: 1px solid #e4e9f0;
+        flex: 1 1 0;
+        min-width: 160px;
+        max-width: 400px;
+        background: #f8f9fc;
+        padding: 3px 12px 3px 16px;
         border-radius: 10px;
-        padding: 9px 36px 9px 14px;
-        font-size: 14px;
-        color: #1a2332;
-        background-color: #ffffff;
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7a8f' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 14px center;
-        cursor: pointer;
-        min-width: 220px;
+        border: 1px solid #e4e9f0;
         transition: all 0.2s ease;
     }
 
-    .gd-field-group select:focus {
+    .gd-field-group:hover {
+        border-color: #3454d1;
+        background: #f4f6fb;
+    }
+
+    .gd-field-group:focus-within {
         border-color: #3454d1;
         box-shadow: 0 0 0 3px rgba(52, 84, 209, 0.08);
+    }
+
+    .gd-field-group .field-icon {
+        color: #6b7a8f;
+        font-size: 14px;
+        width: 18px;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    .gd-field-group .field-icon.material-icon {
+        color: #3454d1;
+    }
+
+    .gd-field-group .field-icon.goal-icon {
+        color: #28a745;
+    }
+
+    .gd-field-group .field-icon.plant-icon {
+        color: #ff9f43;
+    }
+
+    .gd-field-group label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #1a2332;
+        white-space: nowrap;
+        margin: 0;
+        min-width: 45px;
+        flex-shrink: 0;
+    }
+
+    .gd-field-group select {
+        border: none;
+        border-radius: 0;
+        padding: 9px 24px 9px 6px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #1a2332;
+        background-color: transparent;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7a8f' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 2px center;
+        cursor: pointer;
+        flex: 1;
+        min-width: 100px;
+        transition: all 0.2s ease;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    .gd-field-group select:focus {
         outline: none;
+    }
+
+    .gd-field-group select option {
+        padding: 6px 8px;
+        color: #1a2332;
+        font-weight: 500;
+    }
+
+    .gd-field-group select:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
     }
 
     .metric-tabs {
@@ -92,6 +148,7 @@
         line-height: 1.35;
         transition: all 0.2s ease;
         min-width: 120px;
+        position: relative;
     }
 
     .metric-tab:hover {
@@ -117,6 +174,47 @@
         display: block;
         font-weight: 400;
         margin-top: 2px;
+    }
+
+    .metric-tab .kpi-current-value {
+        font-size: 12px;
+        font-weight: 600;
+        color: #3454d1;
+        display: block;
+        margin-top: 4px;
+        padding-top: 4px;
+        border-top: 1px dashed #e4e9f0;
+    }
+
+    .metric-tab.active .kpi-current-value {
+        color: #ffffff;
+        border-top-color: rgba(255,255,255,0.2);
+    }
+
+    .metric-tab .kpi-current-value .value-number {
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+    .metric-tab .kpi-current-value .value-unit-small {
+        font-size: 10px;
+        font-weight: 400;
+        color: #8a94a6;
+    }
+
+    .metric-tab.active .kpi-current-value .value-unit-small {
+        color: #aab4c9;
+    }
+
+    .metric-tab .kpi-current-indicator {
+        display: none;
+        font-size: 10px;
+        color: #28a745;
+        margin-left: 4px;
+    }
+
+    .metric-tab.active .kpi-current-indicator {
+        display: inline;
     }
 
     .gd-grid {
@@ -165,7 +263,7 @@
     }
 
     .stat-mini-card .stat-value {
-        font-size: 22px;
+        font-size: 24px;
         font-weight: 700;
         color: #1a2332;
     }
@@ -183,9 +281,28 @@
     }
 
     .stat-mini-card .stat-unit {
-        font-size: 11px;
-        color: #8a94a6;
+        font-size: 12px;
+        font-weight: 600;
+        color: #6b7a8f;
         margin-top: 2px;
+    }
+
+    .plant-scope-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 4px 12px;
+        border-radius: 10px;
+        margin-bottom: 6px;
+        background: #f0f4ff;
+        color: #3454d1;
+    }
+
+    .plant-scope-badge.is-plant-specific {
+        background: #e8f5e9;
+        color: #2e7d32;
     }
 
     .config-panel {
@@ -211,7 +328,7 @@
 
     .config-field label {
         font-size: 14px;
-        font-weight: 600;
+        font-weight: 700;
         color: #1a2332;
         flex: 0 0 auto;
         min-width: 120px;
@@ -227,7 +344,8 @@
         border: 1px solid #e4e9f0;
         border-radius: 10px;
         padding: 8px 12px;
-        font-size: 13px;
+        font-size: 14px;
+        font-weight: 600;
         color: #1a2332;
         background: #ffffff;
         transition: all 0.2s ease;
@@ -240,6 +358,14 @@
         background-position: right 12px center;
         padding-right: 32px;
         cursor: pointer;
+        color: #1a2332;
+        font-weight: 600;
+    }
+
+    .config-field select.form-control-mini option {
+        color: #1a2332;
+        font-weight: 500;
+        padding: 8px;
     }
 
     .config-field .form-control-mini:focus {
@@ -255,7 +381,17 @@
     .config-field .form-control-mini[readonly] {
         background: #f4f6fb;
         cursor: not-allowed;
-        color: #6b7a8f;
+        color: #1a2332;
+        font-weight: 600;
+        opacity: 1;
+    }
+
+    .config-field select.form-control-mini:disabled {
+        background: #f4f6fb;
+        cursor: not-allowed;
+        color: #1a2332;
+        font-weight: 600;
+        opacity: 1;
     }
 
     .config-field .pct-wrap {
@@ -268,6 +404,8 @@
         max-width: none;
         width: 100%;
         padding-right: 28px;
+        color: #1a2332;
+        font-weight: 600;
     }
 
     .config-field .pct-wrap span {
@@ -275,9 +413,30 @@
         right: 12px;
         top: 50%;
         transform: translateY(-50%);
-        font-size: 12px;
-        color: #8a94a6;
+        font-size: 14px;
+        font-weight: 600;
+        color: #1a2332;
         pointer-events: none;
+    }
+
+    #targetValue {
+        background: #e8f0fe !important;
+        border-color: #3454d1 !important;
+        color: #1a2332 !important;
+        font-weight: 700 !important;
+        font-size: 14px !important;
+    }
+
+    #unitInput {
+        color: #1a2332 !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        text-transform: uppercase;
+    }
+
+    input.form-control-mini::placeholder {
+        color: #9aa5b5 !important;
+        font-weight: 400 !important;
     }
 
     .config-save-btn {
@@ -308,6 +467,72 @@
         opacity: 0.6;
         cursor: not-allowed;
         transform: none;
+    }
+
+    /* Read-only config panel styles */
+    .config-panel.read-only .config-field input,
+    .config-panel.read-only .config-field select {
+        background: #f4f6fb;
+        cursor: not-allowed;
+        color: #1a2332 !important;
+        opacity: 1;
+    }
+
+    .config-panel.read-only .config-field input:focus,
+    .config-panel.read-only .config-field select:focus {
+        border-color: #e4e9f0;
+        box-shadow: none;
+    }
+
+    .config-panel.read-only .config-save-btn {
+        display: none;
+    }
+
+    .config-panel.read-only .read-only-notice {
+        display: block;
+        text-align: center;
+        padding: 12px;
+        background: #f0f4ff;
+        border-radius: 8px;
+        color: #3454d1;
+        font-size: 13px;
+        font-weight: 500;
+        margin-top: 12px;
+        border: 1px dashed #3454d1;
+    }
+
+    .read-only-notice {
+        display: none;
+    }
+
+    .role-badge {
+        font-size: 12px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .role-badge.esg-head {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+    
+    .role-badge.esg-coordinator {
+        background: #e3f2fd;
+        color: #0d47a1;
+    }
+    
+    .role-badge.superadmin {
+        background: #fff3e0;
+        color: #e65100;
+    }
+    
+    .role-badge.viewer {
+        background: #f5f5f5;
+        color: #616161;
     }
 
     .chart-card {
@@ -342,33 +567,62 @@
     .chart-legend {
         display: flex;
         align-items: center;
-        gap: 20px;
+        gap: 24px;
+        flex-wrap: wrap;
     }
 
     .chart-legend-item {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         font-size: 13px;
-        color: #46536a;
+        font-weight: 600;
+        color: #1a2332;
         cursor: pointer;
         user-select: none;
-        padding: 4px 8px;
+        padding: 4px 10px;
         border-radius: 6px;
         transition: all 0.2s ease;
     }
 
-    .chart-legend-item:hover {
-        background: #f0f3f8;
+    .chart-legend-item .legend-color {
+        width: 20px;
+        height: 3px;
+        border-radius: 2px;
+        display: inline-block;
+    }
+
+    .chart-legend-item .legend-color.baseline-line {
+        background: #ff9f43;
+        height: 1.5px;
+        width: 20px;
+    }
+
+    .chart-legend-item .legend-color.projected-line {
+        background: #3454d1;
+        height: 1.5px;
+        width: 20px;
+    }
+
+    .chart-legend-item .legend-color.target-line {
+        background: #28a745;
+        height: 1.5px;
+        width: 20px;
     }
 
     .chart-legend-item input[type="checkbox"] {
-        width: 15px;
-        height: 15px;
-        accent-color: #16213e;
-        cursor: pointer;
-        margin: 0;
+        display: none;
     }
+
+    .chart-legend-item.hidden {
+        opacity: 0.4;
+        text-decoration: line-through;
+    }
+
+    .legend-text-actual { color: #3454d1; }
+    .legend-text-baseline { color: #ff9f43; }
+    .legend-text-projected { color: #3454d1; }
+    .legend-text-targeted { color: #28a745; }
 
     .chart-canvas-wrap {
         position: relative;
@@ -462,7 +716,7 @@
         .gd-grid {
             grid-template-columns: 1fr;
         }
-        
+
         .chart-card {
             min-height: 400px;
         }
@@ -472,20 +726,30 @@
         .gd-topbar {
             flex-direction: column;
             align-items: stretch;
+            padding: 16px;
         }
 
         .gd-topbar .gd-fields {
             flex-direction: column;
             align-items: stretch;
+            gap: 8px;
         }
 
         .gd-field-group {
-            justify-content: space-between;
+            min-width: unset;
+            max-width: 100%;
+            padding: 4px 10px 4px 12px;
+        }
+
+        .gd-field-group label {
+            min-width: 50px;
+            font-size: 12px;
         }
 
         .gd-field-group select {
-            min-width: 0;
-            flex: 1;
+            font-size: 13px;
+            padding: 8px 20px 8px 4px;
+            min-width: 60px;
         }
 
         .stat-row {
@@ -507,79 +771,31 @@
             flex-wrap: wrap;
             gap: 10px;
         }
-        
+
         .chart-card {
             min-height: 350px;
         }
     }
 
     @media (max-width: 480px) {
+        .gd-field-group {
+            flex-wrap: wrap;
+            padding: 6px 10px;
+        }
+
+        .gd-field-group label {
+            min-width: 100%;
+            margin-bottom: 2px;
+        }
+
         .stat-row {
             grid-template-columns: 1fr;
         }
-        
+
         .chart-card {
             min-height: 300px;
         }
     }
-   /* ===== View Initiative Button ===== */
-#viewInitiativeBtn {
-    padding: 10px 22px;
-    background: #3454d1;
-    color: #ffffff;
-    border: none;
-    border-radius: 12px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    white-space: nowrap;
-    text-decoration: none;
-}
-
-#viewInitiativeBtn:hover {
-    background: #1a3fa8;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(52, 84, 209, 0.3);
-    color: #ffffff;
-    text-decoration: none;
-}
-
-#viewInitiativeBtn i {
-    font-size: 16px;
-}
-
-/* ===== Responsive adjustments ===== */
-@media (max-width: 768px) {
-    .page-header {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 12px;
-    }
-    
-    .page-header-right {
-        margin-left: 0 !important;
-        width: 100%;
-    }
-    
-    .page-header-right-items {
-        width: 100%;
-    }
-    
-    .page-header-right-items-wrapper {
-        width: 100%;
-        flex-direction: column;
-    }
-    
-    #viewInitiativeBtn {
-        width: 100%;
-        justify-content: center;
-    }
-}
-
 </style>
 {% endblock %}
 
@@ -598,21 +814,41 @@
     <div class="page-header-right ms-auto">
         <div class="page-header-right-items">
             <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
-                <a href="{% url 'goals:initiative_list' %}?topic={{ material_topic|urlencode }}&goal={{ selected_goal|urlencode }}" 
-                   class="btn btn-primary" id="viewInitiativeBtn">
-                    <i class="fas fa-rocket"></i> View Initiative
+                <!-- Role Badge -->
+                {% if user_role %}
+                    <span class="role-badge 
+                        {% if user_role == 'ESG_HEAD' %}esg-head
+                        {% elif user_role == 'ESG_COORDINATOR' %}esg-coordinator
+                        {% elif user_role == 'SUPERADMIN' %}superadmin
+                        {% else %}viewer{% endif %}">
+                        <i class="fas 
+                            {% if user_role == 'ESG_HEAD' %}fa-crown
+                            {% elif user_role == 'ESG_COORDINATOR' %}fa-user-tie
+                            {% elif user_role == 'SUPERADMIN' %}fa-user-shield
+                            {% else %}fa-user{% endif %}">
+                        </i>
+                        {{ user_role_name|default:user_role }}
+                    </span>
+                {% endif %}
+                
+                <!-- Back to Dashboard Button -->
+                <a href="{% url 'goals:dashboard' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back
                 </a>
             </div>
         </div>
     </div>
 </div>
+
 <div class="gd-page">
 
     <!-- Top Toolbar -->
     <div class="gd-topbar">
         <div class="gd-fields">
+            <!-- Material Topic Dropdown -->
             <div class="gd-field-group">
-                <label for="gdMaterialTopic">Material Topic</label>
+                <span class="field-icon material-icon"><i class="fas fa-layer-group"></i></span>
+                <label for="gdMaterialTopic">Topic</label>
                 <select id="gdMaterialTopic" onchange="gdNavigateTopic(this.value)">
                     {% if all_material_topics %}
                         {% for topic in all_material_topics %}
@@ -624,7 +860,9 @@
                 </select>
             </div>
 
+            <!-- Goal Dropdown -->
             <div class="gd-field-group">
+                <span class="field-icon goal-icon"><i class="fas fa-bullseye"></i></span>
                 <label for="gdGoal">Goal</label>
                 <select id="gdGoal" onchange="gdGoalChanged(this.value)">
                     <option value="">Select Goal</option>
@@ -637,20 +875,53 @@
                     {% endif %}
                 </select>
             </div>
+
+            <!-- Plant Filter Dropdown -->
+            <div class="gd-field-group">
+                <span class="field-icon plant-icon"><i class="fas fa-industry"></i></span>
+                <label for="plantFilter">Plant</label>
+                <select id="plantFilter" onchange="gdPlantChanged(this.value)">
+                    <option value="">All Plants</option>
+                    {% if plants %}
+                        {% for plant in plants %}
+                            <option value="{{ plant.id }}" {% if plant.selected %}selected{% endif %}>
+                                {{ plant.name }}
+                            </option>
+                        {% endfor %}
+                    {% else %}
+                        <option value="">No plants available</option>
+                    {% endif %}
+                </select>
+            </div>
         </div>
     </div>
 
-    <!-- Metric Tabs -->
+    <!-- Metric Tabs with Current Values -->
     <div class="metric-tabs" id="metricTabs">
         {% if metrics %}
             {% for metric_name, values in metrics.items %}
-                <button type="button" 
-                        class="metric-tab {% if forloop.first %}active{% endif %}" 
-                        data-metric="{{ metric_name }}" 
+                <button type="button"
+                        class="metric-tab {% if forloop.first %}active{% endif %}"
+                        data-metric="{{ metric_name }}"
                         data-unit="{{ values.unit }}"
+                        data-kpi-id="{{ values.kpi_id }}"
+                        data-current-value="{{ values.current|default:0 }}"
                         onclick="selectMetric('{{ metric_name }}')">
                     {{ metric_name }}
                     <span class="metric-unit">{{ values.unit }}</span>
+                    <span class="kpi-current-value">
+                        <span class="value-number">
+                            {% if values.current != None and values.current != 0 %}
+                                {{ values.current|floatformat:2 }}
+                            {% else %}
+                                0.00
+                            {% endif %}
+                        </span>
+                        <span class="value-unit-small">{{ values.unit }}</span>
+                    </span>
+                    <span class="kpi-current-indicator">
+                        <i class="fas fa-circle" style="font-size: 6px; color: #28a745;"></i>
+                    </span>
                 </button>
             {% endfor %}
         {% else %}
@@ -672,29 +943,36 @@
                 <div class="stat-mini-card">
                     <span class="stat-label"><i class="fas fa-circle-dot"></i> Current</span>
                     <span class="stat-value current" id="statCurrent">0.00</span>
-                    <span class="stat-unit" id="statCurrentUnit">{{ config.unit|default:'' }}</span>
+                    <span class="stat-unit" id="statCurrentUnit">{{ active_unit|default:'' }}</span>
                 </div>
                 <div class="stat-mini-card">
                     <span class="stat-label"><i class="fas fa-arrow-trend-up"></i> Baseline</span>
                     <span class="stat-value baseline" id="statBaseline">0</span>
-                    <span class="stat-unit" id="statBaselineUnit">{{ config.unit|default:'' }}</span>
+                    <span class="stat-unit" id="statBaselineUnit">{{ active_unit|default:'' }}</span>
                 </div>
                 <div class="stat-mini-card">
                     <span class="stat-label"><i class="fas fa-crosshairs"></i> Target</span>
                     <span class="stat-value target" id="statTarget">0</span>
-                    <span class="stat-unit" id="statTargetUnit">{{ config.unit|default:'' }}</span>
+                    <span class="stat-unit" id="statTargetUnit">{{ active_unit|default:'' }}</span>
                 </div>
             </div>
 
             <!-- Config Panel -->
-            <div class="config-panel" id="configPanel">
+            <div class="config-panel {% if not can_manage_goals %}read-only{% endif %}" id="configPanel">
+                <span class="plant-scope-badge" id="plantScopeBadge">
+                    <i class="fas fa-globe"></i> All Plants
+                </span>
+
                 <form id="configForm" method="POST" action="{% url 'goals:goal_config_update' material_topic %}">
                     {% csrf_token %}
                     <input type="hidden" name="selected_goal" id="selectedGoal" value="{{ selected_goal }}">
-                    
+                    <input type="hidden" name="kpi_name" id="selectedKPI" value="">
+                    <input type="hidden" name="kpi_id" id="selectedKPIId" value="">
+                    <input type="hidden" name="plant_id" id="selectedPlantIdInput" value="">
+
                     <div class="config-field">
                         <label for="baselineYear">Baseline Year <span class="text-danger">*</span></label>
-                        <select class="form-control-mini" id="baselineYear" name="baseline_year" required>
+                        <select class="form-control-mini" id="baselineYear" name="baseline_year" required {% if not can_manage_goals %}disabled{% endif %}>
                             <option value="">Select Baseline Year</option>
                         </select>
                     </div>
@@ -702,12 +980,12 @@
                     <div class="config-field">
                         <label for="baselineValue">Baseline Value <span class="text-danger">*</span></label>
                         <input type="number" class="form-control-mini" id="baselineValue" name="baseline_value"
-                               value="{{ config.baseline_value|default:'' }}" required min="0" step="0.01" placeholder="Enter value">
+                               value="" required min="0" step="0.01" placeholder="Enter value" {% if not can_manage_goals %}readonly{% endif %}>
                     </div>
 
                     <div class="config-field">
                         <label for="targetYear">Target Year <span class="text-danger">*</span></label>
-                        <select class="form-control-mini" id="targetYear" name="target_year" required>
+                        <select class="form-control-mini" id="targetYear" name="target_year" required {% if not can_manage_goals %}disabled{% endif %}>
                             <option value="">Select Target Year</option>
                         </select>
                     </div>
@@ -716,7 +994,7 @@
                         <label for="targetReduction">Target Reduction <span class="text-danger">*</span></label>
                         <div class="pct-wrap">
                             <input type="number" class="form-control-mini" id="targetReduction" name="target_reduction"
-                                   value="{{ config.target_reduction|default:'' }}" required min="0" max="100" step="0.01" placeholder="Enter %">
+                                   value="" required min="0" max="100" step="0.01" placeholder="Enter %" {% if not can_manage_goals %}readonly{% endif %}>
                             <span>%</span>
                         </div>
                     </div>
@@ -724,18 +1002,27 @@
                     <div class="config-field">
                         <label for="targetValue">Target Value <span class="text-danger">*</span></label>
                         <input type="number" class="form-control-mini" id="targetValue" name="target_value"
-                               value="{{ config.target_value|default:'' }}" readonly>
+                               value="" readonly>
                     </div>
 
                     <div class="config-field">
                         <label for="unitInput">Unit <span class="text-danger">*</span></label>
                         <input type="text" class="form-control-mini" id="unitInput" name="unit"
-                               value="{{ config.unit|default:'' }}" placeholder="e.g. Kilolitre, tCO₂e">
+                               value="" placeholder="e.g. Kilolitre, tCO₂e" {% if not can_manage_goals %}readonly{% endif %}>
                     </div>
 
-                    <button type="submit" class="config-save-btn" id="saveConfigBtn">
-                        <i class="fas fa-save"></i> Save
-                    </button>
+                    <!-- Save Button - Only show for authorized users -->
+                    {% if can_manage_goals %}
+                        <button type="submit" class="config-save-btn" id="saveConfigBtn">
+                            <i class="fas fa-save"></i> Save
+                        </button>
+                    {% comment %} {% else %}
+                        <div class="read-only-notice" style="display: block; text-align: center; padding: 12px; background: #f0f4ff; border-radius: 8px; color: #3454d1; font-size: 13px; font-weight: 500; margin-top: 12px; border: 1px dashed #3454d1;">
+                            <i class="fas fa-info-circle me-2"></i>
+                            You are viewing this configuration in read-only mode. 
+                            Please contact your ESG Coordinator to make changes.
+                        </div> {% endcomment %}
+                    {% endif %}
                 </form>
             </div>
         </div>
@@ -743,19 +1030,19 @@
         <!-- Right Column - Chart -->
         <div class="chart-card">
             <div class="chart-card-header">
-                <h6 id="chartTitle">Select a metric</h6>
+                <h6 id="chartTitle">Diesel Consumption</h6>
                 <div class="chart-legend">
-                    <span class="chart-legend-item">
-                        <input type="checkbox" id="chkActual" checked onchange="toggleLine('Actual')">
-                        Actual
+                    <span class="chart-legend-item" onclick="toggleLegend('Baseline')">
+                        <span class="legend-color projected-line"></span>
+                        <span class="legend-text-projected">Actual</span>
                     </span>
-                    <span class="chart-legend-item">
-                        <input type="checkbox" id="chkProjected" checked onchange="toggleLine('Projected')">
-                        Projected
+                    <span class="chart-legend-item" onclick="toggleLegend('Projected')">
+                        <span class="legend-color baseline-line"></span>
+                        <span class="legend-text-baseline">Baseline</span>
                     </span>
-                    <span class="chart-legend-item">
-                        <input type="checkbox" id="chkTargeted" checked onchange="toggleLine('Targeted')">
-                        Targeted
+                    <span class="chart-legend-item" onclick="toggleLegend('Target')">
+                        <span class="legend-color target-line"></span>
+                        <span class="legend-text-targeted">Target</span>
                     </span>
                 </div>
             </div>
@@ -772,25 +1059,29 @@
 <!-- Toast Container -->
 <div class="toast-container" id="toastContainer"></div>
 
-<!-- Data passed to JS -->
+<!-- ===== DATA PASSED TO JS ===== -->
 {{ metrics|json_script:"metricsData" }}
 {{ config|json_script:"configData" }}
 {{ goals_json|json_script:"goalsData" }}
+{{ material_topic|json_script:"materialTopicData" }}
+{{ selected_goal|json_script:"selectedGoalData" }}
+{{ per_kpi_configs|json_script:"perKpiConfigs" }}
+{{ plants_json|json_script:"plantsData" }}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Get data from JSON scripts
+    // ===== DATA =====
     const metricsData = JSON.parse(document.getElementById('metricsData').textContent || '{}');
     const configData = JSON.parse(document.getElementById('configData').textContent || '{}');
     const goalsData = JSON.parse(document.getElementById('goalsData').textContent || '[]');
+    const materialTopicValue = JSON.parse(document.getElementById('materialTopicData').textContent || '""');
+    const selectedGoalInitial = JSON.parse(document.getElementById('selectedGoalData').textContent || '""');
+    const perKpiConfigs = JSON.parse(document.getElementById('perKpiConfigs').textContent || '{}');
+    const plantsData = JSON.parse(document.getElementById('plantsData').textContent || '[]');
 
-    console.log('=== DEBUG: Goal Detail Page ===');
-    console.log('Goals Data:', goalsData);
-    console.log('Metrics Data:', metricsData);
-    console.log('Config Data:', configData);
-
-    // Get DOM elements
+    // ===== DOM ELEMENTS =====
     const statCurrent = document.getElementById('statCurrent');
     const statBaseline = document.getElementById('statBaseline');
     const statTarget = document.getElementById('statTarget');
@@ -800,484 +1091,76 @@ document.addEventListener('DOMContentLoaded', function() {
     const chartTitle = document.getElementById('chartTitle');
     const emptyOverlay = document.getElementById('chartEmptyOverlay');
     const unitInput = document.getElementById('unitInput');
-    const goalSelect = document.getElementById('gdGoal');
-
-    // Get active metric (first one from metrics)
-    const metricNames = Object.keys(metricsData);
-    let activeMetric = metricNames.length > 0 ? metricNames[0] : null;
-    
-    console.log('Active Metric:', activeMetric);
-
-    let chartInstance = null;
-    let chartData = {};
-
-    // ===== Select Metric Function =====
-    window.selectMetric = function(metricName) {
-        activeMetric = metricName;
-        // Update active class on tabs
-        document.querySelectorAll('.metric-tab').forEach(function(tab) {
-            tab.classList.remove('active');
-            if (tab.getAttribute('data-metric') === metricName) {
-                tab.classList.add('active');
-            }
-        });
-        // Update chart title
-        chartTitle.textContent = metricName;
-        // Update unit
-        const m = metricsData[metricName] || {};
-        if (m.unit) {
-            unitInput.value = m.unit;
-            configData.unit = m.unit;
-            updateStatUnits(m.unit);
-        }
-        renderChart(metricName);
-    };
-
-    // ===== Update Stat Units =====
-    function updateStatUnits(unit) {
-        const unitDisplay = unit || '';
-        statCurrentUnit.textContent = unitDisplay;
-        statBaselineUnit.textContent = unitDisplay;
-        statTargetUnit.textContent = unitDisplay;
-    }
-
-    // ===== Goal Changed =====
-    window.gdGoalChanged = function(goalName) {
-        console.log('Goal changed to:', goalName);
-        
-        if (!goalName) {
-            const tabsContainer = document.getElementById('metricTabs');
-            tabsContainer.innerHTML = `
-                <div class="no-data" style="width:100%;">
-                    <i class="fas fa-chart-bar"></i>
-                    <h6>No KPIs available</h6>
-                    <p class="text-muted">Select a goal to view its KPIs.</p>
-                </div>
-            `;
-            emptyOverlay.style.display = 'flex';
-            updateStatUnits('');
-            return;
-        }
-        
-        document.getElementById('selectedGoal').value = goalName;
-        
-        // Redirect to the same page with the goal parameter
-        const url = "{% url 'goals:goal_detail' material_topic %}?goal=" + encodeURIComponent(goalName);
-        window.location.href = url;
-    };
-
-    // ===== Generate Year Options =====
-    function populateYearDropdowns() {
-        const currentYear = 2026;
-        const baselineSelect = document.getElementById('baselineYear');
-        const targetSelect = document.getElementById('targetYear');
-        
-        baselineSelect.innerHTML = '<option value="">Select Baseline Year</option>';
-        targetSelect.innerHTML = '<option value="">Select Target Year</option>';
-        
-        for (let year = currentYear; year >= 2006; year--) {
-            const option = document.createElement('option');
-            option.value = 'Apr-' + year;
-            option.textContent = 'Apr-' + year;
-            if (configData.baseline_year && configData.baseline_year === 'Apr-' + year) {
-                option.selected = true;
-            }
-            baselineSelect.appendChild(option);
-        }
-        
-        for (let year = currentYear; year <= currentYear + 20; year++) {
-            const option = document.createElement('option');
-            option.value = 'Apr-' + year;
-            option.textContent = 'Apr-' + year;
-            if (configData.target_year && configData.target_year === 'Apr-' + year) {
-                option.selected = true;
-            }
-            targetSelect.appendChild(option);
-        }
-    }
-
-    // ===== Generate Year Range =====
-    function getYearRange(startYear, endYear) {
-        const years = [];
-        for (let year = startYear; year <= endYear; year++) {
-            years.push(String(year));
-        }
-        return years;
-    }
-
-    // ===== Parse year from "Apr-YYYY" =====
-    function yearOf(label) {
-        if (!label) return null;
-        const parts = String(label).split('-');
-        const y = parseInt(parts[parts.length - 1], 10);
-        return isNaN(y) ? null : y;
-    }
-
-    // ===== Toggle Line (checkbox) =====
-    window.toggleLine = function(label) {
-        if (!chartInstance) return;
-        
-        let datasetIndex = -1;
-        if (label === 'Actual') {
-            return;
-        } else if (label === 'Projected') {
-            datasetIndex = chartInstance.data.datasets.findIndex(d => d.label === 'Projected');
-        } else if (label === 'Targeted') {
-            datasetIndex = chartInstance.data.datasets.findIndex(d => d.label === 'Targeted');
-        }
-        
-        if (datasetIndex !== -1) {
-            const meta = chartInstance.getDatasetMeta(datasetIndex);
-            meta.hidden = !meta.hidden;
-            chartInstance.update();
-        }
-    };
-
-    // ===== Render Chart =====
-    function renderChart(metricName) {
-        const m = metricsData[metricName] || {};
-        chartTitle.textContent = metricName || 'Select a metric';
-
-        if (m.unit) {
-            unitInput.value = m.unit;
-            configData.unit = m.unit;
-            updateStatUnits(m.unit);
-        }
-
-        const baselineValue = parseFloat(document.getElementById('baselineValue').value) || 0;
-        const targetValue = parseFloat(document.getElementById('targetValue').value) || 0;
-        const baselineYearStr = document.getElementById('baselineYear').value;
-        const targetYearStr = document.getElementById('targetYear').value;
-        
-        const baselineYear = yearOf(baselineYearStr);
-        const targetYear = yearOf(targetYearStr);
-
-        statCurrent.textContent = '0.00';
-        statBaseline.textContent = baselineValue.toFixed(2);
-        statTarget.textContent = targetValue.toFixed(2);
-
-        const hasBaselineTarget = baselineYear !== null && targetYear !== null &&
-            baselineValue > 0 && targetValue > 0 &&
-            baselineYear < targetYear;
-
-        if (chartInstance) {
-            chartInstance.destroy();
-            chartInstance = null;
-        }
-
-        if (!hasBaselineTarget) {
-            emptyOverlay.style.display = 'flex';
-            statCurrent.textContent = '0.00';
-            statBaseline.textContent = '0.00';
-            statTarget.textContent = '0.00';
-            return;
-        }
-        emptyOverlay.style.display = 'none';
-
-        const years = getYearRange(baselineYear, targetYear);
-        const numYears = years.length;
-
-        const baselineData = years.map(() => baselineValue);
-        const projectedData = years.map(() => baselineValue);
-
-        const targetData = years.map((_, index) => {
-            const progress = index / (numYears - 1);
-            return baselineValue - (baselineValue - targetValue) * progress;
-        });
-
-        chartData = {
-            years: years,
-            baseline: baselineValue,
-            target: targetValue,
-            baselineData: baselineData,
-            projectedData: projectedData,
-            targetData: targetData
-        };
-
-        const datasets = [];
-
-        datasets.push({
-            label: 'Projected',
-            data: projectedData,
-            borderColor: '#ff9f43',
-            borderWidth: 1.5,
-            borderDash: [],
-            tension: 0,
-            pointRadius: 3,
-            pointBackgroundColor: '#ff9f43',
-            pointBorderColor: '#ff9f43',
-            pointBorderWidth: 1,
-            fill: false,
-        });
-
-        datasets.push({
-            label: 'Targeted',
-            data: targetData,
-            borderColor: '#28a745',
-            borderWidth: 1.5,
-            tension: 0.3,
-            pointRadius: 3,
-            pointBackgroundColor: '#28a745',
-            pointBorderColor: '#28a745',
-            pointBorderWidth: 1,
-            fill: false,
-        });
-
-        const ctx = document.getElementById('metricChart').getContext('2d');
-        chartInstance = new Chart(ctx, {
-            type: 'line',
-            data: { 
-                labels: years,
-                datasets: datasets
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        backgroundColor: '#ffffff',
-                        titleColor: '#1a2332',
-                        bodyColor: '#1a2332',
-                        borderColor: '#e4e9f0',
-                        borderWidth: 1,
-                        padding: 12,
-                        cornerRadius: 8,
-                        displayColors: false,
-                        callbacks: {
-                            title: function(tooltipItems) {
-                                return 'Year: ' + tooltipItems[0].label;
-                            },
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                let value = context.parsed.y;
-                                if (value !== null && value !== undefined) {
-                                    return label + ': ' + value.toFixed(2);
-                                }
-                                return label;
-                            },
-                            afterBody: function(tooltipItems) {
-                                const index = tooltipItems[0].dataIndex;
-                                const baselineVal = chartData.baselineData[index];
-                                return 'Baseline: ' + baselineVal.toFixed(2);
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    y: { 
-                        beginAtZero: true,
-                        max: Math.ceil((baselineValue * 1.2) / 10) * 10,
-                        grid: { color: '#f0f3f8', drawBorder: false },
-                        ticks: {
-                            stepSize: Math.ceil((baselineValue * 1.2) / 10),
-                            font: { size: 11 }
-                        },
-                        title: {
-                            display: true,
-                            text: 'Value',
-                            color: '#8a94a6',
-                            font: { size: 12, weight: '500' }
-                        }
-                    },
-                    x: { 
-                        grid: { display: false },
-                        ticks: { font: { size: 11 }, maxRotation: 45 },
-                        title: {
-                            display: true,
-                            text: 'Year',
-                            color: '#8a94a6',
-                            font: { size: 12, weight: '500' }
-                        }
-                    },
-                },
-            },
-        });
-
-        // Apply checkbox states
-        const chkProjected = document.getElementById('chkProjected');
-        if (chkProjected && !chkProjected.checked) {
-            const idx = chartInstance.data.datasets.findIndex(d => d.label === 'Projected');
-            if (idx !== -1) {
-                chartInstance.getDatasetMeta(idx).hidden = true;
-                chartInstance.update();
-            }
-        }
-        
-        const chkTargeted = document.getElementById('chkTargeted');
-        if (chkTargeted && !chkTargeted.checked) {
-            const idx = chartInstance.data.datasets.findIndex(d => d.label === 'Targeted');
-            if (idx !== -1) {
-                chartInstance.getDatasetMeta(idx).hidden = true;
-                chartInstance.update();
-            }
-        }
-    }
-
-    // ===== Initialize =====
-    // Populate year dropdowns
-    populateYearDropdowns();
-    
-    // Set config values if they exist
-    if (configData.baseline_value) {
-        document.getElementById('baselineValue').value = configData.baseline_value;
-    }
-    if (configData.target_reduction) {
-        document.getElementById('targetReduction').value = configData.target_reduction;
-    }
-    if (configData.target_value) {
-        document.getElementById('targetValue').value = configData.target_value;
-    }
-    if (configData.unit) {
-        unitInput.value = configData.unit;
-        updateStatUnits(configData.unit);
-    }
-
-    // Calculate target if values exist
+    const selectedKPIInput = document.getElementById('selectedKPI');
+    const selectedKPIIdInput = document.getElementById('selectedKPIId');
+    const selectedPlantIdInput = document.getElementById('selectedPlantIdInput');
+    const plantScopeBadge = document.getElementById('plantScopeBadge');
+    const plantFilter = document.getElementById('plantFilter');
+    const baselineYearSelect = document.getElementById('baselineYear');
+    const targetYearSelect = document.getElementById('targetYear');
     const baselineValueInput = document.getElementById('baselineValue');
     const targetReductionInput = document.getElementById('targetReduction');
     const targetValueInput = document.getElementById('targetValue');
 
-    function calculateTarget() {
-        const baseline = parseFloat(baselineValueInput.value) || 0;
-        const reduction = parseFloat(targetReductionInput.value) || 0;
-        
-        if (baseline > 0 && reduction > 0) {
-            const calculated = baseline * (1 - reduction / 100);
-            targetValueInput.value = calculated.toFixed(2);
-        } else {
-            targetValueInput.value = '';
-        }
-        
-        if (activeMetric) {
-            renderChart(activeMetric);
-        }
+    const metricNames = Object.keys(metricsData);
+    let activeMetric = metricNames.length > 0 ? metricNames[0] : null;
+    let chartInstance = null;
+    let chartData = {
+        currentValue: 0,
+        years: [],
+        baseline: 0,
+        target: 0,
+        baselineData: [],
+        projectedData: [],
+        targetData: [],
+        actualData: []
+    };
+    let legendStates = {
+        'Baseline': true,
+        'Projected': true,
+        'Target': true
+    };
+
+    // ===== CHECK IF USER CAN EDIT =====
+    const canEdit = {{ can_manage_goals|yesno:"true,false" }};
+
+    // ===== HELPER FUNCTIONS =====
+    function getPlantFilterFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('plant_id') || '';
     }
 
-    baselineValueInput.addEventListener('input', calculateTarget);
-    targetReductionInput.addEventListener('input', calculateTarget);
-
-    document.getElementById('baselineYear').addEventListener('change', function() {
-        const baselineValue = parseFloat(baselineValueInput.value) || 0;
-        const targetVal = parseFloat(targetValueInput.value) || 0;
-        if (baselineValue > 0 && targetVal > 0) {
-            if (activeMetric) renderChart(activeMetric);
-        }
-    });
-    
-    document.getElementById('targetYear').addEventListener('change', function() {
-        const baselineValue = parseFloat(baselineValueInput.value) || 0;
-        const targetVal = parseFloat(targetValueInput.value) || 0;
-        if (baselineValue > 0 && targetVal > 0) {
-            if (activeMetric) renderChart(activeMetric);
-        }
-    });
-
-    unitInput.addEventListener('input', function() {
-        updateStatUnits(this.value);
-        configData.unit = this.value;
-    });
-
-    // Set initial active metric
-    if (activeMetric) {
-        chartTitle.textContent = activeMetric;
-        const firstMetric = metricsData[activeMetric];
-        if (firstMetric && firstMetric.unit) {
-            unitInput.value = firstMetric.unit;
-            updateStatUnits(firstMetric.unit);
-        }
-        // Set active class on first tab
-        const firstTab = document.querySelector('.metric-tab');
-        if (firstTab) {
-            firstTab.classList.add('active');
-        }
+    const plantFilterValue = getPlantFilterFromURL();
+    if (plantFilterValue && plantFilter) {
+        plantFilter.value = plantFilterValue;
     }
 
-    // Only render chart if all values are present
-    if (activeMetric && 
-        document.getElementById('baselineYear').value && 
-        document.getElementById('targetYear').value &&
-        parseFloat(baselineValueInput.value) > 0 && 
-        parseFloat(targetValueInput.value) > 0) {
-        renderChart(activeMetric);
-    } else {
-        emptyOverlay.style.display = 'flex';
+    function getCurrentPlantId() {
+        return document.getElementById('plantFilter')?.value || '';
     }
 
-    // ===== Config form submission (AJAX) =====
-    const configForm = document.getElementById('configForm');
-    const saveBtn = document.getElementById('saveConfigBtn');
+    function buildConfigKey(topic, goal, metricName, plantId) {
+        return `${topic}_${goal}_${metricName}_${plantId || 'all'}`;
+    }
 
-    configForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const inputs = this.querySelectorAll('input, select');
-        let isValid = true;
-        inputs.forEach(input => {
-            if (input.hasAttribute('required') && !input.value) {
-                input.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                input.classList.remove('is-invalid');
-            }
-        });
-
-        if (!isValid) {
-            showToast('Please fill in all required fields.', 'error');
+    function updatePlantScopeBadge(plantId, isPlantSpecific) {
+        if (!plantScopeBadge) return;
+        if (!plantId) {
+            plantScopeBadge.classList.remove('is-plant-specific');
+            plantScopeBadge.innerHTML = '<i class="fas fa-globe"></i> All Plants';
             return;
         }
+        const plantOption = document.querySelector(`#plantFilter option[value="${plantId}"]`);
+        const plantName = plantOption ? plantOption.textContent.trim() : `Plant ${plantId}`;
+        if (isPlantSpecific) {
+            plantScopeBadge.classList.add('is-plant-specific');
+            plantScopeBadge.innerHTML = `<i class="fas fa-industry"></i> ${plantName} (custom target)`;
+        } else {
+            plantScopeBadge.classList.remove('is-plant-specific');
+            plantScopeBadge.innerHTML = `<i class="fas fa-industry"></i> ${plantName} (using All Plants target)`;
+        }
+    }
 
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-
-        const formData = new FormData(this);
-        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-        fetch(this.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRFToken': csrftoken,
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                showToast(data.message || 'Configuration saved successfully!', 'success');
-                if (data.data) {
-                    configData.baseline_year = data.data.baseline_year || configData.baseline_year;
-                    configData.baseline_value = data.data.baseline_value || configData.baseline_value;
-                    configData.target_year = data.data.target_year || configData.target_year;
-                    configData.target_reduction = data.data.target_reduction || configData.target_reduction;
-                    configData.target_value = data.data.target_value || configData.target_value;
-                    configData.unit = data.data.unit || configData.unit;
-                    
-                    targetValueInput.value = data.data.target_value || targetValueInput.value;
-                    unitInput.value = data.data.unit || unitInput.value;
-                    updateStatUnits(unitInput.value);
-                    
-                    if (activeMetric) renderChart(activeMetric);
-                }
-            } else {
-                showToast(data.message || 'An error occurred. Please try again.', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('An error occurred. Please try again.', 'error');
-        })
-        .finally(() => {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="fas fa-save"></i> Save';
-        });
-    });
-
-    // ===== Toast notifications =====
     function showToast(message, type = 'success') {
         const container = document.getElementById('toastContainer');
         const toast = document.createElement('div');
@@ -1298,12 +1181,967 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 4000);
     }
 
-    window.gdShowToast = showToast;
+    window.showToast = showToast;
+
+    function updateStatUnits(unit) {
+        const unitDisplay = unit || '';
+        statCurrentUnit.textContent = unitDisplay;
+        statBaselineUnit.textContent = unitDisplay;
+        statTargetUnit.textContent = unitDisplay;
+    }
+
+    function updateMetricTabValue(metricName, currentValue, unit) {
+        const tabs = document.querySelectorAll('.metric-tab');
+        tabs.forEach(tab => {
+            if (tab.dataset.metric === metricName) {
+                const valueSpan = tab.querySelector('.kpi-current-value .value-number');
+                if (valueSpan) {
+                    valueSpan.textContent = currentValue !== undefined && currentValue !== null ?
+                        parseFloat(currentValue).toFixed(2) : '0.00';
+                }
+                const unitSpan = tab.querySelector('.kpi-current-value .value-unit-small');
+                if (unitSpan && unit) {
+                    unitSpan.textContent = unit;
+                }
+                tab.dataset.currentValue = currentValue || 0;
+            }
+        });
+    }
+
+    // ===== LEGEND TOGGLE =====
+    window.toggleLegend = function(label) {
+        legendStates[label] = !legendStates[label];
+        
+        // Update legend item styling
+        const items = document.querySelectorAll('.chart-legend-item');
+        items.forEach(item => {
+            if (item.textContent.includes(label)) {
+                if (legendStates[label]) {
+                    item.classList.remove('hidden');
+                } else {
+                    item.classList.add('hidden');
+                }
+            }
+        });
+
+        // Update chart
+        if (chartInstance) {
+            let datasetIndex = -1;
+            if (label === 'Baseline') {
+                datasetIndex = chartInstance.data.datasets.findIndex(d => d.label === 'Baseline');
+            } else if (label === 'Projected') {
+                datasetIndex = chartInstance.data.datasets.findIndex(d => d.label === 'Projected');
+            } else if (label === 'Target') {
+                datasetIndex = chartInstance.data.datasets.findIndex(d => d.label === 'Target');
+            }
+            
+            if (datasetIndex !== -1) {
+                const meta = chartInstance.getDatasetMeta(datasetIndex);
+                meta.hidden = !legendStates[label];
+                chartInstance.update();
+            }
+        }
+    };
+
+    // ===== FETCH FUNCTIONS =====
+    function fetchCurrentValue(metricName) {
+        const topic = materialTopicValue;
+        const goal = document.getElementById('selectedGoal').value || selectedGoalInitial;
+        const plantId = getCurrentPlantId();
+
+        const metric = metricsData[metricName];
+        if (!metric) {
+            return Promise.resolve(0);
+        }
+
+        let url = `/goals/api/kpi/current-value/?metric_name=${encodeURIComponent(metricName)}`;
+
+        if (topic) url += `&topic=${encodeURIComponent(topic)}`;
+        if (goal) url += `&goal=${encodeURIComponent(goal)}`;
+        if (plantId) url += `&plant_id=${encodeURIComponent(plantId)}`;
+
+        const company = document.getElementById('company')?.value;
+        const financialYear = document.getElementById('financialYear')?.value;
+        const financialMonth = document.getElementById('financialMonth')?.value;
+        const assignment = document.getElementById('assignmentId')?.value;
+
+        if (company) url += `&company_id=${company}`;
+        if (financialYear) url += `&financial_year_id=${financialYear}`;
+        if (financialMonth) url += `&financial_month_id=${financialMonth}`;
+        if (assignment) url += `&assignment_id=${assignment}`;
+
+        return fetch(url)
+            .then(response => {
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                return response.json();
+            })
+            .then(result => {
+                if (result.success) {
+                    const data = result.data;
+                    const currentVal = parseFloat(data.current_value) || 0;
+
+                    updateMetricTabValue(metricName, currentVal, data.unit);
+                    statCurrent.textContent = currentVal.toFixed(2);
+                    chartData.currentValue = currentVal;
+
+                    if (metricsData[metricName]) {
+                        metricsData[metricName].current = currentVal;
+                        metricsData[metricName].is_plant_specific = data.is_plant_specific;
+                    }
+
+                    if (data.baseline_value !== undefined) {
+                        statBaseline.textContent = parseFloat(data.baseline_value || 0).toFixed(2);
+                        baselineValueInput.value = data.baseline_value || '';
+                    }
+                    if (data.baseline_year !== undefined) {
+                        baselineYearSelect.value = data.baseline_year || '';
+                    }
+                    if (data.target_value !== undefined) {
+                        statTarget.textContent = parseFloat(data.target_value || 0).toFixed(2);
+                        targetValueInput.value = data.target_value || '';
+                    }
+                    if (data.target_year !== undefined) {
+                        targetYearSelect.value = data.target_year || '';
+                    }
+                    if (data.unit) {
+                        updateStatUnits(data.unit);
+                        unitInput.value = data.unit;
+                    }
+                    if (data.target_reduction !== undefined) {
+                        targetReductionInput.value = data.target_reduction || '';
+                    }
+
+                    updatePlantScopeBadge(plantId, data.is_plant_specific);
+
+                    if (activeMetric) {
+                        renderChart(activeMetric);
+                        if (currentVal > 0) {
+                            statCurrent.textContent = currentVal.toFixed(2);
+                            chartData.currentValue = currentVal;
+                        }
+                    }
+
+                    return currentVal;
+                }
+                return 0;
+            })
+            .catch(error => {
+                console.error('Error fetching current value:', error);
+                return 0;
+            });
+    }
+
+    function fetchKPIConfig(metricName, plantId) {
+        const topic = materialTopicValue;
+        const goal = document.getElementById('selectedGoal').value || selectedGoalInitial;
+
+        let url = `/goals/api/kpi/config/?topic=${encodeURIComponent(topic)}&goal=${encodeURIComponent(goal)}&metric_name=${encodeURIComponent(metricName)}`;
+        if (plantId) {
+            url += `&plant_id=${encodeURIComponent(plantId)}`;
+        }
+
+        return fetch(url)
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    const configKey = buildConfigKey(topic, goal, metricName, plantId || 'all');
+                    perKpiConfigs[configKey] = result.config;
+                    return result.config;
+                }
+                return null;
+            })
+            .catch(error => {
+                console.error('Error fetching config:', error);
+                return null;
+            });
+    }
+
+    // ===== APPLY CONFIG =====
+    function applyConfigToUI(metricName, metric, kpiConfig, plantId) {
+        const currentValue = parseFloat(statCurrent.textContent) || chartData.currentValue || 0;
+
+        baselineYearSelect.value = kpiConfig.baseline_year || '';
+        baselineValueInput.value = kpiConfig.baseline_value || '';
+        targetYearSelect.value = kpiConfig.target_year || '';
+        targetReductionInput.value = kpiConfig.target_reduction || '';
+        targetValueInput.value = kpiConfig.target_value || '';
+        unitInput.value = kpiConfig.unit || metric.unit || '';
+
+        selectedKPIInput.value = metricName;
+        selectedKPIIdInput.value = metric.kpi_id || '';
+        selectedPlantIdInput.value = plantId || '';
+
+        statBaseline.textContent = kpiConfig.baseline_value ? parseFloat(kpiConfig.baseline_value).toFixed(2) : '0.00';
+        statTarget.textContent = kpiConfig.target_value ? parseFloat(kpiConfig.target_value).toFixed(2) : '0.00';
+
+        if (currentValue > 0) {
+            statCurrent.textContent = currentValue.toFixed(2);
+            chartData.currentValue = currentValue;
+        } else if (metric.current && metric.current > 0) {
+            statCurrent.textContent = parseFloat(metric.current).toFixed(2);
+            chartData.currentValue = parseFloat(metric.current);
+        }
+
+        updateStatUnits(kpiConfig.unit || metric.unit || '');
+        updatePlantScopeBadge(plantId, kpiConfig.plant_id ? true : false);
+
+        configData.baseline_year = kpiConfig.baseline_year || '';
+        configData.baseline_value = kpiConfig.baseline_value || '';
+        configData.target_year = kpiConfig.target_year || '';
+        configData.target_reduction = kpiConfig.target_reduction || '';
+        configData.target_value = kpiConfig.target_value || '';
+        configData.unit = kpiConfig.unit || metric.unit || '';
+
+        if (activeMetric) {
+            renderChart(activeMetric);
+        }
+    }
+
+    function loadKPIConfig(metricName) {
+        const metric = metricsData[metricName];
+        if (!metric) return;
+
+        const plantId = getCurrentPlantId();
+        const configKey = buildConfigKey(materialTopicValue, selectedGoalInitial, metricName, plantId);
+        let kpiConfig = perKpiConfigs[configKey] || {};
+
+        if (plantId && !kpiConfig.baseline_value) {
+            fetchKPIConfig(metricName, plantId).then(config => {
+                if (config) {
+                    kpiConfig = config;
+                    perKpiConfigs[configKey] = kpiConfig;
+                    applyConfigToUI(metricName, metric, kpiConfig, plantId);
+                    fetchCurrentValue(metricName);
+                } else {
+                    const fallbackKey = buildConfigKey(materialTopicValue, selectedGoalInitial, metricName, '');
+                    const fallbackConfig = perKpiConfigs[fallbackKey] || {};
+                    applyConfigToUI(metricName, metric, fallbackConfig, plantId);
+                    showToast('Using default configuration for this plant.', 'warning');
+                }
+            });
+        } else {
+            applyConfigToUI(metricName, metric, kpiConfig, plantId);
+            if (plantId || !kpiConfig.baseline_value) {
+                fetchCurrentValue(metricName);
+            }
+        }
+    }
+    // ===== SAVE UNSAVED CONFIG TO SESSION =====
+    function saveUnsavedConfig(metricName) {
+        // Only save if user can edit
+        if (!canEdit) return;
+        
+        const topic = materialTopicValue;
+        const goal = document.getElementById('selectedGoal').value || selectedGoalInitial;
+        const plantId = getCurrentPlantId();
+        const plantKey = plantId || 'all';
+        
+        // Get current form values
+        const formData = {
+            baseline_year: document.getElementById('baselineYear').value,
+            baseline_value: document.getElementById('baselineValue').value,
+            target_year: document.getElementById('targetYear').value,
+            target_reduction: document.getElementById('targetReduction').value,
+            target_value: document.getElementById('targetValue').value,
+            unit: document.getElementById('unitInput').value,
+        };
+        
+        // Check if any field has value (to determine if there are unsaved changes)
+        const hasValues = Object.values(formData).some(val => val !== '' && val !== null && val !== undefined);
+        
+        if (!hasValues) {
+            // Clear unsaved config if all fields are empty
+            const unsavedKey = `${topic}_${goal}_${metricName}_${plantKey}`;
+            let unsavedConfigs = JSON.parse(sessionStorage.getItem('unsaved_kpi_configs') || '{}');
+            delete unsavedConfigs[unsavedKey];
+            sessionStorage.setItem('unsaved_kpi_configs', JSON.stringify(unsavedConfigs));
+            return;
+        }
+        
+        // Save to sessionStorage (this will be sent to server on page load)
+        const unsavedKey = `${topic}_${goal}_${metricName}_${plantKey}`;
+        let unsavedConfigs = JSON.parse(sessionStorage.getItem('unsaved_kpi_configs') || '{}');
+        unsavedConfigs[unsavedKey] = {
+            ...formData,
+            timestamp: new Date().getTime()
+        };
+        sessionStorage.setItem('unsaved_kpi_configs', JSON.stringify(unsavedConfigs));
+        
+        console.log(`Saved unsaved config for ${metricName}:`, formData);
+    }
+
+    // ===== RESTORE UNSAVED CONFIG FROM SESSION =====
+    function restoreUnsavedConfig(metricName) {
+        // Only restore if user can edit
+        if (!canEdit) return false;
+        
+        const topic = materialTopicValue;
+        const goal = document.getElementById('selectedGoal').value || selectedGoalInitial;
+        const plantId = getCurrentPlantId();
+        const plantKey = plantId || 'all';
+        
+        const unsavedKey = `${topic}_${goal}_${metricName}_${plantKey}`;
+        const unsavedConfigs = JSON.parse(sessionStorage.getItem('unsaved_kpi_configs') || '{}');
+        const config = unsavedConfigs[unsavedKey];
+        
+        if (config) {
+            document.getElementById('baselineYear').value = config.baseline_year || '';
+            document.getElementById('baselineValue').value = config.baseline_value || '';
+            document.getElementById('targetYear').value = config.target_year || '';
+            document.getElementById('targetReduction').value = config.target_reduction || '';
+            document.getElementById('targetValue').value = config.target_value || '';
+            document.getElementById('unitInput').value = config.unit || '';
+            
+            // Update stat cards
+            if (config.baseline_value) {
+                document.getElementById('statBaseline').textContent = parseFloat(config.baseline_value).toFixed(2);
+            }
+            if (config.target_value) {
+                document.getElementById('statTarget').textContent = parseFloat(config.target_value).toFixed(2);
+            }
+            if (config.unit) {
+                updateStatUnits(config.unit);
+            }
+            
+            return true;
+        }
+        return false;
+    }
+
+    // ===== CLEAR UNSAVED CONFIG =====
+    function clearUnsavedConfig(metricName) {
+        const topic = materialTopicValue;
+        const goal = document.getElementById('selectedGoal').value || selectedGoalInitial;
+        const plantId = getCurrentPlantId();
+        const plantKey = plantId || 'all';
+        
+        const unsavedKey = `${topic}_${goal}_${metricName}_${plantKey}`;
+        let unsavedConfigs = JSON.parse(sessionStorage.getItem('unsaved_kpi_configs') || '{}');
+        delete unsavedConfigs[unsavedKey];
+        sessionStorage.setItem('unsaved_kpi_configs', JSON.stringify(unsavedConfigs));
+    }
+    // ===== SELECT METRIC =====
+    window.selectMetric = function(metricName) {
+        // Save current unsaved config before switching
+        if (activeMetric && activeMetric !== metricName) {
+            saveUnsavedConfig(activeMetric);
+        }
+        
+        const currentValue = parseFloat(statCurrent.textContent) || chartData.currentValue || 0;
+
+        activeMetric = metricName;
+        document.querySelectorAll('.metric-tab').forEach(function(tab) {
+            tab.classList.remove('active');
+            if (tab.getAttribute('data-metric') === metricName) {
+                tab.classList.add('active');
+            }
+        });
+        chartTitle.textContent = metricName;
+
+        // Try to restore unsaved config first
+        const hasUnsaved = restoreUnsavedConfig(metricName);
+        
+        if (!hasUnsaved) {
+            // If no unsaved config, load from server
+            loadKPIConfig(metricName);
+        } else {
+            // Update the UI to reflect unsaved changes
+            const metric = metricsData[metricName];
+            if (metric) {
+                const baselineVal = parseFloat(document.getElementById('baselineValue').value) || 0;
+                const targetVal = parseFloat(document.getElementById('targetValue').value) || 0;
+                const unit = document.getElementById('unitInput').value || metric.unit || '';
+                
+                // Update stat cards
+                if (baselineVal > 0) {
+                    document.getElementById('statBaseline').textContent = baselineVal.toFixed(2);
+                }
+                if (targetVal > 0) {
+                    document.getElementById('statTarget').textContent = targetVal.toFixed(2);
+                }
+                if (unit) {
+                    updateStatUnits(unit);
+                }
+                
+                // Update chart
+                renderChart(metricName);
+            }
+        }
+
+        if (currentValue > 0) {
+            statCurrent.textContent = currentValue.toFixed(2);
+            chartData.currentValue = currentValue;
+        }
+
+        const activeTab = document.querySelector('.metric-tab.active');
+        if (activeTab) {
+            const tabCurrentValue = parseFloat(activeTab.dataset.currentValue) || 0;
+            if (tabCurrentValue > 0) {
+                statCurrent.textContent = tabCurrentValue.toFixed(2);
+                chartData.currentValue = tabCurrentValue;
+            }
+        }
+
+        renderChart(metricName);
+        setTimeout(function() {
+            fetchCurrentValue(metricName);
+        }, 300);
+    };
+
+    // ===== YEAR HELPERS =====
+    function populateYearDropdowns() {
+        const currentYear = new Date().getFullYear();
+        
+        baselineYearSelect.innerHTML = '<option value="">Select Baseline Year</option>';
+        targetYearSelect.innerHTML = '<option value="">Select Target Year</option>';
+
+        for (let year = currentYear; year >= 2000; year--) {
+            const option = document.createElement('option');
+            option.value = String(year);
+            option.textContent = String(year);
+            baselineYearSelect.appendChild(option);
+        }
+
+        for (let year = currentYear; year <= currentYear + 20; year++) {
+            const option = document.createElement('option');
+            option.value = String(year);
+            option.textContent = String(year);
+            targetYearSelect.appendChild(option);
+        }
+    }
+
+    function getYearRange(startYear, endYear) {
+        const years = [];
+        for (let year = startYear; year <= endYear; year++) {
+            years.push(String(year));
+        }
+        return years;
+    }
+
+    function yearOf(label) {
+        if (!label) return null;
+        const y = parseInt(String(label), 10);
+        return isNaN(y) ? null : y;
+    }
+
+    // ===== RENDER CHART =====
+    function renderChart(metricName) {
+        const m = metricsData[metricName] || {};
+        chartTitle.textContent = metricName || 'Select a metric';
+
+        if (m.unit) {
+            unitInput.value = m.unit;
+            configData.unit = m.unit;
+            updateStatUnits(m.unit);
+        }
+
+        const baselineValue = parseFloat(baselineValueInput.value) || 0;
+        const targetValue = parseFloat(targetValueInput.value) || 0;
+        const baselineYearStr = baselineYearSelect.value;
+        const targetYearStr = targetYearSelect.value;
+
+        const baselineYear = yearOf(baselineYearStr);
+        const targetYear = yearOf(targetYearStr);
+
+        const currentValue = parseFloat(statCurrent.textContent) || chartData.currentValue || 0;
+
+        statBaseline.textContent = baselineValue.toFixed(2);
+        statTarget.textContent = targetValue.toFixed(2);
+
+        if (currentValue > 0) {
+            statCurrent.textContent = currentValue.toFixed(2);
+            chartData.currentValue = currentValue;
+        }
+
+        const hasBaselineTarget = baselineYear !== null && targetYear !== null &&
+            baselineValue > 0 && targetValue > 0 &&
+            baselineYear < targetYear;
+
+        if (chartInstance) {
+            chartInstance.destroy();
+            chartInstance = null;
+        }
+
+        if (!hasBaselineTarget) {
+            emptyOverlay.style.display = 'flex';
+            chartData = {
+                currentValue: currentValue,
+                years: [],
+                baseline: 0,
+                target: 0,
+                baselineData: [],
+                projectedData: [],
+                targetData: [],
+                actualData: []
+            };
+            return;
+        }
+        emptyOverlay.style.display = 'none';
+
+        const years = getYearRange(baselineYear, targetYear);
+        const numYears = years.length;
+
+        // ===== DATA CALCULATION =====
+        // Baseline and Projected stay flat at the baseline value the whole way through.
+        // Only Target slopes down from the baseline value to the target value.
+        const baselineData = years.map(() => baselineValue);
+        const projectedDataFlat = years.map(() => baselineValue);
+        const targetDeclineData = years.map((_, index) => {
+            const progress = index / (numYears - 1);
+            return baselineValue - (baselineValue - targetValue) * progress;
+        });
+
+        chartData = {
+            years: years,
+            baseline: baselineValue,
+            target: targetValue,
+            baselineData: baselineData,
+            projectedData: projectedDataFlat,
+            targetData: targetDeclineData,
+            currentValue: currentValue
+        };
+
+        // ===== CREATE DATASETS =====
+        const datasets = [
+            {
+                label: 'Baseline',
+                data: baselineData,
+                borderColor: '#ff9f43',
+                borderWidth: 1.5,
+                tension: 0,
+                pointRadius: 4,
+                pointBackgroundColor: '#ff9f43',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 1,
+                fill: false,
+                order: 0,
+                datalabels: {
+                    align: 'top',
+                    anchor: 'end',
+                    offset: 6,
+                    color: '#ff9f43'
+                }
+            },
+            {
+                label: 'Projected',
+                data: projectedDataFlat,
+                borderColor: '#3454d1',
+                borderWidth: 1.5,
+                tension: 0,
+                pointRadius: 4,
+                pointBackgroundColor: '#3454d1',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 1,
+                fill: false,
+                order: 1,
+                datalabels: {
+                    align: 'bottom',
+                    anchor: 'end',
+                    offset: 6,
+                    color: '#3454d1'
+                }
+            },
+            {
+                label: 'Target',
+                data: targetDeclineData,
+                borderColor: '#28a745',
+                borderWidth: 1.5,
+                tension: 0,
+                pointRadius: 4,
+                pointBackgroundColor: '#28a745',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 1,
+                fill: false,
+                order: 2,
+                datalabels: {
+                    align: 'top',
+                    anchor: 'end',
+                    offset: 6,
+                    color: '#28a745'
+                }
+            }
+        ];
+
+        const ctx = document.getElementById('metricChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+            type: 'line',
+            data: { labels: years, datasets: datasets },
+            plugins: [ChartDataLabels],
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { 
+                    mode: 'index', 
+                    intersect: false 
+                },
+                plugins: {
+                    legend: { 
+                        display: false  // We use custom legend
+                    },
+                    datalabels: {
+                        font: { size: 11, weight: '700' },
+                        formatter: function(value) {
+                            return Math.round(value);
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: '#ffffff',
+                        titleColor: '#1a2332',
+                        bodyColor: '#1a2332',
+                        borderColor: '#e4e9f0',
+                        borderWidth: 1,
+                        padding: 12,
+                        cornerRadius: 8,
+                        displayColors: true,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += context.parsed.y.toFixed(2) + ' ' + (m.unit || '');
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: Math.ceil((Math.max(baselineValue, targetValue) * 1.3) / 10) * 10 || 100,
+                        grid: { 
+                            color: '#f0f3f8', 
+                            drawBorder: false 
+                        },
+                        ticks: { 
+                            stepSize: Math.ceil((Math.max(baselineValue, targetValue) * 1.3) / 6) || 10,
+                            font: {
+                                size: 11,
+                                weight: '500'
+                            },
+                            color: '#6b7a8f'
+                        },
+                        title: {
+                            display: true,
+                            text: m.unit || 'Value',
+                            color: '#8a94a6',
+                            font: { size: 12, weight: '500' }
+                        }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { 
+                            maxRotation: 45,
+                            font: {
+                                size: 11,
+                                weight: '500'
+                            },
+                            color: '#6b7a8f'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Year',
+                            color: '#8a94a6',
+                            font: { size: 12, weight: '500' }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Apply legend states
+        Object.keys(legendStates).forEach(label => {
+            let datasetIndex = -1;
+            if (label === 'Baseline') {
+                datasetIndex = chartInstance.data.datasets.findIndex(d => d.label === 'Baseline');
+            } else if (label === 'Projected') {
+                datasetIndex = chartInstance.data.datasets.findIndex(d => d.label === 'Projected');
+            } else if (label === 'Target') {
+                datasetIndex = chartInstance.data.datasets.findIndex(d => d.label === 'Target');
+            }
+            
+            if (datasetIndex !== -1) {
+                chartInstance.getDatasetMeta(datasetIndex).hidden = !legendStates[label];
+            }
+        });
+        chartInstance.update();
+    }
+
+    // ===== CALCULATE TARGET =====
+    function calculateTarget() {
+        const baseline = parseFloat(baselineValueInput.value) || 0;
+        const reduction = parseFloat(targetReductionInput.value) || 0;
+
+        if (baseline > 0 && reduction > 0) {
+            const calculated = baseline * (1 - reduction / 100);
+            targetValueInput.value = calculated.toFixed(2);
+        } else {
+            targetValueInput.value = '';
+        }
+
+        const currentValue = parseFloat(statCurrent.textContent) || chartData.currentValue || 0;
+
+        if (activeMetric) {
+            renderChart(activeMetric);
+            if (currentValue > 0) {
+                statCurrent.textContent = currentValue.toFixed(2);
+                chartData.currentValue = currentValue;
+            }
+        }
+    }
+
+    // ===== NAVIGATION =====
+    window.gdGoalChanged = function(goalName) {
+        if (!goalName) {
+            const tabsContainer = document.getElementById('metricTabs');
+            tabsContainer.innerHTML = `
+                <div class="no-data" style="width:100%;">
+                    <i class="fas fa-chart-bar"></i>
+                    <h6>No KPIs available</h6>
+                    <p class="text-muted">Select a goal to view its KPIs.</p>
+                </div>
+            `;
+            emptyOverlay.style.display = 'flex';
+            updateStatUnits('');
+            return;
+        }
+
+        document.getElementById('selectedGoal').value = goalName;
+        let url = "{% url 'goals:goal_detail' material_topic %}?goal=" + encodeURIComponent(goalName);
+        const plantId = getCurrentPlantId();
+        if (plantId) {
+            url += "&plant_id=" + encodeURIComponent(plantId);
+        }
+        window.location.href = url;
+    };
+
+    window.gdPlantChanged = function(plantId) {
+        const url = new URL(window.location.href);
+        if (plantId) {
+            url.searchParams.set('plant_id', plantId);
+        } else {
+            url.searchParams.delete('plant_id');
+        }
+        window.location.href = url.toString();
+    };
+
+    window.gdNavigateTopic = function(url) {
+        if (url) window.location.href = url;
+    };
+
+    // ===== INITIALIZE =====
+    populateYearDropdowns();
+
+    chartData.currentValue = 0;
+    selectedPlantIdInput.value = getCurrentPlantId();
+
+    if (activeMetric) {
+        loadKPIConfig(activeMetric);
+        chartTitle.textContent = activeMetric;
+        const firstMetric = metricsData[activeMetric];
+        if (firstMetric && firstMetric.unit) {
+            unitInput.value = firstMetric.unit;
+            updateStatUnits(firstMetric.unit);
+        }
+        const firstTab = document.querySelector('.metric-tab');
+        if (firstTab) {
+            firstTab.classList.add('active');
+            const currentValue = parseFloat(firstTab.dataset.currentValue) || 0;
+            if (currentValue > 0) {
+                statCurrent.textContent = currentValue.toFixed(2);
+                chartData.currentValue = currentValue;
+            }
+        }
+    }
+
+    const hasBaselineYear = baselineYearSelect.value;
+    const hasTargetYear = targetYearSelect.value;
+    const hasBaselineValue = parseFloat(baselineValueInput.value) > 0;
+    const hasTargetValue = parseFloat(targetValueInput.value) > 0;
+
+    if (activeMetric && hasBaselineYear && hasTargetYear && hasBaselineValue && hasTargetValue) {
+        renderChart(activeMetric);
+    } else {
+        emptyOverlay.style.display = 'flex';
+    }
+
+    // ===== EVENT LISTENERS =====
+    baselineValueInput.addEventListener('input', calculateTarget);
+    targetReductionInput.addEventListener('input', calculateTarget);
+
+    baselineYearSelect.addEventListener('change', function() {
+        if (activeMetric) {
+            const currentValue = parseFloat(statCurrent.textContent) || chartData.currentValue || 0;
+            renderChart(activeMetric);
+            if (currentValue > 0) {
+                statCurrent.textContent = currentValue.toFixed(2);
+                chartData.currentValue = currentValue;
+            }
+        }
+    });
+
+    targetYearSelect.addEventListener('change', function() {
+        if (activeMetric) {
+            const currentValue = parseFloat(statCurrent.textContent) || chartData.currentValue || 0;
+            renderChart(activeMetric);
+            if (currentValue > 0) {
+                statCurrent.textContent = currentValue.toFixed(2);
+                chartData.currentValue = currentValue;
+            }
+        }
+    });
+
+    // ===== CONFIG FORM SUBMISSION =====
+    const configForm = document.getElementById('configForm');
+    const saveBtn = document.getElementById('saveConfigBtn');
+
+    if (configForm) {
+        configForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // If user can't edit, prevent submission
+            if (!canEdit) {
+                showToast('You do not have permission to save configuration.', 'error');
+                return;
+            }
+
+            const inputs = this.querySelectorAll('input, select');
+            let isValid = true;
+            inputs.forEach(input => {
+                if (input.hasAttribute('required') && !input.value) {
+                    input.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    input.classList.remove('is-invalid');
+                }
+            });
+
+            if (!isValid) {
+                showToast('Please fill in all required fields.', 'error');
+                return;
+            }
+
+            if (!selectedKPIInput.value) {
+                showToast('Please select a KPI first.', 'error');
+                return;
+            }
+
+            selectedPlantIdInput.value = getCurrentPlantId();
+
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            }
+
+            const formData = new FormData(this);
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': csrftoken,
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToast(data.message || 'Configuration saved successfully!', 'success');
+                    if (data.data) {
+                        const savedPlantId = data.data.plant_id || '';
+                        const configKey = buildConfigKey(materialTopicValue, selectedGoalInitial, selectedKPIInput.value, savedPlantId);
+                        perKpiConfigs[configKey] = {
+                            baseline_year: data.data.baseline_year || '',
+                            baseline_value: data.data.baseline_value || '',
+                            target_year: data.data.target_year || '',
+                            target_reduction: data.data.target_reduction || '',
+                            target_value: data.data.target_value || '',
+                            unit: data.data.unit || '',
+                            selected_goal: selectedGoalInitial,
+                            selected_kpi: selectedKPIInput.value,
+                            kpi_id: data.data.kpi_id || '',
+                            plant_id: savedPlantId || null
+                        };
+
+                        baselineValueInput.value = data.data.baseline_value || '';
+                        targetValueInput.value = data.data.target_value || '';
+                        unitInput.value = data.data.unit || '';
+                        updateStatUnits(data.data.unit || '');
+
+                        if (metricsData[selectedKPIInput.value]) {
+                            metricsData[selectedKPIInput.value].is_plant_specific = !!savedPlantId;
+                        }
+                        updatePlantScopeBadge(savedPlantId, !!savedPlantId);
+
+                        const currentValue = parseFloat(statCurrent.textContent) || chartData.currentValue || 0;
+
+                        if (activeMetric) {
+                            renderChart(activeMetric);
+                            if (currentValue > 0) {
+                                statCurrent.textContent = currentValue.toFixed(2);
+                                chartData.currentValue = currentValue;
+                            }
+                        }
+                        
+                        // Clear unsaved config after successful save
+                        clearUnsavedConfig(selectedKPIInput.value);
+                    }
+                } else {
+                    showToast(data.message || 'An error occurred. Please try again.', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('An error occurred. Please try again.', 'error');
+            })
+            .finally(() => {
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fas fa-save"></i> Save';
+                }
+            });
+        });
+    }
 });
 
-// ===== Material Topic switcher =====
-function gdNavigateTopic(url) {
-    if (url) window.location.href = url;
-}
+// ===== GLOBAL FUNCTIONS =====
+window.selectMetric = function(metricName) {
+    if (typeof window._selectMetric === 'function') {
+        window._selectMetric(metricName);
+    }
+};
+
+window.toggleLegend = function(label) {
+    if (typeof window._toggleLegend === 'function') {
+        window._toggleLegend(label);
+    }
+};
+
+window.gdGoalChanged = function(goalName) {
+    if (typeof window._gdGoalChanged === 'function') {
+        window._gdGoalChanged(goalName);
+    }
+};
+
+window.gdPlantChanged = function(plantId) {
+    if (typeof window._gdPlantChanged === 'function') {
+        window._gdPlantChanged(plantId);
+    }
+};
+
+window.gdNavigateTopic = function(url) {
+    if (typeof window._gdNavigateTopic === 'function') {
+        window._gdNavigateTopic(url);
+    }
+};
+
+window.showToast = function(message, type) {
+    if (typeof window._showToast === 'function') {
+        window._showToast(message, type);
+    }
+};
 </script>
 {% endblock %}

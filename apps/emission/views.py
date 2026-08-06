@@ -1041,25 +1041,24 @@ class SaveEmissionTransactionsView(View):
                         status=403,
                     )
 
+                # FIX: Include ALL identifying fields in the filter
+                # This ensures we update the correct record or create a new one
                 transaction_obj, created = (
                     EmissionTransaction.objects.update_or_create(
-
                         assignment_id=assignment_id,
                         activity_id=row["activity"],
                         source_id=source_id,
-
+                        company_id=company_id,
+                        plant_id=plant_id,
+                        financial_year_id=fy_id,
+                        financial_month_id=month_id,
                         defaults={
-                            "company_id": company_id,
-                            "plant_id": plant_id,
-                            "financial_year_id": fy_id,
-                            "financial_month_id": month_id,
                             "unit_id": row["unit"],
                             "quantity": quantity,
                             "remarks": row.get("remarks", ""),
                             "status": "DRAFT",
                             "created_by": request.user,
                         }
-
                     )
                 )
 

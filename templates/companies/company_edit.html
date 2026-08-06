@@ -113,6 +113,10 @@
                         <!-- Company Details Tab - Always Visible -->
                         <div class="tab-pane fade show active" id="companydetailTab" role="tabpanel">
                             <div class="card-body personal-info">
+                                <!-- ADD HIDDEN INPUTS HERE -->
+                                <input type="hidden" name="company_name" value="{{ company.company_name }}">
+                                <input type="hidden" name="email" value="{{ company.email }}">
+                                
                                 <div class="mb-4 d-flex align-items-center justify-content-between">
                                     <h5 class="fw-bold mb-0 me-4">
                                         <span class="d-block mb-2">Company Information:</span>
@@ -120,32 +124,7 @@
                                     </h5>
                                 </div>
 
-                                <!-- Company Logo -->
-                                <div class="row mb-4 align-items-center">
-                                    <div class="col-lg-4">
-                                        <label class="fw-semibold">Company Logo: </label>
-                                    </div>
-                                    <div class="col-lg-8">
-                                        <div class="mb-4 mb-md-0 d-flex gap-4 your-brand">
-                                            <div class="wd-100 ht-100 position-relative overflow-hidden border border-gray-2 rounded">
-                                                {% if company.company_logo %}
-                                                    <img src="{{ company.company_logo.url }}" class="upload-pic img-fluid rounded h-100 w-100" alt="Company logo">
-                                                {% else %}
-                                                    <img src="{% static 'images/company-logo-placeholder.svg' %}" class="upload-pic img-fluid rounded h-100 w-100" alt="Default company logo">
-                                                {% endif %}
-                                                {% if request.user.is_superuser %}
-                                                    {{ form.company_logo }}
-                                                {% else %}
-                                                    <input type="file" name="company_logo" class="form-control" disabled>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                        {% if form.company_logo.errors %}
-                                            <div class="invalid-feedback d-block">{{ form.company_logo.errors|striptags }}</div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-
+            
                                 <!-- Company Name -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">
@@ -185,7 +164,7 @@
                                         {% endif %}
                                     </div>
                                 </div>
-
+        
                                 <!-- Mobile Number -->
                                 <div class="row mb-4 align-items-center">
                                     <div class="col-lg-4">

@@ -91,91 +91,272 @@
         font-size: 16px;
     }
 
-    /* ===== Goal Cards ===== */
+    /* ===== Toast Notifications ===== */
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .toast-custom {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 16px 24px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        border-left: 4px solid #28a745;
+        min-width: 300px;
+        animation: slideIn 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .toast-custom.toast-error {
+        border-left-color: #dc3545;
+    }
+
+    .toast-custom .toast-icon.success { color: #28a745; }
+    .toast-custom .toast-icon.error { color: #dc3545; }
+
+    .toast-custom .toast-message {
+        font-size: 14px;
+        color: #1a2332;
+        flex: 1;
+    }
+
+    .toast-custom .toast-close {
+        background: none;
+        border: none;
+        color: #8a94a6;
+        cursor: pointer;
+        font-size: 18px;
+        padding: 0 4px;
+    }
+
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
     .goals-cards-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 24px;
-        margin: 24px;
+        gap: 20px;
+        margin: 16px 0;
+        margin-left: 30px;
     }
 
     .goal-card {
         border: 1px solid #edf0f5;
-        border-radius: 16px;
-        padding: 24px 26px;
+        border-radius: 10px;
+        padding: 20px 22px;
         background: #ffffff;
-        min-height: 210px;
+        min-height: 200px;
+        max-width: 320px;
         display: flex;
         flex-direction: column;
         cursor: pointer;
-        transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+        transition: all 0.25s ease;
         position: relative;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        width: 100%;
     }
 
     .goal-card:hover {
         border-color: #3454d1;
-        box-shadow: 0 10px 26px rgba(52, 84, 209, 0.12);
-        transform: translateY(-3px);
+        box-shadow: 0 4px 16px rgba(52, 84, 209, 0.10);
+        transform: translateY(-2px);
     }
 
-    .goal-card .card-top-row {
+    .goal-card .card-header {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         justify-content: space-between;
-        gap: 12px;
         margin-bottom: 14px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #f0f3f8;
     }
 
-    .goal-card .card-code {
-        font-size: 12px;
+    .goal-card .card-topic-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #f0f4ff;
+        color: #3454d1;
+        font-size: 11px;
         font-weight: 700;
-        color: #8a94a6;
-        letter-spacing: 0.6px;
+        padding: 5px 14px;
+        border-radius: 10px;
+        letter-spacing: 0.5px;
         text-transform: uppercase;
-        padding-top: 2px;
+        max-width: 60%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .goal-card .card-topic-badge i {
+        font-size: 12px;
+        flex-shrink: 0;
     }
 
     .goal-card .card-top-actions {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
+        flex-shrink: 0;
     }
 
-    .goal-card .card-count {
+    .goal-card .card-stats {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        color: #8a94a6;
+    }
+
+    .goal-card .card-stats .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: #f8f9fc;
+        padding: 3px 10px;
+        border-radius: 10px;
+        font-weight: 500;
+    }
+
+    .goal-card .card-stats .stat-item i {
+        font-size: 11px;
+        color: #6b7a8f;
+    }
+
+    .goal-card .card-stats .stat-item .stat-number {
+        color: #1a2332;
+        font-weight: 600;
+    }
+
+    .goal-card .card-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        overflow: hidden;
+    }
+
+    .goal-card .goal-item {
+        display: flex;
+        flex-direction: column;
+        padding: 10px 12px;
+        background: #f8f9fc;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        border-left: 3px solid #3454d1;
+        min-height: 44px;
+    }
+
+    .goal-card .goal-item:hover {
+        background: #f0f4ff;
+    }
+
+    .goal-card .goal-item .goal-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .goal-card .goal-item .goal-name {
         font-size: 13px;
         font-weight: 600;
-        color: #3454d1;
+        color: #1a2332;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
         white-space: nowrap;
     }
 
-    .goal-card .card-title {
-        font-size: 19px;
-        font-weight: 700;
-        color: #1a2332;
-        margin-bottom: 10px;
-        line-height: 1.3;
+    .goal-card .goal-item .goal-name i {
+        flex-shrink: 0;
     }
 
-    .goal-card .card-description {
-        font-size: 14px;
+    .goal-card .goal-item .goal-name span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .goal-card .goal-item .goal-name .db-indicator {
+        color: #28a745;
+        font-size: 11px;
+        flex-shrink: 0;
+    }
+
+    .goal-card .goal-item .goal-meta {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+    }
+
+    .goal-card .goal-item .kpi-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        background: #e8f5e9;
+        color: #2e7d32;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 3px 12px;
+        border-radius: 12px;
+        white-space: nowrap;
+    }
+
+    .goal-card .goal-item .kpi-badge i {
+        font-size: 9px;
+    }
+
+    /* ===== KPI List Styles ===== */
+    .goal-card .goal-item .kpi-list {
+        margin-top: 6px;
+        padding-left: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .goal-card .goal-item .kpi-list .kpi-item {
+        font-size: 12px;
         color: #6b7a8f;
-        line-height: 1.65;
-        flex: 1;
+        padding: 2px 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
 
-    .goal-card .card-description ul {
-        margin: 0;
-        padding-left: 18px;
+    .goal-card .goal-item .kpi-list .kpi-item::before {
+        content: "•";
+        color: #3454d1;
+        font-weight: bold;
+        font-size: 14px;
+        flex-shrink: 0;
     }
 
-    .goal-card .card-description ul li {
-        margin-bottom: 6px;
-        list-style: disc;
-        color: #46536a;
-    }
-
-    .goal-card .card-description ul li::marker {
-        color: #c3cbdb;
+    .goal-card .goal-item .kpi-list .kpi-item .kpi-name {
+        color: #1a2332;
+        font-weight: 500;
+        font-size: 12px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     /* ===== Three Dots Menu ===== */
@@ -188,10 +369,10 @@
         background: none;
         border: none;
         color: #8a94a6;
-        font-size: 18px;
+        font-size: 16px;
         cursor: pointer;
-        padding: 4px 6px;
-        border-radius: 6px;
+        padding: 2px 4px;
+        border-radius: 4px;
         transition: all 0.2s ease;
         line-height: 1;
     }
@@ -202,25 +383,29 @@
     }
 
     .dropdown-menu {
-        min-width: 160px;
-        padding: 8px 0;
+        min-width: 140px;
+        padding: 6px 0;
         border: 1px solid #e9edf4;
-        border-radius: 12px;
+        border-radius: 10px;
         box-shadow: 0 10px 40px rgba(0,0,0,0.1);
         background: #ffffff;
         font-family: inherit;
     }
 
     .dropdown-menu .dropdown-item {
-        padding: 8px 20px;
-        font-size: 14px;
+        padding: 6px 16px;
+        font-size: 13px;
         font-family: inherit;
         color: #1a2332;
         transition: all 0.15s ease;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         cursor: pointer;
+        background: none;
+        border: none;
+        width: 100%;
+        text-align: left;
     }
 
     .dropdown-menu .dropdown-item:hover {
@@ -229,8 +414,8 @@
     }
 
     .dropdown-menu .dropdown-item i {
-        font-size: 16px;
-        width: 20px;
+        font-size: 14px;
+        width: 18px;
         color: #8a94a6;
     }
 
@@ -516,6 +701,37 @@
         color: #8a94a6;
     }
 
+    /* Role Badge Styles */
+    .role-badge {
+        font-size: 12px;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .role-badge.esg-head {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+    
+    .role-badge.esg-coordinator {
+        background: #e3f2fd;
+        color: #0d47a1;
+    }
+    
+    .role-badge.superadmin {
+        background: #fff3e0;
+        color: #e65100;
+    }
+    
+    .role-badge.viewer {
+        background: #f5f5f5;
+        color: #616161;
+    }
+
     /* ===== Responsive ===== */
     @media (max-width: 1200px) {
         .goals-cards-grid {
@@ -550,14 +766,18 @@
 
         .goals-cards-grid {
             grid-template-columns: 1fr;
+            margin: 12px 0;
+            margin-left: 0;
         }
 
         .goal-card {
-            padding: 20px;
+            padding: 16px 18px;
+            min-height: 160px;
+            max-width: 100%;
         }
 
-        .goal-card .card-title {
-            font-size: 16px;
+        .goal-card .goal-item .goal-name {
+            max-width: 150px;
         }
 
         .modal-body {
@@ -586,11 +806,34 @@
         .modal-dialog-centered {
             padding: 16px;
         }
+
+        .modal-content {
+            width: 100%;
+        }
+        
+        .role-badge {
+            font-size: 10px;
+            padding: 4px 10px;
+        }
     }
 
     @media (max-width: 480px) {
         .goals-cards-grid {
-            gap: 16px;
+            gap: 12px;
+        }
+
+        .goal-card {
+            padding: 14px 16px;
+            min-height: 140px;
+        }
+
+        .goal-card .goal-item .goal-name {
+            max-width: 100px;
+            font-size: 12px;
+        }
+
+        .goal-card .goal-item .kpi-list .kpi-item {
+            font-size: 11px;
         }
     }
 </style>
@@ -610,54 +853,113 @@
     <div class="page-header-right ms-auto">
         <div class="page-header-right-items">
             <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
-                <button class="btn btn-primary" id="openAddGoalModal">
-                    <i class="fas fa-plus"></i> Add Goals
-                </button>
+                <!-- Role Badge - Shows user's role -->
+                {% comment %} {% if user_role %}
+                    <span class="role-badge 
+                        {% if user_role == 'ESG_HEAD' %}esg-head
+                        {% elif user_role == 'ESG_COORDINATOR' %}esg-coordinator
+                        {% elif user_role == 'SUPERADMIN' %}superadmin
+                        {% else %}viewer{% endif %}">
+                        <i class="fas 
+                            {% if user_role == 'ESG_HEAD' %}fa-crown
+                            {% elif user_role == 'ESG_COORDINATOR' %}fa-user-tie
+                            {% elif user_role == 'SUPERADMIN' %}fa-user-shield
+                            {% else %}fa-user{% endif %}">
+                        </i>
+                        {{ user_role_name|default:user_role }}
+                    </span>
+                {% endif %} {% endcomment %}
+                
+                <!-- Only show Add Goals button for authorized users -->
+                {% if can_manage_goals %}
+                    <button class="btn btn-primary" id="openAddGoalModal">
+                        <i class="fas fa-plus"></i> Add Goals
+                    </button>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
 
-<!-- Goals Cards Section - Only shows goals added to session -->
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Goals Cards Section -->
 {% if grouped_goals %}
     <div class="goals-cards-grid">
         {% for group in grouped_goals %}
             <div class="goal-card" onclick="window.location.href='{% url 'goals:goal_detail' group.material_topic %}'">
-                <div class="card-top-row">
-                    <span class="card-code">Topic</span>
+                <div class="card-header">
+                    <span class="card-topic-badge" title="{{ group.material_topic }}">
+                        <i class="fas fa-tag"></i>
+                        {{ group.material_topic }}
+                    </span>
                     <div class="card-top-actions" onclick="event.stopPropagation()">
-                        <span class="card-count">
-                            {{ group.goals|length }} goal{% if group.goals|length > 1 %}s{% endif %}
-                        </span>
-                       <div class="dropdown">
-                        <i class="feather-more-vertical" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer; font-size: 18px;"></i>
+                        <div class="card-stats">
+                            <span class="stat-item">
+                                <i class="fas fa-bullseye"></i>
+                                <span class="stat-number">{{ group.goals|length }}</span>
+                            </span>
+                        </div>
+                        <div class="dropdown">
+                            <i class="feather-more-vertical" data-bs-toggle="dropdown" aria-expanded="false" style="cursor: pointer; font-size: 16px;"></i>
                             <ul class="dropdown-menu dropdown-menu-end">
-                                <li>
-                                    <a class="dropdown-item" href="#" onclick="openAddGoalModalWithTopic('{{ group.material_topic }}')">
-                                        <i class="feather-plus"></i> Add Goal
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <form method="POST" action="{% url 'goals:delete_topic' group.material_topic %}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete all goals under {{ group.material_topic }}?');">
-                                        {% csrf_token %}
-                                        <button type="submit" class="dropdown-item text-danger">
+                                <!-- Only show Add Goal option for authorized users -->
+                                {% if can_manage_goals %}
+                                    <li>
+                                        <a class="dropdown-item" href="#" onclick="event.stopPropagation(); openAddGoalModalWithTopic('{{ group.material_topic }}')">
+                                            <i class="feather-plus"></i> Add Goal
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                {% endif %}
+                                
+                                <!-- Only show Delete Topic for authorized users -->
+                                {% if can_delete_goals %}
+                                    <li>
+                                        <button type="button" class="dropdown-item text-danger" onclick="event.stopPropagation(); deleteTopic('{{ group.material_topic }}')">
                                             <i class="feather-trash-2"></i> Delete Topic
                                         </button>
-                                    </form>
-                                </li>
+                                    </li>
+                                {% endif %}
                             </ul>
                         </div>
                     </div>
                 </div>
 
-                <div class="card-title">{{ group.material_topic }}</div>
-                <div class="card-description">
-                    <ul>
-                        {% for goal in group.goals %}
-                            <li>{{ goal.name }}</li>
-                        {% endfor %}
-                    </ul>
+                <div class="card-body">
+                    {% for goal in group.goals %}
+                        <div class="goal-item">
+                            <div class="goal-row">
+                                <div class="goal-name" title="{{ goal.name }}">
+                                    <i class="fas fa-chevron-right" style="font-size: 10px; color: #3454d1; flex-shrink: 0;"></i>
+                                    <span>{{ goal.name }}</span>
+                                    {% if goal.is_from_db %}
+                                        <span class="db-indicator" title="From Database">
+                                            <i class="fas fa-database"></i>
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <div class="goal-meta">
+                                    {% if goal.kpis %}
+                                        <span class="kpi-badge">
+                                            <i class="fas fa-chart-simple"></i>
+                                            {{ goal.kpis|length }} KPI{% if goal.kpis|length > 1 %}s{% endif %}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% if goal.kpis %}
+                                <div class="kpi-list">
+                                    {% for kpi in goal.kpis %}
+                                        <div class="kpi-item">
+                                            <span class="kpi-name">{{ kpi.name }}</span>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
                 </div>
             </div>
         {% endfor %}
@@ -668,7 +970,14 @@
             <i class="fas fa-bullseye"></i>
         </div>
         <div class="no-goals-title">No Goals Yet</div>
-        <div class="no-goals-text">Click "Add Goals" to create your first sustainability goal.</div>
+        <div class="no-goals-text">
+            <!-- Custom message based on user role -->
+            {% if can_manage_goals %}
+                Click "Add Goals" to create your first sustainability goal.
+            {% else %}
+                No goals have been created yet. Please contact your ESG Coordinator.
+            {% endif %}
+        </div>
     </div>
 {% endif %}
 
@@ -694,18 +1003,20 @@
                         </label>
                         <select class="form-select" id="materialTopic" name="material_topic" required>
                             <option value="">Select a material topic</option>
+                            <!-- ===== SCOPE 1 ===== -->
                             <option value="Stationary Combustion">Stationary Combustion</option>
                             <option value="Mobile Combustion">Mobile Combustion</option>
                             <option value="Process Emissions">Process Emissions</option>
                             <option value="Fugitive Emissions">Fugitive Emissions</option>
+                            <!-- ===== SCOPE 2 ===== -->
                             <option value="Purchased Electricity">Purchased Electricity</option>
                             <option value="Purchased Steam, Heat & Cooling">Purchased Steam, Heat &amp; Cooling</option>
+                            <!-- ===== SCOPE 3 ===== -->
                             <option value="Purchased Goods & Services">Purchased Goods &amp; Services</option>
-                            <option value="Business Travel">Business Travel</option>
-                            <option value="Employee Commuting">Employee Commuting</option>
-                            <option value="Transportation & Distribution">Transportation &amp; Distribution</option>
+                            <option value="Capital Goods">Capital Goods</option>
+                            <option value="Fuel & Energy Related Activities">Fuel &amp; Energy Related Activities</option>
+                            <option value="Upstream Transportation & Distribution">Upstream Transportation &amp; Distribution</option>
                             <option value="Waste Generated in Operations">Waste Generated in Operations</option>
-                            <option value="Upstream & Downstream Activities">Upstream &amp; Downstream Activities</option>
                         </select>
                         <div class="invalid-feedback" id="materialTopicError">Please select a material topic.</div>
                     </div>
@@ -716,7 +1027,6 @@
                         </label>
                         <select class="form-select" id="goalName" name="goal_name" required>
                             <option value="">Select Goal</option>
-                            <!-- Goals will be filtered based on material topic -->
                         </select>
                         <div class="invalid-feedback" id="goalNameError">Please select a goal.</div>
                     </div>
@@ -736,7 +1046,108 @@
 <div class="modal-backdrop-custom" id="modalBackdrop"></div>
 
 <script>
-// Modal Functions
+// ===== Toast Functions =====
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast-custom ${type === 'error' ? 'toast-error' : ''}`;
+    const iconClass = type === 'error' ? 'fas fa-exclamation-circle error' : 'fas fa-check-circle success';
+    toast.innerHTML = `
+        <span class="toast-icon ${type === 'error' ? 'error' : 'success'}"><i class="${iconClass}"></i></span>
+        <span class="toast-message">${message}</span>
+        <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+    `;
+    container.appendChild(toast);
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => { if (toast.parentElement) toast.remove(); }, 300);
+        }
+    }, 4000);
+}
+
+// ===== Get CSRF Token =====
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// ===== Delete Goal =====
+function deleteGoal(goalId, goalName) {
+    if (!confirm(`Are you sure you want to delete the goal "${goalName}"?`)) {
+        return;
+    }
+    
+    const csrftoken = getCookie('csrftoken');
+    
+    fetch(`/goals/delete-goal/${goalId}/`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': csrftoken,
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showToast(data.message || 'Goal deleted successfully!', 'success');
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showToast(data.message || 'Error deleting goal.', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred while deleting the goal.', 'error');
+    });
+}
+
+// ===== Delete Topic =====
+function deleteTopic(topic) {
+    if (!confirm(`Are you sure you want to delete all goals under "${topic}"?`)) {
+        return;
+    }
+    
+    const csrftoken = getCookie('csrftoken');
+    
+    fetch(`/goals/delete-topic/${encodeURIComponent(topic)}/`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': csrftoken,
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            showToast(data.message || 'Topic deleted successfully!', 'success');
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showToast(data.message || 'Error deleting topic.', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('An error occurred while deleting the topic.', 'error');
+    });
+}
+
+// ===== Modal Functions =====
 function openModal() {
     const modal = document.getElementById('addGoalModal');
     const backdrop = document.getElementById('modalBackdrop');
@@ -776,21 +1187,6 @@ function openAddGoalModalWithTopic(topic) {
     }
 }
 
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
 document.addEventListener('DOMContentLoaded', function() {
     const openBtn = document.getElementById('openAddGoalModal');
     if (openBtn) {
@@ -800,57 +1196,45 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // ===== Complete Goals by Material Topic (for the modal) =====
+    // ===== Goals by Topic =====
     const goalsByTopic = {
+        // ===== SCOPE 1 =====
         'Stationary Combustion': [
             'Reduce Fuel Consumption',
-            'Lower GHG Emissions',
-            'Improve Efficiency'
+            'Lower GHG Emissions'
         ],
         'Mobile Combustion': [
-            'Reduce Fuel Usage',
-            'Improve Fleet Efficiency',
-            'Reduce Emissions'
+            'Reduce Fuel Consumption',
+            'Lower GHG Emissions'
         ],
         'Process Emissions': [
-            'Reduce Process Emissions',
-            'Improve Process Efficiency'
+            'Reduce Process GHG Emissions'
         ],
         'Fugitive Emissions': [
-            'Reduce Refrigerant Leakage',
-            'Reduce Fugitive Emissions',
-            'Leak Prevention'
+            'Reduce Fugitive Emissions'
         ],
+        // ===== SCOPE 2 =====
         'Purchased Electricity': [
-            'Reduce Electricity Use',
-            'Increase Renewable Energy',
-            'Reduce Emissions'
+            'Reduce Electricity Consumption'
         ],
         'Purchased Steam, Heat & Cooling': [
-            'Optimize Energy Use',
-            'Reduce Emissions'
+            'Optimize Energy Consumption'
         ],
+        // ===== SCOPE 3 =====
         'Purchased Goods & Services': [
-            'Sustainable Procurement',
-            'Responsible Sourcing'
+            'Reduce Supply Chain Emissions'
         ],
-        'Business Travel': [
-            'Reduce Travel Emissions'
+        'Capital Goods': [
+            'Reduce Capital Goods Emissions'
         ],
-        'Employee Commuting': [
-            'Sustainable Commuting'
+        'Fuel & Energy Related Activities': [
+            'Reduce Upstream Energy Emissions'
         ],
-        'Transportation & Distribution': [
+        'Upstream Transportation & Distribution': [
             'Reduce Logistics Emissions'
         ],
         'Waste Generated in Operations': [
-            'Reduce Waste',
-            'Increase Recycling',
-            'Waste Disposal'
-        ],
-        'Upstream & Downstream Activities': [
-            'Reduce Value Chain Emissions',
-            'Improve Supplier Performance'
+            'Reduce Waste-related Emissions'
         ]
     };
 
@@ -859,7 +1243,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     materialTopic.addEventListener('change', function() {
         const selectedTopic = this.value;
-        const options = goalName.querySelectorAll('option');
         
         goalName.innerHTML = '<option value="">Select Goal</option>';
         

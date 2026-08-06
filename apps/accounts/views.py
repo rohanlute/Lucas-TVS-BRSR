@@ -539,27 +539,39 @@ class UserUpdateView(UserLocationAssignmentMixin, LoginRequiredMixin, UpdateView
     model = User
     form_class = UserCreateForm
     template_name = ('accounts/user_management/user_create.html')
-    success_url = reverse_lazy('accounts:user_list')
+
+    def get_success_url(self):
+        """Redirect based on 'next' parameter or default to user list"""
+        # Check if 'next' parameter exists
+        next_url = self.request.GET.get('next')
+        if next_url:
+            return next_url
+        
+        # Default redirect to user list
+        return reverse_lazy('accounts:user_list')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['page_title'] = 'Edit User'
         context.update(self.get_assignment_context(self.object))
+        
+        # Pass the next URL to the template for the cancel button
+        context['next_url'] = self.request.GET.get('next', reverse_lazy('accounts:user_list'))
         return context
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
         
-        # ✅ Password is optional for updates
+        # Password is optional for updates
         form.fields['password'].required = False
         form.fields['confirm_password'].required = False
         form.fields['password'].help_text = "Leave blank to keep current password"
         form.fields['confirm_password'].help_text = "Leave blank to keep current password"
         
-        # ✅ Configure company field
+        # Configure company field
         self.configure_company_field(form)
         
-        # ✅ Ensure all fields are populated with existing data
+        # Ensure all fields are populated with existing data
         if self.object:
             form.fields['username'].initial = self.object.username
             form.fields['full_name'].initial = self.object.full_name
@@ -572,7 +584,7 @@ class UserUpdateView(UserLocationAssignmentMixin, LoginRequiredMixin, UpdateView
             form.fields['department'].initial = self.object.department_id
             form.fields['company'].initial = self.object.company_id
             
-            # ✅ Set profile image if exists
+            # Set profile image if exists
             if self.object.profile_image:
                 form.fields['profile_image'].initial = self.object.profile_image
         
@@ -581,7 +593,7 @@ class UserUpdateView(UserLocationAssignmentMixin, LoginRequiredMixin, UpdateView
     def get_initial(self):
         initial = super().get_initial()
         
-        # ✅ Populate initial data from the user instance
+        # Populate initial data from the user instance
         if self.object:
             initial['username'] = self.object.username
             initial['full_name'] = self.object.full_name
@@ -602,16 +614,16 @@ class UserUpdateView(UserLocationAssignmentMixin, LoginRequiredMixin, UpdateView
         with transaction.atomic():
             user = form.save(commit=False)
 
-            # ✅ Handle profile image
+            # Handle profile image
             if self.request.FILES.get('profile_image'):
                 user.profile_image = self.request.FILES.get('profile_image')
 
-            # ✅ Only update password if provided
+            # Only update password if provided
             password = (form.cleaned_data.get('password') or '').strip()
             if password:
                 user.set_password(password)
 
-            # ✅ Handle company assignment
+            # Handle company assignment
             if self.can_choose_company():
                 company = form.cleaned_data.get('company')
                 if company is None:
@@ -628,8 +640,9 @@ class UserUpdateView(UserLocationAssignmentMixin, LoginRequiredMixin, UpdateView
             user.save()
             self.sync_user_assignments(user)
 
-        messages.success(self.request, 'User updated successfully.')
-        return redirect(self.success_url)
+        # ✅ Success message
+        messages.success(self.request, f'User "{user.get_full_name() or user.username}" updated successfully.')
+        return redirect(self.get_success_url())
 
     def form_invalid(self, form):
         print(form.errors)

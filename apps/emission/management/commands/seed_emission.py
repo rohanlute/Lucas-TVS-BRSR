@@ -1,10 +1,14 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.db import connection
 
 from apps.emission.models import (
-    EmissionScope,EmissionCategory,EmissionActivity,EmissionSource,EmissionFactor,)
+    EmissionScope, EmissionCategory, EmissionActivity, 
+    EmissionSource, EmissionFactor,
+)
 from apps.calculator.models import Unit
 from datetime import date
+
 
 class Command(BaseCommand):
     help = "Seed Environmental Master Data"
@@ -37,7 +41,6 @@ class Command(BaseCommand):
     # ==========================================================
 
     def seed_scopes(self):
-
         self.stdout.write("")
         self.stdout.write(
             self.style.HTTP_INFO("Seeding Emission Scopes...")
@@ -67,37 +70,114 @@ class Command(BaseCommand):
             },
         ]
 
-        created = 0
-        updated = 0
-
-        for scope in scopes:
-
-            obj, is_created = EmissionScope.objects.update_or_create(
-                code=scope["code"],
-                defaults={
-                    "name": scope["name"],
-                    "description": scope["description"],
-                    "display_order": scope["display_order"],
-                    "is_active": scope["is_active"],
-                },
+        # Check if we already have scopes
+        existing_count = EmissionScope.objects.count()
+        
+        if existing_count > 0:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"⚠️  Found {existing_count} existing scopes. Updating..."
+                )
             )
-
-            if is_created:
+            
+            # Update existing scopes or create if not exist
+            created = 0
+            updated = 0
+            
+            for scope_data in scopes:
+                obj, is_created = EmissionScope.objects.update_or_create(
+                    code=scope_data["code"],
+                    defaults={
+                        "name": scope_data["name"],
+                        "description": scope_data["description"],
+                        "display_order": scope_data["display_order"],
+                        "is_active": scope_data["is_active"],
+                    },
+                )
+                
+                # If the ID is not what we want, update it
+                expected_id = scope_data["display_order"]  # 1, 2, 3
+                if obj.id != expected_id:
+                    # Check if target ID is free
+                    if not EmissionScope.objects.filter(id=expected_id).exists():
+                        obj.id = expected_id
+                        obj.save()
+                        self.stdout.write(
+                            self.style.WARNING(
+                                f"   Changed ID: {obj.name} → {expected_id}"
+                            )
+                        )
+                    else:
+                        # Target ID is taken, swap them
+                        target_obj = EmissionScope.objects.get(id=expected_id)
+                        # Swap IDs
+                        temp_id = max(EmissionScope.objects.all().values_list('id', flat=True)) + 1
+                        target_obj.id = temp_id
+                        target_obj.save()
+                        
+                        obj.id = expected_id
+                        obj.save()
+                        
+                        # Fix the temporary ID
+                        target_obj.id = obj.id + 10  # Move it away
+                        target_obj.save()
+                        
+                        self.stdout.write(
+                            self.style.WARNING(
+                                f"   Swapped IDs: {obj.name} → {expected_id}"
+                            )
+                        )
+                
+                if is_created:
+                    created += 1
+                    self.stdout.write(
+                        self.style.SUCCESS(f"   Created : {obj.name} (ID: {obj.id})")
+                    )
+                else:
+                    updated += 1
+                    self.stdout.write(
+                        self.style.WARNING(f"   Updated : {obj.name} (ID: {obj.id})")
+                    )
+            
+            # Reset sequence
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT setval('env_emission_scope_id_seq', "
+                    "(SELECT MAX(id) FROM env_emission_scope));"
+                )
+            
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Scope Master -> Created: {created}, Updated: {updated}"
+                )
+            )
+        else:
+            # No existing scopes, create fresh
+            created = 0
+            for scope_data in scopes:
+                obj = EmissionScope.objects.create(
+                    id=scope_data["display_order"],  # Set ID explicitly
+                    code=scope_data["code"],
+                    name=scope_data["name"],
+                    description=scope_data["description"],
+                    display_order=scope_data["display_order"],
+                    is_active=scope_data["is_active"],
+                )
                 created += 1
                 self.stdout.write(
-                    self.style.SUCCESS(f"   Created : {obj.name}")
+                    self.style.SUCCESS(f"   Created : {obj.name} (ID: {obj.id})")
                 )
-            else:
-                updated += 1
-                self.stdout.write(
-                    self.style.WARNING(f"   Updated : {obj.name}")
+            
+            # Reset sequence
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    "SELECT setval('env_emission_scope_id_seq', "
+                    "(SELECT MAX(id) FROM env_emission_scope));"
                 )
-
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Scope Master -> Created: {created}, Updated: {updated}"
+            
+            self.stdout.write(
+                self.style.SUCCESS(f"Scope Master -> Created: {created}")
             )
-        )
 
     # ==========================================================
     # Category Master
@@ -315,52 +395,35 @@ class Command(BaseCommand):
         for category in categories:
 
             try:
-
                 scope = EmissionScope.objects.get(
                     code=category["scope"]
                 )
-
             except EmissionScope.DoesNotExist:
-
                 self.stdout.write(
                     self.style.ERROR(
                         f"Scope '{category['scope']}' not found."
                     )
                 )
-
                 continue
 
             obj, is_created = EmissionCategory.objects.update_or_create(
-
                 scope=scope,
-
                 code=category["code"],
-
                 defaults={
-
                     "name": category["name"],
-
                     "description": category["description"],
-
                     "display_order": category["display_order"],
-
                     "is_active": True,
-
                 },
             )
 
             if is_created:
-
                 created += 1
-
                 self.stdout.write(
                     self.style.SUCCESS(f"   Created : {obj.name}")
                 )
-
             else:
-
                 updated += 1
-
                 self.stdout.write(
                     self.style.WARNING(f"   Updated : {obj.name}")
                 )
@@ -814,9 +877,7 @@ class Command(BaseCommand):
                 continue
 
             obj, is_created = EmissionActivity.objects.update_or_create(
-
                 code=item["code"],
-
                 defaults={
                     "category": category,
                     "name": item["name"],
@@ -846,7 +907,6 @@ class Command(BaseCommand):
                 f"Activity Master -> Created: {created}, Updated: {updated}"
             )
         )
-
 
     # ==========================================================
     # Emission Source Master
@@ -1528,53 +1588,36 @@ class Command(BaseCommand):
         for item in sources:
 
             try:
-
                 activity = EmissionActivity.objects.get(
                     code=item["activity"]
                 )
-
             except EmissionActivity.DoesNotExist:
-
                 self.stdout.write(
                     self.style.ERROR(
                         f"Activity not found : {item['activity']}"
                     )
                 )
-
                 continue
 
             obj, is_created = EmissionSource.objects.update_or_create(
-
                 activity=activity,
-
                 source_code=item["code"],
-
                 defaults={
-
                     "source_name": item["name"],
-
                     "display_order": item["display_order"],
-
                     "is_active": True,
-
                 },
-
             )
 
             if is_created:
-
                 created += 1
-
                 self.stdout.write(
                     self.style.SUCCESS(
                         f"   Created : {activity.name} -> {obj.source_name}"
                     )
                 )
-
             else:
-
                 updated += 1
-
                 self.stdout.write(
                     self.style.WARNING(
                         f"   Updated : {activity.name} -> {obj.source_name}"
@@ -1586,8 +1629,6 @@ class Command(BaseCommand):
                 f"Emission Source Master -> Created: {created}, Updated: {updated}"
             )
         )
-
-
 
     # ==========================================================
     # Emission Factor Master
@@ -2021,7 +2062,7 @@ class Command(BaseCommand):
         for item in factors:
 
             try:
-                activity = EmissionActivity.objects.get(code=item["activity"]                )
+                activity = EmissionActivity.objects.get(code=item["activity"])
                 unit = Unit.objects.get(symbol=item["unit"])
 
             except (EmissionActivity.DoesNotExist, Unit.DoesNotExist):
@@ -2034,11 +2075,9 @@ class Command(BaseCommand):
                 continue
 
             obj, is_created = EmissionFactor.objects.update_or_create(
-
                 activity=activity,
                 unit=unit,
                 effective_from=item["effective_from"],
-
                 defaults={
                     "emission_factor": item["factor"],
                     "source": item["source"],
@@ -2067,4 +2106,3 @@ class Command(BaseCommand):
                 f"Emission Factor Master -> Created: {created}, Updated: {updated}"
             )
         )
-    

@@ -187,12 +187,14 @@
                     </ul>
                 </li>
             </ul>
+            {% if request.user|has_perm:'ACCESS_GOAL_MODULE' %}
              <li class="nxl-item">
                 <a class="nxl-link" href="{% url 'goals:dashboard' %}">
                     <i class="fas fa-bullseye"></i> 
                     Goals
                 </a>
             </li>
+            {% endif %}
             <li class="nxl-item">
                 <a class="nxl-link" href="{% url 'report:generate' %}">
                     <i class="fas fa-bullseye"></i> 
