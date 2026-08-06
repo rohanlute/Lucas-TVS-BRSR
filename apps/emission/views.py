@@ -218,6 +218,23 @@ class EmissionAssignmentDashboardView(LoginRequiredMixin, TemplateView):
             .select_related("company","plant","financial_year","financial_month","scope","assignee",
                             "assigner","reviewer",).prefetch_related("transactions","assignment_sources__source__activity",)
                             .order_by("-created_at"))
+
+        # ==========================================
+        # Plant Filter
+        # ==========================================
+
+        selected_plant = self.request.GET.get("plant")
+        selected_scope = self.request.GET.get("scope")
+        selected_source = self.request.GET.get("source")
+
+        if selected_plant:
+            assignments = assignments.filter(plant_id=selected_plant)
+
+        if selected_scope:
+            assignments = assignments.filter(scope_id=selected_scope)
+
+        if selected_source:
+            assignments = assignments.filter(assignment_sources__source_id=selected_source).distinct()
         
         # Validate assignment_id
         highlight_assignment_id = None
@@ -287,7 +304,7 @@ class EmissionAssignmentDashboardView(LoginRequiredMixin, TemplateView):
         # Apply Dashboard Filter
         # ==========================================================
 
-        status_filter = self.request.GET.get("status", "all")
+        status_filter = self.request.GET.get("status", "open")
 
         if status_filter == "open":
             assignments = all_assignments.filter(
@@ -309,6 +326,19 @@ class EmissionAssignmentDashboardView(LoginRequiredMixin, TemplateView):
         else:
             assignments = all_assignments
 
+        plants = Plant.objects.filter(id__in=all_assignments.values_list("plant_id",flat=True).distinct()).order_by("name")
+
+        scopes = EmissionScope.objects.filter(id__in=all_assignments.values_list("scope_id",flat=True).distinct()).order_by("display_order")
+
+        if selected_scope:
+            sources = EmissionSource.objects.filter(
+                activity__category__scope_id=selected_scope
+            ).order_by("source_name")
+        else:
+            sources = EmissionSource.objects.filter(
+                assignment_sources__assignment__in=all_assignments
+            ).distinct().order_by("source_name")
+
         # ==========================================================
         # Update Context
         # ==========================================================
@@ -323,6 +353,13 @@ class EmissionAssignmentDashboardView(LoginRequiredMixin, TemplateView):
             "navbar_notifications": navbar_notifications,
             "navbar_notification_count": navbar_notification_count,
             **assignment_stats,
+            "plants": plants,
+            "selected_plant": selected_plant,
+            "current_filter": status_filter,
+            "scopes": scopes,
+            "sources": sources,
+            "selected_scope": selected_scope,
+            "selected_source": selected_source,
         })
 
         return context
@@ -402,7 +439,7 @@ class SaveEmissionAssignmentAPIView(APIView):
                 status="ASSIGNED",
 
             )
-
+            print("After Create:", assignment.id, assignment.status)
             source_ids = data.get("source_ids", [])
 
             for source_id in source_ids:
@@ -431,26 +468,63 @@ class SaveEmissionAssignmentAPIView(APIView):
                     status=400,)
 
             # Save template in assignment
+            # assignment.workflow_template = workflow_template
+            # assignment.save(update_fields=["workflow_template"])
+
+            # # Create workflow task (starts at first stage)
+            # workflow_task = WorkflowConfigurationEngine.start(template=workflow_template,target=assignment,
+            #     first_assignee=request.user,)
+
+            # # Skip Question Assignment stage
+            # workflow_task = WorkflowConfigurationEngine.advance_to_next_stage(
+            #     task=workflow_task,user=request.user,next_assignee=assignment.assignee,)
+
+            # # Save workflow task
+            # assignment.workflow_task = workflow_task
+            # assignment.save(update_fields=["workflow_task"])
+
+            # # ----------------------------------------
+            # # Create Notification
+            # # ----------------------------------------
+            # NotificationService.notify(event="ASSIGN_SCOPE",assignment=assignment,sender=request.user,)
+
+            print("After Create:", assignment.status)
+
             assignment.workflow_template = workflow_template
             assignment.save(update_fields=["workflow_template"])
+            assignment.refresh_from_db()
+            print("After Template:", assignment.status)
 
-            # Create workflow task (starts at first stage)
-            workflow_task = WorkflowConfigurationEngine.start(template=workflow_template,target=assignment,
-                first_assignee=request.user,)
+            workflow_task = WorkflowConfigurationEngine.start(
+                template=workflow_template,
+                target=assignment,
+                first_assignee=request.user,
+            )
+            assignment.refresh_from_db()
+            print("After Start:", assignment.status)
 
-            # Skip Question Assignment stage
             workflow_task = WorkflowConfigurationEngine.advance_to_next_stage(
-                task=workflow_task,user=request.user,next_assignee=assignment.assignee,)
+                task=workflow_task,
+                user=request.user,
+                next_assignee=assignment.assignee,
+            )
+            assignment.refresh_from_db()
+            print("After Advance:", assignment.status)
 
-            # Save workflow task
             assignment.workflow_task = workflow_task
             assignment.save(update_fields=["workflow_task"])
+            assignment.refresh_from_db()
+            print("After Task Save:", assignment.status)
 
-            # ----------------------------------------
-            # Create Notification
-            # ----------------------------------------
-            NotificationService.notify(event="ASSIGN_SCOPE",assignment=assignment,sender=request.user,)
-
+            NotificationService.notify(
+                event="ASSIGN_SCOPE",
+                assignment=assignment,
+                sender=request.user,
+            )
+            assignment.refresh_from_db()
+            print("After Notification:", assignment.status)
+            assignment.refresh_from_db()
+            print("Before Return:", assignment.id, assignment.status)
             return Response(
                 {
                     "success": True,
@@ -671,6 +745,10 @@ class ScopeDashboardView(ListView):
                 "ESG-HEAD",
                 "ESG-COORD",
             ]
+        )
+        context["can_assign"] = (
+            assignment is None and
+            self.request.user.role.role_code == "ESG-COORD"
         )
 
         context["financial_years"] = FinancialYear.objects.all()
@@ -1023,6 +1101,14 @@ from django.db.models import Sum
 from django.http import JsonResponse
 from django.views import View
 
+from django.views import View
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
+from django.db.models import Sum
+
+from .models import EmissionTransaction, EmissionAssignment
+
+
 class LoadEmissionTransactionsView(View):
 
     def get(self, request):
@@ -1036,40 +1122,16 @@ class LoadEmissionTransactionsView(View):
         data = []
 
         # ----------------------------------------------------
-        # Assignment Mode
+        # Validate Assignment (only if assignment exists)
         # ----------------------------------------------------
+        assignment = None
+
         if assignment_id:
 
-            transactions = (
-                EmissionTransaction.objects
-                .filter(assignment_id=assignment_id)
-                .select_related("activity")
+            assignment = get_object_or_404(
+                EmissionAssignment,
+                id=assignment_id,
             )
-
-            for transaction in transactions:
-
-                data.append({
-
-                    "activity": transaction.activity_id,
-
-                    "source": transaction.source_id,
-
-                    "quantity": str(transaction.quantity),
-
-                    "factor": str(transaction.emission_factor),
-
-                    "total": str(transaction.total_emission),
-
-                    "status": transaction.status,
-
-                })
-
-        # ----------------------------------------------------
-        # All Plants
-        # ----------------------------------------------------
-        elif plant == "ALL":
-
-            assignment = get_object_or_404(EmissionAssignment,id=assignment_id,)
 
             is_assigner = assignment.assigner_id == request.user.id
             is_assignee = assignment.assignee_id == request.user.id
@@ -1084,95 +1146,96 @@ class LoadEmissionTransactionsView(View):
                     status=403,
                 )
 
+        # ====================================================
+        # Assignment Mode
+        # ====================================================
+        if assignment:
+
             transactions = (
-
                 EmissionTransaction.objects
+                .filter(assignment=assignment)
+                .select_related("activity")
+            )
 
+            for transaction in transactions:
+
+                data.append({
+                    "activity": transaction.activity_id,
+                    "source": transaction.source_id,
+                    "quantity": str(transaction.quantity),
+                    "factor": str(transaction.emission_factor),
+                    "total": str(transaction.total_emission),
+                    "status": transaction.status,
+                })
+
+        # ====================================================
+        # ALL Plants
+        # ====================================================
+        elif plant == "ALL":
+
+            transactions = (
+                EmissionTransaction.objects
                 .filter(
                     company_id=company,
                     financial_year_id=financial_year,
                     financial_month_id=financial_month,
                 )
-
                 .values(
                     "activity_id",
                     "source_id",
                     "emission_factor",
                     "status",
                 )
-
                 .annotate(
                     quantity=Sum("quantity"),
                     total_emission=Sum("total_emission"),
                 )
-
             )
 
             for transaction in transactions:
 
                 data.append({
-
                     "activity": transaction["activity_id"],
-
                     "source": transaction["source_id"],
-
                     "quantity": str(transaction["quantity"]),
-
                     "factor": str(transaction["emission_factor"]),
-
                     "total": str(transaction["total_emission"]),
-
                     "status": transaction["status"],
-
                 })
 
-        # ----------------------------------------------------
+        # ====================================================
         # Single Plant
-        # ----------------------------------------------------
+        # ====================================================
         else:
 
             transactions = (
-
                 EmissionTransaction.objects
-
                 .filter(
                     company_id=company,
                     plant_id=plant,
                     financial_year_id=financial_year,
                     financial_month_id=financial_month,
                 )
-
                 .select_related("activity")
-
             )
 
             for transaction in transactions:
 
                 data.append({
-
                     "activity": transaction.activity_id,
-
                     "source": transaction.source_id,
-
                     "quantity": str(transaction.quantity),
-
                     "factor": str(transaction.emission_factor),
-
                     "total": str(transaction.total_emission),
-
                     "status": transaction.status,
-
                 })
 
         return JsonResponse({
-
             "success": True,
-
             "transactions": data,
-
         })
 
-
+    
 class ScopeCategoriesView(View):
 
     def get(self, request):
@@ -1444,7 +1507,7 @@ from .models import (
 
 
 class SubmitAssignmentView(View):
-
+    print("===== SubmitAssignmentView Called =====")
     @transaction.atomic
     def post(self, request):
 

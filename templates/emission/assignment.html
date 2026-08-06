@@ -427,12 +427,12 @@
         <!-- header -->
         <div class="dashboard-header">
             <div class="dashboard-title">
-                <h1>Assignment Dashboard</h1>
+                <h1>Emission Assignment Dashboard</h1>
                 <p>Assignments visible to the logged-in user based on plant, department, and direct user scope.</p>
             </div>
             <div class="header-actions">
-                <a class="btn-soft" href="{% url 'brsr:brsr_list' %}">BRSR Home</a>
-                <a class="btn-primary-link" href="{% url 'brsr:question_workspace' %}">Open Workspace</a>
+                <a class="btn-soft" href="{% url 'emission:dashboard' %}">Emission Dashboard</a>
+                <a class="btn-primary-link" href="{% url 'emission:scope_dataentry' %}">Open Workspace</a>
             </div>
         </div>
 
@@ -459,6 +459,53 @@
                 <div class="stat-note">Past due date and still open</div>
             </a>
         </div>
+        
+        <form method="get" class="mb-3">
+            <div class="row">
+
+                <!-- Plant -->
+                <div class="col-md-4">
+                    <select name="plant" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Plants</option>
+                        {% for plant in plants %}
+                            <option value="{{ plant.id }}"
+                                {% if selected_plant == plant.id|stringformat:"s" %}selected{% endif %}>
+                                {{ plant.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Scope -->
+                <div class="col-md-4">
+                    <select name="scope" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Scopes</option>
+                        {% for scope in scopes %}
+                            <option value="{{ scope.id }}"
+                                {% if selected_scope == scope.id|stringformat:"s" %}selected{% endif %}>
+                                {{ scope.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Emission Source -->
+                <div class="col-md-4">
+                    <select name="source" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Sources</option>
+                        {% for source in sources %}
+                            <option value="{{ source.id }}"
+                                {% if selected_source == source.id|stringformat:"s" %}selected{% endif %}>
+                                {{ source.source_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Preserve Status -->
+                <input type="hidden" name="status" value="{{ current_filter }}">
+            </div>
+        </form>
 
         <!-- assignment list -->
         {% if assignments %}
