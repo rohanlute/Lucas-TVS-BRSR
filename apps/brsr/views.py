@@ -18,6 +18,7 @@ from django.core.exceptions import PermissionDenied
 from django.utils.html import escape
 from datetime import date
 from django.utils import timezone
+from .services import create_assignment_and_optional_schedule
 
 
 User = get_user_model()
@@ -36,11 +37,14 @@ def _principle_queryset():
         .prefetch_related("questions")
     )
 
+
 def _pdf_questions_queryset():
     return BRSRQuestion.objects.filter(is_active=True)
 
+
 def _get_default_section():
     return BRSRSection.objects.filter(is_active=True).order_by("display_order", "code").first()
+
 
 def _get_default_principle():
     return BRSRPrinciple.objects.filter(is_active=True).order_by("principle_number").first()
@@ -419,6 +423,7 @@ def _ensure_assignment_workflow_task(assignment, current_user=None):
     _advance_assignment_to_entry_stage(assignment, actor=current_user)
     return task
 
+
 def _get_section_principle(section_code=None, principle_slug=None):
     section = None
     principle = None
@@ -461,6 +466,7 @@ def _question_status(question, assignment=None):
     if response:
         return response.status
     return "draft"
+
 
 def _question_metadata(question):
     rules = question.validation_rules or {}
@@ -582,6 +588,7 @@ def _assignment_scope_queryset(user, plant=None, department=None):
         filters |= Q(assignee_content_type=ct_map["department"], assignee_object_id=department.id)
     return Assignment.objects.filter(filters).distinct()
 
+
 def _plant_departments(plant):
     if not plant:
         return Department.objects.none()
@@ -618,6 +625,7 @@ def _plant_assignees(plant, target_role_codes=None, current_user=None):
         queryset = queryset.exclude(pk=current_user.pk)
 
     return queryset.distinct()
+
 
 def _default_assignee_for_context(user, plant):
     assignees = _plant_assignees(plant, target_role_codes=_assignment_target_role_codes(user), current_user=user)
@@ -735,6 +743,7 @@ def _serialize_assignment(assignment, user=None):
         "current_user_role": current_user_role,
     }
 
+
 def _serialize_assignment_with_reviewers(assignment, user=None):
     """Serialize assignment with reviewer information and comments."""
     base_data = _serialize_assignment(assignment, user)
@@ -774,6 +783,7 @@ def _serialize_assignment_with_reviewers(assignment, user=None):
     
     return base_data
 
+
 def _assignment_context(section, principle, questions, assignment=None, user=None):
     latest_assignment = (
         Assignment.objects.filter(section=section, principle=principle)
@@ -808,10 +818,49 @@ def _assignment_context(section, principle, questions, assignment=None, user=Non
     }
 
 
+def _is_section_locked_for_new_assignment(user, plant, section, principle, financial_year):
+    """
+    True if this plant/section/principle/financial_year combination has
+    already been sent to (or past) Pre-Final Approval. Once locked, no new
+    Assignment can be created for it — the existing one must go through the
+    approval workflow instead of being duplicated.
+    """
+    if not plant or not section or not financial_year:
+        return False
+
+    assignments = list(
+        _assignment_queryset_for_user(user)
+        .filter(plant_id=plant.id, section_id=section.id, financial_year=financial_year)
+        .select_related("plant", "section", "principle", "workflow_template")
+    )
+    if principle:
+        assignments = [a for a in assignments if a.principle_id == principle.id]
+    else:
+        assignments = [a for a in assignments if a.principle_id is None]
+
+    locked_stages = {"pre_final_approval", "final_approval"}
+    for assignment in assignments:
+        _ensure_assignment_workflow_task(assignment, current_user=user)
+        task = assignment.workflow_task
+        if not task:
+            continue
+        if task.is_completed:
+            return True
+        if task.current_stage and task.current_stage.stage_type in locked_stages:
+            return True
+    return False
+
+
 def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_queryset, workflow_template_override=None):
     plant = cleaned_data["plant"]
     financial_year = cleaned_data["financial_year"]
     period_code = cleaned_data.get("period_code")
+    if _is_section_locked_for_new_assignment(user, plant, section, principle, financial_year):
+        raise ValueError(
+            "This section has already been sent for Pre-Final Approval for this "
+            "plant and financial year. No new assignment can be created until "
+            "the current one is approved or rejected."
+        )
     force_create = cleaned_data.get("force_create", False)
     workflow_template = workflow_template_override or _resolve_brsr_workflow_template(user=user, plant=plant)
     if not workflow_template:
@@ -856,7 +905,7 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
     if existing:
         if existing.overall_status != 'completed':
             raise ValueError(
-                "An active assignment already exists for this period. Please complete or close the existing  assignment first."
+                "An active assignment already exists for this period. Please complete or close the existing assignment first."
             )
         if not force_create:
             raise ValueError(
@@ -898,6 +947,7 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
     notify_assignment_created(assignment)
     
     return assignment
+
 
 def _serialize_task_for_user(task, user):
     """Serialize workflow task with user permissions."""
@@ -1367,6 +1417,7 @@ class _AggregatedResponse:
         self.response_value = response_value
         self.response_json = response_json
 
+
 def _aggregate_response_stats(responses_qs):
     """Reduce a QuestionResponse queryset down to dashboard-friendly counts."""
     responses = list(
@@ -1565,6 +1616,7 @@ def _build_brsr_data_groups(plants, financial_year=None):
         )
     ordered_sections.sort(key=lambda s: (s["section"].display_order, s["section"].code))
     return ordered_sections
+
 
 _STATUS_DOT_PRIORITY = {"rejected": 3, "submitted": 2, "resubmitted": 2, "draft": 1, "approved": 0}
 
@@ -2461,7 +2513,7 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
         if form.is_valid():
             selected_questions = form.cleaned_data["question_ids"]
             try:
-                assignment = _create_brsr_assignment(
+                assignment, schedule = create_assignment_and_optional_schedule(
                     user=self.request.user,
                     section=context["section"],
                     principle=context["principle"],
@@ -2490,7 +2542,8 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
                 return render(request, self.template_name, context)
             messages.success(
                 request,
-                f"Assignment {assignment.assignment_id} created for {selected_questions.count()} questions.",
+                f"Assignment {assignment.assignment_id} created for {selected_questions.count()} questions."
+                + (f" Recurring schedule {schedule.schedule_id} set up." if schedule else ""),
             )
             return redirect(
                 reverse(

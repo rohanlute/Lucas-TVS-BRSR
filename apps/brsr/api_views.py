@@ -40,6 +40,7 @@ from .views import (
     _assignment_missing_responses,
     _next_non_review_stage,
 )
+from .services import create_assignment_and_optional_schedule
 
 
 User = get_user_model()
@@ -965,13 +966,11 @@ class AssignmentCreateAPIView(APIView):
         )
         if not form.is_valid():
             return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        # Add reviewer to cleaned_data if it exists
         if reviewer:
             form.cleaned_data['reviewer'] = reviewer
 
         try:
-            assignment = _create_brsr_assignment(
+            assignment, schedule = create_assignment_and_optional_schedule(
                 user=request.user,
                 section=section,
                 principle=principle,
@@ -988,6 +987,7 @@ class AssignmentCreateAPIView(APIView):
                 "assignment_id": assignment.assignment_id,
                 "question_count": selected_questions.count(),
                 "reviewer_saved": bool(assignment.reviewer_links.exists()),
+                "schedule_id": schedule.schedule_id if schedule else None,
                 "message": f"Assignment {assignment.assignment_id} created successfully.",
             },
             status=status.HTTP_201_CREATED,
@@ -996,11 +996,12 @@ class AssignmentCreateAPIView(APIView):
 
 class AssignmentScheduleCreateAPIView(APIView):
     """
-    Creates a reusable AssignmentSchedule (the recurring-assignment
-    template). This endpoint does NOT create an Assignment — the daily
-    Celery Beat task (`brsr.generate_scheduled_assignments`) generates real
-    Assignments from this schedule whenever a configured period becomes
-    due, reusing the exact same creation path as a manual assignment.
+    Creates a reusable AssignmentSchedule plus the immediate current-period
+    Assignment using the same combined service path used by the regular
+    assignment creation flow. This preserves the original assignee/reviewer
+    and other metadata on the schedule, while also generating the first
+    manual-style assignment for the current period and keeping the schedule
+    active for future recurring generation.
     """
  
     def post(self, request):
@@ -1034,44 +1035,62 @@ class AssignmentScheduleCreateAPIView(APIView):
         if not selected_questions.exists():
             return Response({"detail": "Select at least one question for the schedule."}, status=status.HTTP_400_BAD_REQUEST)
  
-        plant = form.cleaned_data["plant"]
-        user_ct = ContentType.objects.get_for_model(User)
+        assignee_id = request.data.get("assignee")
+        assignee = None
+        if assignee_id:
+            try:
+                assignee = User.objects.get(id=assignee_id)
+            except User.DoesNotExist:
+                return Response({"detail": f"Assignee with ID {assignee_id} not found."}, status=status.HTTP_400_BAD_REQUEST)
  
-        schedule = AssignmentSchedule.objects.create(
-            name=form.cleaned_data.get("name") or f"{section.name} recurring assignment",
-            plant=plant,
-            section=section,
-            principle=principle,
-            financial_year=form.cleaned_data["financial_year"],
-            workflow_template=_resolve_brsr_workflow_template(user=request.user, plant=plant),
-            frequency=form.cleaned_data["frequency"],
-            weekly_start_day=form.cleaned_data.get("weekly_start_day"),
-            weekly_end_day=form.cleaned_data.get("weekly_end_day"),
-            selected_months=form.cleaned_data.get("selected_months") or [],
-            selected_quarters=form.cleaned_data.get("selected_quarters") or [],
-            priority=form.cleaned_data["priority"],
-            notes=form.cleaned_data.get("notes"),
-            created_by=request.user,
-            assignee_content_type=user_ct,
-            assignee_object_id=form.cleaned_data["assignee"].pk,
-        )
+        reviewer_id = request.data.get("reviewer")
+        reviewer = None
+        if reviewer_id:
+            try:
+                reviewer = User.objects.get(id=reviewer_id)
+            except User.DoesNotExist:
+                return Response({"detail": f"Reviewer with ID {reviewer_id} not found."}, status=status.HTTP_400_BAD_REQUEST)
  
-        reviewer = form.cleaned_data.get("reviewer")
-        if reviewer is not None:
-            schedule.reviewer_content_type = user_ct
-            schedule.reviewer_object_id = reviewer.pk
-            schedule.save(update_fields=["reviewer_content_type", "reviewer_object_id", "updated_at"])
+        cleaned_data = {
+            "plant": form.cleaned_data["plant"],
+            "financial_year": form.cleaned_data["financial_year"],
+            "assignee": assignee,
+            "reviewer": reviewer,
+            "priority": form.cleaned_data["priority"],
+            "notes": form.cleaned_data.get("notes"),
+            "due_date": None,
+            "data_collection_frequency": form.cleaned_data["frequency"],
+            "weekly_start_day": form.cleaned_data.get("weekly_start_day"),
+            "weekly_end_day": form.cleaned_data.get("weekly_end_day"),
+            "selected_months": form.cleaned_data.get("selected_months") or [],
+            "selected_quarters": form.cleaned_data.get("selected_quarters") or [],
+            "assigner": request.user,
+            "schedule_name": form.cleaned_data.get("name") or f"{section.name} recurring assignment",
+        }
  
-        schedule.questions.set(selected_questions)
+        try:
+            assignment, schedule = create_assignment_and_optional_schedule(
+                user=request.user,
+                section=section,
+                principle=principle,
+                cleaned_data=cleaned_data,
+                question_queryset=selected_questions,
+            )
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
  
         return Response(
             {
-                "id": schedule.id,
+                "id": assignment.id,
+                "assignment_id": assignment.assignment_id,
                 "schedule_id": schedule.schedule_id,
                 "question_count": selected_questions.count(),
+                "is_recurring": True,
                 "message": (
-                    f"Recurring schedule {schedule.schedule_id} created. Assignments will be "
-                    f"generated automatically according to the configured frequency."
+                    f"Assignment {assignment.assignment_id} created successfully. "
+                    f"Recurring schedule {schedule.schedule_id} set up — future "
+                    f"periods will be generated automatically with the same "
+                    f"assignee, reviewer and settings."
                 ),
             },
             status=status.HTTP_201_CREATED,

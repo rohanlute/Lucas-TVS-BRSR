@@ -52,7 +52,7 @@ class BRSRAssignmentForm(forms.Form):
     )
     data_collection_frequency = forms.ChoiceField(
         choices=Assignment.FREQUENCY_CHOICES,
-        required=False,
+        required=True,
         widget=forms.Select(attrs={"class": "form-select"}),
     )
     due_date = forms.DateField(
@@ -74,6 +74,52 @@ class BRSRAssignmentForm(forms.Form):
             attrs={"class": "form-control", "rows": 3, "placeholder": "Assignment notes"}
         ),
     )
+    weekly_start_day = forms.TypedChoiceField(
+        choices=AssignmentSchedule.WEEKDAY_CHOICES, coerce=int, required=False,
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    weekly_end_day = forms.TypedChoiceField(
+        choices=AssignmentSchedule.WEEKDAY_CHOICES, coerce=int, required=False,
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
+    selected_months = forms.MultipleChoiceField(
+        choices=AssignmentSchedule.MONTH_CHOICES, required=False,
+        widget=forms.CheckboxSelectMultiple,
+    )
+    selected_quarters = forms.MultipleChoiceField(
+        choices=AssignmentSchedule.QUARTER_CHOICES, required=False,
+        widget=forms.CheckboxSelectMultiple,
+    )
+    schedule_name = forms.CharField(
+        required=False, max_length=150,
+        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "e.g. Monthly Energy Data Collection"}),
+    )
+
+    def clean(self):
+        cleaned = super().clean()
+        frequency = cleaned.get("data_collection_frequency")
+        if not frequency:
+            return cleaned
+
+        if frequency == "weekly":
+            start_day = cleaned.get("weekly_start_day")
+            end_day = cleaned.get("weekly_end_day")
+            if start_day is None or end_day is None:
+                self.add_error(None, "Weekly frequency requires both a Start Day and an End Day.")
+            elif start_day > end_day:
+                self.add_error(None, "Start Day must come before End Day (e.g. Monday → Friday).")
+        elif frequency == "monthly":
+            months = cleaned.get("selected_months") or []
+            if not months:
+                self.add_error(None, "Select at least one month for monthly frequency.")
+            else:
+                cleaned["selected_months"] = [int(m) for m in months]
+        elif frequency == "quarterly":
+            quarters = cleaned.get("selected_quarters") or []
+            if not quarters:
+                self.add_error(None, "Select at least one quarter for quarterly frequency.")
+
+        return cleaned
 
     def __init__(self, *args, **kwargs):
         plant_queryset = kwargs.pop("plant_queryset", None)

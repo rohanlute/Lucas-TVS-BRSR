@@ -178,13 +178,12 @@ MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 's702.bom.secure-web.cloud' #config('EMAIL_HOST') #'mail.fireinspector.co.in' #'s437.bom7.mysecurecloudhost.com'
-EMAIL_USE_TLS = True               # Enable TLS
-EMAIL_USE_SSL = False 
-EMAIL_PORT = 587 
-EMAIL_HOST_USER = 'support@fireinspector.co.in'
-EMAIL_HOST_PASSWORD = 'Support@Fire'
-DEFAULT_FROM_EMAIL = 'Sustainability Reporting <support@fireinspector.co.in>'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'samarthbhagane@gmail.com'
+EMAIL_HOST_PASSWORD = 'wnbv pnez iqag mabw'
+DEFAULT_FROM_EMAIL = 'samarthbhagane@gmail.com'
 
 SITE_URL = "http://127.0.0.1:8000/"
 
