@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.views.generic import TemplateView
 from apps.accounts.models import Department
 from apps.accounts.models.permission import Permissions
-from apps.organizations.models import ApprovalConfigurationTemplate, FinancialYear, Plant
+from apps.organizations.models import ApprovalConfigurationTemplate, ApprovalConfigurationTask, FinancialYear, Plant
 from apps.organizations.workflow_configuration_engine import WorkflowConfigurationEngine
 from .forms import BRSRAssignmentForm, AssignmentScheduleForm
 from .models import *
@@ -276,7 +276,71 @@ def _is_approval_stage(stage_type):
     return stage_type in {"review", "approval", "pre_final_approval", "final_approval"}
 
 
-def _can_user_act_on_assignment(user, assignment):
+def _is_admin_scope(user):
+    role_code = getattr(getattr(user, "role", None), "role_code", "") or ""
+    return bool(user.is_superuser or getattr(user, "is_super_admin", False) or role_code == "COMPANYADMIN")
+
+
+def _my_assignment_ids(user):
+    """Assignment IDs where THIS user personally is the assignee or an
+    assigned reviewer — not the plant, not the department, not 'anyone
+    with this role'."""
+    user_ct = ContentType.objects.get_for_model(User)
+    ids = set(
+        Assignment.objects.filter(
+            assignee_content_type=user_ct, assignee_object_id=user.id
+        ).values_list("id", flat=True)
+    )
+    ids |= set(
+        Assignment.objects.filter(
+            reviewer_links__reviewer_content_type=user_ct,
+            reviewer_links__reviewer_object_id=user.id,
+        ).values_list("id", flat=True)
+    )
+    return ids
+
+
+def _my_dashboard_assignment_queryset(user):
+    """
+    Strict per-user dashboard scope.
+    Admin/company-admin roles keep full company visibility (they need it
+    to manage things). Every other role — ESG coordinator, plant
+    coordinator, department user/approver, reviewer, approver — only
+    sees assignments where they are personally the assignee, the
+    assigned reviewer, or the current workflow-task assignee (covers
+    approval / pre-final / final-approval hand-offs to a specific person).
+    """
+    base = _assignment_queryset_for_user(user)
+    if _is_admin_scope(user):
+        return base
+
+    my_ids = _my_assignment_ids(user)
+
+    user_ct = ContentType.objects.get_for_model(User)
+    assignment_ct = ContentType.objects.get_for_model(Assignment)
+    task_assignment_ids = set(
+        ApprovalConfigurationTask.objects.filter(
+            target_content_type=assignment_ct,
+            current_assignee_content_type=user_ct,
+            current_assignee_object_id=user.id,
+        ).values_list("target_object_id", flat=True)
+    )
+
+    return base.filter(id__in=(my_ids | task_assignment_ids))
+
+
+def _plant_scope_assignment_queryset(user, plant):
+    """
+    Business-rule scope: ALL assignments for a plant (within the user's
+    company/plant access), regardless of who owns each one. Used for
+    integrity checks — section locking, pre-final readiness — which must
+    consider every assignment in the plant/section/FY, not just the
+    current user's own slice. Never use this for dashboard display.
+    """
+    return _assignment_queryset_for_user(user).filter(plant=plant)
+
+
+def _can_user_act_on_assignment(user, assignment, strict_user_only=True):
     if not assignment:
         return False
 
@@ -285,12 +349,44 @@ def _can_user_act_on_assignment(user, assignment):
     if not task:
         return False
 
+    if strict_user_only and not _is_admin_scope(user):
+        stage = task.current_stage if task.current_stage_id else None
+        if not stage:
+            return False
+
+        assignee_id = task.current_assignee_object_id if (
+            task.current_assignee_content_type_id
+            and task.current_assignee_content_type.model == "user"
+        ) else None
+
+        if stage.stage_type == "review":
+            return _is_assigned_reviewer(user, assignment)
+
+        if stage.stage_type in {"approval", "pre_final_approval", "final_approval"}:
+            # Require BOTH: the task is currently parked on this exact user
+            # AND this user's role matches the role configured for this
+            # stage. A bare "current_assignee == user" check isn't enough —
+            # if the workflow engine couldn't resolve a proper next
+            # approver (missing/misconfigured stage role, no one with that
+            # role available), it can leave a stale assignee (often
+            # whoever submitted) parked on the task. Without a role
+            # configured on the stage we can't verify authorization at
+            # all, so we deny rather than fall back to trusting the
+            # assignee id.
+            if not stage.role_id:
+                return False
+            if getattr(user, "role_id", None) != stage.role_id:
+                return False
+            return bool(assignee_id == user.id)
+
+        return bool(assignee_id == user.id)
+
     task_info = _serialize_task_for_user(task, user)
     return bool(task_info and task_info.get("can_act"))
 
 
 def _approval_stage_queryset(user):
-    assignments = _assignment_queryset_for_user(user).select_related(
+    assignments = _my_dashboard_assignment_queryset(user).select_related(
         "plant",
         "section",
         "principle",
@@ -312,7 +408,7 @@ def _approval_stage_queryset(user):
 
 
 def _build_brsr_selection_filters(user, request):
-    plants = list(_company_scope_plants(user))
+    plants = list(_company_scope_plants(user)) if _is_admin_scope(user) else list(user.assigned_plants.filter(is_active=True).order_by("name"))
     selected_plant = None
     selected_plant_id = request.GET.get("plant", "")
     if selected_plant_id:
@@ -360,9 +456,8 @@ def _section_principle_ready_for_pre_final(user, plant, section, principle, fina
         return False, 0
 
     assignments = list(
-        _assignment_queryset_for_user(user)
+        _plant_scope_assignment_queryset(user, plant)
         .filter(
-            plant_id=plant.id,
             section_id=section.id,
             financial_year=financial_year,
         )
@@ -829,8 +924,8 @@ def _is_section_locked_for_new_assignment(user, plant, section, principle, finan
         return False
 
     assignments = list(
-        _assignment_queryset_for_user(user)
-        .filter(plant_id=plant.id, section_id=section.id, financial_year=financial_year)
+        _plant_scope_assignment_queryset(user, plant)
+        .filter(section_id=section.id, financial_year=financial_year)
         .select_related("plant", "section", "principle", "workflow_template")
     )
     if principle:
@@ -956,34 +1051,44 @@ def _serialize_task_for_user(task, user):
     is_completed = bool(task.is_completed)
     stage_label = "Final Approved & Locked" if is_completed else (task.current_stage.label if task.current_stage_id else "")
     stage_type = "" if is_completed else (task.current_stage.stage_type if task.current_stage_id else "")
-    
+
     assignee_id = task.current_assignee_object_id if (
-        task.current_assignee_content_type_id and 
-        task.current_assignee_content_type.model == "user"
+        task.current_assignee_content_type_id and
+        task.current_assignee_content_type.model == "user"  # Fixed typo here
     ) else None
     if is_completed:
         assignee_id = None
-    
+
+    is_admin = user.is_superuser or getattr(user, "is_super_admin", False)
     current_user_role_id = getattr(user, "role_id", None)
     current_stage_role_id = task.current_stage.role_id if task.current_stage_id else None
-    
-    can_act = bool(
-        user.is_authenticated
-        and (
-            user.is_superuser
-            or getattr(user, "is_super_admin", False)
-            or assignee_id == user.id
-            or (current_user_role_id and current_stage_role_id and current_user_role_id == current_stage_role_id)
+
+    if is_admin:
+        can_act = user.is_authenticated
+    elif task.current_stage_id and task.current_stage.stage_type in {"approval", "pre_final_approval", "final_approval"}:
+        if not current_stage_role_id:
+            can_act = is_admin
+        else:
+            can_act = bool(
+                user.is_authenticated
+                and current_user_role_id == current_stage_role_id
+                and assignee_id == user.id
+            )
+    else:
+        can_act = bool(user.is_authenticated and assignee_id == user.id)
+
+    if task.is_returned and assignee_id == getattr(user, "id", None) and not is_admin:
+        stage_ok = (
+            not current_stage_role_id
+            or current_user_role_id == current_stage_role_id
         )
-    )
-    if task.is_returned and assignee_id == getattr(user, "id", None):
-        can_act = True
+        can_act = can_act or stage_ok
     if task.current_stage_id and task.current_stage.stage_type == "review":
         assignment = getattr(task.target, "assignment", None) or (task.target if isinstance(task.target, Assignment) else None)
         can_act = _is_assigned_reviewer(user, assignment)
     if is_completed:
         can_act = False
-    
+
     return {
         "id": task.id,
         "stage": stage_label,
@@ -1280,44 +1385,20 @@ def _user_has_permission(user, code):
 def _dashboard_plant_queryset(user):
     """
     Plants shown on the BRSR data dashboard:
-      - superuser -> every active plant
-      - user with VIEW_ALL_BRSR_DATA -> every active plant in their company
-      - everyone else -> only plants assigned to them
+      - superuser/company-admin -> every active plant in scope
+      - everyone else -> only plants assigned to them, regardless of
+        VIEW_ALL_BRSR_DATA (that permission no longer expands scope
+        beyond the user's own assigned plants for non-admins).
     """
-    if user.is_superuser or getattr(user, "is_super_admin", False):
+    if _is_admin_scope(user):
         return Plant.objects.filter(is_active=True).order_by("name")
-
-    try:
-        view_all_perm = Permissions.objects.get(code='VIEW_ALL_BRSR_DATA')
-        has_view_all = _user_has_permission(user, view_all_perm.code)
-    except Permissions.DoesNotExist:
-        has_view_all = False
-
-    if has_view_all:
-        company_id = getattr(user, "company_id", None)
-        if company_id:
-            return Plant.objects.filter(
-                created_by__company_id=company_id,
-                is_active=True,
-            ).select_related("created_by__company").order_by("name")
-        return Plant.objects.none()
 
     return user.assigned_plants.filter(is_active=True).order_by("name")
 
 
 def _can_view_plant_brsr_data(user, plant):
-    if user.is_superuser or getattr(user, "is_super_admin", False):
+    if _is_admin_scope(user):
         return True
-
-    try:
-        view_all_perm = Permissions.objects.get(code='VIEW_ALL_BRSR_DATA')
-        has_view_all = _user_has_permission(user, view_all_perm.code)
-    except Permissions.DoesNotExist:
-        has_view_all = False
-
-    if has_view_all:
-        plant_company_id = getattr(getattr(plant, "created_by", None), "company_id", None)
-        return bool(plant_company_id) and plant_company_id == getattr(user, "company_id", None)
 
     return user.assigned_plants.filter(pk=plant.pk, is_active=True).exists()
 
@@ -1726,7 +1807,7 @@ class AssignmentDashboardView(LoginRequiredMixin, TemplateView):
         search_query = self.request.GET.get('search', '').strip()
         
         assignments = list(
-            _assignment_scope_queryset(user)
+            _my_dashboard_assignment_queryset(user)
             .select_related(
                 "plant",
                 "section",
@@ -1769,7 +1850,7 @@ class AssignmentDashboardView(LoginRequiredMixin, TemplateView):
             ]
         
         assignments.sort(key=lambda x: (x.overall_status == "completed", -x.created_at.timestamp()))
-        plants = _company_scope_plants(user)
+        plants = _company_scope_plants(user) if _is_admin_scope(user) else user.assigned_plants.filter(is_active=True).order_by("name")
         statuses = sorted(set(a.overall_status for a in assignments if a.overall_status))
         stages = sorted(set(a.workflow_stage_type for a in assignments if a.workflow_stage_type))    
         serialized_assignments = [
@@ -1852,12 +1933,36 @@ class ApprovalDashboardView(LoginRequiredMixin, TemplateView):
         stage_filter = self.request.GET.get('stage', '')
         search_query = self.request.GET.get('search', '').strip()
         
-        assignments = [
-            assignment
-            for assignment in _approval_stage_queryset(user)
-            if not assignment.workflow_task or not assignment.workflow_task.is_completed
-        ]
+        # Get all assignments in approval stages that the user can act on
+        assignments = []
+        for assignment in _my_dashboard_assignment_queryset(user).select_related(
+            "plant",
+            "section",
+            "principle",
+            "workflow_template",
+            "assignee_content_type",
+            "assigner_content_type",
+        ).prefetch_related(
+            "questions",
+            "responses",
+            "questions__section",
+            "questions__principle",
+        ):
+            # Check if assignment is in an approval stage
+            if not assignment.workflow_stage_type or not _is_approval_stage(assignment.workflow_stage_type):
+                continue
+            
+            # Check if user can act on this assignment
+            if not _can_user_act_on_assignment(user, assignment):
+                continue
+            
+            # Skip completed assignments
+            if assignment.workflow_task and assignment.workflow_task.is_completed:
+                continue
+                
+            assignments.append(assignment)
         
+        # Apply filters
         if company_filter:
             assignments = [
                 a for a in assignments
@@ -1913,6 +2018,8 @@ class ApprovalDashboardView(LoginRequiredMixin, TemplateView):
             plant_id = str(assignment.plant.id) if assignment.plant_id else ""
             plants.add((plant_id, plant_key))
 
+            questions_qs = assignment.questions.select_related("section", "principle").order_by("display_order", "question_number")
+
             if stage_type == "pre_final_approval":
                 section_key = assignment.section.name if assignment.section else "Unknown Section"
                 principle_key = assignment.principle.principle_name if assignment.principle else "Section-wide"
@@ -1934,11 +2041,14 @@ class ApprovalDashboardView(LoginRequiredMixin, TemplateView):
                             "principle_name": principle_key,
                             "plant_names": set([plant_key]),
                             "assignment_count": 1,
+                            "assignment_id": assignment.id,
                         }
                     )
                 else:
                     entry["plant_names"].add(plant_key)
                     entry["assignment_count"] += 1
+                total_questions += questions_qs.count()
+                continue
 
             if stage_type == "final_approval":
                 section_key = assignment.section.name if assignment.section else "Unknown Section"
@@ -1961,21 +2071,23 @@ class ApprovalDashboardView(LoginRequiredMixin, TemplateView):
                             "principle_name": principle_key,
                             "plant_names": set([plant_key]),
                             "assignment_count": 1,
+                            "assignment_id": assignment.id,
                         }
                     )
                 else:
                     entry["plant_names"].add(plant_key)
                     entry["assignment_count"] += 1
+                total_questions += questions_qs.count()
+                continue
             
+            # Regular review/approval assignments
             company_bucket = grouped.setdefault(company_key, {})
             company_bucket["_company_id"] = company_id
             plant_bucket = company_bucket.setdefault(plant_key, {})
             plant_bucket["_plant_id"] = plant_id
             entries = plant_bucket.setdefault("entries", [])
             
-            questions = list(
-                assignment.questions.select_related("section", "principle").order_by("display_order", "question_number")
-            )
+            questions = list(questions_qs)
             responses = {
                 response.question_id: response
                 for response in assignment.responses.select_related("question")
@@ -2008,6 +2120,8 @@ class ApprovalDashboardView(LoginRequiredMixin, TemplateView):
         
         plants_list = sorted([{"id": p_id, "name": p_name} for p_id, p_name in plants if p_id], key=lambda x: x["name"])
         companies_list = sorted([{"id": c_id, "name": c_name} for c_id, c_name in companies if c_id], key=lambda x: x["name"])
+        
+        # Convert sets to sorted lists
         consolidated_pre_final_groups = [
             {
                 **item,
@@ -2022,6 +2136,7 @@ class ApprovalDashboardView(LoginRequiredMixin, TemplateView):
             }
             for item in consolidated_final_groups
         ]
+        
         stages = sorted([s for s in stage_counts.keys() if stage_counts[s] > 0])
         
         context.update({
@@ -2060,7 +2175,7 @@ class AssignmentDetailView(LoginRequiredMixin, TemplateView):
 
         # Get the assignment with proper permissions
         assignment = get_object_or_404(
-            _assignment_queryset_for_user(user).select_related(
+            _my_dashboard_assignment_queryset(user).select_related(
                 "plant",
                 "section",
                 "principle",
@@ -2153,8 +2268,7 @@ class AssignmentDetailView(LoginRequiredMixin, TemplateView):
 
         context["assignment"] = _serialize_assignment(assignment, user)
         context["questions"] = question_rows
- 
-        # Group questions for display (now grouped correctly, since sub_section is populated)
+
         context["question_groups"] = self._group_questions(question_rows)
  
         context["questions_json"] = [
@@ -2179,6 +2293,7 @@ class AssignmentDetailView(LoginRequiredMixin, TemplateView):
             "company_name",
             ""
         )
+        
         # Counts for summary
         status_counts = {
             "draft": 0,
@@ -2192,6 +2307,21 @@ class AssignmentDetailView(LoginRequiredMixin, TemplateView):
             if status in status_counts:
                 status_counts[status] += 1
         context["status_counts"] = status_counts
+        
+        # Get pending question IDs (questions with status 'submitted' or 'resubmitted' that user can act on)
+        pending_questions = [
+            q for q in question_rows 
+            if q.get('status') in ['submitted', 'resubmitted'] and q.get('can_act', False)
+        ]
+        pending_question_ids = [q['question_id'] for q in pending_questions]
+        
+        # Check if user can act on the assignment (any pending question they can act on)
+        can_act = any(q.get('can_act', False) for q in question_rows)
+        
+        context["pending_question_ids"] = pending_question_ids
+        context["pending_questions_count"] = len(pending_question_ids)
+        context["can_act"] = can_act
+        
         context["approval_dashboard_url"] = reverse("brsr:approval_dashboard")
         return context
 
@@ -2206,8 +2336,11 @@ class AssignmentDetailView(LoginRequiredMixin, TemplateView):
                     "questions": []
                 }
             groups[key]["questions"].append(question)
-        if not groups or (len(groups) == 1 and "Questions" in groups):
-            return [{"label": "Submitted Responses", "questions": questions}]
+        
+        # If only one group and it's the default "Questions", rename it
+        if len(groups) == 1 and "Questions" in groups:
+            return [{"label": "Submitted Responses", "questions": groups["Questions"]["questions"]}]
+        
         return list(groups.values())
 
     def _can_act_on_question(self, assignment, response, user):
@@ -2242,7 +2375,7 @@ class AssignmentReviewCommentView(LoginRequiredMixin, TemplateView):
         user = self.request.user
 
         assignment = get_object_or_404(
-            _assignment_queryset_for_user(user).select_related(
+            _my_dashboard_assignment_queryset(user).select_related(
                 "plant",
                 "section",
                 "principle",
@@ -2423,7 +2556,10 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
                 "status": response.status if response else "draft",
                 "response_json": response.response_json if response else {},
                 "response_value": response.response_value if response else "",
-                "is_editable": response.is_editable if response else True,
+                "is_editable": (
+                    (response.is_editable if response else True)
+                    and (assignment.is_editable if assignment else True)
+                ),
                 "assignment_id": response.assignment.assignment_id if response else "",
                 "workflow_stage": task.current_stage.label if task and task.current_stage_id else "",
                 "workflow_stage_type": task.current_stage.stage_type if task and task.current_stage_id else "",
@@ -2458,6 +2594,12 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
         question_queryset = BRSRQuestion.objects.filter(id__in=[q.id for q in questions])
         assignment_bundle = _assignment_context(section, principle, question_queryset, assignment=assignment, user=self.request.user)
 
+        section_locked = False
+        if assignment and assignment.plant_id and assignment.financial_year:
+            section_locked = _is_section_locked_for_new_assignment(
+                self.request.user, assignment.plant, section, principle, assignment.financial_year
+            )
+
         return {
             "section": section,
             "principle": principle,
@@ -2469,6 +2611,7 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
             "section_cards": section_cards,
             "principle_cards": principle_cards,
             "counts": _workflow_counts(questions, assignment=assignment),
+            "section_locked": section_locked,
             **assignment_bundle,
         }
 
@@ -2592,7 +2735,7 @@ class BRSRDataDashboardView(LoginRequiredMixin, TemplateView):
 
         context["plant_cards"] = plant_cards
         context["has_view_all"] = has_view_all
-        if has_view_all and plants:
+        if _is_admin_scope(user) and plants:
             context["company_stats"] = _company_brsr_stats(plants)
             context["company_url"] = reverse("brsr:brsr_company_data")
         return context
@@ -2648,11 +2791,9 @@ class BRSRCompanyDataView(LoginRequiredMixin, TemplateView):
 
     def get(self, request, *args, **kwargs):
         user = request.user
-        try:
-            view_all_perm = Permissions.objects.get(code='VIEW_ALL_BRSR_DATA')
-            has_view_all = _user_has_permission(user, view_all_perm.code)
-        except Permissions.DoesNotExist:
-            has_view_all = False
+        if not _is_admin_scope(user):
+            messages.error(request, "You do not have permission to view company-wide BRSR data.")
+            return redirect("brsr:brsr_data_dashboard")
         return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):

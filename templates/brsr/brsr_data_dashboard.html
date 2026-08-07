@@ -56,7 +56,6 @@
     <div class="page-header-title"><h5 class="m-b-10">BRSR Data Dashboard</h5></div>
     <ul class="breadcrumb">
       <li class="breadcrumb-item"><a href="{% url 'accounts:dashboard' %}">Home</a></li>
-      <li class="breadcrumb-item"><a href="{% url 'brsr:brsr_list' %}">BRSR</a></li>
       <li class="breadcrumb-item">Data Dashboard</li>
     </ul>
   </div>
@@ -68,11 +67,6 @@
     <div>
       <h3>Overall Company Data</h3>
       <p>Combined BRSR data across all {{ plant_cards|length }} plant{{ plant_cards|length|pluralize }} in your company.</p>
-    </div>
-    <div class="metrics">
-      <div class="metric"><strong>{{ company_stats.entered }}</strong><span>Entered</span></div>
-      <div class="metric"><strong>{{ company_stats.approved }}</strong><span>Approved</span></div>
-      <div class="metric"><strong>{{ company_stats.progress }}%</strong><span>Progress</span></div>
     </div>
   </a>
   {% endif %}
@@ -90,11 +84,6 @@
       </div>
       <div class="plant-progress-track">
         <div class="plant-progress-fill" style="width:{{ card.stats.progress }}%"></div>
-      </div>
-      <div class="plant-stats-row">
-        <span><strong>{{ card.stats.entered }}</strong> entered</span>
-        <span><strong>{{ card.stats.approved }}</strong> approved</span>
-        <span><strong>{{ card.stats.pending_review }}</strong> pending</span>
       </div>
     </a>
     {% endfor %}

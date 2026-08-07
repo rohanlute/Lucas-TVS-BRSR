@@ -938,7 +938,6 @@
     </div>
     <ul class="breadcrumb">
       <li class="breadcrumb-item"><a href="{% url 'accounts:dashboard' %}">Home</a></li>
-      <li class="breadcrumb-item"><a href="{{ dashboard_url }}">BRSR Data</a></li>
       <li class="breadcrumb-item">{% if is_company_view %}Company Overview{% else %}{{ plant.name }}{% endif %}</li>
     </ul>
   </div>
@@ -953,14 +952,6 @@
             <h3>{% if is_company_view %}{{ company_name }}{% else %}{{ plant.name }}{% endif %}</h3>
             <small>{% if is_company_view %}All plants combined{% else %}{{ plant.code }} · Entered BRSR data{% endif %}</small>
           </div>
-          <span class="pill brand">Read Only</span>
-        </div>
-        <div class="progress-label">
-          <span>Approved Progress</span>
-          <strong id="progressLabel">{{ stats.approved }} of {{ stats.entered }}</strong>
-        </div>
-        <div class="progress-track">
-          <div class="progress-fill" style="width:{{ stats.progress }}%"></div>
         </div>
       </div>
 
@@ -1025,9 +1016,6 @@
           <div style="word-wrap:break-word; overflow-wrap:break-word; min-width:0;">
             {% if is_company_view %}Company-wide combined data{% else %}{{ plant.name }} entered data{% endif %}{% if selected_fy %} · {{ selected_fy }}{% endif %}
           </div>
-          <div class="workspace-banner-actions">
-            <div>{{ stats.approved }} approved · {{ stats.pending_review }} pending review · {{ stats.rejected }} rejected</div>
-          </div>
         </div>
       </div>
 
@@ -1036,11 +1024,6 @@
           <div class="panel-title">
             <h2>{% if is_company_view %}All Plants — Combined BRSR Data{% else %}{{ plant.name }} — Entered BRSR Data{% endif %}</h2>
             <p>Read-only view of already submitted responses{% if selected_fy %} for {{ selected_fy }}{% endif %}.</p>
-          </div>
-          <div class="pill-row">
-            <span class="pill brand">{{ stats.entered }} Entered</span>
-            <span class="pill success">{{ stats.approved }} Approved</span>
-            {% if stats.pending_review %}<span class="pill warn">{{ stats.pending_review }} Pending</span>{% endif %}
           </div>
         </div>
 
