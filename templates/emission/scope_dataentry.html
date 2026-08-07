@@ -1624,140 +1624,6 @@
                                     </div>
                                 {% endif %}
 
-                                <!-- Action Buttons -->
-                                {% comment %} <div class="d-flex gap-3">
-
-                                    <!-- ========================= -->
-                                    <!-- REVIEWER -->
-                                    <!-- ========================= -->
-                                    {% if is_reviewer %}
-
-                                        {% if assignment.status == "SUBMITTED" %}
-
-                                            <button id="approveAssignmentBtn" class="btn btn-success">
-                                                <i class="feather-check"></i> Approve
-                                            </button>
-
-                                            <button id="rejectAssignmentBtn" class="btn btn-danger">
-                                                <i class="feather-x"></i> Reject
-                                            </button>
-
-                                        {% elif assignment.status == "IN_PROGRESS" %}
-
-                                            <div class="alert alert-warning w-100 mb-0">
-                                                <h6 class="mb-1">
-                                                    <i class="feather-corner-up-left"></i>
-                                                    Assignment Returned
-                                                </h6>
-
-                                                <div>
-                                                    This assignment has been returned to the assignee for correction.
-                                                </div>
-                                            </div>
-
-                                        {% elif assignment.status == "APPROVED" %}
-
-                                            <div class="alert alert-success w-100 mb-0">
-                                                <h6 class="mb-1">
-                                                    <i class="feather-check-circle"></i>
-                                                    Assignment Approved
-                                                </h6>
-
-                                                <div>
-                                                    You have already approved this assignment.
-                                                </div>
-                                            </div>
-
-                                        {% endif %}
-
-
-                                    <!-- ========================= -->
-                                    <!-- ASSIGNEE -->
-                                    <!-- ========================= -->
-                                    {% elif is_assignee %}
-
-                                        {% if assignment.status == "SUBMITTED" %}
-
-                                            <div class="alert alert-info w-100 mb-0">
-                                                <h6 class="mb-1">
-                                                    <i class="feather-clock"></i>
-                                                    Waiting for Approval
-                                                </h6>
-
-                                                <div>
-                                                    Your submission has been sent for review.
-                                                </div>
-
-                                                <div class="mt-2">
-                                                    <strong>Reviewer :</strong>
-                                                    {{ reviewer_name }}
-                                                </div>
-                                            </div>
-
-                                        {% elif assignment.status == "APPROVED" %}
-
-                                            <div class="alert alert-success w-100 mb-0">
-                                                <h6 class="mb-1">
-                                                    <i class="feather-check-circle"></i>
-                                                    Assignment Approved
-                                                </h6>
-
-                                                <div>
-                                                    Your submission has been approved by
-                                                    <strong>{{ reviewer_name }}</strong>.
-                                                </div>
-                                            </div>
-
-                                        {% else %}
-
-                                            <button id="submitAssignment"
-                                                    class="btn btn-brsr success"
-                                                    style="padding:10px 30px;">
-                                                Submit for Review
-                                            </button>
-
-                                            <button id="saveDraft"
-                                                    class="btn btn-brsr secondary"
-                                                    style="padding:10px 30px;">
-                                                Save Draft
-                                            </button>
-
-                                        {% endif %}
-
-
-                                    <!-- ========================= -->
-                                    <!-- ASSIGNER / ADMIN -->
-                                    <!-- ========================= -->
-                                    {% else %}
-
-                                        {% if assignment %}
-
-                                            <div class="alert alert-secondary w-100 mb-0">
-                                                <h6 class="mb-1">
-                                                    <i class="feather-eye"></i>
-                                                    Read Only
-                                                </h6>
-
-                                                <div>
-                                                    You are viewing this assignment.
-                                                </div>
-                                            </div>
-
-                                        {% else %}
-
-                                            <button id="assignTaskBtn"
-                                                    class="btn btn-brsr primary"
-                                                    style="padding:10px 30px;">
-                                                <i class="feather-user-plus"></i>
-                                                Assign Task
-                                            </button>
-
-                                        {% endif %}
-
-                                    {% endif %}
-
-                                </div> {% endcomment %}
-
                                 <div class="d-flex gap-3">
 
                                     {# ---------------- Reviewer ---------------- #}
@@ -1850,14 +1716,8 @@
 
                                     {% else %}
 
-                                        {% if assignment %}
-
-                                            <button id="submitAssignment"
-                                                    class="btn btn-brsr success">
-                                                Submit for Review
-                                            </button>
-
-                                        {% else %}
+                                        {# ESG Coordinator / Assigner can only see Assign button #}
+                                        {% if can_assign %}
 
                                             <button id="assignTaskBtn"
                                                     class="btn btn-brsr primary">
@@ -1866,10 +1726,20 @@
 
                                         {% endif %}
 
-                                        <button id="saveDraft"
-                                                class="btn btn-brsr secondary">
-                                            Save Draft
-                                        </button>
+                                        {# Only the assigned user can Save Draft & Submit #}
+                                        {% if assignment and is_assignee %}
+
+                                            <button id="submitAssignment"
+                                                    class="btn btn-brsr success">
+                                                Submit for Review
+                                            </button>
+
+                                            <button id="saveDraft"
+                                                    class="btn btn-brsr secondary">
+                                                Save Draft
+                                            </button>
+
+                                        {% endif %}
 
                                     {% endif %}
 

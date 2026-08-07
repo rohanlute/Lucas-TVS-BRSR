@@ -12,6 +12,8 @@ from apps.organizations.models import (
 )
 from decimal import Decimal
 from django.utils import timezone
+from django.contrib.postgres.fields import ArrayField
+from django.conf import settings
 
 class EmissionScope(models.Model):
     code = models.CharField(max_length=10, unique=True)
@@ -636,3 +638,237 @@ class EmissionAssignmentSource(models.Model):
         return f"{self.assignment.assignment_code} - {self.source.source_name}"
 
 
+
+class EmissionAssignmentSchedule(models.Model):
+
+    # =====================================================
+    # Schedule Type
+    # =====================================================
+
+    SCHEDULE_TYPE_CHOICES = [
+        ("ONE_TIME", "One Time"),
+        ("RECURRING", "Recurring"),
+    ]
+
+    # =====================================================
+    # Frequency
+    # =====================================================
+
+    FREQUENCY_CHOICES = [
+        ("MONTHLY", "Monthly"),
+        ("QUARTERLY", "Quarterly"),
+        ("HALF_YEARLY", "Half Yearly"),
+        ("YEARLY", "Yearly"),
+    ]
+
+    # =====================================================
+    # Status
+    # =====================================================
+
+    STATUS_CHOICES = [
+        ("ACTIVE", "Active"),
+        ("PAUSED", "Paused"),
+        ("COMPLETED", "Completed"),
+    ]
+
+    PRIORITY_CHOICES = [
+        ("LOW", "Low"),
+        ("MEDIUM", "Medium"),
+        ("HIGH", "High"),
+        ("URGENT", "Urgent"),
+    ]
+
+    # =====================================================
+    # Basic Information
+    # =====================================================
+
+    schedule_code = models.CharField(
+        max_length=30,
+        unique=True,
+    )
+
+    name = models.CharField(
+        max_length=200,
+    )
+
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.PROTECT,
+        related_name="emission_schedules",
+    )
+
+    plant = models.ForeignKey(
+        Plant,
+        on_delete=models.PROTECT,
+        related_name="emission_schedules",
+    )
+
+    scope = models.ForeignKey(
+        EmissionScope,
+        on_delete=models.PROTECT,
+        related_name="schedules",
+    )
+
+    # =====================================================
+    # Users
+    # =====================================================
+
+    assigner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="created_emission_schedules",
+    )
+
+    assignee = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="assigned_emission_schedules",
+    )
+
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="review_emission_schedules",
+        null=True,
+        blank=True,
+    )
+
+    workflow_template = models.ForeignKey(
+        ApprovalConfigurationTemplate,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="emission_schedules",
+    )
+
+    # =====================================================
+    # Schedule Configuration
+    # =====================================================
+
+    schedule_type = models.CharField(
+        max_length=20,
+        choices=SCHEDULE_TYPE_CHOICES,
+        default="ONE_TIME",
+    )
+
+    frequency = models.CharField(
+        max_length=20,
+        choices=FREQUENCY_CHOICES,
+        null=True,
+        blank=True,
+    )
+
+    start_date = models.DateField()
+
+    end_date = models.DateField(
+        null=True,
+        blank=True,
+    )
+
+    # =====================================================
+    # Frequency Selection
+    # =====================================================
+
+    selected_months = ArrayField(
+        models.IntegerField(),
+        default=list,
+        blank=True,
+        help_text="Used only for Monthly schedules.",
+    )
+
+    selected_quarters = ArrayField(
+        models.CharField(max_length=2),
+        default=list,
+        blank=True,
+        help_text="Example: Q1,Q2",
+    )
+
+    selected_half_years = ArrayField(
+        models.CharField(max_length=2),
+        default=list,
+        blank=True,
+        help_text="Example: H1,H2",
+    )
+
+    # =====================================================
+    # Auto Scheduler
+    # =====================================================
+
+    next_run_date = models.DateField(
+        null=True,
+        blank=True,
+    )
+
+    last_run_date = models.DateField(
+        null=True,
+        blank=True,
+    )
+
+    total_assignments_created = models.PositiveIntegerField(
+        default=0,
+    )
+
+    # =====================================================
+    # Assignment Defaults
+    # =====================================================
+
+    priority = models.CharField(
+        max_length=20,
+        choices=PRIORITY_CHOICES,
+        default="MEDIUM",
+    )
+
+    notes = models.TextField(
+        blank=True,
+    )
+
+    # =====================================================
+    # Status
+    # =====================================================
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default="ACTIVE",
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True,
+    )
+
+    class Meta:
+
+        db_table = "env_emission_assignment_schedule"
+
+        ordering = [
+            "plant",
+            "scope",
+            "schedule_type",
+            "frequency",
+        ]
+
+        indexes = [
+            models.Index(fields=["company"]),
+            models.Index(fields=["plant"]),
+            models.Index(fields=["status"]),
+            models.Index(fields=["next_run_date"]),
+        ]
+
+    def __str__(self):
+        return f"{self.schedule_code} - {self.name}"
+
+    @property
+    def is_recurring(self):
+        return self.schedule_type == "RECURRING"
+
+    @property
+    def is_one_time(self):
+        return self.schedule_type == "ONE_TIME"

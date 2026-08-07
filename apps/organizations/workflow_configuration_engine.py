@@ -253,8 +253,6 @@ class WorkflowConfigurationEngine:
             if hasattr(target, "assignment_status"):
                 target.assignment_status = "rejected"
         else:
-            if hasattr(target, "status"):
-                target.status = "submitted"
             if hasattr(target, "assignment_status"):
                 target.assignment_status = "in_progress"
 
