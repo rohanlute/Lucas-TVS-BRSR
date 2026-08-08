@@ -1075,7 +1075,7 @@
   </div>
   {% endif %}
 
-  {% if consolidated_pre_final_groups %}
+  {% if can_view_pre_final_approvals and consolidated_pre_final_groups %}
   <div class="company-group" style="margin-top: 24px;">
     <div class="company-group-header">
       <h2>Consolidated Pre-Final Approval</h2>
@@ -1193,7 +1193,7 @@
   </div>
   {% endif %}
 
-  {% if consolidated_final_groups %}
+  {% if can_view_final_approvals and consolidated_final_groups %}
   <div class="company-group" style="margin-top: 24px;">
     <div class="company-group-header">
       <h2>Final Approval</h2>

@@ -2580,6 +2580,22 @@ class ApprovalDashboardView(LoginRequiredMixin, TemplateView):
             "grouped_assignments": grouped,
             "consolidated_pre_final_groups": consolidated_pre_final_groups,
             "consolidated_final_groups": consolidated_final_groups,
+            "can_view_pre_final_approvals": bool(
+                user.is_superuser
+                or getattr(user, "is_super_admin", False)
+                or ApprovalConfigurationTask.objects.filter(
+                    current_stage__stage_type="pre_final_approval",
+                    current_stage__role_id=getattr(user, "role_id", None),
+                ).exists()
+            ),
+            "can_view_final_approvals": bool(
+                user.is_superuser
+                or getattr(user, "is_super_admin", False)
+                or ApprovalConfigurationTask.objects.filter(
+                    current_stage__stage_type="final_approval",
+                    current_stage__role_id=getattr(user, "role_id", None),
+                ).exists()
+            ),
             "assignment_count": len(assignments),
             "question_count": total_questions,
             "stage_counts": stage_counts,
