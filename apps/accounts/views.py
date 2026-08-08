@@ -541,22 +541,17 @@ class UserUpdateView(UserLocationAssignmentMixin, LoginRequiredMixin, UpdateView
     template_name = ('accounts/user_management/user_create.html')
 
     def get_success_url(self):
-        """Redirect based on 'next' parameter or default to user list"""
-        # Check if 'next' parameter exists
         next_url = self.request.GET.get('next')
         if next_url:
             return next_url
-        
-        # Default redirect to user list
         return reverse_lazy('accounts:user_list')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['page_title'] = 'Edit User'
         context.update(self.get_assignment_context(self.object))
-        
-        # Pass the next URL to the template for the cancel button
         context['next_url'] = self.request.GET.get('next', reverse_lazy('accounts:user_list'))
+        context['is_readonly'] = not self.request.user.is_company_admin
         return context
 
     def get_form(self, form_class=None):
@@ -571,6 +566,22 @@ class UserUpdateView(UserLocationAssignmentMixin, LoginRequiredMixin, UpdateView
         # Configure company field
         self.configure_company_field(form)
         
+        is_company_admin = self.request.user.is_company_admin
+        
+        if not is_company_admin:
+            # Make fields read-only for non-company admins
+            if 'role' in form.fields:
+                form.fields['role'].disabled = True
+                form.fields['role'].help_text = "This field is read-only for your role"
+            
+            if 'department' in form.fields:
+                form.fields['department'].disabled = True
+                form.fields['department'].help_text = "This field is read-only for your role"
+            
+            if 'company' in form.fields:
+                form.fields['company'].disabled = True
+                form.fields['company'].help_text = "This field is read-only for your role"
+        
         # Ensure all fields are populated with existing data
         if self.object:
             form.fields['username'].initial = self.object.username
@@ -584,7 +595,6 @@ class UserUpdateView(UserLocationAssignmentMixin, LoginRequiredMixin, UpdateView
             form.fields['department'].initial = self.object.department_id
             form.fields['company'].initial = self.object.company_id
             
-            # Set profile image if exists
             if self.object.profile_image:
                 form.fields['profile_image'].initial = self.object.profile_image
         
@@ -593,7 +603,6 @@ class UserUpdateView(UserLocationAssignmentMixin, LoginRequiredMixin, UpdateView
     def get_initial(self):
         initial = super().get_initial()
         
-        # Populate initial data from the user instance
         if self.object:
             initial['username'] = self.object.username
             initial['full_name'] = self.object.full_name
@@ -614,17 +623,15 @@ class UserUpdateView(UserLocationAssignmentMixin, LoginRequiredMixin, UpdateView
         with transaction.atomic():
             user = form.save(commit=False)
 
-            # Handle profile image
             if self.request.FILES.get('profile_image'):
                 user.profile_image = self.request.FILES.get('profile_image')
 
-            # Only update password if provided
             password = (form.cleaned_data.get('password') or '').strip()
             if password:
                 user.set_password(password)
 
-            # Handle company assignment
-            if self.can_choose_company():
+            # ✅ Handle company assignment - only if user is company admin
+            if self.can_choose_company() or self.request.user.is_company_admin:
                 company = form.cleaned_data.get('company')
                 if company is None:
                     form.add_error('company', 'Please select a company.')
@@ -638,9 +645,7 @@ class UserUpdateView(UserLocationAssignmentMixin, LoginRequiredMixin, UpdateView
                 user.company = company
 
             user.save()
-            self.sync_user_assignments(user)
-
-        # ✅ Success message
+            self.sync_user_assignments(user)    
         messages.success(self.request, f'User "{user.get_full_name() or user.username}" updated successfully.')
         return redirect(self.get_success_url())
 

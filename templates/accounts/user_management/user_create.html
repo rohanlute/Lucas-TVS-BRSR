@@ -212,6 +212,34 @@
         box-shadow: 0 0 0 30px white inset !important;
         -webkit-text-fill-color: #000 !important;
     }
+
+    /* Read-only field styles */
+    .read-only-field .form-control,
+    .read-only-field .form-select {
+        background-color: #e9ecef !important;
+        cursor: not-allowed;
+        opacity: 0.85;
+    }
+    .read-only-field .form-control:focus,
+    .read-only-field .form-select:focus {
+        box-shadow: none;
+        border-color: #ced4da;
+    }
+    .read-only-field .input-group-text {
+        background-color: #e9ecef !important;
+    }
+    .assignment-node.disabled-node {
+        opacity: 0.7;
+        cursor: not-allowed;
+        background-color: #f8f9fa;
+    }
+    .assignment-node.disabled-node:hover {
+        border-color: #dde4ee;
+    }
+    input[type="checkbox"]:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
 </style>
 {% endblock %}
 
@@ -378,14 +406,19 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <div class="row mb-4 align-items-center">
+                            <!-- COMPANY - READ ONLY for non-companyadmin -->
+                            <div class="row mb-4 align-items-center {% if is_readonly %}read-only-field{% endif %}">
                                 <div class="col-lg-4">
-                                    <label for="companyInput" class="fw-semibold required-field">Company</label>
+                                    <label for="companyInput" class="fw-semibold {% if not is_readonly %}required-field{% endif %}">Company</label>
                                 </div>
                                 <div class="col-lg-8">
                                     <div class="input-group">
                                         <div class="input-group-text"><i class="feather-compass"></i></div>
-                                        {{ form.company }}
+                                        {% if is_readonly %}
+                                            <input type="text" class="form-control" value="{% if object and object.company %}{{ object.company.company_name }}{% else %}Not Assigned{% endif %}" disabled>
+                                        {% else %}
+                                            {{ form.company }}
+                                        {% endif %}
                                     </div>
                                     <div class="fs-12 text-muted mt-1">
                                         {% if form.company.field.disabled %}
@@ -399,14 +432,19 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <div class="row mb-4 align-items-center">
+                            <!-- ROLE - READ ONLY for non-companyadmin -->
+                            <div class="row mb-4 align-items-center {% if is_readonly %}read-only-field{% endif %}">
                                 <div class="col-lg-4">
-                                    <label for="{{ form.role.id_for_label }}" class="fw-semibold required-field">Role</label>
+                                    <label for="{{ form.role.id_for_label }}" class="fw-semibold {% if not is_readonly %}required-field{% endif %}">Role</label>
                                 </div>
                                 <div class="col-lg-8">
                                     <div class="input-group">
                                         <div class="input-group-text"><i class="feather-shield"></i></div>
-                                        {{ form.role }}
+                                        {% if is_readonly %}
+                                            <input type="text" class="form-control" value="{% if object and object.role %}{{ object.role.role_name }}{% else %}Not Assigned{% endif %}" disabled>
+                                        {% else %}
+                                            {{ form.role }}
+                                        {% endif %}
                                     </div>
                                     {% if form.role.errors %}
                                         <div class="invalid-feedback d-block">{{ form.role.errors|striptags }}</div>
@@ -446,14 +484,19 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <div class="row mb-4 align-items-center">
+                            <!-- DEPARTMENT - READ ONLY for non-companyadmin -->
+                            <div class="row mb-4 align-items-center {% if is_readonly %}read-only-field{% endif %}">
                                 <div class="col-lg-4">
                                     <label for="departmentInput" class="fw-semibold">Department</label>
                                 </div>
                                 <div class="col-lg-8">
                                     <div class="input-group">
                                         <div class="input-group-text"><i class="feather-briefcase"></i></div>
-                                        {{ form.department }}
+                                        {% if is_readonly %}
+                                            <input type="text" class="form-control" value="{% if object and object.department %}{{ object.department.name }}{% else %}Not Assigned{% endif %}" disabled>
+                                        {% else %}
+                                            {{ form.department }}
+                                        {% endif %}
                                     </div>
                                     {% if form.department.errors %}
                                         <div class="invalid-feedback d-block">{{ form.department.errors|striptags }}</div>
@@ -477,17 +520,34 @@
                             </div>
                         </div>
                     </div>
+                    <!-- LOCATION - READ ONLY for non-companyadmin -->
                     <div class="tab-pane fade" id="INlocationTab" role="tabpanel">
                         <div class="card-body personal-info">
                             <div class="mb-4 d-flex align-items-center justify-content-between">
                                 <h5 class="fw-bold mb-0 me-4">
                                     <span class="d-block mb-2">Location Assignment:</span>
-                                    <span class="fs-12 fw-normal text-muted text-truncate-1-line">Select plants for this user.</span>
+                                    <span class="fs-12 fw-normal text-muted text-truncate-1-line">
+                                        {% if is_readonly %}
+                                            View assigned plants for this user.
+                                        {% else %}
+                                            Select plants for this user.
+                                        {% endif %}
+                                    </span>
                                 </h5>
                             </div>
                             <div class="location-assignment-section">
-                                <div class="assignment-group-title required-field">Assigned Plants</div>
-                                <div class="assignment-group-note">Select multiple plants</div>
+                                <div class="assignment-group-title {% if not is_readonly %}required-field{% endif %}">
+                                    Assigned Plants
+                                </div>
+                                <div class="assignment-group-note">
+                                    {% if is_readonly %}
+                                        Assigned plants are displayed below
+                                    {% else %}
+                                        Select multiple plants
+                                    {% endif %}
+                                </div>
+                                
+                                {% if not is_readonly %}
                                 <div class="assignment-toolbar">
                                     <button type="button" class="btn btn-outline-primary btn-sm" data-select-all="assigned_plants">
                                         <i class="feather-check-square me-1"></i>Select All
@@ -496,12 +556,16 @@
                                         <i class="feather-square me-1"></i>Deselect All
                                     </button>
                                 </div>
+                                {% endif %}
+                                
                                 <div class="assignment-panel mb-4" id="plantPanel">
                                     {% if company_plants %}
                                         <div class="assignment-grid">
                                             {% for plant in company_plants %}
-                                                <label class="assignment-node {% if plant.id in selected_plant_ids %}is-selected{% endif %}" data-node-type="plant">
-                                                    <input class="assignment-input" type="checkbox" name="assigned_plants" value="{{ plant.id }}" {% if plant.id in selected_plant_ids %}checked{% endif %}>
+                                                <label class="assignment-node {% if plant.id in selected_plant_ids %}is-selected{% endif %} {% if is_readonly %}disabled-node{% endif %}" data-node-type="plant">
+                                                    <input class="assignment-input" type="checkbox" name="assigned_plants" value="{{ plant.id }}" 
+                                                        {% if plant.id in selected_plant_ids %}checked{% endif %}
+                                                        {% if is_readonly %}disabled{% endif %}>
                                                     <span class="assignment-node-label">
                                                         {{ plant.name }}
                                                         <small>{{ plant.code }}</small>
@@ -513,7 +577,9 @@
                                         <div class="text-muted">No active plants available for assignment.</div>
                                     {% endif %}
                                 </div>
-                                <div class="error-message" id="plantError">Please select at least one plant.</div>
+                                {% if not is_readonly %}
+                                    <div class="error-message" id="plantError">Please select at least one plant.</div>
+                                {% endif %}
 
                                 {% if form.non_field_errors %}
                                     <div class="invalid-feedback d-block mt-2">{{ form.non_field_errors|striptags }}</div>
@@ -599,6 +665,18 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const isReadOnly = {{ is_readonly|yesno:"true,false" }};
+    
+    // If read-only mode, disable all checkbox interactions for plants
+    if (isReadOnly) {
+        document.querySelectorAll('input[name="assigned_plants"]:disabled').forEach(function(input) {
+            input.addEventListener('click', function(e) {
+                e.preventDefault();
+                return false;
+            });
+        });
+    }
+
     // File upload preview
     const fileInput = document.querySelector('.file-upload');
     const previewImg = document.querySelector('.upload-pic');
@@ -812,41 +890,51 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Plants selection
-    document.querySelectorAll('[data-select-all]').forEach(function (button) {
-        button.addEventListener('click', function () {
-            const fieldName = this.dataset.selectAll;
-            document.querySelectorAll(`input[name="${fieldName}"]`).forEach(function (checkbox) {
-                checkbox.checked = true;
-                checkbox.closest('.assignment-node').classList.add('is-selected');
+    // Plants selection - only if not read-only
+    if (!isReadOnly) {
+        document.querySelectorAll('[data-select-all]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const fieldName = this.dataset.selectAll;
+                document.querySelectorAll(`input[name="${fieldName}"]`).forEach(function (checkbox) {
+                    checkbox.checked = true;
+                    checkbox.closest('.assignment-node').classList.add('is-selected');
+                });
+                validatePlants();
             });
-            validatePlants();
         });
-    });
 
-    document.querySelectorAll('[data-deselect-all]').forEach(function (button) {
-        button.addEventListener('click', function () {
-            const fieldName = this.dataset.deselectAll;
-            document.querySelectorAll(`input[name="${fieldName}"]`).forEach(function (checkbox) {
-                checkbox.checked = false;
-                checkbox.closest('.assignment-node').classList.remove('is-selected');
+        document.querySelectorAll('[data-deselect-all]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const fieldName = this.dataset.deselectAll;
+                document.querySelectorAll(`input[name="${fieldName}"]`).forEach(function (checkbox) {
+                    checkbox.checked = false;
+                    checkbox.closest('.assignment-node').classList.remove('is-selected');
+                });
+                validatePlants();
             });
-            validatePlants();
         });
-    });
 
-    document.querySelectorAll('input[name="assigned_plants"]').forEach(function (checkbox) {
-        checkbox.addEventListener('change', function () {
-            this.closest('.assignment-node').classList.toggle('is-selected', this.checked);
-            validatePlants();
+        document.querySelectorAll('input[name="assigned_plants"]').forEach(function (checkbox) {
+            checkbox.addEventListener('change', function () {
+                this.closest('.assignment-node').classList.toggle('is-selected', this.checked);
+                validatePlants();
+            });
         });
-    });
+    }
 
     function validatePlants() {
+        if (isReadOnly) return;
+        
         const plantCheckboxes = document.querySelectorAll('input[name="assigned_plants"]');
         const isPlantSelected = Array.from(plantCheckboxes).some(cb => cb.checked);
-        document.getElementById('plantError').classList.toggle('show', !isPlantSelected);
-        document.getElementById('plantPanel').classList.toggle('border-danger', !isPlantSelected);
+        const plantError = document.getElementById('plantError');
+        const plantPanel = document.getElementById('plantPanel');
+        if (plantError) {
+            plantError.classList.toggle('show', !isPlantSelected);
+        }
+        if (plantPanel) {
+            plantPanel.classList.toggle('border-danger', !isPlantSelected);
+        }
     }
 
     validatePlants();
@@ -878,17 +966,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
 
-            const plantCheckboxes = document.querySelectorAll('input[name="assigned_plants"]');
-            const isPlantSelected = Array.from(plantCheckboxes).some(cb => cb.checked);
-            if (!isPlantSelected) {
-                isValid = false;
-                document.getElementById('plantError').classList.add('show');
-                document.getElementById('plantPanel').classList.add('border-danger');
-                errorMessages.push('Please select at least one plant.');
+            // Only validate plants if not in read-only mode
+            if (!isReadOnly) {
+                const plantCheckboxes = document.querySelectorAll('input[name="assigned_plants"]');
+                const isPlantSelected = Array.from(plantCheckboxes).some(cb => cb.checked);
+                if (!isPlantSelected) {
+                    isValid = false;
+                    document.getElementById('plantError').classList.add('show');
+                    document.getElementById('plantPanel').classList.add('border-danger');
+                    errorMessages.push('Please select at least one plant.');
+                }
             }
 
-            // ✅ CORRECTED: Only validate password if it has a value
-            const isEditMode = document.querySelector('input[name="is_active"][value]');
             const password = document.getElementById('passwordInput');
             
             if (password && password.value.length > 0 && password.value.length < 8) {
@@ -898,7 +987,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 errorMessages.push('Password must be at least 8 characters long.');
             }
 
-            // ✅ Check password match only if password is entered
             const confirmPassword = document.getElementById('confirmPasswordInput');
             if (password && confirmPassword && password.value && password.value !== confirmPassword.value) {
                 isValid = false;
