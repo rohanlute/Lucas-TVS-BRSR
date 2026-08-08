@@ -1323,8 +1323,8 @@
 {{ questions_json|json_script:"assignment-questions-data" }}
 
 <script>
-  const APPROVE_URL = "{% url 'brsr:question_approve_api' question_id='__question__' %}";
-  const REJECT_URL = "{% url 'brsr:question_reject_api' question_id='__question__' %}";
+  const APPROVE_URL = "{% url 'brsr:assignment_approve_api' assignment_id=assignment.id %}";
+  const REJECT_URL = "{% url 'brsr:assignment_reject_api' assignment_id=assignment.id %}";
 
   // Get pending question IDs from the server-side data
   const pendingQuestionIds = {{ pending_question_ids|safe }};
@@ -1421,7 +1421,8 @@
   }
 
   async function processPendingQuestions(action, remark = '') {
-    if (!pendingQuestionIds || pendingQuestionIds.length === 0) {
+    const pendingCount = pendingQuestionIds ? pendingQuestionIds.length : 0;
+    if (pendingCount === 0) {
       showDetailMessage('No pending questions to process.', 'warning');
       return;
     }
@@ -1441,83 +1442,53 @@
     const statusText = statusEl.querySelector('.status-text');
     statusEl.className = 'action-status';
     statusIcon.textContent = '⏳';
-    statusText.textContent = `Processing ${pendingQuestionIds.length} question${pendingQuestionIds.length > 1 ? 's' : ''}...`;
+    statusText.textContent = `Processing assignment approval...`;
     
     // Remove any existing error list
     const existingErrorList = statusEl.querySelector('.error-list');
     if (existingErrorList) existingErrorList.remove();
 
-    let assignmentId = document.getElementById('approveAssignmentBtn').getAttribute('data-assignment-id');
-    if (!assignmentId) {
-      assignmentId = document.getElementById('rejectAssignmentBtn').getAttribute('data-assignment-id');
-    }
+    const assignmentId = document.getElementById('approveAssignmentBtn').getAttribute('data-assignment-id')
+      || document.getElementById('rejectAssignmentBtn').getAttribute('data-assignment-id');
 
-    for (let i = 0; i < pendingQuestionIds.length; i++) {
-      const questionId = pendingQuestionIds[i];
-      try {
-        const url = action === 'approve' ? apiUrl(APPROVE_URL, questionId) : apiUrl(REJECT_URL, questionId);
-        const payload = {
-          assignment_id: assignmentId,
-        };
-        if (action === 'reject' && remark) {
-          payload.remark = remark;
-        }
-        await postAction(url, payload);
-        successCount++;
-        
-        // Update progress
-        statusText.textContent = `Processing ${i + 1}/${pendingQuestionIds.length}... (${successCount} succeeded, ${errorCount} failed)`;
-      } catch (error) {
-        errorCount++;
-        const errorMsg = error.message || 'Unknown error';
-        errors.push(`Question ${questionId}: ${errorMsg}`);
-        
-        // Update progress with error info
-        statusText.textContent = `Processing ${i + 1}/${pendingQuestionIds.length}... (${successCount} succeeded, ${errorCount} failed)`;
-        statusEl.className = 'action-status warning';
-        statusIcon.textContent = '⚠️';
+    try {
+      const url = action === 'approve' ? APPROVE_URL : REJECT_URL;
+      if (!url) {
+        throw new Error('Workflow action URL is missing.');
       }
+      const payload = { assignment_id: assignmentId };
+      if (action === 'reject' && remark) {
+        payload.remark = remark;
+      }
+      const result = await postAction(url, payload);
+      successCount = 1;
+      statusText.textContent = result.message || `Assignment ${action === 'approve' ? 'approved' : 'rejected'} successfully.`;
+    } catch (error) {
+      errorCount = 1;
+      const errorMsg = error.message || 'Unknown error';
+      errors.push(errorMsg);
+      statusEl.className = 'action-status warning';
+      statusIcon.textContent = '⚠️';
+      statusText.textContent = errorMsg;
     }
 
     // Update final status
     if (errorCount === 0) {
       statusEl.className = 'action-status success';
       statusIcon.textContent = '✅';
-      statusText.textContent = `All ${successCount} question${successCount > 1 ? 's' : ''} ${action === 'approve' ? 'approved' : 'rejected'} successfully!`;
+      statusText.textContent = `Assignment ${action === 'approve' ? 'approved' : 'rejected'} successfully.`;
       showDetailMessage(
         `Assignment ${action === 'approve' ? 'approved' : 'rejected'} successfully.`, 
         'success',
-        `${successCount} question${successCount > 1 ? 's' : ''} processed.`
+        `1 action processed.`
       );
-    } else if (successCount === 0) {
+    } else {
       statusEl.className = 'action-status error';
       statusIcon.textContent = '❌';
-      statusText.textContent = `Failed to process all ${errorCount} question${errorCount > 1 ? 's' : ''}.`;
+      statusText.textContent = `Failed to process assignment action.`;
       showDetailMessage(
-        `Failed to process ${errorCount} question${errorCount > 1 ? 's' : ''}.`, 
+        `Failed to process assignment action.`, 
         'error',
-        errors.join('\n')
-      );
-      
-      // Show error details
-      const errorList = document.createElement('ul');
-      errorList.className = 'error-list';
-      errors.forEach(err => {
-        const li = document.createElement('li');
-        li.textContent = err;
-        errorList.appendChild(li);
-      });
-      statusEl.appendChild(errorList);
-    } else {
-      statusEl.className = 'action-status warning';
-      statusIcon.textContent = '⚠️';
-      statusText.innerHTML = `
-        <strong>${successCount} processed successfully, ${errorCount} failed.</strong>
-        <div class="status-details">${successCount} ${action === 'approve' ? 'approved' : 'rejected'}, ${errorCount} errors occurred.</div>
-      `;
-      showDetailMessage(
-        `Partial success: ${successCount} ${action === 'approve' ? 'approved' : 'rejected'}, ${errorCount} failed.`, 
-        'warning',
         errors.join('\n')
       );
       

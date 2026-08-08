@@ -10,6 +10,7 @@ from apps.brsr.api_views import (
     QuestionReviewCommentAPIView,
     QuestionSaveAPIView,
     QuestionSubmitAPIView,
+    AssignmentFinalizeReviewAPIView,
 )
 from apps.brsr.models import Assignment, AssignmentReviewer, BRSRQuestion, BRSRSection, QuestionResponse
 from apps.brsr.views import (
@@ -189,6 +190,16 @@ class ConsolidatedApprovalRegressionTests(TestCase):
         force_authenticate(review_request, user=self.reviewer)
         response = QuestionReviewCommentAPIView.as_view()(review_request, question_id=self.question.question_id)
         self.assertEqual(response.status_code, 200)
+
+        finalize_request = self.factory.post(
+            "/fake-finalize/",
+            {"assignment_id": assignment.id},
+            format="json",
+        )
+        force_authenticate(finalize_request, user=self.reviewer)
+        response = AssignmentFinalizeReviewAPIView.as_view()(finalize_request, assignment_id=assignment.id)
+        self.assertEqual(response.status_code, 200)
+
         assignment.refresh_from_db()
         self.assertEqual(assignment.workflow_stage_type, "approval")
 
@@ -226,7 +237,7 @@ class ConsolidatedApprovalRegressionTests(TestCase):
         self.assertEqual(len(visible_for_approver), 1)
         self.assertEqual(visible_for_approver[0].id, approval_assignment.id)
 
-    def test_pre_final_ready_gate_only_accepts_assignments_already_at_pre_final_stage(self):
+    def test_pre_final_ready_gate_accepts_assignments_at_approval_before_section_send(self):
         assignment = self._create_assignment("ready")
         self._submit_assignment(assignment)
         self._review_assignment_to_approval(assignment)
@@ -238,7 +249,7 @@ class ConsolidatedApprovalRegressionTests(TestCase):
             None,
             "2025-2026",
         )
-        self.assertFalse(ready)
+        self.assertTrue(ready)
         self.assertEqual(count, 1)
 
         self._approve_assignment_to_pre_final(assignment)
@@ -249,14 +260,14 @@ class ConsolidatedApprovalRegressionTests(TestCase):
             None,
             "2025-2026",
         )
-        self.assertTrue(ready)
+        self.assertFalse(ready)
         self.assertEqual(count, 1)
 
-    def test_assignment_is_ready_for_pre_final_only_when_current_stage_matches_pre_final_gate(self):
+    def test_assignment_is_ready_for_pre_final_only_when_current_stage_is_approval(self):
         assignment = self._create_assignment("gate")
         self._submit_assignment(assignment)
         self._review_assignment_to_approval(assignment)
-        self.assertFalse(_is_assignment_ready_for_pre_final(assignment))
+        self.assertTrue(_is_assignment_ready_for_pre_final(assignment))
 
         self._approve_assignment_to_pre_final(assignment)
-        self.assertTrue(_is_assignment_ready_for_pre_final(assignment))
+        self.assertFalse(_is_assignment_ready_for_pre_final(assignment))

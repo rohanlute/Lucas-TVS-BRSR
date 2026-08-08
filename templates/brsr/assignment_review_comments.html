@@ -863,8 +863,8 @@
           <h2 class="hero-title">{{ assignment.assignment_id }} · {{ assignment.plant }}</h2>
           <p class="hero-copy">
             Each response below is rendered the same way it was captured in the question workspace, in
-            read-only form. Add comments for the whole assignment without leaving the review stage early.
-            Each comment saves independently, and the final button will move the assignment forward once you are done.
+            read-only form. Add comments where needed, or leave questions blank if no reviewer note is needed.
+            Each comment saves independently, and the final button will move the assignment forward whenever you are ready.
           </p>
           <div class="hero-pills">
             <span class="pill brand">{{ assignment.workflow_stage|default:"Review" }}</span>
@@ -1187,23 +1187,6 @@
   // Finalize review - UPDATED with redirect handling
   document.getElementById('finalizeReviewBtn').addEventListener('click', async () => {
     const button = document.getElementById('finalizeReviewBtn');
-    
-    // Check if all questions have comments
-    const textareas = document.querySelectorAll('.js-review-comment-input:not([disabled])');
-    let emptyComments = [];
-    textareas.forEach((textarea) => {
-      if (!textarea.value.trim()) {
-        const container = textarea.closest('.question-container');
-        const number = container ? container.querySelector('.question-number') : null;
-        emptyComments.push(number ? number.textContent : 'Unknown question');
-      }
-    });
-
-    if (emptyComments.length > 0) {
-      if (!confirm(`You have ${emptyComments.length} question(s) without comments: ${emptyComments.join(', ')}. Continue anyway?`)) {
-        return;
-      }
-    }
 
     setButtonLoading(button, true, 'Finalizing...');
 
@@ -1235,14 +1218,6 @@
       const data = await response.json();
       
       if (!response.ok) {
-        if (data.missing_comments) {
-          const missingList = data.missing_comments.map(q => 
-            `${q.question_number}. ${q.title}`
-          ).join('\n');
-          alert(`Please add comments for these questions:\n\n${missingList}`);
-          setButtonLoading(button, false);
-          return;
-        }
         throw new Error(data.detail || data.message || 'Failed to finalize review.');
       }
       

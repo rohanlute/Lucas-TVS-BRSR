@@ -3,6 +3,7 @@ from django.urls import reverse
 from django.contrib.sites.shortcuts import get_current_site
 from django.conf import settings
 import logging
+from urllib.parse import urlencode
 
 logger = logging.getLogger(__name__)
 
@@ -11,6 +12,12 @@ def _recipient_email(actor):
     """assignee/reviewer are GenericForeignKeys — could be User, Plant, etc.
     Only actual User objects have an email worth sending to."""
     return getattr(actor, "email", None)
+
+
+def _assignment_stage_type(assignment):
+    task = getattr(assignment, "workflow_task", None)
+    stage = getattr(task, "current_stage", None)
+    return stage.stage_type if stage else ""
 
 
 def _get_assignment_url(assignment, request=None):
@@ -24,9 +31,13 @@ def _get_assignment_url(assignment, request=None):
     Returns:
         str: The assignment URL
     """
-    # Build the relative URL path
-    # Note: You may need to adjust this based on your actual URL structure
-    relative_url = f"/brsr/workspace/section_b/?assignment_id={assignment.id}"
+    stage_type = _assignment_stage_type(assignment)
+    if stage_type in {"approval", "pre_final_approval", "final_approval"}:
+        relative_url = reverse("brsr:assignment_detail", kwargs={"assignment_id": assignment.id})
+    else:
+        section_code = assignment.section.code if getattr(assignment, "section_id", None) else "section_b"
+        query = urlencode({"assignment_id": assignment.id})
+        relative_url = f"{reverse('brsr:question_workspace_section', kwargs={'section_code': section_code})}?{query}"
     
     if request:
         # Build absolute URL using request
@@ -41,6 +52,35 @@ def _get_assignment_url(assignment, request=None):
     if hasattr(settings, 'SITE_URL'):
         return f"{settings.SITE_URL}{relative_url}"
     
+    return relative_url
+
+
+def _get_pre_final_dashboard_url(plant, section, principle=None, financial_year=None, request=None):
+    query = {
+        "stage": "pre_final_approval",
+    }
+    if plant and getattr(plant, "id", None):
+        query["plant"] = plant.id
+    if section and getattr(section, "code", None):
+        query["section"] = section.code
+    if principle and getattr(principle, "slug", None):
+        query["principle"] = principle.slug
+    if financial_year:
+        query["financial_year"] = financial_year
+
+    relative_url = f"{reverse('brsr:approval_dashboard')}?{urlencode(query)}"
+
+    if request:
+        try:
+            domain = get_current_site(request).domain
+            protocol = 'https' if request.is_secure() else 'http'
+            return f"{protocol}://{domain}{relative_url}"
+        except Exception as e:
+            logger.warning(f"Could not build absolute dashboard URL from request: {e}")
+
+    if hasattr(settings, 'SITE_URL'):
+        return f"{settings.SITE_URL}{relative_url}"
+
     return relative_url
 
 
@@ -216,6 +256,62 @@ def notify_assignment_rejected(assignment, remark, request=None):
         logger.info("Email sent successfully for assignment_rejected")
     except Exception as e:
         logger.error(f"Failed to send assignment_rejected email: {e}", exc_info=True)
+
+
+def notify_section_sent_for_pre_final(*, assignments, recipients, plant, section, principle=None, financial_year=None, sent_by=None, request=None):
+    if not assignments:
+        logger.info("Skipping pre-final notification: no assignments supplied.")
+        return
+    if not recipients:
+        logger.info("Skipping pre-final notification: no recipients supplied.")
+        return
+
+    assignment_lines = []
+    for assignment in assignments:
+        task = getattr(assignment, "workflow_task", None)
+        assignment_lines.append(
+            f"- {assignment.assignment_id} | {assignment.plant.name if assignment.plant_id else ''}"
+            f" | {assignment.workflow_stage_label or (task.current_stage.label if task and task.current_stage_id else '')}"
+        )
+
+    assignment_url = _get_pre_final_dashboard_url(plant, section, principle=principle, financial_year=financial_year, request=request)
+    subject = f"BRSR Pre-Final Approval ready: {section.name}"
+    if principle:
+        subject = f"{subject} / {principle.principle_name}"
+
+    message = (
+        f"Hello,\n\n"
+        f"The BRSR section '{section.name}'"
+        f"{f' / {principle.principle_name}' if principle else ''} "
+        f"for plant {plant.name} is ready for Pre-Final Approval.\n\n"
+        f"Financial Year: {financial_year or 'Not set'}\n"
+        f"Assignments:\n{chr(10).join(assignment_lines)}\n\n"
+        f"Please review the consolidated bundle and complete the pre-final approval.\n"
+        f"View approval dashboard: {assignment_url}"
+    )
+
+    for recipient in recipients:
+        if not _recipient_email(recipient):
+            continue
+        try:
+            EmailService.send_email(
+                recipient=recipient,
+                subject=subject,
+                message=message,
+                html_template="emails/brsr/assignment_submitted.html",
+                context={
+                    "assignment": assignments[0],
+                    "assignment_url": assignment_url,
+                    "bundle_assignments": assignments,
+                    "bundle_section": section,
+                    "bundle_principle": principle,
+                    "bundle_financial_year": financial_year,
+                    "bundle_sent_by": sent_by,
+                },
+            )
+            logger.info("Pre-final bundle email sent to %s", getattr(recipient, "email", None))
+        except Exception as e:
+            logger.error(f"Failed to send pre-final bundle email: {e}", exc_info=True)
 
 
 # Optional: Helper function to test email sending

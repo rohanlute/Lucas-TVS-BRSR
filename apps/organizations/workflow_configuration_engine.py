@@ -145,6 +145,12 @@ class WorkflowConfigurationEngine:
         return cls._move_to_stage(task, user, next_stage, remark=remark, next_assignee=next_assignee, action="approve")
 
     @classmethod
+    def complete(cls, task, user, remark=""):
+        if task.is_completed:
+            raise PermissionDenied("This workflow has already been completed.")
+        return cls._move_to_stage(task, user, None, remark=remark, action="approve")
+
+    @classmethod
     def reject(cls, task, user, remark, return_to_stage=None, return_to_assignee=None):
         if task.is_completed:
             raise PermissionDenied("This workflow has already been completed.")

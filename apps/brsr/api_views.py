@@ -81,7 +81,12 @@ def _serialize_question(question, assignment=None, user=None):
     task_info = _serialize_task_for_user(task, user) if (task and user) else None
     workflow_stage_type = task_info.get("stage_type", "") if task_info else ""
     can_act = task_info.get("can_act", False) if task_info else False
-    status_display = "Final Approved & Locked" if (task and task.is_completed) else ((response.status if response else "draft").replace("_", " ").title())
+    status_display = "Final Approved & Locked" if (
+        task and (
+            task.is_completed
+            or (task.current_stage and task.current_stage.stage_type in {"pre_final_approval", "final_approval"})
+        )
+    ) else ((response.status if response else "draft").replace("_", " ").title())
     documents = []
     if response:
         documents = [
@@ -149,7 +154,6 @@ def _serialize_task_for_user(task, user):
         and (
             user.is_superuser
             or getattr(user, "is_super_admin", False)
-            or assignee_id == user.id
             or (current_user_role_id and current_stage_role_id and current_user_role_id == current_stage_role_id)
         )
     )
@@ -171,6 +175,17 @@ def _serialize_task_for_user(task, user):
         "is_completed": is_completed,
         "status_label": "Final Approved & Locked" if is_completed else stage_label,
     }
+
+
+def _parse_response_json_payload(raw_value):
+    if raw_value in (None, ""):
+        return {}
+    if isinstance(raw_value, (dict, list)):
+        return raw_value
+    try:
+        return json.loads(raw_value)
+    except (TypeError, json.JSONDecodeError):
+        return {}
 
 
 def _completed_task_response():
@@ -337,6 +352,9 @@ def _approve_assignment_stage(assignment, user):
             return None, Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
     WorkflowConfigurationEngine.approve(task, user, next_assignee=next_assignee)
     assignment.refresh_from_db()
+    if next_assignee and assignment.workflow_task and not assignment.workflow_task.is_completed:
+        from .notifications import notify_assignment_submitted
+        notify_assignment_submitted(assignment, next_assignee)
     if assignment.workflow_task and assignment.workflow_task.is_completed:
         from .notifications import notify_assignment_approved
         notify_assignment_approved(assignment)
@@ -503,7 +521,7 @@ class BRSRWorkspaceDataAPIView(APIView):
                     "id": assignment.id,
                     "assignment_id": assignment.assignment_id,
                     "workflow_template": assignment.workflow_template_name,
-                    "workflow_stage": "Final Approved & Locked" if (assignment.workflow_task and assignment.workflow_task.is_completed) else assignment.workflow_stage_label,
+                    "workflow_stage": "Final Approved & Locked" if (assignment.workflow_task and (assignment.workflow_task.is_completed or (assignment.workflow_task.current_stage and assignment.workflow_task.current_stage.stage_type in {"pre_final_approval", "final_approval"}))) else assignment.workflow_stage_label,
                     "workflow_stage_type": "" if (assignment.workflow_task and assignment.workflow_task.is_completed) else workflow_stage_type,
                     "assignment_status": getattr(assignment, "assignment_status", "") or "",
                     "assignment_status_label": {
@@ -640,10 +658,7 @@ class QuestionSaveAPIView(APIView):
         if "response_value" in request.data:
             response.response_value = request.data.get("response_value") or ""
         if "response_json" in request.data:
-            try:
-                response.response_json = json.loads(request.data.get("response_json") or "{}")
-            except json.JSONDecodeError:
-                response.response_json = {}
+            response.response_json = _parse_response_json_payload(request.data.get("response_json"))
         response.save()
 
         # Save Uploaded Files
@@ -796,13 +811,7 @@ class QuestionReviewCommentAPIView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
             
-        if not remark:
-            return Response(
-                {"detail": "Reviewer comment is required."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Save the comment
+        # Save or clear the comment. Reviewer notes are optional.
         response = get_object_or_404(
             QuestionResponse, 
             assignment=assignment, 
@@ -814,34 +823,45 @@ class QuestionReviewCommentAPIView(APIView):
         response.save(update_fields=["review_remark", "reviewed_by", "reviewed_at", "updated_at"])
         response.refresh_from_db()
 
-        # Advance workflow to next stage
+        return Response({
+            "status": "saved",
+            "review_remark": response.review_remark or "",
+            "workflow_task": _serialize_task_for_user(assignment.workflow_task, request.user),
+            "message": "Review comment saved successfully.",
+            "should_redirect": False,
+        })
+
+
+class AssignmentFinalizeReviewAPIView(APIView):
+    def post(self, request, assignment_id):
+        assignment = get_object_or_404(
+            _assignment_queryset_for_user(request.user),
+            pk=assignment_id,
+        )
+
+        task = _ensure_assignment_task(assignment, request.user)
+        if not task:
+            return Response({"detail": "No workflow task found for this assignment."}, status=status.HTTP_400_BAD_REQUEST)
+        if task.is_completed:
+            return _completed_task_response()
+        if task.current_stage.stage_type != "review":
+            return Response(
+                {"detail": "This assignment can only be finalized from the review stage."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        if not _is_assigned_reviewer(request.user, assignment):
+            return Response(
+                {"detail": "Only the assigned reviewer can finalize the review stage."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         from .views import _first_workflow_assignee_for_stage, _next_non_review_stage
         from django.urls import reverse
-        
+
         next_stage = task.current_stage.next_stage() if task.current_stage_id else None
-        
-        if not next_stage:
-            # Complete the workflow
-            WorkflowConfigurationEngine.complete(task, request.user, remark="Review completed.")
-            
-            # Update assignment status
-            assignment.assignment_status = "approved"
-            assignment.save(update_fields=["assignment_status", "updated_at"])
-            
-            return Response({
-                "status": "completed",
-                "review_remark": response.review_remark or "",
-                "workflow_task": _serialize_task_for_user(assignment.workflow_task, request.user),
-                "message": "Review completed successfully.",
-                "redirect_url": reverse("brsr:approval_dashboard"),
-                "should_redirect": True,
-            })
-        
-        # Skip any other review stages
-        if next_stage.stage_type == "review":
+        while next_stage and next_stage.stage_type == "review":
             next_stage = _next_non_review_stage(next_stage)
-        
-        # Determine next assignee
+
         next_assignee = None
         if next_stage:
             try:
@@ -852,42 +872,34 @@ class QuestionReviewCommentAPIView(APIView):
                     assignment=assignment,
                 )
             except ValueError:
-                next_stage = _next_non_review_stage(next_stage) if next_stage else None
-                if next_stage:
-                    try:
-                        next_assignee = _first_workflow_assignee_for_stage(
-                            assignment.plant,
-                            next_stage,
-                            current_user=request.user,
-                            assignment=assignment,
-                        )
-                    except ValueError:
-                        next_assignee = None
-        
-        # Advance the workflow
+                next_assignee = None
+
         WorkflowConfigurationEngine.advance_to_next_stage(
             task,
             request.user,
-            remark=f"Reviewer comment: {remark}",
+            remark="Review finalized.",
             next_assignee=next_assignee,
         )
 
         assignment.assignment_status = "in_progress"
         assignment.save(update_fields=["assignment_status", "updated_at"])
+        assignment.refresh_from_db()
 
-        # Determine if we should redirect
-        should_redirect = next_stage is None or next_stage.stage_type in ["approval", "final_approval"]
-        redirect_url = reverse("brsr:approval_dashboard") if should_redirect else None
+        if next_assignee:
+            from .notifications import notify_assignment_submitted
+            notify_assignment_submitted(assignment, next_assignee)
 
-        return Response({
-            "status": response.status,
-            "review_remark": response.review_remark or "",
-            "workflow_task": _serialize_task_for_user(assignment.workflow_task, request.user),
-            "message": "Review comment saved and workflow advanced successfully.",
-            "next_stage": next_stage.label if next_stage else "Completed",
-            "redirect_url": redirect_url,
-            "should_redirect": should_redirect,
-        })
+        redirect_url = reverse("brsr:approval_dashboard")
+        return Response(
+            {
+                "status": "finalized",
+                "workflow_task": _serialize_task_for_user(assignment.workflow_task, request.user),
+                "message": "Review finalized successfully.",
+                "redirect_url": redirect_url,
+                "should_redirect": True,
+                "next_stage": next_stage.label if next_stage else "Completed",
+            }
+        )
 
 
 class AssignmentApproveAPIView(APIView):

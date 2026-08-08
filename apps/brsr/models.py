@@ -94,6 +94,18 @@ class WorkflowMixin(models.Model):
         """Draft, rejected -> editable. Submitted/approved -> locked."""
         return self.status in (WorkflowStatus.DRAFT, WorkflowStatus.REJECTED)
 
+def _has_meaningful_response_value(value):
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return value.strip() != ""
+    if isinstance(value, (bool, int, float)):
+        return True
+    if isinstance(value, list):
+        return any(_has_meaningful_response_value(item) for item in value)
+    if isinstance(value, dict):
+        return any(_has_meaningful_response_value(item) for item in value.values())
+    return True
 
 # ---------------------------------------------------------------------------
 # 2. Generic actor mixin (assignee / assigner / answered_by / etc.)
@@ -454,7 +466,7 @@ class QuestionResponse(WorkflowMixin, models.Model):
         indexes = [models.Index(fields=['assignment', 'status'])]
 
     def save(self, *args, **kwargs):
-        self.is_complete = bool(self.response_value or self.response_json)
+        self.is_complete = _has_meaningful_response_value(self.response_value) or _has_meaningful_response_value(self.response_json)
         # snapshot a revision before overwriting, if this is an update
         if self.pk:
             previous = QuestionResponse.objects.filter(pk=self.pk).values(

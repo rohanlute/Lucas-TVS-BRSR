@@ -1,0 +1,363 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{{ stage_label }} Bundle - BRSR{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root{
+    --ink:#24304a;
+    --muted:#6f7b91;
+    --surface:#ffffff;
+    --bg:#f5f7fb;
+    --border:#e3e8f0;
+    --brand:#2563eb;
+    --brand-bg:#eaf1ff;
+    --success:#16a34a;
+    --success-bg:#e7f8ee;
+    --warn:#d97706;
+    --warn-bg:#fff5e6;
+    --danger:#dc2626;
+    --danger-bg:#fdecec;
+  }
+
+  .bundle-page{
+    min-height:100vh;
+    padding:24px 30px 36px;
+    background:
+      radial-gradient(circle at top left, rgba(37,99,235,.08), transparent 34%),
+      radial-gradient(circle at bottom right, rgba(22,163,74,.08), transparent 28%),
+      var(--bg);
+    color:var(--ink);
+  }
+
+  .bundle-shell{
+    max-width:1400px;
+    margin:0 auto;
+  }
+
+  .bundle-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:16px;
+    flex-wrap:wrap;
+    margin-bottom:18px;
+  }
+
+  .bundle-header h1{
+    margin:0;
+    font-size:30px;
+    line-height:1.2;
+  }
+
+  .bundle-copy{
+    margin:8px 0 0;
+    color:var(--muted);
+  }
+
+  .btn-link{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:10px 14px;
+    border-radius:12px;
+    border:1px solid var(--border);
+    background:#fff;
+    color:var(--ink);
+    text-decoration:none;
+    font-weight:700;
+  }
+
+  .hero{
+    background:linear-gradient(180deg,#fff 0%, #fbfcff 100%);
+    border:1px solid var(--border);
+    border-radius:20px;
+    box-shadow:0 18px 40px rgba(28,44,73,.08);
+    padding:24px;
+    margin-bottom:20px;
+  }
+
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+    gap:12px;
+    margin-top:18px;
+  }
+
+  .stat{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:14px 16px;
+  }
+
+  .stat .label{
+    display:block;
+    font-size:11px;
+    font-weight:800;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+
+  .stat .value{
+    font-size:20px;
+    font-weight:800;
+  }
+
+  .bundle-card{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:18px;
+    box-shadow:0 10px 24px rgba(28,44,73,.05);
+    overflow:hidden;
+    margin-bottom:18px;
+  }
+
+  .bundle-card-head{
+    padding:16px 18px;
+    border-bottom:1px solid var(--border);
+    background:#fafcff;
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+
+  .bundle-card-head h3{
+    margin:0;
+    font-size:18px;
+  }
+
+  .question-list{
+    padding:18px;
+    display:grid;
+    gap:16px;
+  }
+
+  .question{
+    border:1px solid var(--border);
+    border-radius:16px;
+    overflow:hidden;
+    background:#fff;
+  }
+
+  .question-head{
+    padding:14px 16px;
+    background:#fafcff;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+
+  .question-title{
+    font-weight:800;
+    margin:0;
+  }
+
+  .question-body{
+    padding:16px;
+  }
+
+  .question-body .rendered-html :is(.form-group,.choice-stack,.table-container){
+    margin-bottom:14px;
+  }
+
+  .question-docs{
+    margin-top:12px;
+    display:grid;
+    gap:8px;
+  }
+
+  .question-docs a{
+    color:var(--brand);
+    text-decoration:none;
+    font-weight:600;
+  }
+
+  .actions{
+    display:grid;
+    gap:12px;
+  }
+
+  .remark{
+    width:100%;
+    min-height:110px;
+    padding:12px;
+    border-radius:12px;
+    border:1px solid var(--border);
+  }
+
+  .action-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+
+  .btn-primary,
+  .btn-danger{
+    border:0;
+    border-radius:12px;
+    padding:11px 16px;
+    font-weight:800;
+    cursor:pointer;
+    text-decoration:none;
+  }
+
+  .btn-primary{background:var(--brand);color:#fff;}
+  .btn-danger{background:var(--danger);color:#fff;}
+
+  .bundle-summary{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:12px;
+    margin-bottom:18px;
+  }
+
+  .summary-pill{
+    padding:12px 14px;
+    border-radius:14px;
+    border:1px solid var(--border);
+    background:#fff;
+  }
+
+  .summary-pill .label{
+    display:block;
+    font-size:11px;
+    font-weight:800;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:4px;
+  }
+
+  .summary-pill .value{
+    font-weight:800;
+  }
+
+  @media (max-width: 768px){
+    .bundle-page{padding:18px;}
+    .bundle-header h1{font-size:24px;}
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bundle-page">
+  <div class="bundle-shell">
+    <div class="bundle-header">
+      <div>
+        <div class="eyebrow">{{ stage_label }}</div>
+        <h1>{{ company.company_name }} · {{ section.name }}</h1>
+        <p class="bundle-copy">
+          Review the combined data for all plants before approving or rejecting this bundle.
+        </p>
+      </div>
+      <div class="workspace-banner-actions">
+        <a href="{{ approval_dashboard_url }}" class="btn-link">Back to Dashboard</a>
+      </div>
+    </div>
+
+    <div class="hero">
+      <div class="bundle-summary">
+        <div class="summary-pill">
+          <span class="label">Company</span>
+          <span class="value">{{ company.company_name }}</span>
+        </div>
+        <div class="summary-pill">
+          <span class="label">Section</span>
+          <span class="value">{{ section.name }}</span>
+        </div>
+        <div class="summary-pill">
+          <span class="label">Financial Year</span>
+          <span class="value">{{ financial_year }}</span>
+        </div>
+        <div class="summary-pill">
+          <span class="label">Assignments</span>
+          <span class="value">{{ assignment_total }}</span>
+        </div>
+        <div class="summary-pill">
+          <span class="label">Questions</span>
+          <span class="value">{{ question_total }}</span>
+        </div>
+        <div class="summary-pill">
+          <span class="label">Principle</span>
+          <span class="value">{{ principle.principle_name|default:"Section-wide" }}</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <form method="post" action="{{ approve_url }}">
+          {% csrf_token %}
+          <input type="hidden" name="stage_type" value="{{ stage_type }}">
+          <input type="hidden" name="company_id" value="{{ company.id }}">
+          <input type="hidden" name="section_code" value="{{ section.code }}">
+          <input type="hidden" name="financial_year" value="{{ financial_year }}">
+          <input type="hidden" name="principle_slug" value="{{ principle.slug|default:'' }}">
+          <div class="action-row">
+            <button type="submit" class="btn-primary">Approve Bundle</button>
+          </div>
+        </form>
+
+        <form method="post" action="{{ reject_url }}">
+          {% csrf_token %}
+          <input type="hidden" name="stage_type" value="{{ stage_type }}">
+          <input type="hidden" name="company_id" value="{{ company.id }}">
+          <input type="hidden" name="section_code" value="{{ section.code }}">
+          <input type="hidden" name="financial_year" value="{{ financial_year }}">
+          <input type="hidden" name="principle_slug" value="{{ principle.slug|default:'' }}">
+          <textarea class="remark" name="remark" placeholder="Add rejection remarks for the whole bundle"></textarea>
+          <div class="action-row" style="margin-top:10px;">
+            <button type="submit" class="btn-danger">Reject Bundle</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {% for bundle in bundle_assignments %}
+      <section class="bundle-card">
+        <div class="bundle-card-head">
+          <div>
+            <h3>{{ bundle.assignment.assignment_id }}</h3>
+            <div style="color:var(--muted);font-size:13px;">{{ bundle.assignment.plant }} · {{ bundle.assignment.section }}{% if bundle.assignment.principle %} · {{ bundle.assignment.principle }}{% endif %}</div>
+          </div>
+          <div style="font-weight:800;color:var(--brand);">{{ bundle.questions|length }} questions</div>
+        </div>
+        <div class="question-list">
+          {% for question in bundle.questions %}
+            <article class="question">
+              <div class="question-head">
+                <div>
+                  <p class="question-title">{{ question.number }}. {{ question.title }}</p>
+                  <div style="color:var(--muted);font-size:12px;">{{ question.question_id }} · {{ question.status_display }}</div>
+                </div>
+              </div>
+              <div class="question-body">
+                <div class="rendered-html">
+                  {{ question.rendered_html|safe }}
+                </div>
+                {% if question.review_remark %}
+                  <div class="summary-pill" style="margin-top:10px;background:var(--warn-bg);border-color:rgba(217,119,6,.18);">
+                    <span class="label">Review Remark</span>
+                    <span class="value">{{ question.review_remark }}</span>
+                  </div>
+                {% endif %}
+                {% if question.documents %}
+                  <div class="question-docs">
+                    <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:var(--muted);">Documents</div>
+                    {% for doc in question.documents %}
+                      <a href="{{ doc.url }}" target="_blank">📄 {{ doc.name }}</a>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      </section>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

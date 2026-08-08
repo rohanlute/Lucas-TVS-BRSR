@@ -852,8 +852,16 @@
   </div>
 
   <!-- Active Filters Display -->
-  {% if selected_company or selected_plant or selected_stage or search_query %}
+  {% if selected_company or selected_section or selected_plant or selected_stage or search_query %}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+    {% if selected_section %}
+      <span class="active-filter-badge">
+        Section: {{ selected_section|title }}
+        <a href="?{% if selected_company %}company={{ selected_company }}&{% endif %}{% if selected_plant %}plant={{ selected_plant }}&{% endif %}{% if selected_stage %}stage={{ selected_stage }}&{% endif %}{% if search_query %}search={{ search_query }}{% endif %}" 
+           class="remove-filter">Ã—</a>
+      </span>
+    {% endif %}
+
     {% if selected_plant %}
       {% for plant in plants %}
         {% if plant.id|stringformat:"s" == selected_plant %}
@@ -1131,6 +1139,27 @@
                     </span>
                   </div>
                 </div>
+                {% if item.assignments %}
+                <div style="margin-top:14px;display:grid;gap:10px;">
+                  <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">
+                    Section Assignments
+                  </div>
+                  {% for bundle in item.assignments %}
+                  <div style="padding:12px 14px;background:#fff;border:1px solid var(--border);border-radius:12px;">
+                    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;">
+                      <div>
+                        <div style="font-weight:700;color:var(--ink);">{{ bundle.assignment.assignment_id }}</div>
+                        <div style="font-size:12px;color:var(--muted);">{{ bundle.assignment.plant }} · {{ bundle.assignment.section }}{% if bundle.assignment.principle %} · {{ bundle.assignment.principle }}{% endif %}</div>
+                      </div>
+                      <div class="pill-row">
+                        <span class="pill muted">{{ bundle.questions|length }} questions</span>
+                        <a href="{% url 'brsr:assignment_detail' assignment_id=bundle.assignment.id %}" class="btn-soft" style="padding:8px 12px;">Open Review</a>
+                      </div>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+                {% endif %}
               </div>
             </div>
             
@@ -1149,11 +1178,8 @@
                     </div>
                   </div>
                   <div class="consolidated-action-row">
-                    <a href="{% url 'brsr:assignment_detail' assignment_id=item.assignment_id %}" class="btn-soft" style="padding: 10px 18px; font-size: 13px;">
-                      Approve Assignment
-                    </a>
-                    <a href="{% url 'brsr:assignment_review_comments' assignment_id=item.assignment_id %}" class="btn-consolidated-review">
-                      Review & Take Action
+                    <a href="{{ item.bundle_detail_url }}" class="btn-consolidated-review">
+                      Open Section Bundle
                     </a>
                   </div>
                 </div>
@@ -1248,9 +1274,30 @@
                       <div style="font-size: 20px; font-weight: 800; color: var(--ink);">{{ item.plant_names|length }}</div>
                     </div>
                   </div>
+                  {% if item.assignments %}
+                  <div style="margin-top:14px;display:grid;gap:10px;">
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">
+                      Final Approval Assignments
+                    </div>
+                    {% for bundle in item.assignments %}
+                    <div style="padding:12px 14px;background:#fff;border:1px solid var(--border);border-radius:12px;">
+                      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;">
+                        <div>
+                          <div style="font-weight:700;color:var(--ink);">{{ bundle.assignment.assignment_id }}</div>
+                          <div style="font-size:12px;color:var(--muted);">{{ bundle.assignment.plant }} · {{ bundle.assignment.section }}{% if bundle.assignment.principle %} · {{ bundle.assignment.principle }}{% endif %}</div>
+                        </div>
+                        <div class="pill-row">
+                          <span class="pill muted">{{ bundle.questions|length }} questions</span>
+                          <a href="{% url 'brsr:assignment_detail' assignment_id=bundle.assignment.id %}" class="btn-soft" style="padding:8px 12px;">Open Review</a>
+                        </div>
+                      </div>
+                    </div>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
                   <div class="consolidated-action-row">
-                    <a href="{% url 'brsr:assignment_detail' assignment_id=item.assignment_id %}" class="btn-consolidated-final">
-                      Final Approve
+                    <a href="{{ item.bundle_detail_url }}" class="btn-consolidated-final">
+                      Open Final Bundle
                     </a>
                   </div>
                 </div>

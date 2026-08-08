@@ -2,6 +2,248 @@
 {% load static %}
 {% block title %}BRSR-Dashboard{% endblock %}
 
+{% block extra_css %}
+<style>
+    .brsr-dashboard-bg {
+        background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+        min-height: 100vh;
+        padding-bottom: 2rem;
+    }
+    
+    .brsr-header-card {
+        background: linear-gradient(135deg, #1a2332 0%, #2c3e6b 100%);
+        border-radius: 16px;
+        padding: 2rem 2.5rem;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(44, 62, 107, 0.15);
+    }
+    
+    .brsr-header-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 300px;
+        height: 300px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 50%;
+    }
+    
+    .brsr-header-card::after {
+        content: '';
+        position: absolute;
+        bottom: -30%;
+        left: 20%;
+        width: 200px;
+        height: 200px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 50%;
+    }
+    
+    .brsr-header-card .header-content {
+        position: relative;
+        z-index: 1;
+    }
+    
+    .brsr-header-card h3 {
+        color: #ffffff;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+    
+    .brsr-header-card h3 i {
+        color: #ffd700;
+    }
+    
+    .brsr-header-card p {
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 0.95rem;
+        max-width: 80%;
+    }
+    
+    .brsr-header-card .header-icon {
+        position: absolute;
+        right: 30px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 80px;
+        color: rgba(255, 255, 255, 0.08);
+        z-index: 0;
+    }
+
+    .section-title-wrapper {
+        background: transparent;
+        padding: 0.5rem 0;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid rgba(44, 62, 107, 0.1);
+    }
+    
+    .section-title-wrapper h5 {
+        font-weight: 600;
+        color: #1a2332;
+        letter-spacing: 0.3px;
+    }
+    
+    .section-title-wrapper .badge {
+        font-weight: 500;
+        padding: 0.35rem 0.85rem;
+    }
+    
+    .brsr-card {
+        background: #ffffff;
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        transition: all 0.3s ease;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .brsr-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #2c3e6b, #4a6fa5);
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .brsr-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(44, 62, 107, 0.12);
+    }
+    
+    .brsr-card .card-body {
+        padding: 1.5rem;
+    }
+    
+    .brsr-card .section-code {
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 1px;
+        color: #6c7a8a;
+        text-transform: uppercase;
+        background: #f0f2f5;
+        padding: 0.15rem 0.75rem;
+        border-radius: 20px;
+        display: inline-block;
+    }
+    
+    .brsr-card .section-name {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1a2332;
+        margin: 0.3rem 0 0.2rem 0;
+    }
+    
+    .brsr-card .section-desc {
+        color: #6c7a8a;
+        font-size: 0.85rem;
+        margin-bottom: 1rem;
+        line-height: 1.5;
+    }
+    
+    .brsr-card .question-badge {
+        background: #eef3f9;
+        color: #2c3e6b;
+        font-weight: 500;
+        font-size: 0.75rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+    }
+    
+    .brsr-card .btn-assign {
+        background: #2c3e6b;
+        color: #ffffff;
+        border: none;
+        padding: 0.4rem 1.2rem;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .brsr-card .btn-assign:hover {
+        background: #1a2a4a;
+        color: #ffffff;
+        transform: translateX(3px);
+        box-shadow: 0 4px 12px rgba(44, 62, 107, 0.3);
+    }
+    
+    .brsr-card .btn-assign i {
+        margin-right: 0.4rem;
+    }
+    
+    .brsr-card .status-badge {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.7rem;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+    
+    .brsr-card .status-badge.ready {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .brsr-card .status-badge.pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .brsr-card .card-icon {
+        position: absolute;
+        right: 15px;
+        top: 15px;
+        font-size: 28px;
+        color: rgba(44, 62, 107, 0.08);
+    }
+    
+    .brsr-card.principle-card::before {
+        background: linear-gradient(90deg, #28a745, #20c997);
+    }
+    
+    .brsr-card.principle-card .btn-assign {
+        background: #28a745;
+    }
+    
+    .brsr-card.principle-card .btn-assign:hover {
+        background: #1e7e34;
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    }
+    
+    .brsr-card.principle-card .question-badge {
+        background: #e8f5e9;
+        color: #1e7e34;
+    }
+    
+    @media (max-width: 768px) {
+        .brsr-header-card {
+            padding: 1.5rem;
+        }
+        
+        .brsr-header-card p {
+            max-width: 100%;
+            font-size: 0.85rem;
+        }
+        
+        .brsr-header-card .header-icon {
+            font-size: 50px;
+            right: 15px;
+        }
+        
+        .brsr-card .section-name {
+            font-size: 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+
 {% block content %}
 <div class="page-header">
     <div class="page-header-left d-flex align-items-center">
@@ -16,51 +258,28 @@
 </div>
 
 <div class="main-content">
-    <div class="row g-3 mb-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">
-                    <div>
-                        <h5 class="mb-1 text-dark">Assignment Dashboard</h5>
-                        <p class="mb-0 text-muted">See assignments visible to your login and continue the workflow from one place.</p>
+    <div class="container-fluid px-4 py-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="brsr-header-card">
+                    <div class="header-content">
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            <i class="fas fa-clipboard-list" style="font-size: 32px; color: #ffd700;"></i>
+                            <div>
+                                <h3 class="mb-1">Assign BRSR Questions to Plant Users</h3>
+                                <p class="mb-0">
+                                    Select a section or principle below to create assignments and distribute questions to 
+                                    specific plant users. Each assignment will be tracked through the review and approval workflow.
+                                </p>
+                            </div>
+                        </div>
                     </div>
-                    <a href="{% url 'brsr:assignment_dashboard' %}" class="btn btn-primary">
-                        Open Assignment Dashboard
-                    </a>
+                    <div class="header-icon">
+                        <i class="fas fa-tasks"></i>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="row g-3 mb-4">
-        <div class="col-12">
-            <form method="get" class="card border-0 shadow-sm">
-                <div class="card-body d-flex flex-wrap gap-3 align-items-end">
-                    <div class="flex-fill">
-                        <label class="form-label text-muted small mb-1">Plant</label>
-                        <select name="plant" class="form-select">
-                            <option value="">-------</option>
-                            {% for plant in plants %}
-                            <option value="{{ plant.id }}" {% if selected_plant_id == plant.id %}selected{% endif %}>{{ plant.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="flex-fill">
-                        <label class="form-label text-muted small mb-1">Financial Year</label>
-                        <select name="financial_year" class="form-select">
-                            <option value="">-------</option>
-                            {% for fy in financial_years %}
-                            <option value="{{ fy }}" {% if selected_financial_year == fy %}selected{% endif %}>{{ fy }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div>
-                        <button class="btn btn-outline-primary" type="submit">Apply</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <div class="row g-4">
         {% for item in section_cards %}
@@ -77,15 +296,6 @@
                     <p class="text-muted mb-3">Open the questions workspace for this section and start the assignment flow.</p>
                     <div class="d-flex justify-content-between align-items-center gap-2">
                         <a href="{{ item.url }}" class="btn btn-sm btn-outline-primary">Open Section</a>
-                        <form method="post" action="{% url 'brsr:send_pre_final_approval' %}">
-                            {% csrf_token %}
-                            <input type="hidden" name="plant_id" value="{{ item.selected_plant_id }}">
-                            <input type="hidden" name="section_code" value="{{ item.section.code }}">
-                            <input type="hidden" name="financial_year" value="{{ item.selected_financial_year }}">
-                            <button type="submit" class="btn btn-sm btn-success" {% if not item.send_enabled or not item.selected_plant_id or not item.selected_financial_year %}disabled{% endif %}>
-                                Send for Pre-Final Approval
-                            </button>
-                        </form>
                     </div>
                 </div>
             </div>
@@ -108,16 +318,6 @@
                     <p class="text-muted mb-3">{{ item.principle.title }}</p>
                     <div class="d-flex justify-content-between align-items-center gap-2">
                         <a href="{{ item.url }}" class="btn btn-sm btn-outline-primary">Open Principle</a>
-                        <form method="post" action="{% url 'brsr:send_pre_final_approval' %}">
-                            {% csrf_token %}
-                            <input type="hidden" name="plant_id" value="{{ item.selected_plant_id }}">
-                            <input type="hidden" name="section_code" value="section_c">
-                            <input type="hidden" name="principle_slug" value="{{ item.principle.slug }}">
-                            <input type="hidden" name="financial_year" value="{{ item.selected_financial_year }}">
-                            <button type="submit" class="btn btn-sm btn-success" {% if not item.send_enabled or not item.selected_plant_id or not item.selected_financial_year %}disabled{% endif %}>
-                                Send for Pre-Final Approval
-                            </button>
-                        </form>
                     </div>
                 </div>
             </div>

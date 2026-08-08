@@ -1727,7 +1727,7 @@
 
                 if (fieldData.type === 'select') {
                   const options = Array.isArray(fieldData.options) ? fieldData.options : [];
-                  rowHtml += `<td><select class="workspace-select" ${fDataValidation} data-field-name="${escapeHtml(fieldData.name)}" ${fieldData.readonly ? 'readonly' : ''} ${disabled ? 'disabled' : ''}>
+                  rowHtml += `<td><select class="workspace-select" ${fDataValidation} data-key="${escapeHtml(fieldData.name)}" data-field-name="${escapeHtml(fieldData.name)}" ${fieldData.readonly ? 'readonly' : ''} ${disabled ? 'disabled' : ''}>
                     ${options.map((opt) => {
                       const optValue = opt.value ?? opt;
                       const optLabel = opt.label ?? opt;
@@ -1738,13 +1738,13 @@
 
                 } else if (fieldData.type === 'checkbox') {
                   const isChecked = value === true || value === 'true' || value === 'on' || value === '1' || value === 1;
-                  rowHtml += `<td class="text-center"><input class="workspace-input" style="width:auto;min-width:auto;" type="checkbox" ${fDataValidation} ${isChecked ? 'checked' : ''} ${disabled ? 'disabled' : ''}><div class="invalid-feedback"></div></td>`;
+                  rowHtml += `<td class="text-center"><input class="workspace-input" style="width:auto;min-width:auto;" type="checkbox" ${fDataValidation} data-key="${escapeHtml(fieldData.name)}" ${isChecked ? 'checked' : ''} ${disabled ? 'disabled' : ''}><div class="invalid-feedback"></div></td>`;
 
                 } else if (fieldData.type === 'static') {
                   rowHtml += `<td>${escapeHtml(fieldData.value || '')}</td>`;
 
                 } else {
-                  rowHtml += `<td><input class="workspace-input" type="${fieldData.type === 'calculated' ? 'text' : (fieldData.type || 'text')}" ${fDataValidation} data-formula="${fieldData.formula || ''}" data-format="${fieldData.format || 'number'}" ${fMaxlength ? `maxlength="${fMaxlength}"` : ''} ${fInputmode ? `inputmode="${fInputmode}"` : ''} ${fPattern ? `pattern="${fPattern}"` : ''} value="${escapeHtml(value)}" placeholder="${escapeHtml(fieldData.placeholder || '')}" ${fieldData.readonly ? 'readonly' : ''} ${disabled ? 'disabled' : ''}><div class="invalid-feedback"></div></td>`;
+                  rowHtml += `<td><input class="workspace-input" type="${fieldData.type === 'calculated' ? 'text' : (fieldData.type || 'text')}" ${fDataValidation} data-key="${escapeHtml(fieldData.name)}" data-formula="${fieldData.formula || ''}" data-format="${fieldData.format || 'number'}" ${fMaxlength ? `maxlength="${fMaxlength}"` : ''} ${fInputmode ? `inputmode="${fInputmode}"` : ''} ${fPattern ? `pattern="${fPattern}"` : ''} value="${escapeHtml(value)}" placeholder="${escapeHtml(fieldData.placeholder || '')}" ${fieldData.readonly ? 'readonly' : ''} ${disabled ? 'disabled' : ''}><div class="invalid-feedback"></div></td>`;
                 }
               } else {
                 rowHtml += `<td></td>`;
@@ -2232,7 +2232,7 @@
             const field = td.querySelector('input, textarea, select');
             if (!field) return;
             const key = field.getAttribute('data-key') || `column_${index + 1}`;
-            row[key] = field.value;
+            row[key] = field.type === 'checkbox' ? field.checked : field.value;
           });
           rows.push(row);
         });
@@ -2382,7 +2382,6 @@
     if (!currentAssignment.is_assigned_reviewer) { alert('Only the selected reviewer can add comments for this assignment.'); return; }
     const textarea = document.querySelector(`.js-review-comment-input[data-question-id="${CSS.escape(questionId)}"]`);
     const remark = textarea ? textarea.value.trim() : '';
-    if (!remark) { alert('Please enter a reviewer comment before saving.'); if (textarea) textarea.focus(); return; }
     const assignmentId = currentAssignment.id || state.assignmentId;
     if (!assignmentId) { alert('No assignment found for this question.'); return; }
 
@@ -2394,7 +2393,7 @@
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) { alert(data.detail || 'Unable to save the reviewer comment.'); return; }
-      showWorkspaceMessage(data.message || 'Reviewer comment saved successfully.', 'success');
+      showWorkspaceMessage(data.message || (remark ? 'Reviewer comment saved successfully.' : 'Reviewer comment cleared successfully.'), 'success');
       await loadWorkspace(state.sectionCode, state.principleSlug, state.questionId, state.assignmentId);
     } catch (error) {
       console.error('Error saving reviewer comment:', error);
