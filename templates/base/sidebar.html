@@ -25,17 +25,11 @@
                 <li class="nxl-item nxl-caption">
                     <label>Navigation</label>
                 </li>
-                <li class="nxl-item nxl-hasmenu">
-                    <a href="javascript:void(0);" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-airplay"></i></span>
-                        <span class="nxl-mtext">Dashboards</span><span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
-                    </a>
-                    {% if request.user.is_super_admin or request.user.is_superuser %}
-                    <ul class="nxl-submenu">
-                        <li class="nxl-item"><a class="nxl-link" href="index.html">CRM</a></li>
-                        <li class="nxl-item"><a class="nxl-link" href="analytics.html">Analytics</a></li>
-                    </ul>
-                    {% endif %}
+                <li class="nxl-item">
+                <a class="nxl-link" href="{% url 'accounts:homepage' %}">
+                    <i class="fas fa-bullseye"></i> 
+                    Dashboard
+                </a>
                 </li>
                 {% if request.user|has_perm:'ACCESS_COMPANY_MODULE' %}
                 <li class="nxl-item nxl-hasmenu">

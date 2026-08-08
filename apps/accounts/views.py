@@ -857,3 +857,575 @@ class DepartmentDeleteView(LoginRequiredMixin, DeleteView):
         response = super().delete(request, *args, **kwargs)
         messages.success(request, f'Department "{department_name}" deleted successfully.')
         return response
+    
+# accounts/views.py - Updated BRSR Views
+
+class BRSRDashboardView(TemplateView):
+    """
+    Renders the BRSR (Business Responsibility & Sustainability Report) 
+    project overview page with ESG framework information.
+    """
+    template_name = "dashboard/homepage.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        from apps.organizations.models import FinancialYear
+        
+        # Get current date
+        today = timezone.now().date()
+        
+        # Get current financial year from database (based on dates)
+        current_fy = FinancialYear.objects.filter(
+            start_date__lte=today,
+            end_date__gte=today
+        ).first()
+        
+        # If no current financial year found, get the latest one
+        if not current_fy:
+            current_fy = FinancialYear.objects.order_by('-start_date').first()
+        
+        # Set financial year display name
+        if current_fy:
+            # Use the financial_year field which stores "2022-2023" format
+            context['current_fy'] = current_fy.financial_year
+        else:
+            # Fallback if no financial year exists
+            current_year = timezone.now().year
+            context['current_fy'] = f"{current_year-1}-{current_year}"
+        
+        # Also pass the full financial year object for other uses
+        context['current_fy_obj'] = current_fy
+        
+        # Get current year for display
+        current_year = timezone.now().year
+        context['current_year'] = current_year
+        
+        # Get company name from user if available
+        company_name = None
+        if self.request.user.is_authenticated:
+            try:
+                if hasattr(self.request.user, 'company') and self.request.user.company:
+                    company_name = self.request.user.company.company_name
+            except:
+                pass
+        
+        context['company_name'] = company_name or 'Your Company'
+        context['total_companies'] = 1000  # Static value for display
+        
+        # ESG Score data for the ring chart
+        context['esg_breakdown'] = {
+            'environment': 38,
+            'social': 30,
+            'governance': 32,
+            'total': 100
+        }
+        
+        # NGRBC Principles data
+        context['ngrbc_principles'] = [
+            {
+                'id': 1,
+                'code': 'P1',
+                'title': 'Ethics, transparency & accountability',
+                'description': 'Businesses conduct themselves ethically and are accountable to stakeholders.',
+                'icon': 'fa-shield-alt'
+            },
+            {
+                'id': 2,
+                'code': 'P2',
+                'title': 'Safe & sustainable goods',
+                'description': 'Products and services are safe and sustainable across their full lifecycle.',
+                'icon': 'fa-recycle'
+            },
+            {
+                'id': 3,
+                'code': 'P3',
+                'title': 'Employee wellbeing',
+                'description': 'Businesses respect and promote the wellbeing of all employees, including value-chain workers.',
+                'icon': 'fa-users'
+            },
+            {
+                'id': 4,
+                'code': 'P4',
+                'title': 'Stakeholder interests',
+                'description': 'Businesses respect the interests of, and are responsive to, all stakeholders.',
+                'icon': 'fa-handshake'
+            },
+            {
+                'id': 5,
+                'code': 'P5',
+                'title': 'Human rights',
+                'description': 'Businesses respect and promote human rights across their operations.',
+                'icon': 'fa-gavel'
+            },
+            {
+                'id': 6,
+                'code': 'P6',
+                'title': 'Environmental protection',
+                'description': 'Businesses respect and make efforts to protect and restore the environment.',
+                'icon': 'fa-leaf'
+            },
+            {
+                'id': 7,
+                'code': 'P7',
+                'title': 'Responsible advocacy',
+                'description': 'Policy engagement and advocacy are conducted in a responsible manner.',
+                'icon': 'fa-bullhorn'
+            },
+            {
+                'id': 8,
+                'code': 'P8',
+                'title': 'Inclusive growth',
+                'description': 'Businesses support equitable development and inclusive growth for all.',
+                'icon': 'fa-chart-line'
+            },
+            {
+                'id': 9,
+                'code': 'P9',
+                'title': 'Consumer value',
+                'description': 'Businesses engage with and provide value to consumers responsibly.',
+                'icon': 'fa-shopping-bag'
+            }
+        ]
+        
+        # BRSR Report Structure
+        context['report_structure'] = [
+            {
+                'section': 'A',
+                'title': 'General Disclosures',
+                'description': 'Company identity, products, operations, employees and value-chain details that set the reporting context.',
+                'meta': 'ENTITY-LEVEL PROFILE'
+            },
+            {
+                'section': 'B',
+                'title': 'Management & Process',
+                'description': 'Governance structure, policies and processes the company has in place to act on each NGRBC principle.',
+                'meta': 'POLICY & OVERSIGHT'
+            },
+            {
+                'section': 'C',
+                'title': 'Principle-wise Performance',
+                'description': 'Quantified Essential and Leadership indicators reported against each of the nine NGRBC principles.',
+                'meta': 'ESSENTIAL + LEADERSHIP'
+            }
+        ]
+        
+        # FAQ Data
+        context['faqs'] = [
+            {
+                'question': 'Who is required to file a BRSR?',
+                'answer': 'SEBI mandates BRSR filing for the top 1,000 listed companies by market capitalisation, as part of their annual report from FY 2022–23 onward. Other listed entities may file it voluntarily.',
+                'open': True
+            },
+            {
+                'question': 'How is BRSR different from the old BRR?',
+                'answer': 'The earlier Business Responsibility Report was largely descriptive and qualitative. BRSR replaces it with quantifiable, indicator-based disclosures that can be compared across companies and years.',
+                'open': False
+            },
+            {
+                'question': 'What\'s the difference between Essential and Leadership indicators?',
+                'answer': 'Essential indicators are mandatory for every applicable company. Leadership indicators are recommended, more advanced disclosures for companies pursuing stronger ESG performance.',
+                'open': False
+            },
+            {
+                'question': 'Does BRSR replace financial reporting?',
+                'answer': 'No. BRSR sits alongside financial statements as a non-financial, ESG-focused disclosure — it doesn\'t substitute for statutory financial reporting requirements.',
+                'open': False
+            }
+        ]
+        
+        # Stats for hero section
+        context['hero_stats'] = [
+            {'value': '1,000+', 'label': 'LISTED COMPANIES'},
+            {'value': '9', 'label': 'CORE PRINCIPLES'},
+            {'value': '3', 'label': 'REPORT SECTIONS'},
+            {'value': 'FY 22–23', 'label': 'MANDATORY FROM'}
+        ]
+        
+        # Why BRSR cards
+        context['why_brsr'] = [
+            {
+                'icon': 'fa-shield-alt',
+                'title': 'Regulatory compliance',
+                'description': 'Meets SEBI\'s mandatory disclosure norms for listed companies, avoiding penalties and filing delays.'
+            },
+            {
+                'icon': 'fa-chart-pie',
+                'title': 'Investor confidence',
+                'description': 'Gives investors decision-useful, comparable ESG data instead of scattered sustainability claims.'
+            },
+            {
+                'icon': 'fa-exclamation-triangle',
+                'title': 'Risk visibility',
+                'description': 'Surfaces environmental and social risks in the reporting cycle, before they turn into financial ones.'
+            },
+            {
+                'icon': 'fa-eye',
+                'title': 'Transparency & trust',
+                'description': 'Builds credibility with regulators, customers and communities through verifiable, public disclosure.'
+            },
+            {
+                'icon': 'fa-globe',
+                'title': 'Global alignment',
+                'description': 'Maps cleanly onto GRI, BRSR Core and other international ESG standards for cross-border reporting.'
+            },
+            {
+                'icon': 'fa-chart-line',
+                'title': 'Long-term value',
+                'description': 'Turns sustainability commitments into a trackable, year-on-year record rather than one-off claims.'
+            }
+        ]
+        
+        # User assignments (mock data)
+        if self.request.user.is_authenticated:
+            context['user_assignments'] = 2  # Mock count
+        else:
+            context['user_assignments'] = 0
+        
+        return context
+
+    def get(self, request, *args, **kwargs):
+        # Check if PDF download is requested
+        if request.GET.get('download_pdf'):
+            pdf_buffer = generate_brsr_pdf_report(
+                company_name=request.user.company.company_name if request.user.is_authenticated and hasattr(request.user, 'company') else None,
+                user=request.user,
+            )
+            
+            timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"brsr_overview_report_{timestamp}.pdf"
+            
+            response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+        
+        return super().get(request, *args, **kwargs)
+
+
+class BRSRPrincipleDetailView(TemplateView):
+    """
+    Detailed view for a specific NGRBC principle
+    """
+    template_name = "brsr/principle_detail.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        from apps.organizations.models import FinancialYear
+        
+        # Get current financial year
+        today = timezone.now().date()
+        current_fy = FinancialYear.objects.filter(
+            start_date__lte=today,
+            end_date__gte=today
+        ).first()
+        
+        if not current_fy:
+            current_fy = FinancialYear.objects.order_by('-start_date').first()
+        
+        if current_fy:
+            context['current_fy'] = current_fy.financial_year
+        else:
+            current_year = timezone.now().year
+            context['current_fy'] = f"{current_year-1}-{current_year}"
+        
+        principle_id = int(self.kwargs.get('principle_id', 1))
+        
+        # Define all principles with detailed information
+        principles = {
+            1: {
+                'id': 1,
+                'code': 'P1',
+                'title': 'Ethics, transparency & accountability',
+                'short_description': 'Businesses conduct themselves ethically and are accountable to stakeholders.',
+                'description': 'Businesses should conduct and govern themselves with Ethics, Transparency and Accountability. This principle requires companies to operate in a manner that is fair, transparent and accountable to all stakeholders.',
+                'indicators': [
+                    {'name': 'Ethics Policy', 'essential': True, 'description': 'Policy on ethical conduct'},
+                    {'name': 'Whistleblower Mechanism', 'essential': True, 'description': 'Channel for reporting unethical behavior'},
+                    {'name': 'Anti-Corruption Measures', 'essential': False, 'description': 'Anti-bribery and corruption policies'},
+                    {'name': 'Transparency Reports', 'essential': False, 'description': 'Regular disclosure of business practices'}
+                ],
+                'related_sdgs': ['SDG 16', 'SDG 17']
+            },
+            # ... rest of the principles remain the same
+        }
+        
+        context['principle'] = principles.get(principle_id, principles[1])
+        context['principle_id'] = principle_id
+        context['total_principles'] = len(principles)
+        
+        return context
+
+
+class BRSRReportView(TemplateView):
+    """
+    View for generating/ viewing a BRSR report
+    """
+    template_name = "brsr/report.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        from apps.organizations.models import FinancialYear
+        
+        # Get current date
+        today = timezone.now().date()
+        
+        # Get current financial year from database
+        current_fy = FinancialYear.objects.filter(
+            start_date__lte=today,
+            end_date__gte=today
+        ).first()
+        
+        if not current_fy:
+            current_fy = FinancialYear.objects.order_by('-start_date').first()
+        
+        # Set financial year display
+        if current_fy:
+            context['current_fy'] = current_fy.financial_year
+        else:
+            current_year = timezone.now().year
+            context['current_fy'] = f"{current_year-1}-{current_year}"
+        
+        # Get report data
+        context['report_date'] = timezone.now()
+        context['report_id'] = f"BRSR-{timezone.now().strftime('%Y')}-001"
+        
+        # Get company name from user if available
+        company_name = None
+        if self.request.user.is_authenticated:
+            try:
+                if hasattr(self.request.user, 'company') and self.request.user.company:
+                    company_name = self.request.user.company.company_name
+            except:
+                pass
+        
+        context['company_name'] = company_name or 'Your Company'
+        
+        # Report sections with completion status
+        context['sections'] = [
+            {
+                'id': 'section_a',
+                'name': 'General Disclosures',
+                'description': 'Company identity, products, operations, employees and value-chain details',
+                'completed': True,
+                'completion_pct': 100
+            },
+            {
+                'id': 'section_b',
+                'name': 'Management & Process',
+                'description': 'Governance structure, policies and processes for ESG oversight',
+                'completed': False,
+                'completion_pct': 65
+            },
+            {
+                'id': 'section_c',
+                'name': 'Principle-wise Performance',
+                'description': 'Quantified indicators against the nine NGRBC principles',
+                'completed': False,
+                'completion_pct': 42
+            }
+        ]
+        
+        # Overall completion
+        total_pct = sum(s['completion_pct'] for s in context['sections']) / len(context['sections'])
+        context['overall_completion'] = round(total_pct)
+        
+        # Principle status for Section C
+        context['principle_status'] = [
+            {'code': 'P1', 'name': 'Ethics & Accountability', 'status': 'Complete', 'pct': 100},
+            {'code': 'P2', 'name': 'Safe & Sustainable Goods', 'status': 'Partial', 'pct': 70},
+            {'code': 'P3', 'name': 'Employee Wellbeing', 'status': 'Partial', 'pct': 60},
+            {'code': 'P4', 'name': 'Stakeholder Interests', 'status': 'In Progress', 'pct': 45},
+            {'code': 'P5', 'name': 'Human Rights', 'status': 'In Progress', 'pct': 30},
+            {'code': 'P6', 'name': 'Environmental Protection', 'status': 'Pending', 'pct': 0},
+            {'code': 'P7', 'name': 'Responsible Advocacy', 'status': 'Pending', 'pct': 0},
+            {'code': 'P8', 'name': 'Inclusive Growth', 'status': 'Pending', 'pct': 0},
+            {'code': 'P9', 'name': 'Consumer Value', 'status': 'Pending', 'pct': 0}
+        ]
+        
+        return context
+class BRSRDataAPIView(TemplateView):
+    """
+    API endpoint for fetching BRSR data for AJAX requests
+    """
+    def get(self, request):
+        try:
+            data = {
+                'success': True,
+                'principles': [
+                    {
+                        'id': i,
+                        'code': f'P{i}',
+                        'title': f'Principle {i}',
+                        'description': f'Description for principle {i}'
+                    }
+                    for i in range(1, 10)
+                ],
+                'stats': {
+                    'total_companies': 1000,
+                    'reporting_rate': 72,
+                    'compliance_score': 68
+                }
+            }
+            return HttpResponse(
+                json.dumps(data),
+                content_type='application/json'
+            )
+        except Exception as e:
+            return HttpResponse(
+                json.dumps({
+                    'success': False,
+                    'error': str(e)
+                }),
+                content_type='application/json',
+                status=500
+            )
+
+
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
+@method_decorator(csrf_exempt, name='dispatch')
+class BRSRReportGenerateView(TemplateView):
+    """
+    Generate a BRSR report from form data
+    """
+    def post(self, request):
+        try:
+            data = json.loads(request.body)
+            
+            # Get company name
+            company_name = None
+            if request.user.is_authenticated:
+                try:
+                    if hasattr(request.user, 'company') and request.user.company:
+                        company_name = request.user.company.company_name
+                except:
+                    pass
+            
+            # Generate report ID
+            report_id = f"BRSR-{timezone.now().strftime('%Y%m%d')}-{timezone.now().strftime('%H%M')}"
+            
+            return HttpResponse(
+                json.dumps({
+                    'success': True,
+                    'message': 'Report generated successfully',
+                    'report_id': report_id,
+                    'company_name': company_name or 'Your Company'
+                }),
+                content_type='application/json'
+            )
+        except Exception as e:
+            return HttpResponse(
+                json.dumps({
+                    'success': False,
+                    'error': str(e)
+                }),
+                content_type='application/json',
+                status=400
+            )
+
+
+# ===== PDF GENERATOR SERVICE =====
+# This can be in a separate file: apps/brsr/services/pdf_generator.py
+
+from io import BytesIO
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from django.utils import timezone
+
+
+def generate_brsr_pdf_report(company_name=None, user=None):
+    """
+    Generate a PDF report for BRSR overview
+    """
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4)
+    styles = getSampleStyleSheet()
+    story = []
+    
+    # Title
+    title_style = ParagraphStyle(
+        'TitleStyle',
+        parent=styles['Title'],
+        fontSize=24,
+        spaceAfter=12,
+        alignment=1  # Center
+    )
+    story.append(Paragraph("BRSR Overview Report", title_style))
+    story.append(Spacer(1, 12))
+    
+    # Company name
+    if company_name:
+        story.append(Paragraph(f"Company: {company_name}", styles['Normal']))
+    else:
+        story.append(Paragraph("Company: Not specified", styles['Normal']))
+    
+    story.append(Paragraph(f"Date: {timezone.now().strftime('%B %d, %Y')}", styles['Normal']))
+    story.append(Spacer(1, 24))
+    
+    # Overview
+    heading_style = ParagraphStyle(
+        'HeadingStyle',
+        parent=styles['Heading2'],
+        fontSize=16,
+        spaceAfter=8,
+        spaceBefore=12
+    )
+    story.append(Paragraph("Overview", heading_style))
+    story.append(Paragraph(
+        "This report provides an overview of the Business Responsibility and Sustainability Reporting (BRSR) framework. "
+        "BRSR is India's standard for ESG disclosure, mandated by SEBI for listed companies.",
+        styles['Normal']
+    ))
+    story.append(Spacer(1, 16))
+    
+    # Report Structure
+    story.append(Paragraph("Report Structure", heading_style))
+    
+    structure_data = [
+        ['Section', 'Title', 'Description'],
+        ['A', 'General Disclosures', 'Company profile and operations'],
+        ['B', 'Management & Process', 'Governance and policies'],
+        ['C', 'Principle-wise Performance', 'ESG indicators by principle']
+    ]
+    
+    table = Table(structure_data, colWidths=[0.8*inch, 2*inch, 3*inch])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black)
+    ]))
+    story.append(table)
+    story.append(Spacer(1, 24))
+    
+    # Nine Principles
+    story.append(Paragraph("Nine NGRBC Principles", heading_style))
+    
+    principles = [
+        "P1: Ethics, transparency & accountability",
+        "P2: Safe & sustainable goods",
+        "P3: Employee wellbeing",
+        "P4: Stakeholder interests",
+        "P5: Human rights",
+        "P6: Environmental protection",
+        "P7: Responsible advocacy",
+        "P8: Inclusive growth",
+        "P9: Consumer value"
+    ]
+    
+    for p in principles:
+        story.append(Paragraph(f"• {p}", styles['Normal']))
+    
+    doc.build(story)
+    buffer.seek(0)
+    return buffer

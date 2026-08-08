@@ -73,20 +73,24 @@ def _serialize_question(question, assignment=None, user=None):
     if assignment is not None:
         response_qs = response_qs.filter(assignment=assignment)
     response = response_qs.select_related("assignment").order_by("-updated_at", "-created_at").first()
+    
     task = None
     if assignment and assignment.workflow_task:
         task = assignment.workflow_task
     elif response and response.workflow_task:
         task = response.workflow_task
+    
     task_info = _serialize_task_for_user(task, user) if (task and user) else None
     workflow_stage_type = task_info.get("stage_type", "") if task_info else ""
     can_act = task_info.get("can_act", False) if task_info else False
+    
     status_display = "Final Approved & Locked" if (
         task and (
             task.is_completed
             or (task.current_stage and task.current_stage.stage_type in {"pre_final_approval", "final_approval"})
         )
     ) else ((response.status if response else "draft").replace("_", " ").title())
+    
     documents = []
     if response:
         documents = [
@@ -98,6 +102,15 @@ def _serialize_question(question, assignment=None, user=None):
             }
             for doc in response.documents.all()
         ]
+    
+    # CRITICAL FIX: Get the actual response data from the database
+    # Even if response is None, we need to return empty values
+    response_value = response.response_value if response else ""
+    response_json = response.response_json if response else {}
+    review_remark = response.review_remark if response else ""
+    is_editable = response.is_editable if response else True
+    assignment_id = response.assignment.assignment_id if (response and response.assignment) else ""
+    
     return {
         "question_id": question.question_id,
         "title": question.question_text,
@@ -117,15 +130,15 @@ def _serialize_question(question, assignment=None, user=None):
         "placeholder_text": question.placeholder_text or "",
         "options": question.options or [],
         "validation_rules": question.validation_rules or {},
-        **_question_metadata(question),
-        "response_value": response.response_value if response else "",
-        "response_json": response.response_json if response else {},
-        "review_remark": response.review_remark if response else "",
-        "is_editable": response.is_editable if response else True,
-        "assignment_id": response.assignment.assignment_id if response else "",
+        "_question_metadata": _question_metadata(question),
+        # CRITICAL: These fields MUST be populated
+        "response_value": response_value,  # This should be "Yes" for question 171
+        "response_json": response_json,
+        "review_remark": review_remark,
+        "is_editable": is_editable,
+        "assignment_id": assignment_id,
         "documents": documents,
     }
-
 
 def _serialize_user(user):
     return {
@@ -426,10 +439,23 @@ class BRSRWorkspaceDataAPIView(APIView):
         if assignment_id:
             assignment = (
                 Assignment.objects.select_related("plant", "section", "principle", "workflow_template")
-                .prefetch_related("questions", "questions__section", "questions__principle", "responses")
+                .prefetch_related(
+                    "questions", 
+                    "questions__section", 
+                    "questions__principle", 
+                    "responses",  # CRITICAL: Prefetch responses
+                    "responses__documents"  # Also prefetch documents
+                )
                 .filter(pk=assignment_id)
                 .first()
             )
+            
+            # CRITICAL: Log what responses are found
+            if assignment:
+                response_count = assignment.responses.count()
+                print(f"📝 Found {response_count} responses for assignment {assignment_id}")
+                for resp in assignment.responses.all()[:5]:
+                    print(f"   Question {resp.question_id}: value='{resp.response_value}', json={resp.response_json}")
 
         if assignment:
             from .views import _ensure_assignment_workflow_task
@@ -445,6 +471,13 @@ class BRSRWorkspaceDataAPIView(APIView):
                 questions = [question for question in questions if question.principle_id is None]
         else:
             questions = list(_question_queryset(section, principle))
+
+        # Serialize questions - this will now include response data
+        serialized_questions = [_serialize_question(question, assignment=assignment, user=request.user) for question in questions]
+        
+        # Log what's being returned
+        for q in serialized_questions[:5]:
+            print(f"📤 Question {q['question_number']}: response_value='{q.get('response_value', 'MISSING')}'")
 
         active_question = None
         if question_id:
@@ -478,7 +511,7 @@ class BRSRWorkspaceDataAPIView(APIView):
             "assignment_id": assignment_id or "",
             "sections": [_serialize_section(item) for item in section_cards],
             "principles": [_serialize_principle(item) for item in principle_cards],
-            "topics": [_serialize_question(question, assignment=assignment, user=request.user) for question in questions],
+            "topics": serialized_questions,  # This now includes response data
             "active_question": _serialize_question(active_question, assignment=assignment, user=request.user) if active_question else None,
             "active_question_id": active_question.question_id if active_question else "",
             "counts": _workflow_counts(questions, assignment=assignment),
@@ -610,28 +643,82 @@ class QuestionDetailAPIView(APIView):
 
 class QuestionSaveAPIView(APIView):
     parser_classes = (MultiPartParser, FormParser, JSONParser)
+    
     def put(self, request, question_id):
-        question = get_object_or_404(_pdf_questions_queryset(), question_id=question_id)
-        assignment_id = request.data.get("assignment_id")
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        logger.info("=" * 50)
+        logger.info("📝 QUESTION SAVE API CALLED")
+        logger.info(f"Question ID: {question_id}")
+        logger.info(f"User: {request.user}")
+        
+        # IMPORTANT: Log ALL data to see what's coming in
+        logger.info(f"🔍 request.data: {request.data}")
+        logger.info(f"🔍 request.POST: {request.POST}")
+        logger.info(f"🔍 request.FILES: {request.FILES}")
+        
+        # If using FormData, data might be in request.POST or request.data
+        assignment_id = request.data.get("assignment_id") or request.POST.get("assignment_id")
+        response_value = request.data.get("response_value") or request.POST.get("response_value", "")
+        response_json_raw = request.data.get("response_json") or request.POST.get("response_json", "{}")
+        
+        logger.info(f"Assignment ID: {assignment_id}")
+        logger.info(f"Response value: {response_value[:50] if response_value else 'EMPTY'}")
+        logger.info(f"Response JSON raw: {response_json_raw[:100] if response_json_raw else 'EMPTY'}")
+        
         if not assignment_id:
             return Response(
-                {"detail": "Create an assignment before saving this response."},
+                {"detail": "Assignment ID is required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        assignment = get_object_or_404(_assignment_queryset_for_user(request.user), pk=assignment_id)
+        
+        # Get question
+        try:
+            question = get_object_or_404(_pdf_questions_queryset(), question_id=question_id)
+            logger.info(f"✅ Question found: {question.question_id}")
+        except Exception as e:
+            logger.error(f"❌ Question not found: {str(e)}")
+            return Response(
+                {"detail": f"Question not found: {str(e)}"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        
+        # Get assignment
+        try:
+            assignment = get_object_or_404(_assignment_queryset_for_user(request.user), pk=assignment_id)
+            logger.info(f"✅ Assignment found: {assignment.id}")
+        except Exception as e:
+            logger.error(f"❌ Assignment not found: {str(e)}")
+            return Response(
+                {"detail": f"Assignment not found: {str(e)}"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        
+        # Ensure workflow exists
         if not assignment.workflow_template_id:
             template = _resolve_brsr_workflow_template(request.user, assignment.plant)
             if template:
                 assignment.workflow_template = template
                 assignment.save(update_fields=["workflow_template", "updated_at"])
+        
         from .views import _ensure_assignment_workflow_task
         _ensure_assignment_workflow_task(assignment, current_user=request.user)
+        
         if assignment.workflow_task and assignment.workflow_task.is_completed:
-            return _completed_task_response()
-        response, _ = QuestionResponse.objects.get_or_create(
+            return Response(
+                {"detail": "This workflow has already been completed."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        
+        # Get or create response
+        response, created = QuestionResponse.objects.get_or_create(
             assignment=assignment,
             question=question,
         )
+        logger.info(f"Response {'created' if created else 'found'}: {response.id}")
+        
+        # Check permissions
         if assignment.workflow_task:
             task_info = _serialize_task_for_user(assignment.workflow_task, request.user)
             if not task_info.get("can_act", False):
@@ -648,20 +735,51 @@ class QuestionSaveAPIView(APIView):
                         {"detail": "You don't have permission to save this question."},
                         status=status.HTTP_403_FORBIDDEN,
                     )
+        
         if not assignment.is_editable and assignment.assignment_status not in {"rejected", "reassigned"}:
             return Response(
                 {"detail": "This question cannot be saved in the current workflow stage."},
                 status=status.HTTP_409_CONFLICT,
             )
+        
+        # Update response - CRITICAL: Always set the values even if empty
         response.answered_by_content_type = ContentType.objects.get_for_model(User)
         response.answered_by_object_id = request.user.id
-        if "response_value" in request.data:
-            response.response_value = request.data.get("response_value") or ""
-        if "response_json" in request.data:
-            response.response_json = _parse_response_json_payload(request.data.get("response_json"))
-        response.save()
-
-        # Save Uploaded Files
+        
+        # Set response_value - IMPORTANT: Use the value from request
+        logger.info(f"📝 Setting response_value to: {response_value}")
+        response.response_value = response_value if response_value is not None else ""
+        
+        # Set response_json
+        try:
+            if response_json_raw:
+                if isinstance(response_json_raw, str):
+                    response.response_json = json.loads(response_json_raw) if response_json_raw else {}
+                else:
+                    response.response_json = response_json_raw
+            else:
+                response.response_json = {}
+            logger.info(f"📝 Setting response_json to: {response.response_json}")
+        except json.JSONDecodeError as e:
+            logger.error(f"❌ JSON decode error: {e}")
+            response.response_json = {}
+        
+        # Save the response
+        try:
+            response.save()
+            logger.info(f"✅ Response {response.id} saved successfully")
+            logger.info(f"   - response_value: {response.response_value[:50] if response.response_value else 'EMPTY'}")
+            logger.info(f"   - response_json: {response.response_json}")
+            logger.info(f"   - status: {response.status}")
+        except Exception as e:
+            logger.error(f"❌ Error saving response: {str(e)}")
+            logger.error(f"❌ Traceback:", exc_info=True)
+            return Response(
+                {"detail": f"Error saving response: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+        # Save uploaded files
         uploaded_files = request.FILES.getlist("documents")
         for uploaded_file in uploaded_files:
             QuestionResponseDocument.objects.create(
@@ -669,15 +787,19 @@ class QuestionSaveAPIView(APIView):
                 document=uploaded_file,
                 original_name=uploaded_file.name,
                 uploaded_by=request.user,
-                )
-
-        stage_type = ""
+            )
+        
+        # Advance workflow if needed
         if assignment.workflow_task and assignment.workflow_task.current_stage:
             stage_type = assignment.workflow_task.current_stage.stage_type
-        if stage_type == "question_assignment":
-            from .views import _advance_assignment_to_entry_stage
-            _advance_assignment_to_entry_stage(assignment, actor=request.user)
+            if stage_type == "question_assignment":
+                from .views import _advance_assignment_to_entry_stage
+                _advance_assignment_to_entry_stage(assignment, actor=request.user)
+        
+        # Refresh from database
         response.refresh_from_db()
+        
+        # Get documents
         documents = [
             {
                 "id": doc.id,
@@ -687,14 +809,19 @@ class QuestionSaveAPIView(APIView):
             }
             for doc in response.documents.all()
         ]
-        return Response(
-            {
-                **_serialize_question(question, assignment=assignment),
-                "documents": documents,
-                "message": f"Draft saved for question {question.question_number}.",
-            }
-        )
-
+        
+        logger.info("=" * 50)
+        
+        return Response({
+            "status": "success",
+            "message": f"Draft saved for question {question.question_number}.",
+            "response_value": response.response_value,
+            "response_json": response.response_json,
+            "status": response.status,
+            "id": response.id,
+            "question_id": question.question_id,
+            "documents": documents,
+        })
 
 class QuestionSubmitAPIView(APIView):
     def post(self, request, question_id):
