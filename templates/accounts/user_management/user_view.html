@@ -53,34 +53,7 @@
             </div>
         </div>
     </div>
-<!-- ✅ ADD THIS: Display messages section -->
-{% if messages %}
-    {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-            <div class="d-flex align-items-center">
-                <div class="me-3">
-                    {% if message.tags == 'success' %}
-                        <i class="feather-check-circle text-success" style="font-size: 1.5rem;"></i>
-                    {% elif message.tags == 'error' %}
-                        <i class="feather-x-circle text-danger" style="font-size: 1.5rem;"></i>
-                    elif message.tags == 'warning' %}
-                        <i class="feather-alert-triangle text-warning" style="font-size: 1.5rem;"></i>
-                    {% else %}
-                        <i class="feather-info text-info" style="font-size: 1.5rem;"></i>
-                    {% endif %}
-                </div>
-                <div>
-                    {% comment %} <h6 class="mb-0 fw-bold">
-                        {% if message.tags == 'success' %}Success!{% elif message.tags == 'error' %}Error!{% elif message.tags == 'warning' %}Warning!{% else %}Info{% endif %}
-                    </h6> {% endcomment %}
-                    <p class="mb-0">{{ message }}</p>
-                </div>
-            </div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    {% endfor %}
-{% endif %}
-    <!-- Main Content -->
+        <!-- Main Content -->
     <div class="main-content">
         <div class="row">
 
