@@ -366,6 +366,21 @@ class EmissionAssignmentDashboardView(LoginRequiredMixin, TemplateView):
 
 
 import traceback
+
+from django.contrib.auth import get_user_model
+from django.db import transaction
+
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .assignment_service import create_emission_assignment
+from .models import EmissionAssignmentSource
+
+
+User = get_user_model()
+
+
 class SaveEmissionAssignmentAPIView(APIView):
 
     @transaction.atomic
@@ -375,44 +390,50 @@ class SaveEmissionAssignmentAPIView(APIView):
 
         try:
 
-            # ----------------------------------------
-            # Check if Assignment already exists
-            # ----------------------------------------
+            # -------------------------------------------------
+            # Prevent duplicate source assignment
+            # -------------------------------------------------
+
             source_ids = data.get("source_ids", [])
 
-            existing_sources = EmissionAssignmentSource.objects.filter(
-                assignment__company_id=data.get("company"),
-                assignment__plant_id=data.get("plant"),
-                assignment__financial_year_id=data.get("financial_year"),
-                assignment__financial_month_id=data.get("financial_month"),
-                assignment__assignee_id=data.get("assignee"),  
-                source_id__in=source_ids,
-            ).select_related("source")
-
-            print("existing_sources",existing_sources)
+            existing_sources = (
+                EmissionAssignmentSource.objects
+                .filter(
+                    assignment__company_id=data.get("company"),
+                    assignment__plant_id=data.get("plant"),
+                    assignment__financial_year_id=data.get("financial_year"),
+                    assignment__financial_month_id=data.get("financial_month"),
+                    assignment__assignee_id=data.get("assignee"),
+                    source_id__in=source_ids,
+                )
+                .select_related("source")
+            )
 
             if existing_sources.exists():
+
                 assigned_sources = ", ".join(
-                    existing_sources.values_list("source__source_name", flat=True).distinct()
+                    existing_sources.values_list(
+                        "source__source_name",
+                        flat=True,
+                    ).distinct()
                 )
 
                 return Response(
                     {
                         "success": False,
                         "message": (
-                            f"The selected user is already assigned to the following source(s): "
-                            f"{assigned_sources}"
+                            "The selected user is already assigned to the "
+                            f"following source(s): {assigned_sources}"
                         ),
                     },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            # ----------------------------------------
+            # -------------------------------------------------
             # Create Assignment
-            # ----------------------------------------
-            assignment = EmissionAssignment.objects.create(
+            # -------------------------------------------------
 
-                assignment_code=generate_assignment_code(),
+            assignment = create_emission_assignment(
 
                 company_id=data.get("company"),
 
@@ -424,11 +445,17 @@ class SaveEmissionAssignmentAPIView(APIView):
 
                 scope_id=data.get("scope_id"),
 
-                assignee_id=data.get("assignee"),
+                assignee=User.objects.get(
+                    id=data.get("assignee")
+                ),
 
                 assigner=request.user,
 
-                reviewer_id=data.get("reviewer"),
+                reviewer=(
+                    User.objects.get(id=data.get("reviewer"))
+                    if data.get("reviewer")
+                    else None
+                ),
 
                 due_date=data.get("due_date"),
 
@@ -436,95 +463,10 @@ class SaveEmissionAssignmentAPIView(APIView):
 
                 notes=data.get("notes"),
 
-                status="ASSIGNED",
+                source_ids=source_ids,
 
             )
-            print("After Create:", assignment.id, assignment.status)
-            source_ids = data.get("source_ids", [])
 
-            for source_id in source_ids:
-
-                EmissionAssignmentSource.objects.create(
-
-                    assignment=assignment,
-
-                    source_id=source_id,
-
-                )
-
-            # -------------------------------------------------------
-            # Start Workflow
-            # -------------------------------------------------------
-
-            workflow_template = ApprovalConfigurationTemplate.objects.filter(
-                company_id=assignment.company_id,is_active=True,).first()
-
-            if not workflow_template:
-                return Response(
-                    {
-                        "success": False,
-                        "message": "No active EMISSION workflow configuration found for this company."
-                    },
-                    status=400,)
-
-            # Save template in assignment
-            # assignment.workflow_template = workflow_template
-            # assignment.save(update_fields=["workflow_template"])
-
-            # # Create workflow task (starts at first stage)
-            # workflow_task = WorkflowConfigurationEngine.start(template=workflow_template,target=assignment,
-            #     first_assignee=request.user,)
-
-            # # Skip Question Assignment stage
-            # workflow_task = WorkflowConfigurationEngine.advance_to_next_stage(
-            #     task=workflow_task,user=request.user,next_assignee=assignment.assignee,)
-
-            # # Save workflow task
-            # assignment.workflow_task = workflow_task
-            # assignment.save(update_fields=["workflow_task"])
-
-            # # ----------------------------------------
-            # # Create Notification
-            # # ----------------------------------------
-            # NotificationService.notify(event="ASSIGN_SCOPE",assignment=assignment,sender=request.user,)
-
-            print("After Create:", assignment.status)
-
-            assignment.workflow_template = workflow_template
-            assignment.save(update_fields=["workflow_template"])
-            assignment.refresh_from_db()
-            print("After Template:", assignment.status)
-
-            workflow_task = WorkflowConfigurationEngine.start(
-                template=workflow_template,
-                target=assignment,
-                first_assignee=request.user,
-            )
-            assignment.refresh_from_db()
-            print("After Start:", assignment.status)
-
-            workflow_task = WorkflowConfigurationEngine.advance_to_next_stage(
-                task=workflow_task,
-                user=request.user,
-                next_assignee=assignment.assignee,
-            )
-            assignment.refresh_from_db()
-            print("After Advance:", assignment.status)
-
-            assignment.workflow_task = workflow_task
-            assignment.save(update_fields=["workflow_task"])
-            assignment.refresh_from_db()
-            print("After Task Save:", assignment.status)
-
-            NotificationService.notify(
-                event="ASSIGN_SCOPE",
-                assignment=assignment,
-                sender=request.user,
-            )
-            assignment.refresh_from_db()
-            print("After Notification:", assignment.status)
-            assignment.refresh_from_db()
-            print("Before Return:", assignment.id, assignment.status)
             return Response(
                 {
                     "success": True,
@@ -535,10 +477,9 @@ class SaveEmissionAssignmentAPIView(APIView):
                 status=status.HTTP_201_CREATED,
             )
 
-        
-
         except Exception as e:
-            traceback.print_exc()   # <-- Prints the full error in the terminal
+
+            traceback.print_exc()
 
             return Response(
                 {
@@ -547,8 +488,6 @@ class SaveEmissionAssignmentAPIView(APIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
-
 class ESGDisclosureView(TemplateView):
     """
     View to display ESG / BRSR Disclosure page.

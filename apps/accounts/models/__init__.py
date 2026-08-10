@@ -3,6 +3,7 @@ import importlib.util
 
 from .user import User
 from .role import Role
+from .permission import Permissions
 
 # Department still lives in the legacy apps/accounts/models.py module.
 _department_model_path = Path(__file__).resolve().parent.parent / 'models.py'
