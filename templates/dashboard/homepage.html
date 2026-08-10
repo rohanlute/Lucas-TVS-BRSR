@@ -1,0 +1,1095 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}BRSR Project — Business Responsibility & Sustainability Reporting{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root {
+    --bg: #f5f7fb;
+    --card: #ffffff;
+    --border: #eef2f6;
+    --text: #1a2332;
+    --muted: #6b7280;
+    --green: #22c07a;
+    --teal: #17b6a7;
+    --blue: #2563eb;
+    --blue-dark: #1a4c9e;
+    --blue-deep: #0d2b66;
+    --blue-light: #3b82f6;
+    --blue-soft: #93b4f8;
+    --blue-bg: #e8edf9;
+    --orange: #f97316;
+    --red: #ef4444;
+    --amber: #d97706;
+    --purple: #8b5cf6;
+    --yellow: #f59e0b;
+    --gold: #f59e0b;
+    --gold-soft: #fcd34d;
+    --line: rgba(26, 35, 50, 0.12);
+    --line-strong: rgba(26, 35, 50, 0.22);
+    --shadow: 0 12px 32px rgba(26, 35, 50, 0.10);
+    --radius: 14px;
+    --paper: #f5f7fb;
+    --paper-deep: #e8edf9;
+  }
+
+  * { box-sizing: border-box; }
+  
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+
+  .brsr-wrapper {
+    width: 100%;
+    padding: 24px 32px 32px 32px;
+    background: transparent;
+  }
+
+  /* ===== HERO SECTION - WHITE BACKGROUND ===== */
+  .brsr-hero {
+    background: #ffffff;
+    padding: 60px 0 72px;
+    border-radius: 16px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 40px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  }
+  
+  .brsr-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(37, 99, 235, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(37, 99, 235, 0.03) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(70% 70% at 30% 20%, black, transparent);
+    pointer-events: none;
+  }
+
+  .hero-grid {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 0.8fr;
+    gap: 60px;
+    align-items: center;
+    padding: 0 40px;
+  }
+
+  .hero-content {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .hero-eyebrow {
+    color: var(--blue);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .hero-eyebrow::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--blue);
+    display: inline-block;
+  }
+
+  .brsr-hero h1 {
+    font-size: clamp(34px, 4.6vw, 48px);
+    line-height: 1.06;
+    margin: 20px 0 22px;
+    max-width: 14ch;
+    font-weight: 600;
+    color: var(--text);
+  }
+  
+  .brsr-hero h1 em {
+    font-style: normal;
+    color: var(--blue);
+  }
+
+  .brsr-hero .lede {
+    font-size: 17.5px;
+    color: var(--muted);
+    max-width: 46ch;
+    margin: 0 0 32px;
+  }
+
+  .hero-ctas {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 44px;
+  }
+
+  /* ===== HERO STATS ===== */
+  .hero-stats {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+  }
+
+  .hero-stat {
+    border-left: 1px solid var(--border);
+    padding-left: 14px;
+  }
+
+  .hero-stat b {
+    display: block;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px;
+    color: var(--text);
+  }
+
+  .hero-stat span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  /* ===== RING VISUAL ===== */
+  .ring-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 0;
+  }
+
+  .ring-outer {
+    animation: spin 34s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .ring-svg {
+    width: 100%;
+    max-width: 280px;
+    height: auto;
+  }
+
+  .ring-center {
+    position: absolute;
+    text-align: center;
+    color: var(--text);
+  }
+
+  .ring-center b {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px;
+    display: block;
+    color: var(--text);
+  }
+
+  .ring-center span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: .06em;
+  }
+
+  /* ===== RING LEGEND ===== */
+  .ring-legend {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin-top: 16px;
+    width: 100%;
+  }
+
+  .ring-legend .legend-row {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .ring-legend .legend-row div {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    min-width: 80px;
+    justify-content: center;
+  }
+
+  .ring-legend .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  /* ===== FINANCIAL YEAR STATS ===== */
+  .hero-stats-ring {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .hero-stat-ring {
+    text-align: center;
+  }
+
+  .hero-stat-ring b {
+    display: block;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px;
+    color: var(--blue);
+  }
+
+  .hero-stat-ring span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  /* ===== BUTTONS ===== */
+  .btn-brsr {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    padding: 13px 24px;
+    border-radius: 999px;
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  }
+  
+  .btn-brsr:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 3px;
+  }
+  
+  .btn-blue {
+    background: var(--blue);
+    color: white;
+  }
+  
+  .btn-blue:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.35);
+  }
+  
+  .btn-ghost-blue {
+    border-color: var(--blue);
+    color: var(--blue);
+    background: transparent;
+  }
+  
+  .btn-ghost-blue:hover {
+    background: var(--blue);
+    color: white;
+    transform: translateY(-2px);
+  }
+
+  /* ===== SECTION STYLES ===== */
+  .brsr-section {
+    padding: 48px 0;
+  }
+
+  .brsr-section-alt {
+    background: var(--blue-bg);
+    border-radius: 16px;
+    padding: 48px 32px;
+    margin-bottom: 40px;
+  }
+
+  .section-head {
+    max-width: 640px;
+    margin: 0 0 40px;
+  }
+
+  .section-head .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--blue);
+  }
+
+  .section-head .eyebrow::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--blue);
+    display: inline-block;
+  }
+
+  .section-head h2 {
+    font-size: clamp(26px, 3vw, 36px);
+    margin: 14px 0 14px;
+    line-height: 1.15;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .section-head p {
+    color: var(--muted);
+    font-size: 16px;
+    margin: 0;
+  }
+
+  /* ===== WHAT GRID ===== */
+  .what-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 40px;
+    align-items: center;
+  }
+
+  .what-copy p {
+    color: var(--muted);
+    font-size: 16px;
+    margin: 0 0 22px;
+  }
+
+  .fact-list {
+    list-style: none;
+    margin: 28px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 14px;
+  }
+
+  .fact-list li {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    font-size: 14.5px;
+    color: var(--text);
+  }
+
+  .fact-list li .check {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    background: var(--blue);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+  }
+
+  .fact-list li .check svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  /* ===== DOC CARD ===== */
+  .doc-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .doc-card-head {
+    background: var(--blue);
+    color: white;
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .doc-card-head span:first-child {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  .doc-card-head span:last-child {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    color: rgba(255,255,255,0.7);
+  }
+
+  .doc-card-body {
+    padding: 24px;
+  }
+
+  .doc-line {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--blue-bg);
+    margin-bottom: 10px;
+  }
+
+  .doc-row {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .doc-chip {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10.5px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    background: var(--blue-bg);
+    color: var(--blue);
+    border: 1px solid var(--border);
+  }
+
+  .doc-meter {
+    height: 6px;
+    border-radius: 3px;
+    background: var(--blue-bg);
+    overflow: hidden;
+    margin-top: 16px;
+  }
+
+  .doc-meter i {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, var(--blue), var(--blue-light));
+    width: 72%;
+    border-radius: 3px;
+  }
+
+  /* ===== WHY GRID ===== */
+  .why-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .why-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 26px 24px;
+    transition: transform .22s ease, box-shadow .22s ease;
+  }
+
+  .why-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow);
+    border-color: var(--blue-soft);
+  }
+
+  .why-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: var(--blue-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    color: var(--blue);
+  }
+
+  .why-icon svg {
+    width: 21px;
+    height: 21px;
+  }
+
+  .why-card h3 {
+    font-size: 16.5px;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .why-card p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+
+  /* ===== LEDGER (STRUCTURE) ===== */
+  .ledger {
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: var(--card);
+    overflow: hidden;
+  }
+
+  .ledger-row {
+    display: grid;
+    grid-template-columns: 100px 1fr 1fr;
+    gap: 24px;
+    padding: 26px 28px;
+    border-bottom: 1px dashed var(--line-strong);
+    align-items: flex-start;
+  }
+
+  .ledger-row:last-child {
+    border-bottom: none;
+  }
+
+  .ledger-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--blue);
+    font-weight: 500;
+  }
+
+  .ledger-row h4 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 16px;
+    margin: 0 0 6px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .ledger-row p {
+    margin: 0;
+    font-size: 13.8px;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+
+  .ledger-row .ledger-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* ===== PRINCIPLES ===== */
+  .principle-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .principle-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px;
+    position: relative;
+    overflow: hidden;
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+
+  .principle-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow);
+    border-color: var(--blue-soft);
+  }
+
+  .principle-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: white;
+    background: var(--blue);
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 5px;
+    margin-bottom: 14px;
+  }
+
+  .principle-card h4 {
+    font-size: 15px;
+    margin: 0 0 8px;
+    line-height: 1.35;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .principle-card p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  /* ===== FAQ ===== */
+  .faq {
+    max-width: 760px;
+  }
+
+  .faq-item {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .faq-item summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 22px 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--text);
+  }
+
+  .faq-item summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq-item .plus {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1.5px solid var(--line-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: transform .25s ease;
+  }
+
+  .faq-item .plus::before,
+  .faq-item .plus::after {
+    content: "";
+    position: absolute;
+    background: var(--text);
+  }
+
+  .faq-item .plus::before {
+    width: 10px;
+    height: 1.5px;
+  }
+
+  .faq-item .plus::after {
+    width: 1.5px;
+    height: 10px;
+  }
+
+  .faq-item[open] .plus {
+    transform: rotate(45deg);
+    border-color: var(--blue);
+  }
+
+  .faq-item p {
+    margin: 0 0 22px;
+    color: var(--muted);
+    font-size: 14.5px;
+    line-height: 1.6;
+    padding-right: 40px;
+  }
+
+  /* ===== REVEAL ANIMATION ===== */
+  .reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity .7s ease, transform .7s ease;
+  }
+
+  .reveal.in {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 1024px) {
+    .hero-grid {
+      grid-template-columns: 1fr;
+      gap: 40px;
+      padding: 0 30px;
+    }
+    .ring-wrap {
+      max-width: 300px;
+      margin: 0 auto;
+    }
+    .why-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .principle-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .ring-legend .legend-row {
+      gap: 16px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .brsr-wrapper {
+      padding: 16px;
+    }
+    .brsr-hero {
+      padding: 40px 0 48px;
+    }
+    .hero-grid {
+      padding: 0 20px;
+    }
+    .what-grid {
+      grid-template-columns: 1fr;
+    }
+    .why-grid {
+      grid-template-columns: 1fr;
+    }
+    .principle-grid {
+      grid-template-columns: 1fr;
+    }
+    .ledger-row {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .doc-row {
+      flex-wrap: wrap;
+    }
+    .hero-stats {
+      gap: 16px;
+    }
+    .brsr-section-alt {
+      padding: 32px 16px;
+    }
+    .ring-wrap {
+      max-width: 240px;
+    }
+    .ring-legend .legend-row {
+      gap: 12px;
+    }
+    .ring-legend .legend-row div {
+      font-size: 10px;
+      min-width: 60px;
+    }
+    .hero-stats-ring {
+      gap: 16px;
+    }
+    .hero-stat-ring b {
+      font-size: 17px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .brsr-hero h1 {
+      font-size: 28px;
+    }
+    .brsr-hero .lede {
+      font-size: 15px;
+    }
+    .hero-stat b {
+      font-size: 18px;
+    }
+    .ring-wrap {
+      max-width: 200px;
+    }
+    .ring-legend .legend-row {
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .ring-legend .legend-row div {
+      font-size: 9px;
+      min-width: 50px;
+    }
+    .hero-stats-ring {
+      gap: 12px;
+    }
+    .hero-stat-ring b {
+      font-size: 15px;
+    }
+    .hero-stat-ring span {
+      font-size: 8px;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="brsr-wrapper">
+  
+  <!-- ================= HERO - WHITE BACKGROUND ================= -->
+  <div class="brsr-hero">
+    <div class="hero-grid">
+      <div class="hero-content">
+        <span class="hero-eyebrow">SEBI Mandated · NGRBC Aligned</span>
+        <h1>Reporting how business creates value, <em>responsibly.</em></h1>
+        <p class="lede">BRSR — the Business Responsibility &amp; Sustainability Report — is India's standard framework for disclosing environmental, social and governance performance in one comparable, verifiable format.</p>
+        <div class="hero-ctas">
+          <a href="#what" class="btn-brsr btn-blue">Explore the Framework</a>
+          <a href="#structure" class="btn-brsr btn-ghost-blue">See Report Structure</a>
+        </div>
+        
+      </div>
+
+      <!-- ===== RING VISUAL - RIGHT SIDE WITH 3-LINE LEGEND ===== -->
+      <div class="ring-wrap">
+        <div style="position:relative; display:flex; align-items:center; justify-content:center; width:100%;">
+          <svg class="ring-svg ring-outer" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <path id="ringPath" d="M90,10 A80,80 0 1,1 89.9,10" fill="none"/>
+            </defs>
+            <circle cx="90" cy="90" r="86" fill="none" stroke="rgba(37, 99, 235, 0.10)" stroke-width="1" stroke-dasharray="2 5"/>
+            <text font-family="IBM Plex Mono" font-size="8.4" fill="rgba(37, 99, 235, 0.4)" letter-spacing="2">
+              <textPath href="#ringPath" startOffset="0%">BRSR REPORT · ENVIRONMENT · SOCIAL · GOVERNANCE · BRSR REPORT · ENVIRONMENT · SOCIAL · GOVERNANCE ·</textPath>
+            </text>
+          </svg>
+          <svg class="ring-svg" viewBox="0 0 180 180" xmlns="http://www.w3.org/2000/svg" style="position:absolute;">
+            <g transform="rotate(-90 90 90)">
+              <circle cx="90" cy="90" r="70" fill="none" stroke="rgba(37, 99, 235, 0.08)" stroke-width="14"/>
+              <circle cx="90" cy="90" r="70" fill="none" stroke="#3b82f6" stroke-width="14" stroke-dasharray="167 439.8" stroke-dashoffset="0" stroke-linecap="round"/>
+              <circle cx="90" cy="90" r="70" fill="none" stroke="#f59e0b" stroke-width="14" stroke-dasharray="132 439.8" stroke-dashoffset="-171" stroke-linecap="round"/>
+              <circle cx="90" cy="90" r="70" fill="none" stroke="#8b5cf6" stroke-width="14" stroke-dasharray="141 439.8" stroke-dashoffset="-307" stroke-linecap="round"/>
+            </g>
+          </svg>
+          <div class="ring-center">
+            <b>E · S · G</b>
+            <span>COMPOSITE SCORE</span>
+          </div>
+        </div>
+        
+        <!-- ===== RING LEGEND - 3 LINES ===== -->
+        <div class="ring-legend">
+          <div class="legend-row">
+            <div><span class="dot" style="background:#3b82f6"></span>Environment</div>
+            <div><span class="dot" style="background:#f59e0b"></span>Social</div>
+          </div>
+          <div class="legend-row">
+            <div><span class="dot" style="background:#8b5cf6"></span>Governance</div>
+            <div><span class="dot" style="background:#22c07a"></span>ESG Score</div>
+          </div>
+          <div class="legend-row">
+            <div><span class="dot" style="background:#f97316"></span>Compliance</div>
+          </div>
+        </div>
+
+        <!-- ===== FINANCIAL YEAR STATS ===== -->
+        <div class="hero-stats-ring">
+          <div class="hero-stat-ring">
+            <b> {{ current_fy|default:"2024–25" }}</b>
+            <span>CURRENT FINANCIAL YEAR</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= WHAT IS BRSR ================= -->
+  <div class="brsr-section" id="what">
+    <div class="what-grid">
+      <div class="reveal">
+        <div class="section-head" style="margin-bottom:0;">
+          <span class="eyebrow">Overview</span>
+          <h2 style="margin:16px 0 20px;">What exactly is a BRSR filing?</h2>
+        </div>
+        <div class="what-copy">
+          <p>The Business Responsibility &amp; Sustainability Report is a standardised disclosure that listed companies file alongside their annual report. It replaces the older, largely qualitative Business Responsibility Report (BRR) with a structured, quantifiable account of ESG performance.</p>
+          <p>It's built on the <strong>National Guidelines on Responsible Business Conduct (NGRBC)</strong> — nine principles issued by the Ministry of Corporate Affairs — and asks companies to report against defined indicators rather than free-form narrative, making disclosures comparable across sectors and years.</p>
+        </div>
+        <ul class="fact-list">
+          <li><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span> Introduced and mandated by SEBI (Securities and Exchange Board of India)</li>
+          <li><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span> Mandatory for the top 1,000 listed companies by market capitalisation</li>
+          <li><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span> Built on the nine NGRBC principles — ethics, environment, human rights and more</li>
+          <li><span class="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span> Filed as part of the annual report, from FY 2022–23 onward</li>
+        </ul>
+      </div>
+
+      <div class="doc-card reveal">
+        <div class="doc-card-head">
+          <span>Annexure · BRSR</span>
+          <span class="mono">FY 2025–26</span>
+        </div>
+        <div class="doc-card-body">
+          <div class="doc-row">
+            <span class="doc-chip">SECTION A</span>
+            <span class="doc-chip">SECTION B</span>
+            <span class="doc-chip">SECTION C</span>
+          </div>
+          <div class="doc-line" style="width:92%;"></div>
+          <div class="doc-line" style="width:78%;"></div>
+          <div class="doc-line" style="width:85%;"></div>
+          <div class="doc-line" style="width:60%; margin-bottom:0;"></div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:20px;">
+            <span class="mono" style="font-size:11px; color:var(--muted);">DISCLOSURE COMPLETENESS</span>
+            <span class="mono" style="font-size:12px; color:var(--blue); font-weight:500;">72%</span>
+          </div>
+          <div class="doc-meter"><i></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= WHY BRSR ================= -->
+  <div class="brsr-section brsr-section-alt" id="why">
+    <div class="section-head reveal">
+      <span class="eyebrow">Why It Matters</span>
+      <h2>Why companies use the BRSR framework</h2>
+      <p>Beyond compliance, BRSR gives regulators, investors and companies themselves a shared, auditable language for sustainability performance.</p>
+    </div>
+
+    <div class="why-grid">
+      <div class="why-card reveal">
+        <div class="why-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 2l8 4v6c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6l8-4z"/></svg></div>
+        <h3>Regulatory compliance</h3>
+        <p>Meets SEBI's mandatory disclosure norms for listed companies, avoiding penalties and filing delays.</p>
+      </div>
+      <div class="why-card reveal">
+        <div class="why-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg></div>
+        <h3>Investor confidence</h3>
+        <p>Gives investors decision-useful, comparable ESG data instead of scattered sustainability claims.</p>
+      </div>
+      <div class="why-card reveal">
+        <div class="why-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div>
+        <h3>Risk visibility</h3>
+        <p>Surfaces environmental and social risks in the reporting cycle, before they turn into financial ones.</p>
+      </div>
+      <div class="why-card reveal">
+        <div class="why-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <h3>Transparency &amp; trust</h3>
+        <p>Builds credibility with regulators, customers and communities through verifiable, public disclosure.</p>
+      </div>
+      <div class="why-card reveal">
+        <div class="why-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><ellipse cx="12" cy="12" rx="9" ry="4"/><path d="M3 12c0 2.2 4 4 9 4s9-1.8 9-4"/><path d="M3 7c0 2.2 4 4 9 4s9-1.8 9-4"/></svg></div>
+        <h3>Global alignment</h3>
+        <p>Maps cleanly onto GRI, BRSR Core and other international ESG standards for cross-border reporting.</p>
+      </div>
+      <div class="why-card reveal">
+        <div class="why-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M8 15l3-4 3 3 4-6"/></svg></div>
+        <h3>Long-term value</h3>
+        <p>Turns sustainability commitments into a trackable, year-on-year record rather than one-off claims.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= STRUCTURE ================= -->
+  <div class="brsr-section" id="structure">
+    <div class="section-head reveal">
+      <span class="eyebrow">Filing Structure</span>
+      <h2>Three sections, one report</h2>
+      <p>Every BRSR filing follows the same fixed structure — which is what makes it comparable across companies and years.</p>
+    </div>
+
+    <div class="ledger reveal">
+      <div class="ledger-row">
+        <span class="ledger-tag">§ A</span>
+        <div>
+          <h4>General Disclosures</h4>
+          <p>Company identity, products, operations, employees and value-chain details that set the reporting context.</p>
+        </div>
+        <span class="ledger-meta">ENTITY-LEVEL PROFILE</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-tag">§ B</span>
+        <div>
+          <h4>Management &amp; Process</h4>
+          <p>Governance structure, policies and processes the company has in place to act on each NGRBC principle.</p>
+        </div>
+        <span class="ledger-meta">POLICY &amp; OVERSIGHT</span>
+      </div>
+      <div class="ledger-row">
+        <span class="ledger-tag">§ C</span>
+        <div>
+          <h4>Principle-wise Performance</h4>
+          <p>Quantified Essential and Leadership indicators reported against each of the nine NGRBC principles.</p>
+        </div>
+        <span class="ledger-meta">ESSENTIAL + LEADERSHIP</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PRINCIPLES ================= -->
+  <div class="brsr-section brsr-section-alt" id="principles">
+    <div class="section-head reveal">
+      <span class="eyebrow">The NGRBC Framework</span>
+      <h2>The nine principles behind BRSR</h2>
+      <p>Section C of every report is organised around these nine principles, each covering a distinct area of responsible conduct.</p>
+    </div>
+
+    <div class="principle-grid">
+      <div class="principle-card reveal"><span class="principle-num">P1</span><h4>Ethics, transparency &amp; accountability</h4><p>Businesses conduct themselves ethically and are accountable to stakeholders.</p></div>
+      <div class="principle-card reveal"><span class="principle-num">P2</span><h4>Safe &amp; sustainable goods</h4><p>Products and services are safe and sustainable across their full lifecycle.</p></div>
+      <div class="principle-card reveal"><span class="principle-num">P3</span><h4>Employee wellbeing</h4><p>Businesses respect and promote the wellbeing of all employees, including value-chain workers.</p></div>
+      <div class="principle-card reveal"><span class="principle-num">P4</span><h4>Stakeholder interests</h4><p>Businesses respect the interests of, and are responsive to, all stakeholders.</p></div>
+      <div class="principle-card reveal"><span class="principle-num">P5</span><h4>Human rights</h4><p>Businesses respect and promote human rights across their operations.</p></div>
+      <div class="principle-card reveal"><span class="principle-num">P6</span><h4>Environmental protection</h4><p>Businesses respect and make efforts to protect and restore the environment.</p></div>
+      <div class="principle-card reveal"><span class="principle-num">P7</span><h4>Responsible advocacy</h4><p>Policy engagement and advocacy are conducted in a responsible manner.</p></div>
+      <div class="principle-card reveal"><span class="principle-num">P8</span><h4>Inclusive growth</h4><p>Businesses support equitable development and inclusive growth for all.</p></div>
+      <div class="principle-card reveal"><span class="principle-num">P9</span><h4>Consumer value</h4><p>Businesses engage with and provide value to consumers responsibly.</p></div>
+    </div>
+  </div>
+
+  <!-- ================= FAQ ================= -->
+  <div class="brsr-section" id="faq">
+    <div class="section-head reveal">
+      <span class="eyebrow">Common Questions</span>
+      <h2>Frequently asked</h2>
+    </div>
+
+    <div class="faq reveal">
+      <details class="faq-item" open>
+        <summary>Who is required to file a BRSR?<span class="plus"></span></summary>
+        <p>SEBI mandates BRSR filing for the top 1,000 listed companies by market capitalisation, as part of their annual report from FY 2022–23 onward. Other listed entities may file it voluntarily.</p>
+      </details>
+      <details class="faq-item">
+        <summary>How is BRSR different from the old BRR?<span class="plus"></span></summary>
+        <p>The earlier Business Responsibility Report was largely descriptive and qualitative. BRSR replaces it with quantifiable, indicator-based disclosures that can be compared across companies and years.</p>
+      </details>
+      <details class="faq-item">
+        <summary>What's the difference between Essential and Leadership indicators?<span class="plus"></span></summary>
+        <p>Essential indicators are mandatory for every applicable company. Leadership indicators are recommended, more advanced disclosures for companies pursuing stronger ESG performance.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Does BRSR replace financial reporting?<span class="plus"></span></summary>
+        <p>No. BRSR sits alongside financial statements as a non-financial, ESG-focused disclosure — it doesn't substitute for statutory financial reporting requirements.</p>
+      </details>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // Scroll reveal
+  const revealEls = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  revealEls.forEach(el => io.observe(el));
+
+  // FAQ smooth behavior
+  document.querySelectorAll('.faq-item summary').forEach(summary => {
+    summary.addEventListener('click', function(e) {
+      const details = this.closest('details');
+      if (details.hasAttribute('open')) {
+        e.preventDefault();
+        details.removeAttribute('open');
+      }
+    });
+  });
+</script>
+
+{% endblock %}

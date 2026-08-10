@@ -1,11 +1,15 @@
+# apps/emission/views.py - Updated views with company name passing
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views import View
 from django.urls import reverse_lazy
 from dataclasses import dataclass
 from typing import List, Dict, Any
 from datetime import datetime
+from rest_framework.views import APIView
+from django.db import transaction
 import json
 from django.views.generic import (ListView,CreateView,UpdateView,DeleteView,)
 from .models import EmissionTransaction
@@ -16,161 +20,468 @@ from apps.notifications.services import NotificationService
 from apps.notifications.models import Notification,Timesheet
 from apps.organizations.models import ApprovalConfigurationTemplate
 from apps.organizations.workflow_configuration_engine import WorkflowConfigurationEngine
+from django.utils import timezone
+from apps.accounts.models import User
+from decimal import Decimal
 
+
+# apps/emission/views.py - Updated EmissionsDashboardView
 
 class EmissionsDashboardView(TemplateView):
     """
     Renders the main Carbon Emissions Dashboard page
     (KPI cards, monthly trend, scope breakdown, by-plant chart,
-    task status, recent activity).
+    task status).
     """
     template_name = "emission/dashboard.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-
+        
+        from django.db.models import Sum, Q
+        from .models import EmissionTransaction, EmissionScope, EmissionCategory, EmissionAssignment
+        from apps.organizations.models import FinancialYear, Plant as PlantModel, FinancialMonth
+        from decimal import Decimal
+        from apps.notifications.models import Notification
+        from apps.accounts.models import User
+        
+        # Get plant filter from request
+        plant_id = self.request.GET.get('plant_id')
+        selected_plant = None
+        filter_kwargs = {}
+        
+        if plant_id:
+            filter_kwargs['plant_id'] = plant_id
+            try:
+                selected_plant = PlantModel.objects.get(id=plant_id)
+                context['selected_plant'] = selected_plant
+            except:
+                pass
+        
+        # Get plants for filter
+        user = self.request.user
+        if user.role.role_code in ['COMPANYADMIN', 'ESG-HEAD']:
+            all_plants = PlantModel.objects.filter(is_active=True).order_by('name')
+            context['plants'] = all_plants
+        else:
+            all_plants = user.assigned_plants.filter(is_active=True).order_by('name')
+            context['plants'] = all_plants
+        
+        # Get current financial year
+        today = timezone.now().date()
+        current_fy = FinancialYear.objects.filter(
+            start_date__lte=today,
+            end_date__gte=today
+        ).first()
+        
+        if current_fy:
+            filter_kwargs['financial_year_id'] = current_fy.id
+            context['current_fy'] = current_fy.name if hasattr(current_fy, 'name') else str(current_fy)
+        else:
+            context['current_fy'] = '2024–25'
+        
+        # ===== CALCULATE TOTALS =====
+        # Total emissions in kg then convert to t
+        total_emissions_kg = EmissionTransaction.objects.filter(**filter_kwargs).aggregate(
+            total=Sum('total_emission')
+        )['total'] or Decimal('0')
+        total_emissions_kg = Decimal(str(total_emissions_kg))
+        total_emissions_t = float(total_emissions_kg / Decimal('1000'))
+        
+        # Scope totals
+        scope_totals_t = {}
+        for scope in EmissionScope.objects.filter(is_active=True):
+            total_kg = EmissionTransaction.objects.filter(
+                **filter_kwargs,
+                activity__category__scope_id=scope.id
+            ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
+            total_kg = Decimal(str(total_kg))
+            scope_totals_t[scope.code] = float(total_kg / Decimal('1000'))
+        
+        # Get scope totals for display
+        scope1_total = scope_totals_t.get('S1', 0)
+        scope2_total = scope_totals_t.get('S2', 0)
+        scope3_total = scope_totals_t.get('S3', 0)
+        total_emissions = total_emissions_t
+        
+        # Calculate deltas (compare with previous year)
+        prev_fy = FinancialYear.objects.filter(
+            end_date__lt=current_fy.start_date if current_fy else today
+        ).order_by('-end_date').first()
+        
+        delta_scope1 = 0
+        delta_scope2 = 0
+        delta_scope3 = 0
+        delta_total = 0
+        
+        if prev_fy:
+            prev_filter = filter_kwargs.copy()
+            prev_filter['financial_year_id'] = prev_fy.id
+            
+            prev_total_kg = EmissionTransaction.objects.filter(**prev_filter).aggregate(
+                total=Sum('total_emission')
+            )['total'] or Decimal('0')
+            prev_total_t = float(Decimal(str(prev_total_kg)) / Decimal('1000'))
+            
+            if prev_total_t > 0:
+                delta_total = ((total_emissions - prev_total_t) / prev_total_t) * 100
+            
+            # Scope deltas
+            for scope in EmissionScope.objects.filter(is_active=True):
+                prev_kg = EmissionTransaction.objects.filter(
+                    **prev_filter,
+                    activity__category__scope_id=scope.id
+                ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
+                prev_t = float(Decimal(str(prev_kg)) / Decimal('1000'))
+                
+                if prev_t > 0:
+                    delta = ((scope_totals_t.get(scope.code, 0) - prev_t) / prev_t) * 100
+                    if scope.code == 'S1':
+                        delta_scope1 = delta
+                    elif scope.code == 'S2':
+                        delta_scope2 = delta
+                    elif scope.code == 'S3':
+                        delta_scope3 = delta
+        
+        # Build KPI data
         context["kpis"] = [
-            {"label": "TOTAL EMISSIONS YTD", "value": 50276, "unit": "tCO2e",
-             "delta": -4.2, "accent": "green"},
-            {"label": "SCOPE 1 DIRECT", "value": 14470, "unit": "tCO2e",
-             "delta": -2.1, "accent": "teal"},
-            {"label": "SCOPE 2 INDIRECT", "value": 10266, "unit": "tCO2e",
-             "delta": -6.8, "accent": "blue"},
-            {"label": "SCOPE 3 VALUE CHAIN", "value": 25540, "unit": "tCO2e",
-             "delta": 1.3, "accent": "orange"},
+            {"label": "TOTAL EMISSIONS YTD", "value": f"{total_emissions:,.0f}", "unit": "tCO₂e",
+             "delta": f"{delta_total:.1f}", "accent": "green" if delta_total < 0 else "red"},
+            {"label": "SCOPE 1 DIRECT", "value": f"{scope1_total:,.0f}", "unit": "tCO₂e",
+             "delta": f"{delta_scope1:.1f}", "accent": "teal" if delta_scope1 < 0 else "orange"},
+            {"label": "SCOPE 2 INDIRECT", "value": f"{scope2_total:,.0f}", "unit": "tCO₂e",
+             "delta": f"{delta_scope2:.1f}", "accent": "blue" if delta_scope2 < 0 else "orange"},
+            {"label": "SCOPE 3 VALUE CHAIN", "value": f"{scope3_total:,.0f}", "unit": "tCO₂e",
+             "delta": f"{delta_scope3:.1f}", "accent": "orange" if delta_scope3 < 0 else "orange"},
         ]
-
-        context["months"] = ["Apr", "May", "Jun", "Jul", "Aug", "Sep",
-                              "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"]
-        context["scope1_series"] = [1420, 1390, 1350, 1300, 1480, 1550,
-                                     1500, 1380, 1300, 1250, 1300, 1400]
-        context["scope2_series"] = [980, 950, 900, 870, 1000, 1050,
-                                     1000, 910, 860, 830, 870, 930]
-        context["scope3_series"] = [2450, 2380, 2300, 2250, 2500, 2600,
-                                     2550, 2300, 2200, 2150, 2250, 2400]
-
+        
+        # ===== MONTHLY TREND DATA =====
+        months = []
+        scope1_series = []
+        scope2_series = []
+        scope3_series = []
+        
+        # Get last 12 months of data
+        last_12_months = FinancialMonth.objects.filter(
+            is_active=True
+        ).order_by('-display_order')[:12]
+        
+        if last_12_months.exists():
+            for month in reversed(last_12_months):
+                month_filter = filter_kwargs.copy()
+                month_filter['financial_month_id'] = month.id
+                
+                s1 = float(EmissionTransaction.objects.filter(
+                    **month_filter,
+                    activity__category__scope__code='S1'
+                ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0') / Decimal('1000'))
+                
+                s2 = float(EmissionTransaction.objects.filter(
+                    **month_filter,
+                    activity__category__scope__code='S2'
+                ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0') / Decimal('1000'))
+                
+                s3 = float(EmissionTransaction.objects.filter(
+                    **month_filter,
+                    activity__category__scope__code='S3'
+                ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0') / Decimal('1000'))
+                
+                months.append(month.name[:3] if hasattr(month, 'name') else str(month.month_number))
+                scope1_series.append(s1)
+                scope2_series.append(s2)
+                scope3_series.append(s3)
+        else:
+            # Fallback to default data
+            months = ["Apr", "May", "Jun", "Jul", "Aug", "Sep",
+                      "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"]
+            scope1_series = [1420, 1390, 1350, 1300, 1480, 1550, 1500, 1380, 1300, 1250, 1300, 1400]
+            scope2_series = [980, 950, 900, 870, 1000, 1050, 1000, 910, 860, 830, 870, 930]
+            scope3_series = [2450, 2380, 2300, 2250, 2500, 2600, 2550, 2300, 2200, 2150, 2250, 2400]
+        
+        context["months"] = months
+        context["scope1_series"] = scope1_series
+        context["scope2_series"] = scope2_series
+        context["scope3_series"] = scope3_series
+        
+        # ===== SCOPE BREAKDOWN FOR DONUT =====
+        total = total_emissions if total_emissions > 0 else 1
         context["scope_breakdown"] = [
-            {"name": "Scope 1", "value": 14470, "pct": 28.8, "color": "#22c07a"},
-            {"name": "Scope 2", "value": 10266, "pct": 20.4, "color": "#17b6a7"},
-            {"name": "Scope 3", "value": 25540, "pct": 50.8, "color": "#3b6df0"},
+            {"name": "Scope 1", "value": scope1_total, "pct": (scope1_total / total) * 100, "color": "#22c07a"},
+            {"name": "Scope 2", "value": scope2_total, "pct": (scope2_total / total) * 100, "color": "#17b6a7"},
+            {"name": "Scope 3", "value": scope3_total, "pct": (scope3_total / total) * 100, "color": "#3b6df0"},
         ]
-
-        context["by_plant"] = [
-            {"name": "Mundra", "value": 8600},
-            {"name": "Tiroda", "value": 8100},
-            {"name": "Raipur", "value": 7300},
-            {"name": "Kawai", "value": 6600},
-            {"name": "Udupi", "value": 5900},
-        ]
-
+        
+        # ===== BY PLANT DATA - NOW INCLUDES ALL PLANTS =====
+        plants_data = []
+        plant_filter = filter_kwargs.copy()
+        if 'plant_id' in plant_filter:
+            plant_filter.pop('plant_id', None)
+        
+        # Get total sources count for completion calculation
+        total_sources_count = EmissionSource.objects.filter(is_active=True).count() or 1
+        
+        # Loop through ALL plants
+        for plant in all_plants:
+            p_filter = plant_filter.copy()
+            p_filter['plant_id'] = plant.id
+            if current_fy:
+                p_filter['financial_year_id'] = current_fy.id
+            
+            total_kg = EmissionTransaction.objects.filter(**p_filter).aggregate(
+                total=Sum('total_emission')
+            )['total'] or Decimal('0')
+            total_t = float(Decimal(str(total_kg)) / Decimal('1000'))
+            
+            # Calculate completion percentage for this plant
+            completed_sources = EmissionTransaction.objects.filter(
+                **p_filter
+            ).values('source_id').distinct().count()
+            
+            completion_pct = (completed_sources / total_sources_count) * 100 if total_sources_count > 0 else 0
+            
+            plants_data.append({
+                "id": plant.id,
+                "name": plant.name,
+                "value": total_t,
+                "completion_pct": completion_pct,
+                "completed_sources": completed_sources,
+                "total_sources": total_sources_count,
+            })
+        
+        # Sort by value descending (plants with data first)
+        plants_data.sort(key=lambda x: (x['value'] == 0, -x['value']))
+        
+        # Pass ALL plants to the template
+        context["by_plant"] = plants_data  # No limit - show all plants
+        
+        # Also pass all_plants for the filter dropdown
+        context["all_plants"] = [{"id": p.id, "name": p.name} for p in all_plants]
+        
+        # ===== TASK STATUS - Using EmissionAssignment =====
+        # Build filter for assignments
+        assignment_filter = {}
+        if plant_id:
+            assignment_filter['plant_id'] = plant_id
+        if current_fy:
+            assignment_filter['financial_year_id'] = current_fy.id
+        
+        # Get all assignments for the company
+        if user.company:
+            assignment_filter['company_id'] = user.company.id
+        
+        # Total assignments
+        total_assignments = EmissionAssignment.objects.filter(**assignment_filter).count()
+        
+        # Completed assignments (APPROVED or REVIEW_APPROVED status)
+        completed_assignments = EmissionAssignment.objects.filter(
+            **assignment_filter,
+            status__in=['APPROVED', 'REVIEW_APPROVED']
+        ).count()
+        
+        # Pending assignments (ASSIGNED, IN_PROGRESS, SUBMITTED)
+        pending_assignments = EmissionAssignment.objects.filter(
+            **assignment_filter,
+            status__in=['ASSIGNED', 'IN_PROGRESS', 'SUBMITTED']
+        ).count()
+        
+        # Overdue assignments (due date passed and not APPROVED or REVIEW_APPROVED)
+        overdue_assignments = EmissionAssignment.objects.filter(
+            **assignment_filter,
+            due_date__lt=timezone.now().date()
+        ).exclude(
+            status__in=['APPROVED', 'REVIEW_APPROVED']
+        ).count()
+        
         context["task_status"] = {
-            "total": 142,
-            "completed": 98,
-            "pending_review": 23,
-            "overdue": 7,
+            "total": total_assignments,
+            "completed": completed_assignments,
+            "pending_review": pending_assignments,
+            "overdue": overdue_assignments,
         }
-
-        context["recent_activity"] = [
-            {"status": "ok", "title": "Q3 Diesel Consumption — Mundra Plant",
-             "author": "Priya Sharma", "meta": "2h ago"},
-            {"status": "warn", "title": "Nov Grid Electricity — Tiroda Plant",
-             "author": "Rahul Mehta", "meta": "3d overdue"},
-            {"status": "pending", "title": "Business Travel — Q3 FY25",
-             "author": "Neha Gupta", "meta": "5h ago"},
-            {"status": "warn", "title": "Refrigerant Leakage — Raipur Plant",
-             "author": "Amit Singh", "meta": "1d ago"},
-            {"status": "ok", "title": "Water Withdrawal — Kawai Plant",
-             "author": "Sunita Rao", "meta": "6h ago"},
-        ]
-
+        
         return context
 
+    def get(self, request, *args, **kwargs):
+        # Check if PDF download is requested
+        if request.GET.get('download_pdf'):
+            from apps.emission.services.pdf_generator import generate_emission_pdf_report
+            
+            # Get user with company
+            user = request.user
+            company_name = None
+            if user.is_authenticated:
+                user = User.objects.select_related('company').get(id=user.id)
+                if user.company:
+                    company_name = user.company.company_name
+            
+            company_id = request.GET.get('company_id')
+            plant_id = request.GET.get('plant_id')
+            year_id = request.GET.get('year_id')
+            month_id = request.GET.get('month_id')
+            
+            pdf_buffer = generate_emission_pdf_report(
+                company_id=company_id,
+                plant_id=plant_id,
+                financial_year_id=year_id,
+                financial_month_id=month_id,
+                company_name=company_name,
+                user=user,
+            )
+            
+            timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"emission_dashboard_report_{timestamp}.pdf"
+            
+            response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+        
+        return super().get(request, *args, **kwargs)
 
 class EmissionsDashboardDataView(View):
     """
-    Optional JSON endpoint — same data as above, useful if the front end
-    (e.g. the Chart.js widgets) wants to fetch/refresh the dashboard via AJAX
-    instead of relying purely on server-rendered context.
+    JSON endpoint for fetching dashboard data via AJAX
     """
-
     def get(self, request, *args, **kwargs):
+        from decimal import Decimal
+        from django.db.models import Sum
+        from .models import EmissionTransaction, EmissionScope, EmissionAssignment, EmissionSource
+        from apps.organizations.models import FinancialYear, Plant as PlantModel
+        from apps.accounts.models import User
+        
+        # Get plant filter
+        plant_id = request.GET.get('plant_id')
+        filter_kwargs = {}
+        
+        if plant_id:
+            filter_kwargs['plant_id'] = plant_id
+        
+        # Get current financial year
+        today = timezone.now().date()
+        current_fy = FinancialYear.objects.filter(
+            start_date__lte=today,
+            end_date__gte=today
+        ).first()
+        
+        if current_fy:
+            filter_kwargs['financial_year_id'] = current_fy.id
+        
+        # Calculate totals
+        total_emissions_kg = EmissionTransaction.objects.filter(**filter_kwargs).aggregate(
+            total=Sum('total_emission')
+        )['total'] or Decimal('0')
+        total_emissions_t = float(Decimal(str(total_emissions_kg)) / Decimal('1000'))
+        
+        # Scope totals
+        scope_totals_t = {}
+        for scope in EmissionScope.objects.filter(is_active=True):
+            total_kg = EmissionTransaction.objects.filter(
+                **filter_kwargs,
+                activity__category__scope_id=scope.id
+            ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
+            total_kg = Decimal(str(total_kg))
+            scope_totals_t[scope.code] = float(total_kg / Decimal('1000'))
+        
+        # Get scope totals
+        scope1_total = scope_totals_t.get('S1', 0)
+        scope2_total = scope_totals_t.get('S2', 0)
+        scope3_total = scope_totals_t.get('S3', 0)
+        
+        # Calculate percentages
+        total = total_emissions_t if total_emissions_t > 0 else 1
+        
+        # ===== BY PLANT DATA WITH COMPLETION PERCENTAGE - ALL PLANTS =====
+        plants_data = []
+        plant_filter = filter_kwargs.copy()
+        if 'plant_id' in plant_filter:
+            plant_filter.pop('plant_id', None)
+        
+        # Get all active sources count for completion calculation
+        total_all_sources = EmissionSource.objects.filter(is_active=True).count() or 1
+        
+        # Get ALL plants (including those with no data)
+        user = request.user
+        if user.role.role_code in ['COMPANYADMIN', 'ESG-HEAD']:
+            all_plants = PlantModel.objects.filter(is_active=True).order_by('name')
+        else:
+            all_plants = user.assigned_plants.filter(is_active=True).order_by('name')
+        
+        for plant in all_plants:
+            p_filter = plant_filter.copy()
+            p_filter['plant_id'] = plant.id
+            if current_fy:
+                p_filter['financial_year_id'] = current_fy.id
+            
+            total_kg = EmissionTransaction.objects.filter(**p_filter).aggregate(
+                total=Sum('total_emission')
+            )['total'] or Decimal('0')
+            total_t = float(Decimal(str(total_kg)) / Decimal('1000'))
+            
+            # Calculate completion percentage for this plant
+            completed_sources = EmissionTransaction.objects.filter(
+                **p_filter
+            ).values('source_id').distinct().count()
+            
+            completion_pct = (completed_sources / total_all_sources) * 100 if total_all_sources > 0 else 0
+            
+            plants_data.append({
+                "id": plant.id,
+                "name": plant.name,
+                "value": total_t,
+                "completion_pct": completion_pct,
+                "completed_sources": completed_sources,
+                "total_sources": total_all_sources,
+            })
+        
+        # Sort: plants with data first, then alphabetically
+        plants_data.sort(key=lambda x: (x['value'] == 0, -x['value']))
+        
+        # ===== TASK STATUS =====
+        user = request.user
+        assignment_filter = {}
+        if plant_id:
+            assignment_filter['plant_id'] = plant_id
+        if current_fy:
+            assignment_filter['financial_year_id'] = current_fy.id
+        if user.company:
+            assignment_filter['company_id'] = user.company.id
+        
+        total_assignments = EmissionAssignment.objects.filter(**assignment_filter).count()
+        completed_assignments = EmissionAssignment.objects.filter(
+            **assignment_filter,
+            status__in=['APPROVED', 'REVIEW_APPROVED']
+        ).count()
+        pending_assignments = EmissionAssignment.objects.filter(
+            **assignment_filter,
+            status__in=['ASSIGNED', 'IN_PROGRESS', 'SUBMITTED']
+        ).count()
+        overdue_assignments = EmissionAssignment.objects.filter(
+            **assignment_filter,
+            due_date__lt=timezone.now().date()
+        ).exclude(
+            status__in=['APPROVED', 'REVIEW_APPROVED']
+        ).count()
+        
         data = {
             "kpis": {
-                "total_ytd": 50276,
-                "scope1": 14470,
-                "scope2": 10266,
-                "scope3": 25540,
+                "total_ytd": total_emissions_t,
+                "scope1": scope1_total,
+                "scope2": scope2_total,
+                "scope3": scope3_total,
             },
-            "monthly_trend": {
-                "months": ["Apr", "May", "Jun", "Jul", "Aug", "Sep",
-                           "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"],
-                "scope1": [1420, 1390, 1350, 1300, 1480, 1550,
-                          1500, 1380, 1300, 1250, 1300, 1400],
-                "scope2": [980, 950, 900, 870, 1000, 1050,
-                          1000, 910, 860, 830, 870, 930],
-                "scope3": [2450, 2380, 2300, 2250, 2500, 2600,
-                          2550, 2300, 2200, 2150, 2250, 2400],
-            },
-            "by_plant": [
-                {"name": "Mundra", "value": 8600},
-                {"name": "Tiroda", "value": 8100},
-                {"name": "Raipur", "value": 7300},
-                {"name": "Kawai", "value": 6600},
-                {"name": "Udupi", "value": 5900},
+            "scope_breakdown": [
+                {"name": "Scope 1", "value": scope1_total, "pct": (scope1_total / total) * 100, "color": "#22c07a"},
+                {"name": "Scope 2", "value": scope2_total, "pct": (scope2_total / total) * 100, "color": "#17b6a7"},
+                {"name": "Scope 3", "value": scope3_total, "pct": (scope3_total / total) * 100, "color": "#3b6df0"},
             ],
+            "by_plant": plants_data,  # Send ALL plants
             "task_status": {
-                "total": 142, "completed": 98,
-                "pending_review": 23, "overdue": 7,
+                "total": total_assignments,
+                "completed": completed_assignments,
+                "pending_review": pending_assignments,
+                "overdue": overdue_assignments,
             },
         }
         return JsonResponse(data)
-
-
-
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import request, status
-
-from django.db import transaction
-from django.utils import timezone
-
-from apps.emission.models import EmissionAssignment, EmissionAssignmentSource
-
-
-def generate_assignment_code():
-    """
-    Generate Assignment Code
-    Example:
-    EA000001
-    EA000002
-    """
-
-    last_assignment = (
-        EmissionAssignment.objects
-        .order_by("-id")
-        .first()
-    )
-
-    if last_assignment:
-
-        try:
-            last_number = int(
-                last_assignment.assignment_code.replace("EA", "")
-            )
-        except:
-            last_number = last_assignment.id
-
-        next_number = last_number + 1
-
-    else:
-        next_number = 1
-
-    return f"EA{next_number:06d}"
-
-
-
-
 
 from django.views.generic import TemplateView
 from django.db.models import Q
@@ -463,9 +774,95 @@ class SaveEmissionAssignmentAPIView(APIView):
 
                 notes=data.get("notes"),
 
-                source_ids=source_ids,
+                status="ASSIGNED",
 
             )
+            print("After Create:", assignment.id, assignment.status)
+            source_ids = data.get("source_ids", [])
+
+            for source_id in source_ids:
+
+                EmissionAssignmentSource.objects.create(
+
+                    assignment=assignment,
+
+                    source_id=source_id,
+
+                )
+
+            # -------------------------------------------------------
+            # Start Workflow
+            # -------------------------------------------------------
+
+            workflow_template = ApprovalConfigurationTemplate.objects.filter(
+                company_id=assignment.company_id,is_active=True,).first()
+
+            if not workflow_template:
+                return Response(
+                    {
+                        "success": False,
+                        "message": "No active EMISSION workflow configuration found for this company."
+                    },
+                    status=400,)
+
+            # Save template in assignment
+            assignment.workflow_template = workflow_template
+            assignment.save(update_fields=["workflow_template"])
+
+            # Create workflow task (starts at first stage)
+            workflow_task = WorkflowConfigurationEngine.start(template=workflow_template,target=assignment,
+                first_assignee=request.user,)
+
+            # Skip Question Assignment stage
+            workflow_task = WorkflowConfigurationEngine.advance_to_next_stage(
+                task=workflow_task,user=request.user,next_assignee=assignment.assignee,)
+
+            # Save workflow task
+            assignment.workflow_task = workflow_task
+            assignment.save(update_fields=["workflow_task"])
+
+            # ----------------------------------------
+            # Create Notification
+            # ----------------------------------------
+            NotificationService.notify(event="ASSIGN_SCOPE",assignment=assignment,sender=request.user,)
+
+            print("After Create:", assignment.status)
+
+            assignment.workflow_template = workflow_template
+            assignment.save(update_fields=["workflow_template"])
+            assignment.refresh_from_db()
+            print("After Template:", assignment.status)
+
+            workflow_task = WorkflowConfigurationEngine.start(
+                template=workflow_template,
+                target=assignment,
+                first_assignee=request.user,
+            )
+            assignment.refresh_from_db()
+            print("After Start:", assignment.status)
+
+            workflow_task = WorkflowConfigurationEngine.advance_to_next_stage(
+                task=workflow_task,
+                user=request.user,
+                next_assignee=assignment.assignee,
+            )
+            assignment.refresh_from_db()
+            print("After Advance:", assignment.status)
+
+            assignment.workflow_task = workflow_task
+            assignment.save(update_fields=["workflow_task"])
+            assignment.refresh_from_db()
+            print("After Task Save:", assignment.status)
+
+            NotificationService.notify(
+                event="ASSIGN_SCOPE",
+                assignment=assignment,
+                sender=request.user,
+            )
+            assignment.refresh_from_db()
+            print("After Notification:", assignment.status)
+            assignment.refresh_from_db()
+            print("Before Return:", assignment.id, assignment.status)
 
             return Response(
                 {
@@ -488,19 +885,523 @@ class SaveEmissionAssignmentAPIView(APIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+# apps/emission/views.py - Complete updated ESGDisclosureView with category completion
+
 class ESGDisclosureView(TemplateView):
-    """
-    View to display ESG / BRSR Disclosure page.
-    """
     template_name = 'emission/report.html'
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['current_year'] = datetime.now().year
+        
+        # Get plant filter
+        plant_id = self.request.GET.get('plant_id')
+        selected_plant = None
+        
+        # Build filter for transactions
+        filter_kwargs = {}
+        if plant_id:
+            filter_kwargs['plant_id'] = plant_id
+            from apps.organizations.models import Plant as PlantModel
+            try:
+                selected_plant = PlantModel.objects.get(id=plant_id)
+                context['selected_plant'] = selected_plant
+            except:
+                pass
+        
+        # Get plants for filter
+        user = self.request.user
+        from apps.organizations.models import Plant as PlantModel
+        
+        if user.role.role_code in ['COMPANYADMIN', 'ESG-HEAD']:
+            context['plants'] = PlantModel.objects.filter(is_active=True).order_by('name')
+        else:
+            context['plants'] = user.assigned_plants.filter(is_active=True).order_by('name')
+        
+        # Get emissions data
+        from django.db.models import Sum, Q, Count
+        from .models import EmissionTransaction, EmissionScope, EmissionCategory, EmissionSource, EmissionActivity
+        from apps.organizations.models import FinancialYear
+        
+        # Get current financial year (or use default if none selected)
+        today = timezone.now().date()
+        current_fy = FinancialYear.objects.filter(
+            start_date__lte=today,
+            end_date__gte=today
+        ).first()
+        
+        if current_fy:
+            filter_kwargs['financial_year_id'] = current_fy.id
+        
+        # ===== CALCULATE TOTALS IN tCO₂e =====
+        total_emissions_kg = EmissionTransaction.objects.filter(**filter_kwargs).aggregate(
+            total=Sum('total_emission')
+        )['total'] or Decimal('0')
+        total_emissions_kg = Decimal(str(total_emissions_kg))
+        total_emissions_t = total_emissions_kg / Decimal('1000')
+        
+        # Get scope totals
+        scope_totals_t = {}
+        for scope in EmissionScope.objects.filter(is_active=True):
+            total_kg = EmissionTransaction.objects.filter(
+                **filter_kwargs,
+                activity__category__scope_id=scope.id
+            ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
+            total_kg = Decimal(str(total_kg))
+            scope_totals_t[scope.code] = total_kg / Decimal('1000')
+        
+        context['total_emissions'] = total_emissions_t
+        context['scope1_total'] = scope_totals_t.get('S1', Decimal('0'))
+        context['scope2_total'] = scope_totals_t.get('S2', Decimal('0'))
+        context['scope3_total'] = scope_totals_t.get('S3', Decimal('0'))
+        
+        # Calculate percentages
+        if total_emissions_t > 0:
+            context['scope1_percentage'] = (context['scope1_total'] / total_emissions_t) * Decimal('100')
+            context['scope2_percentage'] = (context['scope2_total'] / total_emissions_t) * Decimal('100')
+            context['scope3_percentage'] = (context['scope3_total'] / total_emissions_t) * Decimal('100')
+        else:
+            context['scope1_percentage'] = Decimal('0')
+            context['scope2_percentage'] = Decimal('0')
+            context['scope3_percentage'] = Decimal('0')
+        
+        # ===== CALCULATE CATEGORY COMPLETION PERCENTAGES =====
+        scope_breakdown = []
+        scopes = EmissionScope.objects.filter(is_active=True).order_by('display_order')
+        
+        for scope in scopes:
+            scope_total_t = scope_totals_t.get(scope.code, Decimal('0'))
+            scope_data = {
+                'code': scope.code,
+                'name': scope.name,
+                'total': scope_total_t,
+                'categories': []
+            }
+            
+            # Get categories for this scope
+            categories = EmissionCategory.objects.filter(
+                scope=scope,
+                is_active=True
+            ).order_by('display_order')
+            
+            for category in categories:
+                # Get all sources for this category
+                sources = EmissionSource.objects.filter(
+                    activity__category=category,
+                    is_active=True
+                )
+                total_sources = sources.count()
+                
+                # Get completed/transacted sources count (sources that have transactions)
+                completed_sources = EmissionTransaction.objects.filter(
+                    **filter_kwargs,
+                    activity__category_id=category.id
+                ).values('source_id').distinct().count()
+                
+                # Calculate completion percentage
+                if total_sources > 0:
+                    completion_pct = (completed_sources / total_sources) * 100
+                else:
+                    completion_pct = 0
+                
+                # Get total emission for this category
+                cat_total_kg = EmissionTransaction.objects.filter(
+                    **filter_kwargs,
+                    activity__category_id=category.id
+                ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
+                cat_total_kg = Decimal(str(cat_total_kg))
+                cat_total_t = cat_total_kg / Decimal('1000')
+                
+                # Calculate percentage of total scope
+                if scope_total_t > 0:
+                    pct_of_scope = (cat_total_t / scope_total_t) * Decimal('100')
+                else:
+                    pct_of_scope = Decimal('0')
+                
+                scope_data['categories'].append({
+                    'name': category.name,
+                    'total': float(cat_total_t),  # Emission value in tCO₂e
+                    'percentage': float(pct_of_scope),  # Percentage of scope total
+                    'completion_pct': float(completion_pct),  # Completion percentage
+                    'completed_sources': completed_sources,
+                    'total_sources': total_sources,
+                })
+            
+            if scope_total_t > 0 or scope_data['categories']:
+                scope_breakdown.append(scope_data)
+        
+        context['scope_breakdown'] = scope_breakdown
+        
+        # ===== CHART DATA - Dynamic based on available financial years =====
+        from apps.organizations.models import FinancialYear
+        
+        # Get distinct financial years that have transactions
+        transaction_fy_ids = EmissionTransaction.objects.filter(
+            **filter_kwargs
+        ).values_list('financial_year_id', flat=True).distinct()
+        
+        # Get the actual FinancialYear objects
+        financial_years_with_data = FinancialYear.objects.filter(
+            id__in=transaction_fy_ids
+        ).order_by('start_date')
+        
+        # If we have financial years with data, use them
+        if financial_years_with_data.exists():
+            years = []
+            scope1_data = []
+            scope2_data = []
+            scope3_data = []
+            intensity_data = []
+            
+            for fy in financial_years_with_data:
+                fy_filter = filter_kwargs.copy()
+                fy_filter['financial_year_id'] = fy.id
+                
+                # Get data in kg then convert to t
+                s1_kg = EmissionTransaction.objects.filter(
+                    **fy_filter,
+                    activity__category__scope__code='S1'
+                ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
+                s1_kg = Decimal(str(s1_kg))
+                s1_t = s1_kg / Decimal('1000')
+                
+                s2_kg = EmissionTransaction.objects.filter(
+                    **fy_filter,
+                    activity__category__scope__code='S2'
+                ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
+                s2_kg = Decimal(str(s2_kg))
+                s2_t = s2_kg / Decimal('1000')
+                
+                s3_kg = EmissionTransaction.objects.filter(
+                    **fy_filter,
+                    activity__category__scope__code='S3'
+                ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
+                s3_kg = Decimal(str(s3_kg))
+                s3_t = s3_kg / Decimal('1000')
+                
+                scope1_data.append(float(s1_t))
+                scope2_data.append(float(s2_t))
+                scope3_data.append(float(s3_t))
+                
+                # Calculate intensity
+                total_t = s1_t + s2_t + s3_t
+                fy_transaction_count = EmissionTransaction.objects.filter(**fy_filter).count() or 1
+                intensity = total_t / Decimal(str(fy_transaction_count)) if fy_transaction_count > 0 else Decimal('0')
+                intensity_data.append(float(intensity))
+                
+                # Get year label
+                if hasattr(fy, 'name'):
+                    years.append(str(fy.name))
+                elif hasattr(fy, 'start_date'):
+                    years.append(f"FY{fy.start_date.year}")
+                else:
+                    years.append(str(fy.id))
+            
+            chart_data = {
+                'years': years,
+                'scope1': scope1_data,
+                'scope2': scope2_data,
+                'scope3': scope3_data,
+                'intensity': intensity_data
+            }
+        else:
+            # No data found - use empty arrays
+            chart_data = {
+                'years': [],
+                'scope1': [],
+                'scope2': [],
+                'scope3': [],
+                'intensity': []
+            }
+        
+        context['chart_data'] = chart_data
+        
+        # Get individual chart data for easier template access
+        context['scope1_chart_data'] = chart_data['scope1']
+        context['scope2_chart_data'] = chart_data['scope2']
+        context['scope3_chart_data'] = chart_data['scope3']
+        context['intensity_chart_data'] = chart_data['intensity']
+        context['chart_years'] = chart_data['years']
+        
+        # Check if we have chart data
+        context['has_chart_data'] = len(chart_data['years']) > 0
+        
+        # Calculate GHG Intensity
+        transaction_count = EmissionTransaction.objects.filter(**filter_kwargs).count() or 1
+        ghg_intensity = total_emissions_t / Decimal(str(transaction_count)) if transaction_count > 0 else Decimal('0')
+        context['ghg_intensity'] = ghg_intensity
+        context['intensity_change'] = Decimal('-10.3')
+        context['intensity_reduction'] = Decimal('23.2')
+        
+        # Get financial year display name safely
+        if current_fy:
+            if hasattr(current_fy, 'name'):
+                context['current_fy'] = current_fy.name
+            elif hasattr(current_fy, 'start_date'):
+                context['current_fy'] = f"FY{current_fy.start_date.year}-{current_fy.end_date.year}"
+            else:
+                context['current_fy'] = str(current_fy.id)
+        else:
+            context['current_fy'] = '2024–25'
+        
         return context
+    
+    def get(self, request, *args, **kwargs):
+        # Check if PDF download is requested
+        if request.GET.get('download_pdf'):
+            from apps.emission.services.pdf_generator import generate_emission_pdf_report
+            from django.http import HttpResponse
+            from django.utils import timezone
+            from apps.accounts.models import User
+            
+            # Get user with company
+            user = request.user
+            company_name = None
+            if user.is_authenticated:
+                user = User.objects.select_related('company').get(id=user.id)
+                if user.company:
+                    company_name = user.company.company_name
+                    print(f"DEBUG: Company name from user: {company_name}")
+                else:
+                    print(f"DEBUG: User has no company assigned!")
+            
+            # Get filter parameters
+            plant_id = request.GET.get('plant_id')
+            company_id = request.GET.get('company_id')
+            year_id = request.GET.get('year_id')
+            month_id = request.GET.get('month_id')
+            
+            # Generate PDF with company name
+            pdf_buffer = generate_emission_pdf_report(
+                company_id=company_id,
+                plant_id=plant_id,
+                financial_year_id=year_id,
+                financial_month_id=month_id,
+                company_name=company_name,
+                user=user,
+            )
+            
+            # Get plant name for filename
+            plant_name = "all_plants"
+            if plant_id:
+                from apps.organizations.models import Plant as PlantModel
+                try:
+                    plant = PlantModel.objects.get(id=plant_id)
+                    plant_name = plant.name.replace(' ', '_').lower()
+                except:
+                    pass
+            
+            timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"ESG_Report_{plant_name}_{timestamp}.pdf"
+            
+            response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+        
+        return super().get(request, *args, **kwargs)
+# apps/emission/views.py - Updated ESGDisclosureDataAPIView
 
-
-
+class ESGDisclosureDataAPIView(View):
+    """
+    API endpoint to fetch ESG data for AJAX requests
+    """
+    def get(self, request):
+        try:
+            from decimal import Decimal
+            from django.db.models import Sum, Count
+            
+            # Get plant filter
+            plant_id = request.GET.get('plant_id')
+            
+            # Build filter for transactions
+            filter_kwargs = {}
+            if plant_id:
+                filter_kwargs['plant_id'] = plant_id
+            
+            # Get current financial year
+            from apps.organizations.models import FinancialYear
+            today = timezone.now().date()
+            current_fy = FinancialYear.objects.filter(
+                start_date__lte=today,
+                end_date__gte=today
+            ).first()
+            
+            if current_fy:
+                filter_kwargs['financial_year_id'] = current_fy.id
+            
+            # Calculate totals in kg then convert to t
+            total_emissions_kg = EmissionTransaction.objects.filter(**filter_kwargs).aggregate(
+                total=Sum('total_emission')
+            )['total'] or Decimal('0')
+            total_emissions_kg = Decimal(str(total_emissions_kg))
+            total_emissions_t = total_emissions_kg / Decimal('1000')
+            
+            # Get scope totals (convert to t)
+            scope_totals_t = {}
+            for scope in EmissionScope.objects.filter(is_active=True):
+                total_kg = EmissionTransaction.objects.filter(
+                    **filter_kwargs,
+                    activity__category__scope_id=scope.id
+                ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
+                total_kg = Decimal(str(total_kg))
+                scope_totals_t[scope.code] = total_kg / Decimal('1000')
+            
+            # Calculate percentages
+            if total_emissions_t > 0:
+                scope1_pct = (scope_totals_t.get('S1', Decimal('0')) / total_emissions_t) * Decimal('100')
+                scope2_pct = (scope_totals_t.get('S2', Decimal('0')) / total_emissions_t) * Decimal('100')
+                scope3_pct = (scope_totals_t.get('S3', Decimal('0')) / total_emissions_t) * Decimal('100')
+            else:
+                scope1_pct = scope2_pct = scope3_pct = Decimal('0')
+            
+            # Get scope breakdown with categories and completion percentages
+            scope_breakdown = []
+            scopes = EmissionScope.objects.filter(is_active=True).order_by('display_order')
+            
+            for scope in scopes:
+                scope_total_t = scope_totals_t.get(scope.code, Decimal('0'))
+                scope_data = {
+                    'code': scope.code,
+                    'name': scope.name,
+                    'total': float(scope_total_t),
+                    'categories': []
+                }
+                
+                categories = EmissionCategory.objects.filter(
+                    scope=scope,
+                    is_active=True
+                ).order_by('display_order')
+                
+                for category in categories:
+                    # Get all sources for this category
+                    sources = EmissionSource.objects.filter(
+                        activity__category=category,
+                        is_active=True
+                    )
+                    total_sources = sources.count()
+                    
+                    # Get completed sources
+                    completed_sources = EmissionTransaction.objects.filter(
+                        **filter_kwargs,
+                        activity__category_id=category.id
+                    ).values('source_id').distinct().count()
+                    
+                    # Calculate completion percentage
+                    if total_sources > 0:
+                        completion_pct = (completed_sources / total_sources) * 100
+                    else:
+                        completion_pct = 0
+                    
+                    # Get category total
+                    cat_total_kg = EmissionTransaction.objects.filter(
+                        **filter_kwargs,
+                        activity__category_id=category.id
+                    ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
+                    cat_total_kg = Decimal(str(cat_total_kg))
+                    cat_total_t = cat_total_kg / Decimal('1000')
+                    
+                    if cat_total_t > 0 or scope_total_t > 0:
+                        if scope_total_t > 0:
+                            pct_of_scope = float((cat_total_t / scope_total_t) * Decimal('100'))
+                        else:
+                            pct_of_scope = 0
+                        
+                        scope_data['categories'].append({
+                            'name': category.name,
+                            'total': float(cat_total_t),
+                            'percentage': pct_of_scope,
+                            'completion_pct': float(completion_pct),
+                            'completed_sources': completed_sources,
+                            'total_sources': total_sources,
+                        })
+                
+                if scope_total_t > 0 or scope_data['categories']:
+                    scope_breakdown.append(scope_data)
+            
+            # ===== CHART DATA =====
+            from apps.organizations.models import FinancialYear
+            
+            transaction_fy_ids = EmissionTransaction.objects.filter(
+                **filter_kwargs
+            ).values_list('financial_year_id', flat=True).distinct()
+            
+            financial_years_with_data = FinancialYear.objects.filter(
+                id__in=transaction_fy_ids
+            ).order_by('start_date')
+            
+            chart_years = []
+            scope1_chart_data = []
+            scope2_chart_data = []
+            scope3_chart_data = []
+            intensity_chart_data = []
+            
+            if financial_years_with_data.exists():
+                for fy in financial_years_with_data:
+                    fy_filter = filter_kwargs.copy()
+                    fy_filter['financial_year_id'] = fy.id
+                    
+                    s1_kg = EmissionTransaction.objects.filter(
+                        **fy_filter,
+                        activity__category__scope__code='S1'
+                    ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
+                    s1_kg = Decimal(str(s1_kg))
+                    s1_t = s1_kg / Decimal('1000')
+                    
+                    s2_kg = EmissionTransaction.objects.filter(
+                        **fy_filter,
+                        activity__category__scope__code='S2'
+                    ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
+                    s2_kg = Decimal(str(s2_kg))
+                    s2_t = s2_kg / Decimal('1000')
+                    
+                    s3_kg = EmissionTransaction.objects.filter(
+                        **fy_filter,
+                        activity__category__scope__code='S3'
+                    ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
+                    s3_kg = Decimal(str(s3_kg))
+                    s3_t = s3_kg / Decimal('1000')
+                    
+                    scope1_chart_data.append(float(s1_t))
+                    scope2_chart_data.append(float(s2_t))
+                    scope3_chart_data.append(float(s3_t))
+                    
+                    total_t = s1_t + s2_t + s3_t
+                    fy_transaction_count = EmissionTransaction.objects.filter(**fy_filter).count() or 1
+                    intensity = total_t / Decimal(str(fy_transaction_count)) if fy_transaction_count > 0 else Decimal('0')
+                    intensity_chart_data.append(float(intensity))
+                    
+                    if hasattr(fy, 'name'):
+                        chart_years.append(str(fy.name))
+                    elif hasattr(fy, 'start_date'):
+                        chart_years.append(f"FY{fy.start_date.year}")
+                    else:
+                        chart_years.append(str(fy.id))
+            
+            return JsonResponse({
+                'success': True,
+                'total_emissions': float(total_emissions_t),
+                'scope1_total': float(scope_totals_t.get('S1', Decimal('0'))),
+                'scope2_total': float(scope_totals_t.get('S2', Decimal('0'))),
+                'scope3_total': float(scope_totals_t.get('S3', Decimal('0'))),
+                'scope1_percentage': float(scope1_pct),
+                'scope2_percentage': float(scope2_pct),
+                'scope3_percentage': float(scope3_pct),
+                'scope_breakdown': scope_breakdown,
+                'chart_years': chart_years,
+                'scope1_chart_data': scope1_chart_data,
+                'scope2_chart_data': scope2_chart_data,
+                'scope3_chart_data': scope3_chart_data,
+                'intensity_chart_data': intensity_chart_data,
+                'has_chart_data': len(chart_years) > 0,
+            })
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=500)
 
 
 from .models import (
@@ -735,6 +1636,45 @@ class ScopeDashboardView(ListView):
             and assignment.status in ["SUBMITTED","REVIEW_APPROVED","APPROVED",])
         return context
     
+    def get(self, request, *args, **kwargs):
+        # Check if PDF download is requested
+        if request.GET.get('download_pdf'):
+            from apps.emission.services.pdf_generator import generate_emission_pdf_report
+            from apps.accounts.models import User
+            
+            # Get user with company
+            user = request.user
+            company_name = None
+            if user.is_authenticated:
+                user = User.objects.select_related('company').get(id=user.id)
+                if user.company:
+                    company_name = user.company.company_name
+                    print(f"DEBUG: Company name from user: {company_name}")
+            
+            assignment_id = request.GET.get('assignment')
+            company_id = request.GET.get('company')
+            plant_id = request.GET.get('plant')
+            year_id = request.GET.get('financial_year')
+            month_id = request.GET.get('financial_month')
+            
+            pdf_buffer = generate_emission_pdf_report(
+                assignment_id=assignment_id,
+                company_id=company_id,
+                plant_id=plant_id,
+                financial_year_id=year_id,
+                financial_month_id=month_id,
+                company_name=company_name,  # Pass company name
+                user=user,  # Pass user object
+            )
+            
+            timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"emission_data_{timestamp}.pdf"
+            
+            response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+        
+        return super().get(request, *args, **kwargs)
 
 
 from django.http import JsonResponse
@@ -1368,6 +2308,40 @@ class EmissionAssignmentDashboardViewCompact(LoginRequiredMixin, TemplateView):
         })
         
         return context
+
+    def get(self, request, *args, **kwargs):
+        # Check if PDF download is requested
+        if request.GET.get('download_pdf'):
+            from apps.emission.services.pdf_generator import generate_emission_pdf_report
+            from apps.accounts.models import User
+            
+            # Get user with company
+            user = request.user
+            company_name = None
+            if user.is_authenticated:
+                user = User.objects.select_related('company').get(id=user.id)
+                if user.company:
+                    company_name = user.company.company_name
+                    print(f"DEBUG: Company name from user: {company_name}")
+            
+            assignment_id = request.GET.get('assignment')
+            
+            pdf_buffer = generate_emission_pdf_report(
+                assignment_id=assignment_id,
+                company_name=company_name,  # Pass company name
+                user=user,  # Pass user object
+            )
+            
+            timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"emission_assignments_{timestamp}.pdf"
+            
+            response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+        
+        return super().get(request, *args, **kwargs)
+
+
 class EmissionAssignmentDetailView(LoginRequiredMixin, TemplateView):
 
     template_name = "emission/assignment_detail.html"
@@ -1417,7 +2391,40 @@ class EmissionAssignmentDetailView(LoginRequiredMixin, TemplateView):
         context["assignment"] = assignment
         context["assigned_sources"] = assigned_sources
         context["transactions"] = transactions
+        
+        return context
 
+    def get(self, request, *args, **kwargs):
+        # Check if PDF download is requested
+        if request.GET.get('download_pdf'):
+            from apps.emission.services.pdf_generator import generate_emission_pdf_report
+            from apps.accounts.models import User
+            
+            # Get user with company
+            user = request.user
+            company_name = None
+            if user.is_authenticated:
+                user = User.objects.select_related('company').get(id=user.id)
+                if user.company:
+                    company_name = user.company.company_name
+                    print(f"DEBUG: Company name from user: {company_name}")
+            
+            assignment_id = self.kwargs.get('assignment_id')
+            
+            pdf_buffer = generate_emission_pdf_report(
+                assignment_id=assignment_id,
+                company_name=company_name,  # Pass company name
+                user=user,  # Pass user object
+            )
+            
+            timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
+            filename = f"emission_assignment_{assignment_id}_{timestamp}.pdf"
+            
+            response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+        
+        return super().get(request, *args, **kwargs)
 
 
 
@@ -1581,7 +2588,3 @@ class CheckAssignedSourcesAPIView(APIView):
             "success": True,
             "assigned_sources": assigned_sources
         })
-
-
-
-

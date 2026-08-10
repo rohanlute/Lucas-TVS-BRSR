@@ -6,7 +6,7 @@ from .api_views import (ApproveAssignmentView, RejectAssignmentView, Coordinator
 from .views import (EmissionAssignmentDashboardView,EmissionsDashboardView,EmissionsDashboardDataView,
     PlantUsersAPIView,SaveEmissionAssignmentAPIView,ScopeDashboardView,ESGDisclosureView,
     CategoryActivitiesView,ActivityFactorView,SaveEmissionTransactionsView,LoadEmissionTransactionsView,
-    ScopeCategoriesView,EmissionAssignmentDetailView,SubmitAssignmentView,CheckAssignedSourcesAPIView,)
+    ScopeCategoriesView,EmissionAssignmentDetailView,SubmitAssignmentView,CheckAssignedSourcesAPIView,ESGDisclosureDataAPIView)
 
 app_name = "emission"
 
@@ -26,7 +26,8 @@ urlpatterns = [
     
     
     #=====report====
-    path("esg/", ESGDisclosureView.as_view(), name="esg-disclosure"),
+    path('report/', ESGDisclosureView.as_view(), name='esg-disclosure'),
+    path('api/esg-data/', ESGDisclosureDataAPIView.as_view(), name='esg-data-api'),
 
     #====== Correct Working Use ASSIGNMENT=====
     path("assignments/",EmissionAssignmentDashboardView.as_view(),name="assignment_dashboard"),

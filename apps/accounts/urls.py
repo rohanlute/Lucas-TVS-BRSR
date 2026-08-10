@@ -17,6 +17,13 @@ urlpatterns = [
     # -----------------------------------------------
 
     path('dashboard/',DashboardView.as_view(),name='dashboard'),
+    path('homepage', BRSRDashboardView.as_view(), name='homepage'),
+    path('principle/<int:principle_id>/', BRSRPrincipleDetailView.as_view(), name='principle_detail'),
+    path('report/', BRSRReportView.as_view(), name='report'),
+    
+    # API endpoints
+    path('api/data/', BRSRDataAPIView.as_view(), name='api_data'),
+    path('api/report/generate/', BRSRReportGenerateView.as_view(), name='api_generate_report'),
 
     # -----------------------------------------------
     # ============= User =======================
