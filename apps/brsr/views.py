@@ -94,11 +94,17 @@ def _company_scope_plants(user):
 
 
 def _assignment_queryset_for_user(user):
+    """Return assignments the user has access to."""
     queryset = Assignment.objects.all()
+    
     if user.is_superuser or getattr(user, "is_super_admin", False):
         return queryset
+    
+    # Check if user has a company
     if getattr(user, "company_id", None):
         return queryset.filter(plant__created_by__company_id=user.company_id)
+    
+    # For regular users, filter by assigned plants
     plant_ids = user.assigned_plants.filter(is_active=True).values_list("id", flat=True)
     return queryset.filter(plant_id__in=plant_ids)
 
