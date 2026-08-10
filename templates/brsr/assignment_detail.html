@@ -383,7 +383,6 @@
     font-style:italic;
   }
 
-  /* ---- Workspace-style form rendering (read-only) ---- */
   .form-group{
     margin-bottom:16px;
   }
@@ -539,7 +538,7 @@
   }
 
   .table-actions{
-    display:none; /* read-only view: add/remove-row controls are not needed */
+    display:none;
   }
 
   .btn-brsr{
@@ -577,7 +576,6 @@
   .uploaded-file a:hover{
     text-decoration:underline;
   }
-  /* ---- end workspace-style form rendering ---- */
 
   .review-remark{
     padding:14px 16px;
@@ -772,32 +770,229 @@
     z-index:1100;
     display:grid;
     gap:10px;
-    width:min(360px, calc(100vw - 36px));
+    width:min(400px, calc(100vw - 36px));
     pointer-events:none;
   }
 
   .detail-toast{
     pointer-events:auto;
-    padding:12px 14px;
+    padding:14px 18px;
     border-radius:14px;
     box-shadow:0 18px 38px rgba(15,23,42,.16);
     border:1px solid var(--border);
     background:#fff;
     color:var(--ink);
-    font-size:13px;
-    line-height:1.5;
+    font-size:14px;
+    line-height:1.6;
+    animation:slideIn .3s ease;
+    transition:opacity .2s ease,transform .2s ease;
+  }
+
+  @keyframes slideIn{
+    from{opacity:0;transform:translateY(-10px)}
+    to{opacity:1;transform:translateY(0)}
   }
 
   .detail-toast.success{
-    border-color:rgba(22,163,74,.22);
-    background:linear-gradient(180deg,#f2fbf6 0%, #ffffff 100%);
+    border-color:rgba(22,163,74,.3);
+    background:linear-gradient(180deg,#f2fbf6 0%,#fff 100%);
     color:var(--success);
   }
 
   .detail-toast.error{
-    border-color:rgba(220,38,38,.22);
-    background:linear-gradient(180deg,#fff5f5 0%, #ffffff 100%);
+    border-color:rgba(220,38,38,.3);
+    background:linear-gradient(180deg,#fff5f5 0%,#fff 100%);
     color:var(--danger);
+  }
+
+  .detail-toast.warning{
+    border-color:rgba(217,119,6,.3);
+    background:linear-gradient(180deg,#fffbeb 0%,#fff 100%);
+    color:var(--warn);
+  }
+
+  .detail-toast .toast-title{
+    font-weight:700;
+    display:block;
+    margin-bottom:4px;
+  }
+
+  .detail-toast .toast-message{
+    display:block;
+  }
+
+  .detail-toast .toast-details{
+    display:block;
+    font-size:12px;
+    opacity:.8;
+    margin-top:4px;
+  }
+
+  /* --- Assignment-level review actions --- */
+  .assignment-review-actions {
+    background:linear-gradient(180deg,#fff 0%, #fbfcff 100%);
+    border:1px solid var(--border);
+    border-radius:20px;
+    box-shadow:var(--shadow);
+    padding:28px 32px;
+    margin-top:24px;
+  }
+
+  .assignment-review-actions .review-header {
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:16px;
+    flex-wrap:wrap;
+  }
+
+  .assignment-review-actions .review-header h2 {
+    margin:0;
+    font-family:var(--font-display);
+    font-size:20px;
+    color:var(--ink);
+  }
+
+  .assignment-review-actions .review-header .pending-badge {
+    background:var(--warn-bg);
+    color:var(--warn);
+    padding:4px 12px;
+    border-radius:999px;
+    font-size:13px;
+    font-weight:700;
+  }
+
+  .assignment-review-actions .review-header .pending-badge.zero {
+    background:var(--success-bg);
+    color:var(--success);
+  }
+
+  .assignment-review-actions .review-description {
+    color:var(--muted);
+    font-size:14px;
+    margin-bottom:20px;
+  }
+
+  .assignment-review-actions .remark-section {
+    margin-bottom:18px;
+  }
+
+  .assignment-review-actions .remark-section .remark-label {
+    display:block;
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink-soft);
+    margin-bottom:8px;
+  }
+
+  .assignment-review-actions .assignment-remark {
+    width:100%;
+    min-height:100px;
+    resize:vertical;
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:12px 14px;
+    font-size:14px;
+    font-family:var(--font-body);
+    color:var(--ink);
+    background:#fff;
+    outline:none;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+
+  .assignment-review-actions .assignment-remark:focus {
+    border-color:var(--brand);
+    box-shadow:0 0 0 3px rgba(37,99,235,.12);
+  }
+
+  .assignment-review-actions .assignment-remark:disabled {
+    background:#f8fafc;
+    color:var(--muted);
+    cursor:not-allowed;
+  }
+
+  .assignment-review-actions .action-buttons {
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+
+  .assignment-review-actions .action-buttons .btn-action {
+    padding:12px 28px;
+    font-size:14px;
+  }
+
+  .assignment-review-actions .action-buttons .btn-action.reject {
+    min-width:120px;
+  }
+
+  .assignment-review-actions .action-buttons .btn-action.primary {
+    min-width:120px;
+  }
+
+  .assignment-review-actions .action-buttons .btn-action:disabled {
+    opacity:.6;
+    cursor:not-allowed;
+    transform:none;
+  }
+
+  .assignment-review-actions .action-status {
+    margin-top:16px;
+    padding:14px 18px;
+    border-radius:12px;
+    background:#f8fafc;
+    border:1px solid var(--border);
+    color:var(--muted);
+    font-size:14px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    min-height:52px;
+  }
+
+  .assignment-review-actions .action-status .status-icon {
+    font-size:18px;
+    flex-shrink:0;
+  }
+
+  .assignment-review-actions .action-status .status-text {
+    flex:1;
+  }
+
+  .assignment-review-actions .action-status .status-details {
+    font-size:12px;
+    opacity:.8;
+    margin-top:4px;
+  }
+
+  .assignment-review-actions .action-status.success {
+    background:var(--success-bg);
+    border-color:rgba(22,163,74,.2);
+    color:var(--success);
+  }
+
+  .assignment-review-actions .action-status.error {
+    background:var(--danger-bg);
+    border-color:rgba(220,38,38,.2);
+    color:var(--danger);
+  }
+
+  .assignment-review-actions .action-status.warning {
+    background:var(--warn-bg);
+    border-color:rgba(217,119,6,.2);
+    color:var(--warn);
+  }
+
+  .assignment-review-actions .error-list {
+    margin-top:8px;
+    padding-left:20px;
+    font-size:13px;
+    max-height:150px;
+    overflow-y:auto;
+  }
+
+  .assignment-review-actions .error-list li {
+    margin-bottom:4px;
   }
 
   @media (max-width: 1100px){
@@ -857,6 +1052,25 @@
     .data-table td{
       padding:8px 10px;
     }
+
+    .assignment-review-actions {
+      padding:20px;
+    }
+
+    .assignment-review-actions .action-buttons {
+      flex-direction:column;
+    }
+
+    .assignment-review-actions .action-buttons .btn-action {
+      width:100%;
+      justify-content:center;
+    }
+
+    .detail-toast-stack {
+      width:calc(100vw - 32px);
+      top:12px;
+      right:16px;
+    }
   }
 </style>
 {% endblock %}
@@ -880,14 +1094,14 @@
           <h2 class="hero-title">Review the submitted BRSR responses</h2>
           <p class="hero-copy">
             Each response below is rendered the same way it was captured in the question workspace,
-            in read-only form. You can inspect each response and approve or reject individual questions.
+            in read-only form. You can inspect each response before approving or rejecting the entire assignment.
           </p>
           <div class="hero-pills">
             <span class="pill brand">{{ assignment.workflow_stage|default:"Review" }}</span>
             <span class="pill">{{ assignment.financial_year }}</span>
             <span class="pill">{{ question_count }} questions</span>
             <span class="pill {% if status_counts.rejected %}danger{% elif status_counts.submitted|add:status_counts.resubmitted %}warn{% else %}success{% endif %}">
-              {{ status_counts.submitted|add:status_counts.resubmitted }} pending
+              {{ pending_questions_count }} pending
             </span>
           </div>
         </div>
@@ -904,9 +1118,9 @@
             <div class="stat-note">Sent back for revision</div>
           </div>
           <div class="stat-card">
-            <p class="stat-label">Draft</p>
-            <p class="stat-value">{{ status_counts.draft }}</p>
-            <div class="stat-note">Not yet reviewed</div>
+            <p class="stat-label">Pending</p>
+            <p class="stat-value">{{ pending_questions_count }}</p>
+            <div class="stat-note">Awaiting your review</div>
           </div>
           <div class="stat-card">
             <p class="stat-label">Total</p>
@@ -1021,38 +1235,10 @@
                       <span><span class="label">Stage:</span> {{ question.workflow_stage }}</span>
                     </div>
 
-                    {% if question.can_act and question.status != 'approved' %}
-                      <div class="review-actions">
-                        <div>
-                          <span class="review-label">Rejection remark</span>
-                          <textarea
-                            class="review-comment js-reject-remark"
-                            data-question-id="{{ question.question_id }}"
-                            placeholder="Add a note explaining what needs to be corrected before you reject this response"
-                          ></textarea>
-                          <div class="review-hint">Required when rejecting this response.</div>
-                        </div>
-                        <div class="action-row">
-                          <button
-                            type="button"
-                            class="btn-action reject js-reject"
-                            data-question-id="{{ question.question_id }}"
-                            data-assignment-id="{{ assignment.id }}"
-                          >Reject</button>
-                          <button
-                            type="button"
-                            class="btn-action primary js-approve"
-                            data-question-id="{{ question.question_id }}"
-                            data-assignment-id="{{ assignment.id }}"
-                          >Approve</button>
-                        </div>
-                      </div>
-                    {% elif question.status == 'approved' %}
+                    {% if question.status == 'approved' %}
                       <div class="footer-note approved">✅ This response is already approved.</div>
                     {% elif question.status == 'rejected' %}
                       <div class="footer-note rejected">❌ This response has been rejected and returned for correction.</div>
-                    {% else %}
-                      <div class="footer-note locked">🔒 No approval action is available for this question in the current workflow stage.</div>
                     {% endif %}
                   </div>
                 </article>
@@ -1061,6 +1247,70 @@
           </section>
         {% endfor %}
       </div>
+
+      <!-- Assignment-level review actions -->
+      <div class="assignment-review-actions" id="assignmentReviewActions">
+        <div class="review-header">
+          <h2>📋 Assignment Review</h2>
+          <span class="pending-badge {% if pending_questions_count == 0 %}zero{% endif %}">
+            {{ pending_questions_count }} pending
+          </span>
+        </div>
+        <p class="review-description">
+          Approve or reject all pending questions for this assignment. 
+          {% if pending_questions_count == 0 %}
+            <strong>All questions have been reviewed.</strong>
+          {% else %}
+            <strong>{{ pending_questions_count }} question{{ pending_questions_count|pluralize }} awaiting your review.</strong>
+          {% endif %}
+        </p>
+
+        <div class="remark-section">
+          <label class="remark-label" for="assignmentRemark">Rejection Remark <span style="color:var(--danger);font-weight:400;">(required for rejection)</span></label>
+          <textarea 
+            class="assignment-remark" 
+            id="assignmentRemark" 
+            placeholder="Add a note explaining what needs to be corrected before sending this assignment back for revision." 
+            {% if pending_questions_count == 0 %}disabled{% endif %}
+          ></textarea>
+          <div class="review-hint">This remark will be applied to all rejected questions.</div>
+        </div>
+
+        <div class="action-buttons">
+          <button 
+            type="button" 
+            class="btn-action reject" 
+            id="rejectAssignmentBtn" 
+            data-assignment-id="{{ assignment.id }}" 
+            {% if pending_questions_count == 0 or not can_act %}disabled{% endif %}
+          >
+            Reject Assignment
+          </button>
+          <button 
+            type="button" 
+            class="btn-action primary" 
+            id="approveAssignmentBtn" 
+            data-assignment-id="{{ assignment.id }}" 
+            {% if pending_questions_count == 0 or not can_act %}disabled{% endif %}
+          >
+            Approve Assignment
+          </button>
+        </div>
+
+        <div class="action-status" id="assignmentActionStatus">
+          <span class="status-icon">ℹ️</span>
+          <span class="status-text">
+            {% if pending_questions_count == 0 %}
+              All questions have been reviewed. No pending actions required.
+            {% elif not can_act %}
+              You do not have permission to act on this assignment in the current workflow stage.
+            {% else %}
+              Review all responses above, then approve or reject the entire assignment.
+            {% endif %}
+          </span>
+        </div>
+      </div>
+
     {% else %}
       <div class="empty-state">
         <h3>No Questions Found</h3>
@@ -1073,26 +1323,51 @@
 {{ questions_json|json_script:"assignment-questions-data" }}
 
 <script>
-  const APPROVE_URL = "{% url 'brsr:question_approve_api' question_id='__question__' %}";
-  const REJECT_URL = "{% url 'brsr:question_reject_api' question_id='__question__' %}";
+  const APPROVE_URL = "{% url 'brsr:assignment_approve_api' assignment_id=assignment.id %}";
+  const REJECT_URL = "{% url 'brsr:assignment_reject_api' assignment_id=assignment.id %}";
 
-  function showDetailMessage(message, type = 'success') {
+  // Get pending question IDs from the server-side data
+  const pendingQuestionIds = {{ pending_question_ids|safe }};
+
+  function showDetailMessage(message, type = 'success', details = null) {
     if (!message) return;
     const stack = document.getElementById('detailToastStack');
     if (!stack) {
-      alert(message);
+      console.error(message, details);
+      alert(message + (details ? '\n\n' + details : ''));
       return;
     }
+    
     const toast = document.createElement('div');
-    toast.className = `detail-toast ${type === 'error' ? 'error' : 'success'}`;
-    toast.textContent = message;
+    toast.className = `detail-toast ${type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'success'}`;
+    
+    const titleMap = {
+      'success': '✅ Success',
+      'error': '❌ Error',
+      'warning': '⚠️ Warning'
+    };
+    
+    let detailsHtml = '';
+    if (details) {
+      if (Array.isArray(details)) {
+        detailsHtml = `<span class="toast-details">${details.map(d => `• ${d}`).join('<br>')}</span>`;
+      } else {
+        detailsHtml = `<span class="toast-details">${details}</span>`;
+      }
+    }
+    
+    toast.innerHTML = `
+      <span class="toast-title">${titleMap[type] || 'ℹ️ Info'}</span>
+      <span class="toast-message">${message}</span>
+      ${detailsHtml}
+    `;
+    
     stack.appendChild(toast);
     window.setTimeout(() => {
       toast.style.opacity = '0';
-      toast.style.transform = 'translateY(-4px)';
-      toast.style.transition = 'opacity .2s ease, transform .2s ease';
-      window.setTimeout(() => toast.remove(), 220);
-    }, 2800);
+      toast.style.transform = 'translateY(-8px)';
+      window.setTimeout(() => toast.remove(), 300);
+    }, 5000);
   }
 
   function apiUrl(template, questionId) {
@@ -1107,80 +1382,177 @@
   }
 
   async function postAction(url, payload) {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken'),
-      },
-      body: JSON.stringify(payload),
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(data.detail || 'Unable to complete the workflow action.');
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify(payload),
+      });
+      
+      let data = {};
+      try {
+        data = await response.json();
+      } catch (e) {
+        try {
+          const text = await response.text();
+          if (text) {
+            data = { detail: text };
+          }
+        } catch (e2) {
+          data = { detail: 'An unexpected error occurred' };
+        }
+      }
+      
+      if (!response.ok) {
+        const errorMsg = data.detail || data.message || data.error || `HTTP ${response.status}: ${response.statusText}`;
+        throw new Error(errorMsg);
+      }
+      
+      return data;
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error(error.message || error.detail || 'Unable to complete the workflow action.');
     }
-    return data;
   }
 
-  document.querySelectorAll('.js-approve').forEach((button) => {
-    button.addEventListener('click', async () => {
-      const questionId = button.getAttribute('data-question-id');
-      const assignmentId = button.getAttribute('data-assignment-id');
-      button.disabled = true;
-      try {
-        const data = await postAction(apiUrl(APPROVE_URL, questionId), {
-          assignment_id: assignmentId
-        });
+  async function processPendingQuestions(action, remark = '') {
+    const pendingCount = pendingQuestionIds ? pendingQuestionIds.length : 0;
+    if (pendingCount === 0) {
+      showDetailMessage('No pending questions to process.', 'warning');
+      return;
+    }
 
-        showDetailMessage(data.message || 'Question approved successfully.', 'success');
+    const buttons = document.querySelectorAll('#approveAssignmentBtn, #rejectAssignmentBtn');
+    const remarkField = document.getElementById('assignmentRemark');
+    buttons.forEach(btn => btn.disabled = true);
+    if (remarkField) remarkField.disabled = true;
 
-        setTimeout(() => {
-            if (data.redirect_url) {
-                window.location.href = data.redirect_url;
-            } else {
-                window.location.reload();
-            }
-        }, 800);
-      } catch (error) {
-        showDetailMessage(error.message, 'error');
-      } finally {
-        button.disabled = false;
+    let successCount = 0;
+    let errorCount = 0;
+    const errors = [];
+
+    // Update status
+    const statusEl = document.getElementById('assignmentActionStatus');
+    const statusIcon = statusEl.querySelector('.status-icon');
+    const statusText = statusEl.querySelector('.status-text');
+    statusEl.className = 'action-status';
+    statusIcon.textContent = '⏳';
+    statusText.textContent = `Processing assignment approval...`;
+    
+    // Remove any existing error list
+    const existingErrorList = statusEl.querySelector('.error-list');
+    if (existingErrorList) existingErrorList.remove();
+
+    const assignmentId = document.getElementById('approveAssignmentBtn').getAttribute('data-assignment-id')
+      || document.getElementById('rejectAssignmentBtn').getAttribute('data-assignment-id');
+
+    try {
+      const url = action === 'approve' ? APPROVE_URL : REJECT_URL;
+      if (!url) {
+        throw new Error('Workflow action URL is missing.');
       }
-    });
+      const payload = { assignment_id: assignmentId };
+      if (action === 'reject' && remark) {
+        payload.remark = remark;
+      }
+      const result = await postAction(url, payload);
+      successCount = 1;
+      statusText.textContent = result.message || `Assignment ${action === 'approve' ? 'approved' : 'rejected'} successfully.`;
+    } catch (error) {
+      errorCount = 1;
+      const errorMsg = error.message || 'Unknown error';
+      errors.push(errorMsg);
+      statusEl.className = 'action-status warning';
+      statusIcon.textContent = '⚠️';
+      statusText.textContent = errorMsg;
+    }
+
+    // Update final status
+    if (errorCount === 0) {
+      statusEl.className = 'action-status success';
+      statusIcon.textContent = '✅';
+      statusText.textContent = `Assignment ${action === 'approve' ? 'approved' : 'rejected'} successfully.`;
+      showDetailMessage(
+        `Assignment ${action === 'approve' ? 'approved' : 'rejected'} successfully.`, 
+        'success',
+        `1 action processed.`
+      );
+    } else {
+      statusEl.className = 'action-status error';
+      statusIcon.textContent = '❌';
+      statusText.textContent = `Failed to process assignment action.`;
+      showDetailMessage(
+        `Failed to process assignment action.`, 
+        'error',
+        errors.join('\n')
+      );
+      
+      // Show error details
+      const errorList = document.createElement('ul');
+      errorList.className = 'error-list';
+      errors.forEach(err => {
+        const li = document.createElement('li');
+        li.textContent = err;
+        errorList.appendChild(li);
+      });
+      statusEl.appendChild(errorList);
+    }
+
+    buttons.forEach(btn => btn.disabled = false);
+    if (remarkField) remarkField.disabled = false;
+
+    // Reload after a delay if all succeeded
+    if (errorCount === 0 && successCount > 0) {
+      setTimeout(() => window.location.reload(), 2000);
+    }
+  }
+
+  // Approve all pending
+  document.getElementById('approveAssignmentBtn')?.addEventListener('click', async () => {
+    const pendingCount = pendingQuestionIds ? pendingQuestionIds.length : 0;
+    if (pendingCount === 0) {
+      showDetailMessage('No pending questions to approve.', 'warning');
+      return;
+    }
+    if (!confirm(`Are you sure you want to approve all ${pendingCount} pending question${pendingCount > 1 ? 's' : ''}?`)) {
+      return;
+    }
+    await processPendingQuestions('approve');
   });
 
-  document.querySelectorAll('.js-reject').forEach((button) => {
-    button.addEventListener('click', async () => {
-      const questionId = button.getAttribute('data-question-id');
-      const assignmentId = button.getAttribute('data-assignment-id');
-      const remarkField = document.querySelector(`.js-reject-remark[data-question-id="${CSS.escape(questionId)}"]`);
-      const remark = remarkField ? remarkField.value.trim() : '';
-      if (!remark) {
-        alert('Please add a rejection remark before sending the response back.');
-        if (remarkField) remarkField.focus();
-        return;
-      }
+  // Reject all pending
+  document.getElementById('rejectAssignmentBtn')?.addEventListener('click', async () => {
+    const pendingCount = pendingQuestionIds ? pendingQuestionIds.length : 0;
+    if (pendingCount === 0) {
+      showDetailMessage('No pending questions to reject.', 'warning');
+      return;
+    }
 
-      button.disabled = true;
-      try {
-        const data = await postAction(apiUrl(REJECT_URL, questionId), {
-          assignment_id: assignmentId,
-          remark: remark,
-        });
-        showDetailMessage(data.message || 'Question rejected and sent back for correction.', 'success');
-        window.location.reload();
-      } catch (error) {
-        showDetailMessage(error.message, 'error');
-      } finally {
-        button.disabled = false;
+    const remarkField = document.getElementById('assignmentRemark');
+    const remark = remarkField ? remarkField.value.trim() : '';
+    if (!remark) {
+      showDetailMessage('Please add a rejection remark explaining what needs to be corrected.', 'warning');
+      if (remarkField) {
+        remarkField.focus();
+        remarkField.style.borderColor = 'var(--danger)';
+        setTimeout(() => remarkField.style.borderColor = '', 3000);
       }
-    });
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to reject all ${pendingCount} pending question${pendingCount > 1 ? 's' : ''}?`)) {
+      return;
+    }
+    await processPendingQuestions('reject', remark);
   });
 
   // ---------------------------------------------------------------------
-  // Read-only response rendering, reusing the exact same field-rendering
-  // logic used by brsr_question_workspace.html so a response looks
-  // identical here as it did in the workspace -- just non-editable.
+  // Read-only response rendering
   // ---------------------------------------------------------------------
 
   function escapeHtml(value) {

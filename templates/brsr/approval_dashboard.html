@@ -676,9 +676,110 @@
     color: var(--ink);
   }
 
+  /* Consolidated card content styles */
+  .consolidated-content {
+    padding: 8px 4px;
+  }
+
+  .consolidated-detail {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 12px;
+  }
+
+  .consolidated-detail .detail-item {
+    padding: 12px 16px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  .consolidated-detail .detail-item .label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--muted);
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .consolidated-detail .detail-item .value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .plant-tag {
+    display: inline-block;
+    padding: 4px 10px;
+    background: var(--brand-soft);
+    color: var(--brand);
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin: 3px 4px 3px 0;
+  }
+
+  .consolidated-action-row {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  /* Action button styles for consolidated cards */
+  .btn-consolidated-review {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    background: var(--brand);
+    color: #fff;
+    border: 1px solid var(--brand);
+    transition: all 0.2s ease;
+  }
+
+  .btn-consolidated-review:hover {
+    background: #1a3fa8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(29,78,216,.3);
+    color: #fff;
+  }
+
+  .btn-consolidated-final {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    background: var(--success);
+    color: #fff;
+    border: 1px solid var(--success);
+    transition: all 0.2s ease;
+  }
+
+  .btn-consolidated-final:hover {
+    background: #138c3c;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(22,163,74,.3);
+    color: #fff;
+  }
+
   @media (max-width: 1200px){
     .stats-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
     .assignment-grid{grid-template-columns:1fr;}
+    .consolidated-detail{grid-template-columns:1fr;}
   }
 
   @media (max-width: 768px){
@@ -691,6 +792,10 @@
     .filter-bar{flex-direction:column;align-items:stretch;}
     .filter-group{flex:1 1 auto;}
     .filter-actions{margin-left:0;}
+    .consolidated-detail{grid-template-columns:1fr;}
+    .consolidated-action-row{flex-direction:column;}
+    .btn-consolidated-review,
+    .btn-consolidated-final{justify-content:center;}
   }
 </style>
 {% endblock %}
@@ -747,8 +852,16 @@
   </div>
 
   <!-- Active Filters Display -->
-  {% if selected_company or selected_plant or selected_stage or search_query %}
+  {% if selected_company or selected_section or selected_plant or selected_stage or search_query %}
   <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+    {% if selected_section %}
+      <span class="active-filter-badge">
+        Section: {{ selected_section|title }}
+        <a href="?{% if selected_company %}company={{ selected_company }}&{% endif %}{% if selected_plant %}plant={{ selected_plant }}&{% endif %}{% if selected_stage %}stage={{ selected_stage }}&{% endif %}{% if search_query %}search={{ search_query }}{% endif %}" 
+           class="remove-filter">Ã—</a>
+      </span>
+    {% endif %}
+
     {% if selected_plant %}
       {% for plant in plants %}
         {% if plant.id|stringformat:"s" == selected_plant %}
@@ -959,6 +1072,242 @@
   <div class="empty-state">
     <h3>Nothing waiting on you</h3>
     <p>There are no assignments currently in a review or approval stage for your scope.</p>
+  </div>
+  {% endif %}
+
+  {% if can_view_pre_final_approvals and consolidated_pre_final_groups %}
+  <div class="company-group" style="margin-top: 24px;">
+    <div class="company-group-header">
+      <h2>Consolidated Pre-Final Approval</h2>
+      <span class="pill brand">Company / Section / Principle</span>
+    </div>
+    {% for item in consolidated_pre_final_groups %}
+    <div class="plant-group">
+      <div class="plant-group-header">
+        <h3>{{ item.company_name }}</h3>
+        <span class="pill muted">{{ item.section_name }} · {{ item.principle_name|default:"Section-wide" }}</span>
+        <span class="pill warn">{{ item.plant_names|length }} plant{{ item.plant_names|length|pluralize }}</span>
+      </div>
+      <div class="assignment-list">
+        <article class="assignment-card expanded" data-assignment-id="{{ item.company_id }}-{{ item.section_name|slugify }}-{{ item.principle_name|default:'section-wide'|slugify }}">
+          <div class="assignment-card-head">
+            <div class="assignment-meta">
+              <h3>Pre-Final Review Bundle</h3>
+              <p>{{ item.company_name }} · {{ item.section_name }}{% if item.principle_name %} · {{ item.principle_name }}{% endif %}</p>
+              <div class="assignment-quick-stats">
+                <span>🏭 {{ item.plant_names|length }} plant{{ item.plant_names|length|pluralize }}</span>
+                <span>📋 {{ item.assignment_count }} assignment{{ item.assignment_count|pluralize }}</span>
+              </div>
+            </div>
+            <div class="pill-row">
+              <span class="pill warn">Pre-Final Approval</span>
+              <span class="pill brand">Consolidated</span>
+              <span class="expand-icon" aria-hidden="true">▼</span>
+            </div>
+          </div>
+          
+          <!-- Consolidated Content -->
+          <div class="assignment-grid">
+            <div class="question-box">
+              <span class="section-label">Bundle Details</span>
+              <div class="consolidated-content">
+                <p style="color: var(--muted); font-size: 14px; margin-bottom: 12px;">
+                  This is a consolidated view of all plants that are ready for Pre-Final Approval for 
+                  <strong>{{ item.section_name }}</strong>{% if item.principle_name %} · <strong>{{ item.principle_name }}</strong>{% endif %}.
+                </p>
+                <div class="consolidated-detail">
+                  <div class="detail-item">
+                    <span class="label">Company</span>
+                    <span class="value">{{ item.company_name }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="label">Section</span>
+                    <span class="value">{{ item.section_name }}</span>
+                  </div>
+                  {% if item.principle_name %}
+                  <div class="detail-item">
+                    <span class="label">Principle</span>
+                    <span class="value">{{ item.principle_name }}</span>
+                  </div>
+                  {% endif %}
+                  <div class="detail-item">
+                    <span class="label">Plants Ready</span>
+                    <span class="value">
+                      {% for plant_name in item.plant_names %}
+                        <span class="plant-tag">{{ plant_name }}</span>
+                      {% endfor %}
+                    </span>
+                  </div>
+                </div>
+                {% if item.assignments %}
+                <div style="margin-top:14px;display:grid;gap:10px;">
+                  <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">
+                    Section Assignments
+                  </div>
+                  {% for bundle in item.assignments %}
+                  <div style="padding:12px 14px;background:#fff;border:1px solid var(--border);border-radius:12px;">
+                    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;">
+                      <div>
+                        <div style="font-weight:700;color:var(--ink);">{{ bundle.assignment.assignment_id }}</div>
+                        <div style="font-size:12px;color:var(--muted);">{{ bundle.assignment.plant }} · {{ bundle.assignment.section }}{% if bundle.assignment.principle %} · {{ bundle.assignment.principle }}{% endif %}</div>
+                      </div>
+                      <div class="pill-row">
+                        <span class="pill muted">{{ bundle.questions|length }} questions</span>
+                        <a href="{% url 'brsr:assignment_detail' assignment_id=bundle.assignment.id %}" class="btn-soft" style="padding:8px 12px;">Open Review</a>
+                      </div>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            
+            <div>
+              <div class="assignment-summary-box">
+                <span class="section-label">Pre-Final Summary</span>
+                <div class="consolidated-content">
+                  <div style="display: grid; gap: 10px;">
+                    <div style="padding: 10px; background: #fff; border: 1px solid var(--border); border-radius: 10px;">
+                      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 4px;">Total Plants</div>
+                      <div style="font-size: 20px; font-weight: 800; color: var(--ink);">{{ item.plant_names|length }}</div>
+                    </div>
+                    <div style="padding: 10px; background: #fff; border: 1px solid var(--border); border-radius: 10px;">
+                      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 4px;">Assignments</div>
+                      <div style="font-size: 20px; font-weight: 800; color: var(--ink);">{{ item.assignment_count }}</div>
+                    </div>
+                  </div>
+                  <div class="consolidated-action-row">
+                    <a href="{{ item.bundle_detail_url }}" class="btn-consolidated-review">
+                      Open Section Bundle
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if can_view_final_approvals and consolidated_final_groups %}
+  <div class="company-group" style="margin-top: 24px;">
+    <div class="company-group-header">
+      <h2>Final Approval</h2>
+      <span class="pill success">Single Company Report</span>
+    </div>
+    {% for item in consolidated_final_groups %}
+    <div class="plant-group">
+      <div class="plant-group-header">
+        <h3>{{ item.company_name }}</h3>
+        <span class="pill muted">Entire Company report</span>
+        <span class="pill success">{{ item.plant_names|length }} plant{{ item.plant_names|length|pluralize }}</span>
+      </div>
+      <div class="assignment-list">
+        <article class="assignment-card expanded" data-assignment-id="{{ item.company_id }}-final">
+          <div class="assignment-card-head">
+            <div class="assignment-meta">
+              <h3>Final Approval Bundle</h3>
+              <p>{{ item.company_name }} · {{ item.section_name }}{% if item.principle_name %} · {{ item.principle_name }}{% endif %}</p>
+              <div class="assignment-quick-stats">
+                <span>🏭 {{ item.plant_names|length }} plant{{ item.plant_names|length|pluralize }}</span>
+                <span>🔒 Final approval</span>
+              </div>
+            </div>
+            <div class="pill-row">
+              <span class="pill success">Final Approval</span>
+              <span class="pill brand">Company-wide</span>
+              <span class="expand-icon" aria-hidden="true">▼</span>
+            </div>
+          </div>
+          
+          <!-- Consolidated Content -->
+          <div class="assignment-grid">
+            <div class="question-box">
+              <span class="section-label">Final Approval Details</span>
+              <div class="consolidated-content">
+                <p style="color: var(--muted); font-size: 14px; margin-bottom: 12px;">
+                  This is the consolidated final approval for all plants in <strong>{{ item.company_name }}</strong> 
+                  for <strong>{{ item.section_name }}</strong>{% if item.principle_name %} · <strong>{{ item.principle_name }}</strong>{% endif %}.
+                </p>
+                <div class="consolidated-detail">
+                  <div class="detail-item">
+                    <span class="label">Company</span>
+                    <span class="value">{{ item.company_name }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="label">Section</span>
+                    <span class="value">{{ item.section_name }}</span>
+                  </div>
+                  {% if item.principle_name %}
+                  <div class="detail-item">
+                    <span class="label">Principle</span>
+                    <span class="value">{{ item.principle_name }}</span>
+                  </div>
+                  {% endif %}
+                  <div class="detail-item">
+                    <span class="label">Plants Included</span>
+                    <span class="value">
+                      {% for plant_name in item.plant_names %}
+                        <span class="plant-tag">{{ plant_name }}</span>
+                      {% endfor %}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <div class="assignment-summary-box">
+                <span class="section-label">Final Approval Summary</span>
+                <div class="consolidated-content">
+                  <div style="display: grid; gap: 10px;">
+                    <div style="padding: 10px; background: #fff; border: 1px solid var(--border); border-radius: 10px;">
+                      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 4px;">Companies Ready</div>
+                      <div style="font-size: 20px; font-weight: 800; color: var(--ink);">1</div>
+                    </div>
+                    <div style="padding: 10px; background: #fff; border: 1px solid var(--border); border-radius: 10px;">
+                      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 4px;">Plants Included</div>
+                      <div style="font-size: 20px; font-weight: 800; color: var(--ink);">{{ item.plant_names|length }}</div>
+                    </div>
+                  </div>
+                  {% if item.assignments %}
+                  <div style="margin-top:14px;display:grid;gap:10px;">
+                    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">
+                      Final Approval Assignments
+                    </div>
+                    {% for bundle in item.assignments %}
+                    <div style="padding:12px 14px;background:#fff;border:1px solid var(--border);border-radius:12px;">
+                      <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;">
+                        <div>
+                          <div style="font-weight:700;color:var(--ink);">{{ bundle.assignment.assignment_id }}</div>
+                          <div style="font-size:12px;color:var(--muted);">{{ bundle.assignment.plant }} · {{ bundle.assignment.section }}{% if bundle.assignment.principle %} · {{ bundle.assignment.principle }}{% endif %}</div>
+                        </div>
+                        <div class="pill-row">
+                          <span class="pill muted">{{ bundle.questions|length }} questions</span>
+                          <a href="{% url 'brsr:assignment_detail' assignment_id=bundle.assignment.id %}" class="btn-soft" style="padding:8px 12px;">Open Review</a>
+                        </div>
+                      </div>
+                    </div>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                  <div class="consolidated-action-row">
+                    <a href="{{ item.bundle_detail_url }}" class="btn-consolidated-final">
+                      Open Final Bundle
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+    {% endfor %}
   </div>
   {% endif %}
 </div>

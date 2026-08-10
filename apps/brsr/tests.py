@@ -352,6 +352,20 @@ class BRSRWorkflowAPITests(TestCase):
         response_row = QuestionResponse.objects.get(assignment=assignment, question=self.question)
         self.assertEqual(response_row.review_remark, "Looks good")
         self.assertEqual(response_row.status, "submitted")
+        self.assertEqual(assignment.workflow_stage_type, "review")
+        self.assertEqual(assignment.workflow_task.current_assignee_object_id, self.reviewer.id)
+
+        request = self.factory.post(
+            "/fake-finalize/",
+            {"assignment_id": assignment.id},
+            format="json",
+        )
+        force_authenticate(request, user=self.reviewer)
+        from apps.brsr.api_views import AssignmentFinalizeReviewAPIView
+        response = AssignmentFinalizeReviewAPIView.as_view()(request, assignment_id=assignment.id)
+        self.assertEqual(response.status_code, 200)
+
+        assignment.refresh_from_db()
         self.assertEqual(assignment.workflow_stage_type, "approval")
         self.assertEqual(assignment.workflow_task.current_assignee_object_id, self.approver.id)
 

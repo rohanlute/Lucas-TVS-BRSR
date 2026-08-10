@@ -243,11 +243,11 @@
      * Only show errors if the field has been blurred (touched) or during form submission
      */
     function showValidation(element, valid, message, forceShow = false) {
-        const formGroup = element.closest('.form-group');
+        const formGroup = element.closest('.form-group, td, .table-cell');
         if (!formGroup) return;
 
         const feedback = formGroup.querySelector('.invalid-feedback');
-        const input = formGroup.querySelector('input, textarea, select');
+        const input = element;
         
         // Check if field has been blurred (touched)
         const isBlurred = element.dataset.blurred === 'true';
@@ -304,11 +304,11 @@
      * Clear validation state on an element
      */
     function clearValidation(element) {
-        const formGroup = element.closest('.form-group');
+        const formGroup = element.closest('.form-group, td, .table-cell');
         if (!formGroup) return;
 
         const feedback = formGroup.querySelector('.invalid-feedback');
-        const input = formGroup.querySelector('input, textarea, select');
+        const input = element;
 
         formGroup.classList.remove('has-error');
         if (input) {

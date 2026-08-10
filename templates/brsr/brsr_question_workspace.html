@@ -141,7 +141,12 @@
     box-shadow:0 0 0 3px rgba(37,99,235,.12);
   }
 
-  /* REQUIRED FIELD STYLES - Assignment Modal Only */
+  .workspace-select:disabled {
+    background-color: #f3f4f6;
+    cursor: not-allowed;
+    opacity: 0.8;
+  }
+
   .assignment-required .workspace-select:required,
   .assignment-required .workspace-input:required {
     border-left: 3px solid var(--brand);
@@ -323,6 +328,12 @@
     color:var(--brand);
   }
 
+  .workspace-toast.warning{
+    border-color:rgba(217,119,6,.22);
+    background:linear-gradient(180deg,#fff5e6 0%, #ffffff 100%);
+    color:var(--warn);
+  }
+
   .main-panel{
     margin:0 20px 20px;
     border:1px solid var(--border);
@@ -376,7 +387,6 @@
   }
 
   .pill.brand{border-color:var(--brand);background:var(--brand-bg);color:var(--brand);}
-  .pill.success{border-color:var(--success);background:var(--success-bg);color:var(--success);}
   .pill.warn{border-color:var(--warn);background:var(--warn-bg);color:var(--warn);}
 
   .panel-body{
@@ -816,6 +826,10 @@
     font-size:13px;
   }
 
+  .selected-list li {
+    margin-bottom: 4px;
+  }
+
   .modal-actions{
     display:flex;
     gap:10px;
@@ -928,7 +942,6 @@
     text-align: left;
   }
 
-  /* Loading overlay for modals */
   .modal-loading-overlay{
     position:absolute;
     inset:0;
@@ -951,6 +964,33 @@
   }
 
   .modal-card{position:relative;}
+
+  #assignmentFinancialYearHidden {
+    display: none;
+  }
+
+  .uploaded-files {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .uploaded-file {
+    background: var(--bg);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  .uploaded-file a {
+    color: var(--brand);
+    text-decoration: none;
+  }
+
+  .uploaded-file a:hover {
+    text-decoration: underline;
+  }
 </style>
 {% endblock %}
 
@@ -1014,6 +1054,11 @@
             <button type="button" class="btn-brsr success" id="submitAssignmentBtn" style="display:none;">
               <span class="btn-text">Submit Assignment</span>
             </button>
+            {% if request.user|has_perm:'CAN_ASSIGN_QUESTIONS' %}
+            <button type="button" class="btn-brsr primary" id="createScheduleBtn" style="display:none;">
+              <span class="btn-text">Create Recurring Schedule</span>
+            </button>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -1047,6 +1092,7 @@
   </div>
 </div>
 
+<!-- Assignment Modal -->
 <div class="modal-backdrop-brsr" id="assignModal">
   <div class="modal-card">
     <div class="modal-loading-overlay" id="modalLoadingOverlay">
@@ -1074,9 +1120,10 @@
               Financial Year <span class="required-star">*</span>
               <span class="field-required-text">required</span>
             </label>
-            <select class="workspace-select" name="financial_year" id="assignmentFinancialYear" required>
+            <select class="workspace-select" name="financial_year" id="assignmentFinancialYear" required disabled style="background-color:#f3f4f6;cursor:not-allowed;">
               <option value="">Select financial year</option>
             </select>
+            <input type="hidden" name="financial_year" id="assignmentFinancialYearHidden">
             <div class="invalid-feedback">Please select a financial year.</div>
           </div>
           <div>
@@ -1129,44 +1176,24 @@
             <label class="tool-label">Notes</label>
             <textarea class="workspace-textarea" rows="3" name="notes" id="assignmentNotes" placeholder="Assignment notes (optional)"></textarea>
           </div>
-          <div class="full">
-            <label class="tool-label" style="display:flex;align-items:center;gap:8px;">
-              <input type="checkbox" id="scheduleRecurringToggle" style="width:auto;">
-              Make this a recurring assignment schedule
+
+          <div>
+            <label class="tool-label">
+              Submission Frequency <span class="required-star">*</span>
+              <span class="field-required-text">required</span>
             </label>
-            <small style="color:var(--muted);display:block;margin-top:4px;">
-              Instead of creating one assignment, this saves a reusable schedule.
-              Assignments are then generated automatically according to the
-              frequency below (existing "Submission Frequency" above is ignored
-              when this is checked).
-            </small>
+            <select class="workspace-select" name="data_collection_frequency" id="scheduleFrequency" required>
+              <option value="">Select frequency</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="quarterly">Quarterly</option>
+              <option value="annually">Annually</option>
+            </select>
+            <div class="invalid-feedback">Please select a submission frequency.</div>
           </div>
 
-          <div class="full" id="scheduleFieldsWrap" style="display:none;">
+          <div class="full" id="scheduleFieldsWrap">
             <div class="assignment-grid" style="padding:14px;border:1px dashed var(--border-strong);border-radius:12px;background:#fbfcff;">
-              <div>
-                <label class="tool-label">
-                  Schedule Name <span class="required-star">*</span>
-                  <span class="field-required-text">required</span>
-                </label>
-                <input class="workspace-input" type="text" id="scheduleName" placeholder="e.g. Monthly Energy Data" required>
-                <div class="invalid-feedback">Please enter a schedule name.</div>
-              </div>
-              <div>
-                <label class="tool-label">
-                  Frequency <span class="required-star">*</span>
-                  <span class="field-required-text">required</span>
-                </label>
-                <select class="workspace-select" id="scheduleFrequency" required>
-                  <option value="">Select frequency</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="quarterly">Quarterly</option>
-                  <option value="annually">Annually</option>
-                </select>
-                <div class="invalid-feedback">Please select a frequency.</div>
-              </div>
-
               <div class="half schedule-freq-fields" data-freq="weekly" style="display:none;">
                 <label class="tool-label">Start Day</label>
                 <select class="workspace-select" id="scheduleWeeklyStart">
@@ -1187,7 +1214,7 @@
               </div>
 
               <div class="full schedule-freq-fields" data-freq="monthly" style="display:none;">
-                <label class="tool-label">Months</label>
+                <label class="tool-label">Months (for future auto-generation)</label>
                 <div class="choice-stack" style="grid-template-columns:repeat(4,1fr);display:grid;">
                   <label class="choice-item"><input type="checkbox" class="schedule-month" value="4"><span>April</span></label>
                   <label class="choice-item"><input type="checkbox" class="schedule-month" value="5"><span>May</span></label>
@@ -1205,7 +1232,7 @@
               </div>
 
               <div class="full schedule-freq-fields" data-freq="quarterly" style="display:none;">
-                <label class="tool-label">Quarters</label>
+                <label class="tool-label">Quarters (for future auto-generation)</label>
                 <div class="choice-stack" style="grid-template-columns:repeat(4,1fr);display:grid;">
                   <label class="choice-item"><input type="checkbox" class="schedule-quarter" value="Q1"><span>Q1 (Apr-Jun)</span></label>
                   <label class="choice-item"><input type="checkbox" class="schedule-quarter" value="Q2"><span>Q2 (Jul-Sep)</span></label>
@@ -1246,12 +1273,14 @@
   // ============================================================
   // API Endpoints and Initial State
   // ============================================================
-  const API_SCHEDULE_CREATE = "{{ assignment_schedule_create_api_url|escapejs }}";
   const API_WORKSPACE = "{{ workspace_api_url|escapejs }}";
   const API_SAVE = "{{ question_save_api_url|escapejs }}";
   const API_SUBMIT = "{{ question_submit_api_url|escapejs }}";
   const API_COMMENT = "{{ question_comment_api_url|escapejs }}";
+  const API_APPROVE = "{{ question_approve_api_url|escapejs }}";
+  const API_REJECT = "{{ question_reject_api_url|escapejs }}";
   const API_ASSIGN = "{{ assignment_create_api_url|escapejs }}";
+  const API_SCHEDULE = "{{ assignment_schedule_create_api_url|escapejs }}";
   const API_ASSIGN_OPTIONS = "{{ assignment_options_api_url|escapejs }}";
   const INITIAL_SECTION = "{{ current_section_code|default:''|escapejs }}";
   const INITIAL_PRINCIPLE = "{{ current_principle_slug|default:''|escapejs }}";
@@ -1265,6 +1294,7 @@
     assignmentId: INITIAL_ASSIGNMENT,
     workspace: null,
     activeQuestion: null,
+    isScheduleMode: false,
   };
 
   // ============================================================
@@ -1276,8 +1306,8 @@
   }
 
   function escapeHtml(value) {
-    return (value ?? '')
-      .toString()
+    if (value == null) return '';
+    return String(value)
       .replaceAll('&', '&amp;')
       .replaceAll('<', '&lt;')
       .replaceAll('>', '&gt;')
@@ -1290,7 +1320,7 @@
     const stack = document.getElementById('workspaceToastStack');
     if (!stack) { alert(message); return; }
     const toast = document.createElement('div');
-    toast.className = `workspace-toast ${type === 'error' ? 'error' : type === 'info' ? 'info' : 'success'}`;
+    toast.className = `workspace-toast ${type === 'error' ? 'error' : type === 'info' ? 'info' : type === 'warning' ? 'warning' : 'success'}`;
     toast.textContent = message;
     stack.appendChild(toast);
     window.setTimeout(() => {
@@ -1331,7 +1361,8 @@
   }
 
   function statusClass(status) {
-    return { draft: 'todo', submitted: 'in-progress', resubmitted: 'in-progress', approved: 'approved', rejected: 'rejected' }[status] || 'todo';
+    const map = { draft: 'todo', submitted: 'in-progress', resubmitted: 'in-progress', approved: 'approved', rejected: 'rejected' };
+    return map[status] || 'todo';
   }
 
   function statusLabel(question) {
@@ -1355,6 +1386,13 @@
       FY1: `${startYear - 1}-${String(startYear).slice(-2)}`,
       FY2: `${startYear - 2}-${String(startYear - 1).slice(-2)}`
     };
+  }
+
+  function getCurrentFinancialYear() {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const startYear = today.getMonth() >= 3 ? currentYear : currentYear - 1;
+    return `${startYear}-${String(startYear + 1).slice(-2)}`;
   }
 
   function replaceFinancialYearPlaceholders(text) {
@@ -1689,7 +1727,7 @@
 
                 if (fieldData.type === 'select') {
                   const options = Array.isArray(fieldData.options) ? fieldData.options : [];
-                  rowHtml += `<td><select class="workspace-select" ${fDataValidation} data-field-name="${escapeHtml(fieldData.name)}" ${fieldData.readonly ? 'readonly' : ''} ${disabled ? 'disabled' : ''}>
+                  rowHtml += `<td><select class="workspace-select" ${fDataValidation} data-key="${escapeHtml(fieldData.name)}" data-field-name="${escapeHtml(fieldData.name)}" ${fieldData.readonly ? 'readonly' : ''} ${disabled ? 'disabled' : ''}>
                     ${options.map((opt) => {
                       const optValue = opt.value ?? opt;
                       const optLabel = opt.label ?? opt;
@@ -1700,13 +1738,13 @@
 
                 } else if (fieldData.type === 'checkbox') {
                   const isChecked = value === true || value === 'true' || value === 'on' || value === '1' || value === 1;
-                  rowHtml += `<td class="text-center"><input class="workspace-input" style="width:auto;min-width:auto;" type="checkbox" ${fDataValidation} ${isChecked ? 'checked' : ''} ${disabled ? 'disabled' : ''}><div class="invalid-feedback"></div></td>`;
+                  rowHtml += `<td class="text-center"><input class="workspace-input" style="width:auto;min-width:auto;" type="checkbox" ${fDataValidation} data-key="${escapeHtml(fieldData.name)}" ${isChecked ? 'checked' : ''} ${disabled ? 'disabled' : ''}><div class="invalid-feedback"></div></td>`;
 
                 } else if (fieldData.type === 'static') {
                   rowHtml += `<td>${escapeHtml(fieldData.value || '')}</td>`;
 
                 } else {
-                  rowHtml += `<td><input class="workspace-input" type="${fieldData.type === 'calculated' ? 'text' : (fieldData.type || 'text')}" ${fDataValidation} data-formula="${fieldData.formula || ''}" data-format="${fieldData.format || 'number'}" ${fMaxlength ? `maxlength="${fMaxlength}"` : ''} ${fInputmode ? `inputmode="${fInputmode}"` : ''} ${fPattern ? `pattern="${fPattern}"` : ''} value="${escapeHtml(value)}" placeholder="${escapeHtml(fieldData.placeholder || '')}" ${fieldData.readonly ? 'readonly' : ''} ${disabled ? 'disabled' : ''}><div class="invalid-feedback"></div></td>`;
+                  rowHtml += `<td><input class="workspace-input" type="${fieldData.type === 'calculated' ? 'text' : (fieldData.type || 'text')}" ${fDataValidation} data-key="${escapeHtml(fieldData.name)}" data-formula="${fieldData.formula || ''}" data-format="${fieldData.format || 'number'}" ${fMaxlength ? `maxlength="${fMaxlength}"` : ''} ${fInputmode ? `inputmode="${fInputmode}"` : ''} ${fPattern ? `pattern="${fPattern}"` : ''} value="${escapeHtml(value)}" placeholder="${escapeHtml(fieldData.placeholder || '')}" ${fieldData.readonly ? 'readonly' : ''} ${disabled ? 'disabled' : ''}><div class="invalid-feedback"></div></td>`;
                 }
               } else {
                 rowHtml += `<td></td>`;
@@ -1754,7 +1792,7 @@
 
     if (question.question_type === 'textarea' || question.question_type === 'text') {
       const fieldType = question.field_type || question.question_type || 'text';
-      const isRequired = question.required === true;
+      const isRequired = question.is_required === true;
       const maxlength = getFieldMaxlength(fieldType);
       return `<div class="form-group" data-field-type="${fieldType}">
         <label class="form-label">Response</label>
@@ -1765,7 +1803,7 @@
 
     if (question.question_type === 'number' || question.question_type === 'decimal' || question.question_type === 'currency' || question.question_type === 'percentage' || question.question_type === 'year' || question.question_type === 'email' || question.question_type === 'url' || question.question_type === 'date' || question.question_type === 'phone') {
       const fieldType = question.field_type || question.question_type || 'text';
-      const isRequired = question.required === true;
+      const isRequired = question.is_required === true;
       const typeMap = { number: 'number', decimal: 'text', currency: 'text', percentage: 'text', year: 'number', email: 'email', url: 'url', date: 'date', phone: 'tel' };
       const type = typeMap[question.question_type] || 'text';
       const maxlength = getFieldMaxlength(fieldType);
@@ -1780,7 +1818,7 @@
 
     if (question.question_type === 'radio' || question.question_type === 'yes_no') {
       const fieldType = question.field_type || question.question_type || 'text';
-      const isRequired = question.required === true;
+      const isRequired = question.is_required === true;
       return `<div class="form-group" data-field-type="${fieldType}">
         <label class="form-label">Response</label>
         <div class="choice-stack">
@@ -2094,7 +2132,14 @@
 
     const assignmentLauncher = document.getElementById('assignmentLauncher');
     const stageType = workspace.current_assignment?.workflow_stage_type || '';
-    if (assignmentLauncher) assignmentLauncher.style.display = (!stageType || stageType === 'question_assignment') ? '' : 'none';
+    const canAssign = !stageType || stageType === 'question_assignment';
+    if (assignmentLauncher) assignmentLauncher.style.display = canAssign ? '' : 'none';
+
+    // Show/hide schedule button based on permissions and state
+    const scheduleBtn = document.getElementById('createScheduleBtn');
+    if (scheduleBtn) {
+      scheduleBtn.style.display = canAssign && workspace.current_assignment?.can_act ? '' : 'none';
+    }
 
     fillAssignmentOptions(workspace);
   }
@@ -2146,17 +2191,21 @@
         } else if (field.kind === 'table') {
           const table = container.querySelector(`table[data-table-name="${CSS.escape(fieldName)}"]`);
           if (table) {
+            const tableData = [];
             table.querySelectorAll('tbody tr').forEach((tr) => {
+              const rowData = {};
               tr.querySelectorAll('[data-field-name]').forEach((control) => {
                 const key = control.getAttribute('data-field-name');
                 if (!key) return;
                 if (control.type === 'checkbox') {
-                  responseJson[key] = control.checked;
+                  rowData[key] = control.checked;
                 } else {
-                  responseJson[key] = control.value;
+                  rowData[key] = control.value;
                 }
               });
+              tableData.push(rowData);
             });
+            responseJson[fieldName] = tableData;
           }
 
         } else {
@@ -2183,7 +2232,7 @@
             const field = td.querySelector('input, textarea, select');
             if (!field) return;
             const key = field.getAttribute('data-key') || `column_${index + 1}`;
-            row[key] = field.value;
+            row[key] = field.type === 'checkbox' ? field.checked : field.value;
           });
           rows.push(row);
         });
@@ -2333,7 +2382,6 @@
     if (!currentAssignment.is_assigned_reviewer) { alert('Only the selected reviewer can add comments for this assignment.'); return; }
     const textarea = document.querySelector(`.js-review-comment-input[data-question-id="${CSS.escape(questionId)}"]`);
     const remark = textarea ? textarea.value.trim() : '';
-    if (!remark) { alert('Please enter a reviewer comment before saving.'); if (textarea) textarea.focus(); return; }
     const assignmentId = currentAssignment.id || state.assignmentId;
     if (!assignmentId) { alert('No assignment found for this question.'); return; }
 
@@ -2345,7 +2393,7 @@
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) { alert(data.detail || 'Unable to save the reviewer comment.'); return; }
-      showWorkspaceMessage(data.message || 'Reviewer comment saved successfully.', 'success');
+      showWorkspaceMessage(data.message || (remark ? 'Reviewer comment saved successfully.' : 'Reviewer comment cleared successfully.'), 'success');
       await loadWorkspace(state.sectionCode, state.principleSlug, state.questionId, state.assignmentId);
     } catch (error) {
       console.error('Error saving reviewer comment:', error);
@@ -2359,6 +2407,7 @@
   function fillAssignmentOptions(workspace) {
     const plantSelect = document.getElementById('assignmentPlant');
     const fySelect = document.getElementById('assignmentFinancialYear');
+    const fyHidden = document.getElementById('assignmentFinancialYearHidden');
     const assignerDisplay = document.getElementById('assignmentAssignerDisplay');
     const assignerHidden = document.getElementById('assignmentAssigner');
     const assigneeSelect = document.getElementById('assignmentAssignee');
@@ -2368,6 +2417,22 @@
       workspace.plants.map((plant) => `<option value="${plant.id}">${escapeHtml(plant.name)} (${escapeHtml(plant.code)})</option>`).join('');
     fySelect.innerHTML = '<option value="">Select financial year</option>' + 
       workspace.financial_years.map((fy) => `<option value="${escapeHtml(fy.value)}">${escapeHtml(fy.label)}</option>`).join('');
+
+    // Set default financial year to current FY and make it read-only
+    const currentFY = getCurrentFinancialYear();
+    if (fySelect.querySelector(`option[value="${currentFY}"]`)) {
+      fySelect.value = currentFY;
+      fyHidden.value = currentFY;
+      fySelect.disabled = true;
+      fySelect.style.backgroundColor = '#f3f4f6';
+      fySelect.style.cursor = 'not-allowed';
+    } else if (workspace.financial_years.length) {
+      fySelect.value = workspace.financial_years[0].value;
+      fyHidden.value = workspace.financial_years[0].value;
+      fySelect.disabled = true;
+      fySelect.style.backgroundColor = '#f3f4f6';
+      fySelect.style.cursor = 'not-allowed';
+    }
 
     if (workspace.current_user_id) {
       assignerHidden.value = workspace.current_user_id.toString();
@@ -2433,8 +2498,7 @@
     const selected = getSelectedQuestions();
     const listEl = document.getElementById('selectedQuestionList');
     if (selected.length) {
-      listEl.innerHTML = selected.map((item) => `<li>${escapeHtml(item.title)} <small>(${escapeHtml(item.id)})</small></li>`).join('');
-      // Remove the "Please select" message if present
+      listEl.innerHTML = selected.map((item) => `<li>${escapeHtml(item.title)}</li>`).join('');
       const feedback = listEl.closest('.full')?.querySelector('.invalid-feedback');
       if (feedback) feedback.style.display = 'none';
     } else {
@@ -2445,13 +2509,13 @@
     return selected;
   }
 
-  function openModal() { 
-    refreshSelectedList(); 
-    document.getElementById('assignModal').classList.add('active'); 
-    // Reset form validation state
+  function openModal() {
+    refreshSelectedList();
+    document.getElementById('assignModal').classList.add('active');
     document.getElementById('assignmentForm').classList.remove('was-validated');
     document.querySelectorAll('#assignmentForm .is-invalid').forEach(el => el.classList.remove('is-invalid'));
   }
+  
   function closeModal() { document.getElementById('assignModal').classList.remove('active'); }
 
   // ============================================================
@@ -2461,52 +2525,38 @@
     const form = document.getElementById('assignmentForm');
     let isValid = true;
     
-    // Clear previous validation states
     form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
     
-    // Validate Plant
     const plant = document.getElementById('assignmentPlant');
     if (!plant.value) {
       plant.classList.add('is-invalid');
       isValid = false;
     }
     
-    // Validate Financial Year
-    const fy = document.getElementById('assignmentFinancialYear');
-    if (!fy.value) {
-      fy.classList.add('is-invalid');
-      isValid = false;
-    }
-    
-    // Validate Assigner (hidden field)
     const assigner = document.getElementById('assignmentAssigner');
     if (!assigner.value) {
       document.getElementById('assignmentAssignerDisplay').classList.add('is-invalid');
       isValid = false;
     }
     
-    // Validate Assignee
     const assignee = document.getElementById('assignmentAssignee');
     if (!assignee.value) {
       assignee.classList.add('is-invalid');
       isValid = false;
     }
     
-    // Validate Reviewer
     const reviewer = document.getElementById('assignmentReviewer');
     if (!reviewer.value) {
       reviewer.classList.add('is-invalid');
       isValid = false;
     }
     
-    // Validate Due Date
     const dueDate = document.getElementById('assignmentDueDate');
     if (!dueDate.value) {
       dueDate.classList.add('is-invalid');
       isValid = false;
     }
     
-    // Validate Selected Questions
     const selected = getSelectedQuestions();
     if (!selected.length) {
       const listEl = document.getElementById('selectedQuestionList');
@@ -2515,18 +2565,10 @@
       isValid = false;
     }
     
-    // Validate recurring schedule fields if enabled
-    if (document.getElementById('scheduleRecurringToggle').checked) {
-      const scheduleName = document.getElementById('scheduleName');
-      if (!scheduleName.value.trim()) {
-        scheduleName.classList.add('is-invalid');
-        isValid = false;
-      }
-      const frequency = document.getElementById('scheduleFrequency');
-      if (!frequency.value) {
-        frequency.classList.add('is-invalid');
-        isValid = false;
-      }
+    const frequency = document.getElementById('scheduleFrequency');
+    if (!frequency.value) {
+      frequency.classList.add('is-invalid');
+      isValid = false;
     }
     
     return isValid;
@@ -2535,9 +2577,7 @@
   async function submitAssignment(event) {
     event.preventDefault();
     
-    // Validate the form
     if (!validateAssignmentForm()) {
-      // Scroll to first invalid field
       const firstInvalid = document.querySelector('#assignmentForm .is-invalid');
       if (firstInvalid) {
         firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -2550,7 +2590,7 @@
     const submitBtn = document.getElementById('createAssignmentBtn');
     const overlay = document.getElementById('modalLoadingOverlay');
     
-    setButtonLoading(submitBtn, true, 'Creating...');
+    setButtonLoading(submitBtn, true, 'Creating Assignment...');
     overlay.classList.add('active');
 
     try {
@@ -2576,100 +2616,70 @@
         return; 
       }
 
-      // Check for schedule toggle
-      if (document.getElementById('scheduleRecurringToggle').checked) {
-        const frequency = document.getElementById('scheduleFrequency').value;
-        if (!frequency) {
-          showWorkspaceMessage('Please select a frequency for the recurring schedule.', 'error');
-          setButtonLoading(submitBtn, false);
-          overlay.classList.remove('active');
-          return;
-        }
-        
-        const schedulePayload = {
-          section_code: state.sectionCode, 
-          principle_slug: state.principleSlug,
-          question_ids: selected.map((item) => item.id),
-          name: document.getElementById('scheduleName').value,
-          plant: document.getElementById('assignmentPlant').value,
-          financial_year: document.getElementById('assignmentFinancialYear').value,
-          frequency: frequency,
-          weekly_start_day: document.getElementById('scheduleWeeklyStart').value,
-          weekly_end_day: document.getElementById('scheduleWeeklyEnd').value,
-          selected_months: Array.from(document.querySelectorAll('.schedule-month:checked')).map((el) => el.value),
-          selected_quarters: Array.from(document.querySelectorAll('.schedule-quarter:checked')).map((el) => el.value),
-          priority: document.getElementById('assignmentPriority').value,
-          assignee: document.getElementById('assignmentAssignee').value,
-          reviewer: document.getElementById('assignmentReviewer').value,
-          notes: document.getElementById('assignmentNotes').value,
-        };
-        const response = await fetch(API_SCHEDULE_CREATE, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-          body: JSON.stringify(schedulePayload),
-        });
-        const data = await response.json().catch(() => ({}));
-        if (response.ok) {
-          sessionStorage.setItem('brsr_workspace_message', data.message || 'Recurring schedule created.');
-          closeModal();
-          window.location.href = "{{ assignment_dashboard_url|escapejs }}";
-        } else {
-          showWorkspaceMessage(data.detail || JSON.stringify(data) || 'Unable to create schedule.', 'error');
-        }
+      const financialYear = document.getElementById('assignmentFinancialYearHidden').value || document.getElementById('assignmentFinancialYear').value;
+
+      const frequency = document.getElementById('scheduleFrequency').value;
+      if (!frequency) {
+        showWorkspaceMessage('Please select a submission frequency.', 'error');
+        setButtonLoading(submitBtn, false);
+        overlay.classList.remove('active');
         return;
       }
 
-      // Regular assignment payload
-      const payload = {
-        section_code: state.sectionCode, 
+      const basePayload = {
+        section_code: state.sectionCode,
         principle_slug: state.principleSlug,
         question_ids: selected.map((item) => item.id),
         plant: document.getElementById('assignmentPlant').value,
-        financial_year: document.getElementById('assignmentFinancialYear').value,
+        financial_year: financialYear,
         priority: document.getElementById('assignmentPriority').value,
         assigner: document.getElementById('assignmentAssigner').value,
         assignee: document.getElementById('assignmentAssignee').value,
         reviewer: document.getElementById('assignmentReviewer').value,
         due_date: document.getElementById('assignmentDueDate').value,
         notes: document.getElementById('assignmentNotes').value,
-        force_create:false
+        data_collection_frequency: frequency,
+        weekly_start_day: document.getElementById('scheduleWeeklyStart').value,
+        weekly_end_day: document.getElementById('scheduleWeeklyEnd').value,
+        selected_months: Array.from(document.querySelectorAll('.schedule-month:checked')).map((el) => el.value),
+        selected_quarters: Array.from(document.querySelectorAll('.schedule-quarter:checked')).map((el) => el.value),
       };
 
       const response = await fetch(API_ASSIGN, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(basePayload),
       });
+      
       const data = await response.json().catch(() => ({}));
       
       if (response.status === 409) {
-        if (confirm(data.message)) {
-            payload.force_create = true;
-            const retry = await fetch(API_ASSIGN,{
-                method:"POST",
-                headers:{
-                    "Content-Type":"application/json",
-                    "X-CSRFToken":getCookie("csrftoken")
-                },
-                body:JSON.stringify(payload)
-            });
-            const retryData = await retry.json();
-            if(retry.ok){
-                sessionStorage.setItem(
-                    "brsr_workspace_message",
-                    retryData.message
-                );
-                closeModal();
-                window.location.href="{{ assignment_dashboard_url|escapejs }}";
-            }
-            return;
+        if (confirm(data.message + '\n\nDo you want to create another assignment for this period?')) {
+          basePayload.force_create = true;
+          const retry = await fetch(API_ASSIGN, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-CSRFToken": getCookie("csrftoken") },
+            body: JSON.stringify(basePayload),
+          });
+          const retryData = await retry.json();
+          if (retry.ok) {
+            sessionStorage.setItem("brsr_workspace_message", retryData.message || 'Assignment created successfully.');
+            closeModal();
+            window.location.href = "{{ assignment_dashboard_url|escapejs }}";
+          } else {
+            showWorkspaceMessage(retryData.detail || 'Unable to create assignment.', 'error');
+          }
+        } else {
+          showWorkspaceMessage('Assignment creation cancelled.', 'info');
         }
+        setButtonLoading(submitBtn, false);
+        overlay.classList.remove('active');
         return;
-    }
-    if(response.ok){
+      }
+      
+      if (response.ok) {
         const message = data.message || 'Assignment created successfully.';
-        const reviewerSaved = data.reviewer_saved ? '✅ Reviewer was saved.' : '⚠️ No reviewer was saved.';
-        sessionStorage.setItem('brsr_workspace_message', `${message} ${reviewerSaved}`);
+        sessionStorage.setItem('brsr_workspace_message', message);
         closeModal();
         window.location.href = "{{ assignment_dashboard_url|escapejs }}";
       } else {
@@ -2756,6 +2766,11 @@
   // Event Listeners
   // ============================================================
   document.getElementById('openAssignModalBtn').addEventListener('click', openModal);
+  const scheduleBtn = document.getElementById('createScheduleBtn');
+  if (scheduleBtn) {
+    scheduleBtn.addEventListener('click', openModal);
+  }
+  
   document.getElementById('closeAssignModalBtn').addEventListener('click', closeModal);
   document.getElementById('cancelAssignmentBtn').addEventListener('click', closeModal);
   
@@ -2765,7 +2780,6 @@
     if (event.target.id === 'assignModal') closeModal(); 
   });
 
-  const scheduleToggle = document.getElementById('scheduleRecurringToggle');
   const scheduleFieldsWrap = document.getElementById('scheduleFieldsWrap');
   const scheduleFrequencySelect = document.getElementById('scheduleFrequency');
 
@@ -2776,12 +2790,17 @@
     });
   }
 
-  scheduleToggle.addEventListener('change', () => {
-    scheduleFieldsWrap.style.display = scheduleToggle.checked ? '' : 'none';
-    updateScheduleFieldVisibility();
-  });
   scheduleFrequencySelect.addEventListener('change', updateScheduleFieldVisibility);
+  updateScheduleFieldVisibility();
   document.getElementById('assignmentForm').addEventListener('submit', submitAssignment);
+
+  // Set default due date to 30 days from now
+  const dueDateInput = document.getElementById('assignmentDueDate');
+  if (dueDateInput) {
+    const date = new Date();
+    date.setDate(date.getDate() + 30);
+    dueDateInput.value = date.toISOString().split('T')[0];
+  }
 
   // Initialize workspace
   loadWorkspace(state.sectionCode, state.principleSlug, state.questionId, state.assignmentId);

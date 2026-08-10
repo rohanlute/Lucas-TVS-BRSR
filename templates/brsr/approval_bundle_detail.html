@@ -1,0 +1,960 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{{ stage_label }} Bundle - BRSR{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root{
+    --ink:#24304a;
+    --ink-soft:#42516f;
+    --muted:#6f7b91;
+    --surface:#ffffff;
+    --bg:#f5f7fb;
+    --border:#e3e8f0;
+    --border-strong:#cfd7e6;
+    --brand:#2563eb;
+    --brand-bg:#eaf1ff;
+    --success:#16a34a;
+    --success-bg:#e7f8ee;
+    --warn:#d97706;
+    --warn-bg:#fff5e6;
+    --danger:#dc2626;
+    --danger-bg:#fdecec;
+    --shadow:0 18px 40px rgba(28,44,73,.08);
+    --radius:14px;
+    --font-display:'Space Grotesk','Segoe UI',sans-serif;
+    --font-body:'Inter','Segoe UI',sans-serif;
+  }
+
+  .bundle-page{
+    min-height:100vh;
+    padding:24px 30px 36px;
+    background:
+      radial-gradient(circle at top left, rgba(37,99,235,.08), transparent 34%),
+      radial-gradient(circle at bottom right, rgba(22,163,74,.08), transparent 28%),
+      var(--bg);
+    color:var(--ink);
+  }
+
+  .bundle-shell{
+    max-width:1400px;
+    margin:0 auto;
+  }
+
+  .page-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:16px;
+    margin-bottom:18px;
+    flex-wrap:wrap;
+  }
+
+  .eyebrow{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:6px 10px;
+    border-radius:999px;
+    background:var(--brand-bg);
+    color:var(--brand);
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    margin-bottom:10px;
+  }
+
+  .page-header h1{
+    margin:0;
+    font-family:var(--font-display);
+    font-size:30px;
+    line-height:1.15;
+    font-weight:700;
+    color:var(--ink);
+  }
+
+  .page-header .subtitle{
+    margin:8px 0 0;
+    color:var(--muted);
+    font-size:14px;
+    line-height:1.5;
+  }
+
+  .btn-back{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:10px 16px;
+    border-radius:12px;
+    background:var(--surface);
+    color:var(--ink);
+    border:1px solid var(--border);
+    text-decoration:none;
+    font-weight:700;
+    font-size:14px;
+    transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    box-shadow:0 8px 18px rgba(28,44,73,.04);
+  }
+
+  .btn-back:hover{
+    transform:translateY(-1px);
+    border-color:var(--brand);
+    color:var(--brand);
+    box-shadow:0 14px 24px rgba(37,99,235,.10);
+  }
+
+  .hero-card{
+    background:linear-gradient(180deg,#fff 0%, #fbfcff 100%);
+    border:1px solid var(--border);
+    border-radius:20px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+    margin-bottom:20px;
+  }
+
+  .hero-card-inner{
+    padding:24px;
+    display:grid;
+    grid-template-columns:minmax(0,1.3fr) minmax(0,.9fr);
+    gap:18px;
+    align-items:start;
+  }
+
+  .hero-title{
+    margin:0;
+    font-family:var(--font-display);
+    font-size:22px;
+    line-height:1.3;
+    color:var(--ink);
+  }
+
+  .hero-copy{
+    margin:8px 0 0;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.65;
+  }
+
+  .hero-pills{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:16px;
+  }
+
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    padding:6px 10px;
+    border-radius:999px;
+    background:#f1f5f9;
+    color:var(--ink);
+    font-size:12px;
+    font-weight:700;
+    border:1px solid transparent;
+  }
+
+  .pill.brand{background:var(--brand-bg);color:var(--brand);border-color:rgba(37,99,235,.12);}
+  .pill.success{background:var(--success-bg);color:var(--success);border-color:rgba(22,163,74,.12);}
+  .pill.warn{background:var(--warn-bg);color:var(--warn);border-color:rgba(217,119,6,.14);}
+  .pill.danger{background:var(--danger-bg);color:var(--danger);border-color:rgba(220,38,38,.12);}
+
+  .stats-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:12px;
+  }
+
+  .stat-card{
+    padding:14px 16px;
+    border:1px solid var(--border);
+    border-radius:16px;
+    background:#fff;
+    box-shadow:0 8px 22px rgba(28,44,73,.04);
+  }
+
+  .stat-card .stat-label{
+    margin:0 0 6px;
+    font-size:11px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--muted);
+  }
+
+  .stat-card .stat-value{
+    margin:0;
+    font-size:20px;
+    font-weight:800;
+    color:var(--ink);
+    line-height:1.2;
+  }
+
+  .stat-card .stat-note{
+    margin-top:4px;
+    font-size:12px;
+    color:var(--muted);
+  }
+
+  .summary-strip{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    gap:12px;
+    padding:0 24px 24px;
+  }
+
+  .summary-item{
+    padding:14px 16px;
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:#fff;
+  }
+
+  .summary-item .label{
+    display:block;
+    font-size:11px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--muted);
+    margin-bottom:6px;
+  }
+
+  .summary-item .value{
+    font-size:15px;
+    font-weight:700;
+    color:var(--ink);
+    line-height:1.35;
+  }
+
+  .bundle-card{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:18px;
+    box-shadow:0 10px 24px rgba(28,44,73,.05);
+    overflow:hidden;
+    margin-bottom:18px;
+  }
+
+  .bundle-card-head{
+    padding:16px 18px;
+    border-bottom:1px solid var(--border);
+    background:
+      radial-gradient(circle at top right, rgba(37,99,235,.08), transparent 34%),
+      linear-gradient(180deg,#fff 0%, #fafcff 100%);
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+
+  .bundle-card-head h3{
+    margin:0;
+    font-family:var(--font-display);
+    font-size:18px;
+    color:var(--ink);
+  }
+
+  .bundle-card-head .meta{
+    color:var(--muted);
+    font-size:13px;
+  }
+
+  .bundle-card-head .count{
+    font-weight:800;
+    color:var(--brand);
+  }
+
+  .question-list{
+    padding:18px;
+    display:grid;
+    gap:16px;
+  }
+
+  .question-container{
+    border:1px solid var(--border);
+    border-radius:16px;
+    overflow:hidden;
+    background:#fff;
+  }
+
+  .question-header{
+    padding:14px 16px;
+    background:#fafcff;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+
+  .question-header-left{
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+    min-width:0;
+  }
+
+  .question-number{
+    flex-shrink:0;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:44px;
+    height:32px;
+    padding:0 10px;
+    border-radius:999px;
+    background:var(--brand-bg);
+    color:var(--brand);
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.04em;
+  }
+
+  .question-title{
+    margin:0;
+    font-size:15px;
+    font-weight:800;
+    color:var(--ink);
+    line-height:1.5;
+  }
+
+  .question-meta{
+    margin:6px 0 0;
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.5;
+  }
+
+  .status-badge{
+    flex-shrink:0;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:6px 10px;
+    border-radius:999px;
+    font-size:11px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+  }
+
+  .status-badge.approved{background:var(--success-bg);color:var(--success);}
+  .status-badge.rejected{background:var(--danger-bg);color:var(--danger);}
+  .status-badge.submitted{background:var(--brand-bg);color:var(--brand);}
+  .status-badge.resubmitted{background:#fef3c7;color:#92400e;}
+  .status-badge.draft{background:#eef2f7;color:#64748b;}
+
+  .question-content{
+    padding:18px;
+    display:grid;
+    gap:14px;
+  }
+
+  .response-box{
+    border:1px solid var(--border);
+    border-radius:14px;
+    background:#fbfcff;
+    overflow:hidden;
+  }
+
+  .response-box .response-label{
+    display:block;
+    padding:12px 14px 0;
+    font-size:11px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    color:var(--muted);
+  }
+
+  .response-render{
+    padding:10px 14px 14px;
+  }
+
+  .no-response{
+    padding:14px;
+    color:var(--muted);
+    font-style:italic;
+  }
+
+  .form-group{
+    margin-bottom:16px;
+  }
+
+  .form-group:last-child{
+    margin-bottom:0;
+  }
+
+  .form-label{
+    display:block;
+    margin-bottom:8px;
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink-soft);
+  }
+
+  .workspace-select,
+  .workspace-input,
+  .workspace-textarea{
+    width:100%;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:#fff;
+    color:var(--ink);
+    font-size:13px;
+    padding:10px 12px;
+    outline:none;
+  }
+
+  .workspace-textarea.form-textarea{
+    width:100%;
+    min-height:110px;
+    resize:vertical;
+  }
+
+  .workspace-select:disabled,
+  .workspace-input:disabled,
+  .workspace-textarea:disabled{
+    background:#f8fafc;
+    color:var(--ink-soft);
+    opacity:1;
+    cursor:default;
+  }
+
+  .choice-stack{
+    display:grid;
+    gap:10px;
+  }
+
+  .choice-item{
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    padding:10px 12px;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:#fff;
+  }
+
+  .choice-item input{
+    margin-top:3px;
+    flex-shrink:0;
+  }
+
+  .choice-item input:checked ~ span,
+  .choice-item:has(input:checked){
+    color:var(--ink);
+  }
+
+  .choice-item:has(input:checked){
+    border-color:var(--brand);
+    background:var(--brand-bg);
+  }
+
+  .choice-item span{
+    font-size:13px;
+    color:var(--ink-soft);
+    line-height:1.4;
+  }
+
+  .table-container{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    overflow-x:auto;
+    overflow-y:hidden;
+    display:block;
+    border:1px solid var(--border);
+    border-radius:12px;
+    background:#fff;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  .table-container > table,
+  .data-table{
+    width:max-content;
+    max-width:none;
+    table-layout:auto;
+    border-collapse:collapse;
+    min-width:560px;
+  }
+
+  .table-container > table th,
+  .table-container > table td,
+  .data-table th,
+  .data-table td{
+    border:1px solid var(--border);
+    padding:10px 12px;
+    vertical-align:top;
+    font-size:13px;
+    white-space:nowrap;
+  }
+
+  .table-container > table th,
+  .data-table th{
+    background:#f8fafc;
+    color:var(--ink);
+    font-weight:700;
+  }
+
+  .table-container > table input:disabled,
+  .table-container > table textarea:disabled,
+  .table-container > table select:disabled,
+  .data-table input:disabled,
+  .data-table textarea:disabled,
+  .data-table select:disabled{
+    background:#f8fafc;
+    color:var(--ink-soft);
+    opacity:1;
+  }
+
+  .question-docs{
+    margin-top:12px;
+    display:grid;
+    gap:6px;
+  }
+
+  .question-docs a{
+    color:var(--brand);
+    text-decoration:none;
+    font-weight:600;
+  }
+
+  .question-docs a:hover{
+    text-decoration:underline;
+  }
+
+  .review-remark{
+    padding:14px 16px;
+    border-radius:14px;
+    background:#fffbeb;
+    border:1px solid #fde68a;
+    color:#92400e;
+  }
+
+  .review-remark .label{
+    display:block;
+    margin-bottom:6px;
+    font-size:11px;
+    font-weight:800;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:#78350f;
+  }
+
+  .bundle-actions{
+    background:linear-gradient(180deg,#fff 0%, #fbfcff 100%);
+    border:1px solid var(--border);
+    border-radius:20px;
+    box-shadow:var(--shadow);
+    padding:28px 32px;
+    margin-top:24px;
+  }
+
+  .bundle-actions .actions-header{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:16px;
+    flex-wrap:wrap;
+  }
+
+  .bundle-actions .actions-header h2{
+    margin:0;
+    font-family:var(--font-display);
+    font-size:20px;
+    color:var(--ink);
+  }
+
+  .bundle-actions .actions-header .bundle-badge{
+    background:var(--brand-bg);
+    color:var(--brand);
+    padding:4px 12px;
+    border-radius:999px;
+    font-size:13px;
+    font-weight:700;
+  }
+
+  .bundle-actions .actions-description{
+    color:var(--muted);
+    font-size:14px;
+    margin-bottom:20px;
+  }
+
+  .bundle-actions .remark-section{
+    margin-bottom:18px;
+  }
+
+  .bundle-actions .remark-section .remark-label{
+    display:block;
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink-soft);
+    margin-bottom:8px;
+  }
+
+  .bundle-actions .bundle-remark{
+    width:100%;
+    min-height:100px;
+    resize:vertical;
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:12px 14px;
+    font-size:14px;
+    font-family:var(--font-body);
+    color:var(--ink);
+    background:#fff;
+    outline:none;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+
+  .bundle-actions .bundle-remark:focus{
+    border-color:var(--brand);
+    box-shadow:0 0 0 3px rgba(37,99,235,.12);
+  }
+
+  .bundle-actions .action-buttons{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+
+  .btn-action{
+    border:none;
+    border-radius:12px;
+    padding:12px 28px;
+    font-size:14px;
+    font-weight:800;
+    cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+  }
+
+  .btn-action:hover{
+    transform:translateY(-1px);
+  }
+
+  .btn-action.primary{
+    background:var(--brand);
+    color:#fff;
+    box-shadow:0 10px 18px rgba(37,99,235,.2);
+  }
+
+  .btn-action.reject{
+    background:var(--danger-bg);
+    color:var(--danger);
+    border:1px solid rgba(220,38,38,.14);
+  }
+
+  .btn-action:disabled{
+    opacity:.6;
+    cursor:not-allowed;
+    transform:none;
+  }
+
+  .action-status{
+    margin-top:16px;
+    padding:14px 18px;
+    border-radius:12px;
+    background:#f8fafc;
+    border:1px solid var(--border);
+    color:var(--muted);
+    font-size:14px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    min-height:52px;
+  }
+
+  .action-status .status-icon{
+    font-size:18px;
+    flex-shrink:0;
+  }
+
+  .action-status .status-text{
+    flex:1;
+  }
+
+  .action-status.success{
+    background:var(--success-bg);
+    border-color:rgba(22,163,74,.2);
+    color:var(--success);
+  }
+
+  .action-status.error{
+    background:var(--danger-bg);
+    border-color:rgba(220,38,38,.2);
+    color:var(--danger);
+  }
+
+  .action-status.warning{
+    background:var(--warn-bg);
+    border-color:rgba(217,119,6,.2);
+    color:var(--warn);
+  }
+
+  .empty-state{
+    background:var(--surface);
+    border:1px dashed var(--border);
+    border-radius:18px;
+    padding:60px 24px;
+    text-align:center;
+    color:var(--muted);
+    box-shadow:var(--shadow);
+  }
+
+  .empty-state h3{
+    margin:0 0 8px;
+    font-family:var(--font-display);
+    font-size:20px;
+    color:var(--ink);
+  }
+
+  @media (max-width: 1100px){
+    .hero-card-inner{
+      grid-template-columns:1fr;
+    }
+  }
+
+  @media (max-width: 768px){
+    .bundle-page{
+      padding:16px;
+    }
+
+    .page-header{
+      flex-direction:column;
+    }
+
+    .page-header h1{
+      font-size:24px;
+    }
+
+    .summary-strip{
+      padding:0 16px 16px;
+    }
+
+    .hero-card-inner{
+      padding:18px;
+    }
+
+    .bundle-actions{
+      padding:20px;
+    }
+
+    .bundle-actions .action-buttons{
+      flex-direction:column;
+    }
+
+    .bundle-actions .action-buttons .btn-action{
+      width:100%;
+      justify-content:center;
+    }
+
+    .question-header{
+      flex-direction:column;
+      align-items:flex-start;
+    }
+
+    .stats-grid{
+      grid-template-columns:1fr 1fr;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="bundle-page">
+  <div class="bundle-shell">
+    <div class="page-header">
+      <div>
+        <div class="eyebrow">{{ stage_label }}</div>
+        <h1>{{ company.company_name }} · {{ section.name }}</h1>
+        <p class="subtitle">
+          Review the combined data for all plants before approving or rejecting this bundle.
+        </p>
+      </div>
+      <a href="{{ approval_dashboard_url }}" class="btn-back">← Back to Dashboard</a>
+    </div>
+
+    <section class="hero-card">
+      <div class="hero-card-inner">
+        <div>
+          <h2 class="hero-title">Bundle Overview</h2>
+          <p class="hero-copy">
+            This bundle contains all responses for <strong>{{ section.name }}</strong> 
+            {% if principle %}under <strong>{{ principle.principle_name }}</strong>{% endif %}
+            across multiple plants. Review each response before approving or rejecting the entire bundle.
+          </p>
+          <div class="hero-pills">
+            <span class="pill brand">{{ stage_label }}</span>
+            <span class="pill">{{ financial_year }}</span>
+            <span class="pill">{{ assignment_total }} assignments</span>
+            <span class="pill">{{ question_total }} questions</span>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <p class="stat-label">Assignments</p>
+            <p class="stat-value">{{ assignment_total }}</p>
+            <div class="stat-note">Plants in this bundle</div>
+          </div>
+          <div class="stat-card">
+            <p class="stat-label">Questions</p>
+            <p class="stat-value">{{ question_total }}</p>
+            <div class="stat-note">Total responses to review</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="summary-strip">
+        <div class="summary-item">
+          <span class="label">Company</span>
+          <span class="value">{{ company.company_name }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="label">Section</span>
+          <span class="value">{{ section.name }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="label">Principle</span>
+          <span class="value">{{ principle.principle_name|default:"Section-wide" }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="label">Financial Year</span>
+          <span class="value">{{ financial_year }}</span>
+        </div>
+        <div class="summary-item">
+          <span class="label">Stage</span>
+          <span class="value">{{ stage_label }}</span>
+        </div>
+      </div>
+    </section>
+
+    {% if bundle_assignments %}
+      {% for bundle in bundle_assignments %}
+        <section class="bundle-card">
+          <div class="bundle-card-head">
+            <div>
+              <h3>{{ bundle.assignment.assignment_id }}</h3>
+              <div class="meta">{{ bundle.assignment.plant }} · {{ bundle.assignment.section }}{% if bundle.assignment.principle %} · {{ bundle.assignment.principle }}{% endif %}</div>
+            </div>
+            <div class="count">{{ bundle.questions|length }} questions</div>
+          </div>
+          <div class="question-list">
+            {% for question in bundle.questions %}
+              <article class="question-container">
+                <div class="question-header">
+                  <div class="question-header-left">
+                    <div class="question-number">Q{{ question.number }}</div>
+                    <div>
+                      <h3 class="question-title">{{ question.title }}</h3>
+                      <p class="question-meta">{{ question.question_id }}</p>
+                    </div>
+                  </div>
+                  <span class="status-badge {{ question.status }}">{{ question.status_display|default:question.status|title }}</span>
+                </div>
+
+                <div class="question-content">
+                  <div class="response-box">
+                    <span class="response-label">Response</span>
+                    <div class="response-render">
+                      {{ question.rendered_html|safe }}
+                    </div>
+
+                    {% if question.documents %}
+                      <div class="question-docs" style="padding:0 14px 14px;">
+                        <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:var(--muted);margin-bottom:6px;">Documents</div>
+                        {% for doc in question.documents %}
+                          <div>
+                            <a href="{{ doc.url }}" target="_blank">📄 {{ doc.name }}</a>
+                          </div>
+                        {% endfor %}
+                      </div>
+                    {% endif %}
+                  </div>
+
+                  {% if question.review_remark %}
+                    <div class="review-remark">
+                      <span class="label">Review Remark</span>
+                      {{ question.review_remark|linebreaksbr }}
+                    </div>
+                  {% endif %}
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        </section>
+      {% endfor %}
+
+      <!-- Bundle Review Actions -->
+      <div class="bundle-actions">
+        <div class="actions-header">
+          <h2>📋 Bundle Review</h2>
+          <span class="bundle-badge">{{ assignment_total }} assignments</span>
+        </div>
+        <p class="actions-description">
+          Approve or reject this entire bundle. All assignments will be processed together.
+        </p>
+
+        <!-- Approve Form -->
+        <form method="post" action="{{ approve_url }}" style="margin-bottom:20px;">
+          {% csrf_token %}
+          <input type="hidden" name="stage_type" value="{{ stage_type }}">
+          <input type="hidden" name="company_id" value="{{ company.id }}">
+          <input type="hidden" name="section_code" value="{{ section.code }}">
+          <input type="hidden" name="financial_year" value="{{ financial_year }}">
+          <input type="hidden" name="principle_slug" value="{{ principle.slug|default:'' }}">
+          <div class="action-buttons">
+            <button type="submit" class="btn-action primary">
+              ✅ Approve Bundle
+            </button>
+          </div>
+        </form>
+
+        <!-- Reject Form -->
+        <form method="post" action="{{ reject_url }}">
+          {% csrf_token %}
+          <input type="hidden" name="stage_type" value="{{ stage_type }}">
+          <input type="hidden" name="company_id" value="{{ company.id }}">
+          <input type="hidden" name="section_code" value="{{ section.code }}">
+          <input type="hidden" name="financial_year" value="{{ financial_year }}">
+          <input type="hidden" name="principle_slug" value="{{ principle.slug|default:'' }}">
+          
+          <div class="remark-section">
+            <label class="remark-label" for="bundleRemark">
+              Rejection Remark <span style="color:var(--danger);font-weight:400;">(required for rejection)</span>
+            </label>
+            <textarea 
+              class="bundle-remark" 
+              id="bundleRemark" 
+              name="remark" 
+              placeholder="Add a note explaining why this bundle is being rejected."
+            ></textarea>
+            <div class="action-status" style="margin-top:8px;">
+              <span class="status-icon">ℹ️</span>
+              <span class="status-text">This remark will be applied to all assignments in the bundle.</span>
+            </div>
+          </div>
+
+          <div class="action-buttons">
+            <button type="submit" class="btn-action reject">
+              ❌ Reject Bundle
+            </button>
+          </div>
+        </form>
+      </div>
+
+    {% else %}
+      <div class="empty-state">
+        <h3>No Assignments Found</h3>
+        <p>This bundle does not contain any assignments.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
