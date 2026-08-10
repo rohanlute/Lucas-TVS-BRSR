@@ -254,7 +254,7 @@ class DashboardView(LoginRequiredMixin,TemplateView):
 
     login_url = 'accounts:login'
 
-    template_name = ('dashboard/dashboard.html')
+    template_name = ('dashboard/homepage.html')
 
     def get_context_data(self,**kwargs):
 
