@@ -434,6 +434,9 @@
                 <a class="btn-soft" href="{% url 'emission:dashboard' %}">Emission Dashboard</a>
                 <a class="btn-primary-link" href="{% url 'emission:scope_dataentry' %}">Open Workspace</a>
             </div>
+            <button id="testScheduleSave" class="btn btn-primary">
+                Test Schedule Save
+            </button>
         </div>
 
         <!-- stats -->
@@ -688,5 +691,87 @@
                 }, 500);
             {% endif %}
         });
+
+        document.getElementById("testScheduleSave").addEventListener("click", function () {
+
+            fetch("/emission/api/schedules/save/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrftoken,
+                },
+                body: JSON.stringify({
+
+                    name: "Monthly Diesel Collection",
+
+                    company: 1,
+
+                    plant: 2,
+
+                    scope: 1,
+
+                    assigner: 1,
+
+                    assignee: 5,
+
+                    reviewer: 6,
+
+                    workflow_template: 1,
+
+                    schedule_type: "RECURRING",
+
+                    frequency: "MONTHLY",
+
+                    selected_months: [4, 5, 6],
+
+                    selected_quarters: [],
+
+                    selected_half_years: [],
+
+                    start_date: "2026-09-01",
+
+                    end_date: "2027-03-31",
+
+                    priority: "MEDIUM",
+
+                    notes: "Testing Schedule"
+
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+
+                console.log(result);
+
+                if(result.success){
+                    alert("Saved Successfully");
+                }else{
+                    alert(JSON.stringify(result.errors));
+                }
+
+            });
+
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+
+            if (document.cookie && document.cookie !== "") {
+                const cookies = document.cookie.split(";");
+
+                for (let cookie of cookies) {
+                    cookie = cookie.trim();
+
+                    if (cookie.startsWith(name + "=")) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+
+            return cookieValue;
+        }
+
+        const csrftoken = getCookie("csrftoken");
     </script>
 {% endblock %}

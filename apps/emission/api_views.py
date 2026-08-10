@@ -4,7 +4,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
+from django.shortcuts import get_object_or_404
 from apps.organizations.models import (
     FinancialMonth,
     FinancialYear,
@@ -24,11 +24,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
-
 from .models import (
     EmissionAssignment,
     EmissionTransaction,
+    EmissionAssignmentSchedule,
 )
+from .forms_schedule import EmissionAssignmentScheduleForm
+from .utils import generate_schedule_code
 
 User = get_user_model()
 
@@ -437,5 +439,226 @@ class RejectAssignmentView(APIView):
             {
                 "success": True,
                 "message": "Assignment rejected."
+            }
+        )
+
+
+
+from .models import (EmissionAssignmentScheduleSource,)
+class SaveEmissionScheduleAPIView(APIView):
+
+    @transaction.atomic
+    def post(self, request):
+
+        form = EmissionAssignmentScheduleForm(data=request.data)
+
+        if not form.is_valid():
+            return Response(
+                {
+                    "success": False,
+                    "errors": form.errors,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        schedule = form.save(commit=False)
+
+        schedule.schedule_code = generate_schedule_code()
+
+        # First scheduler run
+        schedule.next_run_date = schedule.start_date
+
+        schedule.save()
+        print("Selected Sources:", form.cleaned_data["source_ids"])
+        # ----------------------------------------
+        # Save Selected Emission Sources
+        # ----------------------------------------
+
+        for source in form.cleaned_data["source_ids"]:
+
+            EmissionAssignmentScheduleSource.objects.create(
+                schedule=schedule,
+                source=source,
+            )
+
+        return Response(
+            {
+                "success": True,
+                "message": "Schedule created successfully.",
+                "schedule_id": schedule.id,
+                "schedule_code": schedule.schedule_code,
+            },
+            status=status.HTTP_201_CREATED,
+        )
+    
+
+
+
+
+
+class EmissionScheduleListAPIView(APIView):
+
+    def get(self, request):
+
+        schedules = (
+            EmissionAssignmentSchedule.objects
+            .select_related(
+                "company",
+                "plant",
+                "scope",
+                "assigner",
+                "assignee",
+                "reviewer",
+            )
+            .order_by("-created_at")
+        )
+
+        data = []
+
+        for schedule in schedules:
+
+            data.append({
+
+                "id": schedule.id,
+
+                "schedule_code": schedule.schedule_code,
+
+                "name": schedule.name,
+
+                "company": schedule.company.company_name,
+
+                "plant": schedule.plant.name,
+
+                "scope": schedule.scope.name,
+
+                "assigner": schedule.assigner.get_full_name() or schedule.assigner.username,
+
+                "assignee": schedule.assignee.get_full_name() or schedule.assignee.username,
+
+                "reviewer": (
+                    schedule.reviewer.get_full_name() or schedule.reviewer.username
+                ) if schedule.reviewer else "-",
+
+                "schedule_type": schedule.get_schedule_type_display(),
+
+                "frequency": (
+                    schedule.get_frequency_display()
+                    if schedule.frequency
+                    else "-"
+                ),
+
+                "start_date": schedule.start_date,
+
+                "end_date": schedule.end_date,
+
+                "next_run_date": schedule.next_run_date,
+
+                "last_run_date": schedule.last_run_date,
+
+                "status": schedule.status,
+
+                "priority": schedule.priority,
+
+                "total_assignments_created": schedule.total_assignments_created,
+
+            })
+
+        return Response(
+            {
+                "success": True,
+                "count": len(data),
+                "data": data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+
+class UpdateEmissionScheduleAPIView(APIView):
+
+    @transaction.atomic
+    def post(self, request, schedule_id):
+
+        schedule = get_object_or_404(
+            EmissionAssignmentSchedule,
+            id=schedule_id,
+        )
+
+        form = EmissionAssignmentScheduleForm(
+            data=request.data,
+            instance=schedule,
+        )
+
+        if not form.is_valid():
+            return Response(
+                {
+                    "success": False,
+                    "errors": form.errors,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        schedule = form.save()
+
+        return Response(
+            {
+                "success": True,
+                "message": "Schedule updated successfully.",
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class ToggleEmissionScheduleAPIView(APIView):
+
+    @transaction.atomic
+    def post(self, request, schedule_id):
+
+        schedule = get_object_or_404(
+            EmissionAssignmentSchedule,
+            id=schedule_id,
+        )
+
+        if schedule.status == "ACTIVE":
+
+            schedule.status = "PAUSED"
+            schedule.is_active = False
+
+        elif schedule.status == "PAUSED":
+
+            schedule.status = "ACTIVE"
+            schedule.is_active = True
+
+        schedule.save(
+            update_fields=[
+                "status",
+                "is_active",
+            ]
+        )
+
+        return Response(
+            {
+                "success": True,
+                "status": schedule.status,
+                "message": f"Schedule {schedule.status.lower()} successfully.",
+            }
+        )
+
+    
+
+
+class DeleteEmissionScheduleAPIView(APIView):
+
+    @transaction.atomic
+    def delete(self, request, schedule_id):
+
+        schedule = get_object_or_404(EmissionAssignmentSchedule,id=schedule_id,)
+
+        schedule.delete()
+
+        return Response(
+            {
+                "success": True,
+                "message": "Schedule deleted successfully.",
             }
         )
