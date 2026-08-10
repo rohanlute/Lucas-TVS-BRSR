@@ -265,6 +265,14 @@ class EmissionAssignment(models.Model):
         related_name="assignments"
     )
 
+    schedule = models.ForeignKey(
+        "EmissionAssignmentSchedule",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="generated_assignments",
+    )
+
     workflow_template = models.ForeignKey(
         ApprovalConfigurationTemplate,
         on_delete=models.SET_NULL,
@@ -872,3 +880,40 @@ class EmissionAssignmentSchedule(models.Model):
     @property
     def is_one_time(self):
         return self.schedule_type == "ONE_TIME"
+
+
+
+class EmissionAssignmentScheduleSource(models.Model):
+
+    schedule = models.ForeignKey(
+        "EmissionAssignmentSchedule",
+        on_delete=models.CASCADE,
+        related_name="schedule_sources",
+    )
+
+    source = models.ForeignKey(
+        EmissionSource,
+        on_delete=models.PROTECT,
+        related_name="schedule_sources",
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+    )
+
+    class Meta:
+
+        db_table = "env_emission_assignment_schedule_source"
+
+        unique_together = (
+            "schedule",
+            "source",
+        )
+
+        ordering = [
+            "schedule",
+            "source",
+        ]
+
+    def __str__(self):
+        return f"{self.schedule.schedule_code} - {self.source.source_name}"
