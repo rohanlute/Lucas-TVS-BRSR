@@ -2852,6 +2852,18 @@ class AssignmentReviewCommentView(LoginRequiredMixin, TemplateView):
         assignment_id = kwargs.get("assignment_id")
         user = self.request.user
 
+        def _normalize_json(value):
+            if isinstance(value, (dict, list)):
+                return value
+            if not value:
+                return {}
+            if isinstance(value, str):
+                try:
+                    return json.loads(value)
+                except json.JSONDecodeError:
+                    return {}
+            return {}
+
         assignment = get_object_or_404(
             _my_dashboard_assignment_queryset(user).select_related(
                 "plant",
@@ -2910,7 +2922,7 @@ class AssignmentReviewCommentView(LoginRequiredMixin, TemplateView):
                     "options": question.options or [],
                     "validation_rules": question.validation_rules or {},
                     "response_value": response.response_value if response else "",
-                    "response_json": response.response_json if response else {},
+                    "response_json": _normalize_json(response.response_json if response else {}),
                     "review_remark": response.review_remark if response else "",
                     "submitted_by": str(response.submitted_by) if response and response.submitted_by else "",
                     "submitted_at": response.submitted_at if response else None,
@@ -2918,6 +2930,7 @@ class AssignmentReviewCommentView(LoginRequiredMixin, TemplateView):
                     "reviewed_by": str(response.reviewed_by) if response and response.reviewed_by else "",
                     "reviewed_at": response.reviewed_at if response else None,
                     "documents": documents,
+                    "rendered_html": _render_question_readonly_html(question, response),
                 }
             )
 

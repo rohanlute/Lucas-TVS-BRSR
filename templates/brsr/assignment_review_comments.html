@@ -293,22 +293,20 @@
 
   .questions-stack{
     display:grid;
-    gap:16px;
+    gap:18px;
   }
 
   .group-block{
     background:var(--surface);
     border:1px solid var(--border);
-    border-radius:18px;
+    border-radius:20px;
     overflow:hidden;
     box-shadow:var(--shadow);
   }
 
   .group-head{
-    padding:16px 18px;
-    background:
-      radial-gradient(circle at top right, rgba(37,99,235,.08), transparent 34%),
-      linear-gradient(180deg,#fff 0%, #fafcff 100%);
+    padding:18px 20px;
+    background:linear-gradient(135deg,#f8fbff 0%, #ffffff 100%);
     border-bottom:1px solid var(--border);
     display:flex;
     justify-content:space-between;
@@ -319,7 +317,7 @@
   .group-head h2{
     margin:0;
     font-family:var(--font-display);
-    font-size:16px;
+    font-size:17px;
     font-weight:700;
     color:var(--ink);
   }
@@ -331,21 +329,24 @@
   }
 
   .group-body{
-    padding:16px;
+    padding:18px;
     display:grid;
-    gap:14px;
+    gap:16px;
   }
 
   .question-container{
     border:1px solid var(--border);
-    border-radius:16px;
+    border-radius:18px;
     overflow:hidden;
     background:#fff;
+    box-shadow:0 10px 24px rgba(28,44,73,.05);
   }
 
   .question-header{
     padding:16px 18px;
-    background:#fafcff;
+    background:
+      radial-gradient(circle at top right, rgba(37,99,235,.06), transparent 30%),
+      #fbfcff;
     border-bottom:1px solid var(--border);
     display:flex;
     justify-content:space-between;
@@ -435,12 +436,74 @@
 
   .response-render{
     padding:10px 14px 14px;
+    max-height:500px;
+    overflow-y:auto;
+    overflow-x:auto;
+    word-wrap:break-word;
+  }
+
+  .response-render::-webkit-scrollbar{
+    width:6px;
+    height:6px;
+  }
+
+  .response-render::-webkit-scrollbar-track{
+    background:#f1f5f9;
+    border-radius:4px;
+  }
+
+  .response-render::-webkit-scrollbar-thumb{
+    background:#cfd7e6;
+    border-radius:4px;
+  }
+
+  .response-render::-webkit-scrollbar-thumb:hover{
+    background:#b0b9cc;
   }
 
   .no-response{
     padding:14px;
     color:var(--muted);
     font-style:italic;
+  }
+
+  .question-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(420px,1fr));
+    gap:16px;
+  }
+
+  .question-card{
+    border:1px solid var(--border);
+    border-radius:18px;
+    background:#fff;
+    box-shadow:0 8px 20px rgba(28,44,73,.05);
+    overflow:hidden;
+  }
+
+  .question-card-head{
+    padding:16px 18px;
+    border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg,#fff 0%, #fafcff 100%);
+  }
+
+  .question-card-head h3{
+    margin:0;
+    font-size:15px;
+    font-weight:800;
+    color:var(--ink);
+  }
+
+  .question-card-head .meta{
+    margin-top:6px;
+    font-size:12px;
+    color:var(--muted);
+  }
+
+  .question-card-body{
+    padding:16px 18px 18px;
+    display:grid;
+    gap:12px;
   }
 
   /* ---- Workspace-style form rendering (read-only), matches assignment_detail.html ---- */
@@ -471,6 +534,7 @@
     font-size:13px;
     padding:10px 12px;
     outline:none;
+    box-sizing:border-box;
   }
 
   .workspace-textarea.form-textarea{
@@ -529,21 +593,41 @@
     max-width:100%;
     min-width:0;
     overflow-x:auto;
-    overflow-y:hidden;
+    overflow-y:auto;
     display:block;
     border:1px solid var(--border);
     border-radius:12px;
     background:#fff;
     -webkit-overflow-scrolling:touch;
+    max-height:400px;
+  }
+
+  .table-container::-webkit-scrollbar{
+    width:6px;
+    height:6px;
+  }
+
+  .table-container::-webkit-scrollbar-track{
+    background:#f1f5f9;
+    border-radius:4px;
+  }
+
+  .table-container::-webkit-scrollbar-thumb{
+    background:#cfd7e6;
+    border-radius:4px;
+  }
+
+  .table-container::-webkit-scrollbar-thumb:hover{
+    background:#b0b9cc;
   }
 
   .table-container > table,
   .data-table{
-    width:max-content;
+    width:100%;
+    min-width:100%;
     max-width:none;
     table-layout:auto;
     border-collapse:collapse;
-    min-width:560px;
   }
 
   .table-container > table th,
@@ -554,7 +638,6 @@
     padding:10px 12px;
     vertical-align:top;
     font-size:13px;
-    white-space:nowrap;
   }
 
   .table-container > table th,
@@ -562,6 +645,9 @@
     background:#f8fafc;
     color:var(--ink);
     font-weight:700;
+    position:sticky;
+    top:0;
+    z-index:2;
   }
 
   .table-container > table input,
@@ -571,7 +657,7 @@
   .data-table textarea,
   .data-table select{
     width:100%;
-    min-width:140px;
+    min-width:100px;
     box-sizing:border-box;
     border:1px solid var(--border);
     border-radius:8px;
@@ -591,9 +677,21 @@
     opacity:1;
   }
 
+  .response-box .table-container{
+    max-width:100%;
+    overflow-x:auto;
+    overflow-y:auto;
+    max-height:400px;
+  }
+
+  .response-box .data-table{
+    width:100%;
+    min-width:600px;
+  }
+
   .table-container > table textarea,
   .data-table textarea{
-    min-width:220px;
+    min-width:150px;
     min-height:64px;
     resize:vertical;
   }
@@ -602,6 +700,7 @@
     margin-top:10px;
     display:grid;
     gap:6px;
+    padding:0 14px 14px;
   }
 
   .uploaded-file a{
@@ -647,6 +746,7 @@
     margin:0 14px 14px;
     width:calc(100% - 28px);
     transition:border-color .15s ease, box-shadow .15s ease;
+    box-sizing:border-box;
   }
 
   .comment-input:focus{
@@ -711,6 +811,12 @@
     background:#fbfcff;
   }
 
+  .question-divider{
+    height:1px;
+    background:var(--border);
+    margin:8px 0;
+  }
+
   .footer-note.has-comment{
     border-top-color:#fdba74;
     background:#fff7ed;
@@ -769,8 +875,48 @@
     color:var(--danger);
   }
 
+  /* KV container for JSON responses */
+  .kv-container{
+    display:grid;
+    gap:8px;
+  }
+
+  .kv-row{
+    display:grid;
+    grid-template-columns:minmax(120px,1fr) 2fr;
+    gap:12px;
+    padding:6px 0;
+    border-bottom:1px solid var(--border);
+    font-size:13px;
+  }
+
+  .kv-row:last-child{
+    border-bottom:none;
+  }
+
+  .kv-key{
+    font-weight:700;
+    color:var(--ink-soft);
+  }
+
+  .kv-value{
+    color:var(--ink);
+    word-break:break-word;
+  }
+
+  .sub-section-title{
+    font-weight:700;
+    color:var(--ink);
+    padding:8px 0 4px;
+    border-bottom:2px solid var(--border);
+    margin-top:8px;
+  }
+
   @media (max-width: 1100px){
     .hero-card-inner{
+      grid-template-columns:1fr;
+    }
+    .question-grid{
       grid-template-columns:1fr;
     }
   }
@@ -836,6 +982,19 @@
     .data-table th,
     .data-table td{
       padding:8px 10px;
+    }
+
+    .kv-row{
+      grid-template-columns:1fr;
+      gap:4px;
+    }
+
+    .response-render{
+      max-height:350px;
+    }
+
+    .table-container{
+      max-height:300px;
     }
   }
 </style>
@@ -953,11 +1112,15 @@
                   <div class="response-box">
                     <span class="response-label">Submitted Response</span>
                     <div class="response-render" id="response-render-{{ question.question_id }}" data-question-id="{{ question.question_id }}">
-                      <div class="no-response">Loading response…</div>
+                      {% if question.rendered_html %}
+                        {{ question.rendered_html|safe }}
+                      {% else %}
+                        <div class="no-response">-</div>
+                      {% endif %}
                     </div>
 
                     {% if question.documents %}
-                      <div class="uploaded-files" style="padding:0 14px 14px;">
+                      <div class="uploaded-files">
                         {% for doc in question.documents %}
                           <div class="uploaded-file">
                             <a href="{{ doc.url }}" target="_blank">📄 {{ doc.name }}</a>
@@ -1324,10 +1487,79 @@
   }
 
   function initTableRows(question) {
-    const existing = question.response_json && Array.isArray(question.response_json.rows)
-      ? question.response_json.rows
-      : null;
-    return existing && existing.length ? existing : [];
+    const responseJson = question.response_json && typeof question.response_json === 'object'
+      ? question.response_json
+      : {};
+    const schema = tableSchema(question);
+    const existing = Array.isArray(responseJson.rows)
+      ? responseJson.rows
+      : Array.isArray(responseJson.table_rows)
+        ? responseJson.table_rows
+        : Array.isArray(responseJson.data)
+          ? responseJson.data
+          : null;
+    if (existing && existing.length) return existing;
+
+    const rowDefs = Array.isArray(schema.rows) ? schema.rows : [];
+    if (rowDefs.length) {
+      return rowDefs.map((rowDef) => {
+        const rowValue = {};
+        (rowDef.fields || []).forEach((field) => {
+          rowValue[field.name || field.column || field.label || ''] = responseJson[field.name] ?? responseJson[field.column] ?? responseJson[field.label] ?? '';
+        });
+        return rowValue;
+      });
+    }
+
+    return [];
+  }
+
+  function getTableCellValue(row, column, question) {
+    const schema = tableSchema(question);
+    const responseJson = question.response_json && typeof question.response_json === 'object'
+      ? question.response_json
+      : {};
+
+    const candidates = [];
+    if (typeof column === 'string') {
+      candidates.push(column, column.toLowerCase());
+    } else if (column && typeof column === 'object') {
+      candidates.push(column.key, column.name, column.label);
+      if (column.column) candidates.push(column.column);
+      if (column.field_name) candidates.push(column.field_name);
+    }
+
+    if (row && typeof row === 'object') {
+      candidates.push(
+        row[column?.key],
+        row[column?.name],
+        row[column?.label],
+        row[column?.column],
+        row[column?.field_name],
+      );
+    }
+
+    for (const candidate of candidates) {
+      if (candidate === undefined || candidate === null || candidate === '') continue;
+      if (row && typeof row === 'object' && Object.prototype.hasOwnProperty.call(row, candidate)) {
+        return row[candidate];
+      }
+      if (Object.prototype.hasOwnProperty.call(responseJson, candidate)) {
+        return responseJson[candidate];
+      }
+      const rows = Array.isArray(schema.rows) ? schema.rows : [];
+      for (const rowDef of rows) {
+        for (const fieldDef of (rowDef.fields || [])) {
+          if (fieldDef.name === candidate || fieldDef.column === candidate || fieldDef.label === candidate) {
+            if (Object.prototype.hasOwnProperty.call(responseJson, fieldDef.name)) return responseJson[fieldDef.name];
+            if (Object.prototype.hasOwnProperty.call(responseJson, fieldDef.column)) return responseJson[fieldDef.column];
+            if (Object.prototype.hasOwnProperty.call(responseJson, fieldDef.label)) return responseJson[fieldDef.label];
+          }
+        }
+      }
+    }
+
+    return '';
   }
 
   function getStoredFieldValue(question, fieldName, fallback = '') {
@@ -1409,13 +1641,15 @@
     }
 
     if (field.kind === 'table') {
-      const columns = Array.isArray(field.columns) ? field.columns : [];
+      const schema = tableSchema(question);
+      const columns = defaultTableColumns(question);
       const rows = Array.isArray(fieldValue) ? fieldValue : [];
-      if (!rows.length) {
+      const normalizedRows = rows.length ? rows : initTableRows(question);
+      if (!normalizedRows.length) {
         return `
           <div class="form-group">
             <label class="form-label">${escapeHtml(fieldLabel)}</label>
-            <div class="no-response">No data submitted</div>
+            <div class="no-response">-</div>
           </div>
         `;
       }
@@ -1425,15 +1659,24 @@
           <div class="table-container">
             <table class="data-table">
               <thead>
-                <tr>
-                  ${columns.map((column) => `<th>${escapeHtml(column)}</th>`).join('')}
-                </tr>
+                ${Array.isArray(schema.header_rows) && schema.header_rows.length
+                  ? schema.header_rows.map((headerRow) => `
+                      <tr>
+                        ${headerRow.map((cell) => `<th>${escapeHtml(cell)}</th>`).join('')}
+                        ${headerRow.length < columns.length ? `<th colspan="${columns.length - headerRow.length}"></th>` : ''}
+                      </tr>
+                    `).join('')
+                  : `
+                    <tr>
+                      ${columns.map((column) => `<th>${escapeHtml(column.label || column.key || column.name || column)}</th>`).join('')}
+                    </tr>
+                  `}
               </thead>
               <tbody>
-                ${rows.map((row) => `
+                ${normalizedRows.map((row) => `
                   <tr>
                     ${columns.map((column) => {
-                      const cellValue = row?.[column] ?? row?.[column.toLowerCase()] ?? '';
+                      const cellValue = getTableCellValue(row, column, question);
                       return `<td><input type="text" value="${escapeHtml(cellValue)}" ${disabledAttr}></td>`;
                     }).join('')}
                   </tr>
@@ -1558,9 +1801,10 @@
     }
 
     if (['table', 'nested_table', 'matrix', 'repeating_section'].includes(question.question_type)) {
+      const schema = tableSchema(question);
       const columns = defaultTableColumns(question);
       const rows = initTableRows(question);
-      if (!rows.length) return '<div class="no-response">No response submitted yet</div>';
+      if (!rows.length) return '<div class="no-response">-</div>';
       const headerRows = Array.isArray(schema.header_rows) ? schema.header_rows : [];
       const renderHeader = headerRows.length
         ? headerRows.map((headerRow) => `
@@ -1586,8 +1830,7 @@
                 ${rows.map((row) => `
                   <tr>
                     ${columns.map((column) => {
-                      const key = column.key || column.name;
-                      const cell = row?.[key] ?? '';
+                      const cell = getTableCellValue(row, column, question);
                       const inputType = column.type || 'text';
                       if (inputType === 'textarea') {
                         return `<td><textarea ${disabledAttr}>${escapeHtml(cell)}</textarea></td>`;
@@ -1607,7 +1850,7 @@
       `;
     }
 
-    if (!value) return '<div class="no-response">No response submitted yet</div>';
+    if (!value) return '<div class="no-response">-</div>';
     return `
       <div class="form-group">
         <label class="form-label">Response</label>
@@ -1632,15 +1875,13 @@
       const qId = getQuestionId(question);
       const target = document.getElementById(`response-render-${qId}`);
       if (!target) return;
-      try {
-        target.innerHTML = renderQuestionInput(question);
-      } catch (error) {
-        console.error('Unable to render question', qId, error);
-        target.innerHTML = '<div class="no-response">Unable to render this response.</div>';
-      }
+      // Only render if it's empty (prefer server-rendered HTML)
+      if (target.innerHTML.trim()) return;
+      target.innerHTML = question.rendered_html || '<div class="no-response">-</div>';
     });
   }
 
+  // Render responses on page load
   renderQuestionResponses();
 </script>
 {% endblock %}
