@@ -2452,7 +2452,6 @@ from .models import (
 
 
 class SubmitAssignmentView(View):
-    print("===== SubmitAssignmentView Called =====")
     @transaction.atomic
     def post(self, request):
 

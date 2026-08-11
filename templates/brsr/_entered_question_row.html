@@ -49,7 +49,6 @@
               </span>
             {% endif %}
           </div>
-          <span class="status-badge {{ entry.status }}" style="flex-shrink:0;">{{ entry.status_display }}</span>
         </div>
         
         {% if entry.has_multiple_periods %}
@@ -98,18 +97,6 @@
               </div>
             {% endfor %}
           </div>
-          
-          {% if entry.reviewed_by %}
-            <div class="review-comment-box">
-              <span class="review-label">✅ Reviewed By</span>
-              <p>{{ entry.reviewed_by }}</p>
-              {% if entry.reviewed_at %}
-                <small style="color:var(--muted); font-size:11px; display:block; margin-top:4px;">
-                  Reviewed on {{ entry.reviewed_at|date:"M d, Y H:i" }}
-                </small>
-              {% endif %}
-            </div>
-          {% endif %}
         </div>
       </div>
     {% empty %}

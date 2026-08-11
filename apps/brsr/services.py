@@ -103,6 +103,9 @@ def _period_due_date(schedule: AssignmentSchedule, trigger_date: date):
     """Best-effort due date for the generated Assignment, based on the
     schedule's own configuration. Never required for generation to
     succeed — falls back to None (no due date) if it can't be computed."""
+    due_period_days = getattr(schedule, "due_period_days", None)
+    if due_period_days:
+        return trigger_date + timedelta(days=int(due_period_days))
     if schedule.frequency == 'weekly' and schedule.weekly_end_day is not None and schedule.weekly_start_day is not None:
         delta_days = (schedule.weekly_end_day - schedule.weekly_start_day) % 7
         return trigger_date + timedelta(days=delta_days)
@@ -273,7 +276,7 @@ def run_daily_schedule_generation(today=None):
 def build_schedule(*, created_by, plant, section, principle, financial_year,
                     assignee, reviewer, frequency, weekly_start_day=None,
                     weekly_end_day=None, selected_months=None,
-                    selected_quarters=None, priority='medium', notes='',
+                    selected_quarters=None, priority='medium', due_period_days=None, notes='',
                     name='', workflow_template=None, question_queryset=None):
     """
     Persist a reusable AssignmentSchedule carrying every bit of context a
@@ -302,6 +305,7 @@ def build_schedule(*, created_by, plant, section, principle, financial_year,
         selected_months=selected_months or [],
         selected_quarters=selected_quarters or [],
         priority=priority,
+        due_period_days=due_period_days,
         notes=notes,
         created_by=created_by,
         assignee_content_type=user_ct,
@@ -399,6 +403,7 @@ def create_assignment_and_optional_schedule(*, user, section, principle, cleaned
         selected_months=cleaned_data.get("selected_months") or [],
         selected_quarters=cleaned_data.get("selected_quarters") or [],
         priority=cleaned_data.get("priority", "medium"),
+        due_period_days=cleaned_data.get("due_period_days"),
         notes=cleaned_data.get("notes"),
         name=cleaned_data.get("schedule_name") or "",
         workflow_template=workflow_template,

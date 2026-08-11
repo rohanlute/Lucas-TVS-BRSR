@@ -403,7 +403,14 @@ class Assignment(models.Model):
 
     @property
     def is_overdue(self):
-        return (self.due_date and self.due_date < timezone.now().date() and self.overall_status not in ("submitted", "completed"))
+        if not self.due_date:
+            return False
+        if self.overall_status in {"submitted", "completed"}:
+            return False
+        stage_type = self.workflow_stage_type
+        if stage_type and stage_type != "data_entry":
+            return False
+        return self.due_date < timezone.now().date()
 
     @property
     def overall_status(self):
@@ -681,6 +688,11 @@ class AssignmentSchedule(models.Model):
     priority = models.CharField(max_length=10, choices=[
         ('low', 'Low'), ('medium', 'Medium'), ('high', 'High'), ('urgent', 'Urgent'),
     ], default='medium')
+    due_period_days = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Number of days allowed to complete each generated assignment.",
+    )
     notes = models.TextField(blank=True, null=True)
     created_by = models.ForeignKey(
         'accounts.User', on_delete=models.SET_NULL, null=True, blank=True, related_name='+'
@@ -706,4 +718,4 @@ class AssignmentSchedule(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return self.name or self.schedule_id    
+        return self.name or self.schedule_id
