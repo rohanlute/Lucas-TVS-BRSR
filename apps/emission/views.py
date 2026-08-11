@@ -1150,7 +1150,7 @@ class ESGDisclosureView(TemplateView):
     def get(self, request, *args, **kwargs):
         # Check if PDF download is requested
         if request.GET.get('download_pdf'):
-            from apps.emission.services.pdf_generator import generate_emission_pdf_report
+            from apps.emission.service.pdf_generator import generate_emission_pdf_report
             from django.http import HttpResponse
             from django.utils import timezone
             from apps.accounts.models import User
