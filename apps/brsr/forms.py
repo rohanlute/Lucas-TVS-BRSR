@@ -174,6 +174,12 @@ class AssignmentScheduleForm(forms.ModelForm):
         widget=forms.NumberInput(attrs={"class": "workspace-input"}),
         label="Reviewer ID"
     )
+    due_period_days = forms.IntegerField(
+        required=False,
+        min_value=1,
+        widget=forms.NumberInput(attrs={"class": "workspace-input", "placeholder": "e.g. 15"}),
+        label="Due Period (days)"
+    )
     question_ids = forms.ModelMultipleChoiceField(
         queryset=BRSRQuestion.objects.none(),
         to_field_name='question_id',
@@ -194,7 +200,7 @@ class AssignmentScheduleForm(forms.ModelForm):
         model = AssignmentSchedule
         fields = [
             "name", "plant", "financial_year", "frequency",
-            "weekly_start_day", "weekly_end_day", "priority", "notes",
+            "weekly_start_day", "weekly_end_day", "priority", "due_period_days", "notes",
         ]
         widgets = {
             "name": forms.TextInput(attrs={"class": "workspace-input", "placeholder": "e.g. Monthly Energy Data Collection"}),

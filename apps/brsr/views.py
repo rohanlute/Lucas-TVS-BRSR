@@ -995,7 +995,7 @@ def _assignment_context(section, principle, questions, assignment=None, user=Non
     }
 
 
-def _is_section_locked_for_new_assignment(user, plant, section, principle, financial_year):
+def _is_section_locked_for_new_assignment(user, plant, section, principle, financial_year, question_ids=None):
     """
     True if this plant/section/principle/financial_year combination has
     already been sent to (or past) Pre-Final Approval. Once locked, no new
@@ -1009,11 +1009,25 @@ def _is_section_locked_for_new_assignment(user, plant, section, principle, finan
         _plant_scope_assignment_queryset(user, plant)
         .filter(section_id=section.id, financial_year=financial_year)
         .select_related("plant", "section", "principle", "workflow_template")
+        .prefetch_related("questions")
     )
     if principle:
         assignments = [a for a in assignments if a.principle_id == principle.id]
     else:
         assignments = [a for a in assignments if a.principle_id is None]
+
+    if not assignments:
+        return False
+
+    if question_ids:
+        existing_question_ids = set()
+        for assignment in assignments:
+            existing_question_ids.update(assignment.questions.values_list("id", flat=True))
+        
+        for q_id in question_ids:
+            if q_id in existing_question_ids:
+                return True
+        return False
 
     locked_stages = {"pre_final_approval", "final_approval"}
     for assignment in assignments:
@@ -1027,17 +1041,30 @@ def _is_section_locked_for_new_assignment(user, plant, section, principle, finan
             return True
     return False
 
-
 def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_queryset, workflow_template_override=None):
     plant = cleaned_data["plant"]
     financial_year = cleaned_data["financial_year"]
     period_code = cleaned_data.get("period_code")
-    if _is_section_locked_for_new_assignment(user, plant, section, principle, financial_year):
-        raise ValueError(
-            "This section has already been sent for Pre-Final Approval for this "
-            "plant and financial year. No new assignment can be created until "
-            "the current one is approved or rejected."
+    question_ids = list(question_queryset.values_list("id", flat=True))
+    if _is_section_locked_for_new_assignment(user, plant, section, principle, financial_year, question_ids=question_ids):
+        existing_assignments = _plant_scope_assignment_queryset(user, plant).filter(
+            section_id=section.id, 
+            financial_year=financial_year
         )
+        if principle:
+            existing_assignments = existing_assignments.filter(principle_id=principle.id)
+        else:
+            existing_assignments = existing_assignments.filter(principle__isnull=True)
+        
+        existing_question_ids = set()
+        for assignment in existing_assignments:
+            existing_question_ids.update(assignment.questions.values_list("id", flat=True))
+        
+        duplicate_questions = [q_id for q_id in question_ids if q_id in existing_question_ids]
+        raise ValueError(
+            f"The following questions are already assigned to this plant and financial year: {duplicate_questions}. "
+            "Please select different questions or complete the existing assignment first."
+        ) 
     force_create = cleaned_data.get("force_create", False)
     workflow_template = workflow_template_override or _resolve_brsr_workflow_template(user=user, plant=plant)
     if not workflow_template:
@@ -1072,23 +1099,7 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
 
     user_ct = ContentType.objects.get_for_model(User)
     assigner = cleaned_data.get("assigner") or user
-    existing = Assignment.objects.filter(
-        plant=plant,
-        section=section,
-        principle=principle,
-        financial_year=financial_year,
-        period_code=period_code,
-    ).order_by("-created_at").first()
-    if existing:
-        if existing.overall_status != 'completed':
-            raise ValueError(
-                "An active assignment already exists for this period. Please complete or close the existing assignment first."
-            )
-        if not force_create:
-            raise ValueError(
-                "This assignment has already been submitted for this period. "
-                "Please confirm if you want to create another assignment."
-            )
+
     assignment = Assignment.objects.create(
         plant=plant,
         principle=principle,
@@ -2987,10 +2998,15 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
 
         active_question_payload = None
         if active_question:
-            response_qs = QuestionResponse.objects.filter(question=active_question)
+            response = None
             if assignment:
-                response_qs = response_qs.filter(assignment=assignment)
-            response = (response_qs.select_related("assignment").prefetch_related("documents").order_by("-updated_at", "-created_at").first())
+                response_qs = (
+                    QuestionResponse.objects.filter(question=active_question, assignment=assignment)
+                    .select_related("assignment")
+                    .prefetch_related("documents")
+                    .order_by("-updated_at", "-created_at")
+                )
+                response = response_qs.first()
             task = assignment.workflow_task if assignment and assignment.workflow_task else (response.workflow_task if response else None)
             documents = []
             if response:
@@ -3022,7 +3038,7 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
                     (response.is_editable if response else True)
                     and (assignment.is_editable if assignment else True)
                 ),
-                "assignment_id": response.assignment.assignment_id if response else "",
+                "assignment_id": response.assignment.assignment_id if response else (assignment.assignment_id if assignment else ""),
                 "workflow_stage": task.current_stage.label if task and task.current_stage_id else "",
                 "workflow_stage_type": task.current_stage.stage_type if task and task.current_stage_id else "",
                 "workflow_task": _serialize_workflow_task(task) if task else None,
