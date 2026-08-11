@@ -74,18 +74,6 @@ venv/
 .env/
 .venv/
 
-# =========================
-# Django
-# =========================
-# Ignore all migration files except __init__.py
-**/migrations/*
-!**/migrations/
-!**/migrations/__init__.py
-##
-#####add 
-#ehs360_project/settings.py
-ehs360_project/settings.py
-
 media/
 
 # Environment Variables
@@ -99,3 +87,11 @@ staticfiles/
 
 # Logs
 *.log
+
+#migrations file
+**/migrations/*
+!**/migrations/
+!**/migrations/__init__.py
+
+#settings
+config/settings.py

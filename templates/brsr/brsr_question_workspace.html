@@ -1294,12 +1294,14 @@
   const INITIAL_PRINCIPLE = "{{ current_principle_slug|default:''|escapejs }}";
   const INITIAL_QUESTION = "{{ active_question_id|default:''|escapejs }}";
   const INITIAL_ASSIGNMENT = "{{ assignment_id|default:''|escapejs }}";
+  const INITIAL_WORKSPACE_MODE = "{{ workspace_mode|default:''|escapejs }}";
 
   const state = {
     sectionCode: INITIAL_SECTION,
     principleSlug: INITIAL_PRINCIPLE,
     questionId: INITIAL_QUESTION,
     assignmentId: INITIAL_ASSIGNMENT,
+    workspaceMode: INITIAL_WORKSPACE_MODE,
     workspace: null,
     activeQuestion: null,
     isScheduleMode: false,
@@ -2903,6 +2905,7 @@ async function loadWorkspace(sectionCode, principleSlug, questionId, assignmentI
     if (principleSlug) params.set('principle_slug', principleSlug);
     if (questionId) params.set('question_id', questionId);
     if (assignmentId) params.set('assignment_id', assignmentId);
+    if (state.workspaceMode) params.set('mode', state.workspaceMode);
 
     try {
         const response = await fetch(`${API_WORKSPACE}?${params.toString()}`, { 
@@ -2936,7 +2939,8 @@ async function loadWorkspace(sectionCode, principleSlug, questionId, assignmentI
         
         // PRESERVE current question data before overwriting
         const currentQuestionData = {};
-        if (state.workspace && state.workspace.topics) {
+        const preserveExistingData = state.workspaceMode !== 'assign';
+        if (preserveExistingData && state.workspace && state.workspace.topics) {
             console.log('📦 Preserving current question data before reload...');
             state.workspace.topics.forEach(q => {
                 const qId = getQuestionId(q);
@@ -2956,7 +2960,7 @@ async function loadWorkspace(sectionCode, principleSlug, questionId, assignmentI
         
         // CRITICAL: Check if workspace has response data before overwriting
         // If the server returned empty data but we have saved data, use the saved data
-        if (workspace.topics) {
+        if (preserveExistingData && workspace.topics) {
             workspace.topics.forEach((q, index) => {
                 const qId = getQuestionId(q);
                 
@@ -3034,20 +3038,35 @@ async function loadWorkspace(sectionCode, principleSlug, questionId, assignmentI
   // ============================================================
   // Event Listeners
   // ============================================================
-  document.getElementById('openAssignModalBtn').addEventListener('click', openModal);
+  const openAssignModalBtn = document.getElementById('openAssignModalBtn');
+  if (openAssignModalBtn) {
+    openAssignModalBtn.addEventListener('click', openModal);
+  }
   const scheduleBtn = document.getElementById('createScheduleBtn');
   if (scheduleBtn) {
     scheduleBtn.addEventListener('click', () => openModal(true));
   }
   
-  document.getElementById('closeAssignModalBtn').addEventListener('click', closeModal);
-  document.getElementById('cancelAssignmentBtn').addEventListener('click', closeModal);
+  const closeAssignModalBtn = document.getElementById('closeAssignModalBtn');
+  if (closeAssignModalBtn) {
+    closeAssignModalBtn.addEventListener('click', closeModal);
+  }
+  const cancelAssignmentBtn = document.getElementById('cancelAssignmentBtn');
+  if (cancelAssignmentBtn) {
+    cancelAssignmentBtn.addEventListener('click', closeModal);
+  }
   
-  document.getElementById('submitAssignmentBtn').addEventListener('click', submitAssignmentResponses);
+  const submitAssignmentBtn = document.getElementById('submitAssignmentBtn');
+  if (submitAssignmentBtn) {
+    submitAssignmentBtn.addEventListener('click', submitAssignmentResponses);
+  }
   
-  document.getElementById('assignModal').addEventListener('click', (event) => { 
-    if (event.target.id === 'assignModal') closeModal(); 
-  });
+  const assignModal = document.getElementById('assignModal');
+  if (assignModal) {
+    assignModal.addEventListener('click', (event) => { 
+      if (event.target.id === 'assignModal') closeModal(); 
+    });
+  }
 
   const scheduleFieldsWrap = document.getElementById('scheduleFieldsWrap');
   const scheduleFrequencySelect = document.getElementById('scheduleFrequency');
@@ -3063,9 +3082,14 @@ async function loadWorkspace(sectionCode, principleSlug, questionId, assignmentI
     });
   }
 
-  scheduleFrequencySelect.addEventListener('change', updateScheduleFieldVisibility);
-  updateScheduleFieldVisibility();
-  document.getElementById('assignmentForm').addEventListener('submit', submitAssignment);
+  if (scheduleFrequencySelect) {
+    scheduleFrequencySelect.addEventListener('change', updateScheduleFieldVisibility);
+    updateScheduleFieldVisibility();
+  }
+  const assignmentForm = document.getElementById('assignmentForm');
+  if (assignmentForm) {
+    assignmentForm.addEventListener('submit', submitAssignment);
+  }
 
   // Set default due date to 30 days from now
   const dueDateInput = document.getElementById('assignmentDueDate');

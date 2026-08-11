@@ -366,6 +366,11 @@ def _my_assignment_ids(user):
     )
     ids |= set(
         Assignment.objects.filter(
+            assigner_content_type=user_ct, assigner_object_id=user.id
+        ).values_list("id", flat=True)
+    )
+    ids |= set(
+        Assignment.objects.filter(
             reviewer_links__reviewer_content_type=user_ct,
             reviewer_links__reviewer_object_id=user.id,
         ).values_list("id", flat=True)
@@ -1834,7 +1839,7 @@ class BRSRDashboardView(LoginRequiredMixin, TemplateView):
                 {
                     "section": section,
                     "question_count": question_count,
-                    "url": reverse("brsr:question_workspace_section", kwargs={"section_code": section.code}),
+                    "url": reverse("brsr:question_workspace_section", kwargs={"section_code": section.code}) + "?mode=assign",
                     "send_enabled": send_enabled,
                     "assignment_count": assignment_count,
                     "ready_for_pre_final": send_enabled,
@@ -1860,7 +1865,7 @@ class BRSRDashboardView(LoginRequiredMixin, TemplateView):
                     "url": reverse(
                         "brsr:question_workspace_principle",
                         kwargs={"section_code": "section_c", "principle_slug": principle.slug},
-                    ),
+                    ) + "?mode=assign",
                     "send_enabled": send_enabled,
                     "assignment_count": assignment_count,
                     "ready_for_pre_final": send_enabled,
@@ -3095,6 +3100,7 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
 
     def get(self, request, section_code=None, principle_slug=None, question_id=None):
         assignment_id = request.GET.get("assignment_id")
+        mode = request.GET.get("mode", "")
         context = self._build_context(section_code, principle_slug, question_id, assignment_id=assignment_id)
         if not context.get("section"):
             messages.info(request, "No active BRSR section found.")
@@ -3109,12 +3115,14 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
         context["assignment_options_api_url"] = reverse("brsr:assignment_options_api")
         context["assignment_dashboard_url"] = reverse("brsr:assignment_dashboard")
         context["assignment_id"] = assignment_id or ""
+        context["workspace_mode"] = mode
         context["current_section_code"] = section_code if section_code else (context["section"].code if context.get("section") else "")
         context["current_principle_slug"] = principle_slug if principle_slug else (context["principle"].slug if context.get("principle") else "")
         return render(request, self.template_name, context)
 
     def post(self, request, section_code=None, principle_slug=None, question_id=None):
         assignment_id = request.GET.get("assignment_id")
+        mode = request.GET.get("mode", "")
         context = self._build_context(section_code, principle_slug, question_id, assignment_id=assignment_id)
         active_questions = _pdf_questions_queryset().filter(section=context["section"])
         if context["principle"]:
@@ -3156,6 +3164,7 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
                         "assignment_options_api_url": reverse("brsr:assignment_options_api"),
                         "assignment_dashboard_url": reverse("brsr:assignment_dashboard"),
                         "assignment_form": form,
+                        "workspace_mode": mode,
                         "current_section_code": section_code if section_code else (context["section"].code if context.get("section") else ""),
                         "current_principle_slug": principle_slug if principle_slug else (context["principle"].slug if context.get("principle") else ""),
                     }
