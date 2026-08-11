@@ -1194,6 +1194,14 @@
 
           <div class="full" id="scheduleFieldsWrap">
             <div class="assignment-grid" style="padding:14px;border:1px dashed var(--border-strong);border-radius:12px;background:#fbfcff;">
+              <div class="full schedule-freq-fields" data-freq="weekly monthly quarterly annually" style="display:none;" id="duePeriodDaysWrap">
+                <label class="tool-label">
+                  Due Period (days)
+                </label>
+                <input class="workspace-input" type="number" min="1" name="due_period_days" id="assignmentDuePeriodDays" placeholder="e.g. 15">
+                <small style="display:block;margin-top:6px;color:var(--muted);">This due date window applies only to auto-scheduled assignments.</small>
+                <div class="invalid-feedback">Please enter a valid due period in days.</div>
+              </div>
               <div class="half schedule-freq-fields" data-freq="weekly" style="display:none;">
                 <label class="tool-label">Start Day</label>
                 <select class="workspace-select" id="scheduleWeeklyStart">
@@ -1242,7 +1250,7 @@
               </div>
 
               <div class="full schedule-freq-fields" data-freq="annually" style="display:none;">
-                <small style="color:var(--muted);">One assignment will be generated for the selected Financial Year.</small>
+                <small style="color:var(--muted);">One assignment will be generated for the selected Financial Year, and its due date will be calculated from the due period above.</small>
               </div>
             </div>
           </div>
@@ -2662,14 +2670,22 @@ function updateProgress() {
     return selected;
   }
 
-  function openModal() {
+  function openModal(isScheduleMode = false) {
     refreshSelectedList();
+    state.isScheduleMode = Boolean(isScheduleMode);
     document.getElementById('assignModal').classList.add('active');
     document.getElementById('assignmentForm').classList.remove('was-validated');
     document.querySelectorAll('#assignmentForm .is-invalid').forEach(el => el.classList.remove('is-invalid'));
+    const duePeriodWrap = document.getElementById('duePeriodDaysWrap');
+    if (duePeriodWrap) duePeriodWrap.style.display = state.isScheduleMode ? '' : 'none';
   }
   
-  function closeModal() { document.getElementById('assignModal').classList.remove('active'); }
+  function closeModal() {
+    document.getElementById('assignModal').classList.remove('active');
+    state.isScheduleMode = false;
+    const duePeriodWrap = document.getElementById('duePeriodDaysWrap');
+    if (duePeriodWrap) duePeriodWrap.style.display = 'none';
+  }
 
   // ============================================================
   // Enhanced Assignment Validation
@@ -3021,7 +3037,7 @@ async function loadWorkspace(sectionCode, principleSlug, questionId, assignmentI
   document.getElementById('openAssignModalBtn').addEventListener('click', openModal);
   const scheduleBtn = document.getElementById('createScheduleBtn');
   if (scheduleBtn) {
-    scheduleBtn.addEventListener('click', openModal);
+    scheduleBtn.addEventListener('click', () => openModal(true));
   }
   
   document.getElementById('closeAssignModalBtn').addEventListener('click', closeModal);
@@ -3039,6 +3055,10 @@ async function loadWorkspace(sectionCode, principleSlug, questionId, assignmentI
   function updateScheduleFieldVisibility() {
     const freq = scheduleFrequencySelect.value;
     document.querySelectorAll('.schedule-freq-fields').forEach((el) => {
+      if (el.id === 'duePeriodDaysWrap') {
+        el.style.display = freq ? '' : 'none';
+        return;
+      }
       el.style.display = el.getAttribute('data-freq') === freq ? '' : 'none';
     });
   }

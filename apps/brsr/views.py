@@ -2998,10 +2998,15 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
 
         active_question_payload = None
         if active_question:
-            response_qs = QuestionResponse.objects.filter(question=active_question)
+            response = None
             if assignment:
-                response_qs = response_qs.filter(assignment=assignment)
-            response = (response_qs.select_related("assignment").prefetch_related("documents").order_by("-updated_at", "-created_at").first())
+                response_qs = (
+                    QuestionResponse.objects.filter(question=active_question, assignment=assignment)
+                    .select_related("assignment")
+                    .prefetch_related("documents")
+                    .order_by("-updated_at", "-created_at")
+                )
+                response = response_qs.first()
             task = assignment.workflow_task if assignment and assignment.workflow_task else (response.workflow_task if response else None)
             documents = []
             if response:
@@ -3033,7 +3038,7 @@ class BRSRQuestionWorkspaceView(LoginRequiredMixin, TemplateView):
                     (response.is_editable if response else True)
                     and (assignment.is_editable if assignment else True)
                 ),
-                "assignment_id": response.assignment.assignment_id if response else "",
+                "assignment_id": response.assignment.assignment_id if response else (assignment.assignment_id if assignment else ""),
                 "workflow_stage": task.current_stage.label if task and task.current_stage_id else "",
                 "workflow_stage_type": task.current_stage.stage_type if task and task.current_stage_id else "",
                 "workflow_task": _serialize_workflow_task(task) if task else None,

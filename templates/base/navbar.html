@@ -715,9 +715,9 @@
                                              class="notification-avatar" 
                                              alt="{{ request.user.get_full_name|default:request.user.username }}">
                                     {% else %}
-                                        <img src="{% static 'images/avatar/1.png' %}" 
-                                             class="notification-avatar" 
-                                             alt="User">
+                                        <img src="{% static 'images/avatar/1.jpg' %}" 
+                                            alt="User avatar placeholder" 
+                                            class="img-fluid">
                                     {% endif %}
                                     
                                     <div class="notification-content">
@@ -796,7 +796,7 @@
                                              class="notification-avatar" 
                                              alt="{{ request.user.get_full_name|default:request.user.username }}">
                                     {% else %}
-                                        <img src="{% static 'images/avatar/1.png' %}" 
+                                        <img src="{% static 'images/avatar/1.jpg' %}" 
                                              class="notification-avatar" 
                                              alt="User">
                                     {% endif %}
@@ -868,7 +868,7 @@
         {% if request.user.profile_image %}
             <img src="{{ request.user.profile_image.url }}" alt="{{ request.user.full_name|default:request.user.username }}" class="img-fluid user-avtar me-0" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
         {% else %}
-            <img src="{% static 'images/avatar/1.png' %}" alt="user-image" class="img-fluid user-avtar me-0" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
+            <img src="{% static 'images/avatar/1.jpg' %}" alt="user-image" class="img-fluid user-avtar me-0" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
         {% endif %}
     </a>
     <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-user-dropdown" style="min-width: 220px; padding: 0.5rem 0;">
@@ -877,7 +877,7 @@
                 {% if request.user.profile_image %}
                     <img src="{{ request.user.profile_image.url }}" alt="{{ request.user.full_name|default:request.user.username }}" class="img-fluid user-avtar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 10px;" />
                 {% else %}
-                    <img src="{% static 'images/avatar/1.png' %}" alt="user-image" class="img-fluid user-avtar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 10px;" />
+                    <img src="{% static 'images/avatar/1.jpg' %}" alt="user-image" class="img-fluid user-avtar" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-right: 10px;" />
                 {% endif %}
                 <div>
                     <h6 class="text-dark mb-0" style="font-size: 0.85rem; font-weight: 600;">
