@@ -1166,7 +1166,7 @@ class BRSRReportView(TemplateView):
     """
     View for generating/ viewing a BRSR report
     """
-    template_name = "brsr/report.html"
+    template_name = "report/report_generate.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
