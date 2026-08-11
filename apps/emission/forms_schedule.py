@@ -149,6 +149,11 @@ class EmissionAssignmentScheduleForm(forms.ModelForm):
         quarters = cleaned_data.get("selected_quarters") or []
         half_years = cleaned_data.get("selected_half_years") or []
 
+        print("Frequency:", frequency)
+        print("Months:", months)
+        print("Quarters:", quarters)
+        print("Half Years:", half_years)
+
         source_ids = cleaned_data.get("source_ids")
 
         # --------------------------------------------------
@@ -193,19 +198,59 @@ class EmissionAssignmentScheduleForm(forms.ModelForm):
                     "End Date must be greater than Start Date."
                 )
 
-            if frequency == "MONTHLY" and not months:
-                raise forms.ValidationError(
-                    "Please select at least one month."
-                )
+            # ----------------------------------------
+            # Monthly
+            # ----------------------------------------
 
-            if frequency == "QUARTERLY" and not quarters:
-                raise forms.ValidationError(
-                    "Please select at least one quarter."
-                )
+            if frequency == "MONTHLY":
 
-            if frequency == "HALF_YEARLY" and not half_years:
-                raise forms.ValidationError(
-                    "Please select at least one half year."
-                )
+                if not months:
+                    raise forms.ValidationError(
+                        "Please select at least one month."
+                    )
+
+            # ----------------------------------------
+            # Quarterly
+            # ----------------------------------------
+
+            elif frequency == "QUARTERLY":
+
+                if not quarters:
+                    raise forms.ValidationError(
+                        "Please select at least one quarter."
+                    )
+
+                quarter_mapping = {
+                    "Q1": 1,
+                    "Q2": 4,
+                    "Q3": 7,
+                    "Q4": 10,
+                }
+
+                cleaned_data["selected_months"] = [
+                    quarter_mapping[q]
+                    for q in quarters
+                ]
+
+            # ----------------------------------------
+            # Half Yearly
+            # ----------------------------------------
+
+            elif frequency == "HALF_YEARLY":
+
+                if not half_years:
+                    raise forms.ValidationError(
+                        "Please select at least one half year."
+                    )
+
+                half_mapping = {
+                    "H1": 1,
+                    "H2": 7,
+                }
+
+                cleaned_data["selected_months"] = [
+                    half_mapping[h]
+                    for h in half_years
+                ]
 
         return cleaned_data

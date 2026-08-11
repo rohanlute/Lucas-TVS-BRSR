@@ -32,6 +32,11 @@ from .models import (
 from .forms_schedule import EmissionAssignmentScheduleForm
 from .utils import generate_schedule_code
 
+# Notication and Timesheet 
+from apps.common_events.event_context import EventContext
+from apps.common_events.constants import *
+from apps.common_events.services import EventService
+
 User = get_user_model()
 
 
@@ -263,7 +268,15 @@ class CoordinatorApproveAssignmentView(APIView):
                 "coordinator_comments",
             ]
         )
+        context = EventContext(
+            module=EMISSION,
+            entity=ASSIGNMENT,
+            action=FINAL_APPROVED,
+            target=assignment,
+            actor=request.user,
+        )
 
+        EventService.publish(context)
         return Response(
             {
                 "success": True,
@@ -321,6 +334,16 @@ class CoordinatorRejectAssignmentView(APIView):
             ]
         )
 
+        context = EventContext(
+            module=EMISSION,
+            entity=ASSIGNMENT,
+            action=FINAL_REJECTED,
+            target=assignment,
+            actor=request.user,
+        )
+
+        EventService.publish(context)
+
         return Response(
             {
                 "success": True,
@@ -372,6 +395,15 @@ class ApproveAssignmentView(APIView):
                 "reviewer",
             ]
         )
+
+        context = EventContext(
+            module=EMISSION,
+            entity=ASSIGNMENT,
+            action=REVIEW_APPROVED,
+            target=assignment,
+            actor=request.user,
+        )
+        EventService.publish(context)
 
         return Response(
             {
@@ -435,6 +467,16 @@ class RejectAssignmentView(APIView):
             ]
         )
 
+        context = EventContext(
+            module=EMISSION,
+            entity=ASSIGNMENT,
+            action=REVIEW_REJECTED,
+            target=assignment,
+            actor=request.user,
+        )
+        EventService.publish(context)
+
+
         return Response(
             {
                 "success": True,
@@ -465,11 +507,16 @@ class SaveEmissionScheduleAPIView(APIView):
 
         schedule.schedule_code = generate_schedule_code()
 
-        # First scheduler run
+        # Save the converted months from the form
+        schedule.selected_months = form.cleaned_data.get(
+            "selected_months",
+            []
+        )
+
+        # First execution date
         schedule.next_run_date = schedule.start_date
 
         schedule.save()
-        print("Selected Sources:", form.cleaned_data["source_ids"])
         # ----------------------------------------
         # Save Selected Emission Sources
         # ----------------------------------------
@@ -662,3 +709,116 @@ class DeleteEmissionScheduleAPIView(APIView):
                 "message": "Schedule deleted successfully.",
             }
         )
+
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+
+from .models import EmissionAssignmentSchedule
+
+
+class ToggleScheduleStatusAPIView(APIView):
+
+    def post(self, request):
+
+        schedule_id = request.data.get("schedule_id")
+
+        try:
+
+            schedule = EmissionAssignmentSchedule.objects.get(
+                id=schedule_id
+            )
+
+        except EmissionAssignmentSchedule.DoesNotExist:
+
+            return Response(
+                {
+                    "success": False,
+                    "message": "Schedule not found.",
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if schedule.is_active:
+
+            schedule.is_active = False
+            schedule.status = "PAUSED"
+
+        else:
+
+            schedule.is_active = True
+            schedule.status = "ACTIVE"
+
+        schedule.save(
+            update_fields=[
+                "is_active",
+                "status",
+            ]
+        )
+
+        return Response(
+            {
+                "success": True,
+                "status": schedule.status,
+                "is_active": schedule.is_active,
+                "message": f"Schedule {schedule.status.lower()} successfully.",
+            }
+        )
+
+
+
+
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+
+from .models import EmissionAssignmentSchedule
+
+
+class ScheduleHistoryAPIView(APIView):
+
+    def get(self, request, schedule_id):
+
+        try:
+            schedule = (
+                EmissionAssignmentSchedule.objects
+                .prefetch_related(
+                    "generated_assignments__financial_year",
+                    "generated_assignments__financial_month",
+                    "generated_assignments__assignee",
+                )
+                .get(id=schedule_id)
+            )
+
+        except EmissionAssignmentSchedule.DoesNotExist:
+
+            return Response(
+                {
+                    "success": False,
+                    "message": "Schedule not found.",
+                },
+                status=404,
+            )
+
+        data = []
+
+        for assignment in schedule.generated_assignments.order_by("-created_at"):
+
+            data.append({
+                "assignment_code": assignment.assignment_code,
+                "financial_year": str(assignment.financial_year),
+                "financial_month": str(assignment.financial_month),
+                "assignee": assignment.assignee.get_full_name()
+                if assignment.assignee else "",
+                "status": assignment.status,
+                "created_at": assignment.created_at.strftime("%d-%b-%Y"),
+            })
+
+        return Response({
+            "success": True,
+            "schedule": schedule.schedule_code,
+            "history": data,
+        })

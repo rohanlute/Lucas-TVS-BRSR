@@ -6,68 +6,6 @@ from django.utils import timezone
 from apps.emission.models import EmissionAssignment
 from .models import Timesheet, Notification
 
-
-@receiver(post_save, sender=EmissionAssignment)
-def create_timesheet_from_assignment(sender, instance, created, **kwargs):
-    """
-    Auto-create a timesheet when an assignment is created
-    """
-    if created and instance.assignee:
-        # Calculate duration (default to 7 days if no due date)
-        end_date = instance.due_date if instance.due_date else instance.created_at + timezone.timedelta(days=7)
-        
-        # Check if timesheet already exists
-        existing_timesheet = Timesheet.objects.filter(assignment=instance).first()
-        if existing_timesheet:
-            print(f"⚠️ Timesheet already exists for assignment {instance.id}")
-            return
-        
-        # Get title
-        title = None
-        if hasattr(instance, 'title') and instance.title:
-            title = f"Timesheet: {instance.title}"
-        elif hasattr(instance, 'name') and instance.name:
-            title = f"Timesheet: {instance.name}"
-        elif hasattr(instance, 'scope') and instance.scope and hasattr(instance.scope, 'name'):
-            title = f"Timesheet: {instance.scope.name}"
-        else:
-            title = f"Assignment #{instance.id}"
-        
-        # Create timesheet with 'assigned' status (New)
-        timesheet = Timesheet.objects.create(
-            user=instance.assignee,
-            assignment=instance,
-            company=instance.company,
-            title=title,
-            description=f"Auto-created from assignment #{instance.id}",
-            start_date=instance.created_at,
-            end_date=end_date,
-            status='assigned',  # New status
-            hours_worked=0
-        )
-        
-        # Create notification for the timesheet
-        try:
-            notification = Notification.objects.create(
-                company=instance.company,
-                sender=instance.assigner or instance.assignee,
-                recipient=instance.assignee,
-                module=Notification.ModuleChoices.EMISSION,
-                notification_type=Notification.NotificationTypeChoices.ASSIGNED,
-                title=f'New Timesheet: {title}',
-                message=f'You have been assigned a new timesheet. Please review it.',
-                reference_id=instance.id,
-                action_url=f'/emission/assignments/?assignment={instance.id}',
-                is_read=False
-            )
-            timesheet.notification = notification
-            timesheet.save(update_fields=['notification'])
-        except Exception as e:
-            print(f"Error creating notification for timesheet: {e}")
-        
-        print(f"✅ Timesheet created for assignment {instance.id}: {timesheet.title} (Status: {timesheet.status})")
-
-
 @receiver(post_save, sender=EmissionAssignment)
 def update_timesheet_on_assignment_update(sender, instance, created, **kwargs):
     """
@@ -95,10 +33,10 @@ def update_timesheet_on_assignment_update(sender, instance, created, **kwargs):
             print(f"✅ Timesheet updated for assignment {instance.id}\n")
             
         except Timesheet.DoesNotExist:
-            # If timesheet doesn't exist but assignment updated, create one
-            if instance.assignee:
-                print(f"⚠️ Timesheet not found for assignment {instance.id}, creating one...")
-                create_timesheet_from_assignment(sender, instance, created=False, **kwargs)
+            print(
+                f"⚠️ Timesheet not found for assignment "
+                f"{instance.assignment_code}"
+            )
         except Exception as e:
             print(f"❌ Error updating timesheet for assignment {instance.id}: {e}")
 

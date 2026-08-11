@@ -73,6 +73,7 @@ def due_schedules(today=None):
         EmissionAssignmentSchedule.objects
         .filter(
             status="ACTIVE",
+            is_active=True,
             next_run_date=today,
         )
         .select_related(
@@ -154,36 +155,70 @@ def run_daily_schedule_generation(today=None):
             )
             continue
 
-        assignment = create_emission_assignment(
+        print("=" * 60)
+        print("Creating assignment for:", schedule.schedule_code)
+        print("Source IDs:", source_ids)
+        print("Financial Year:", financial_year)
+        print("Financial Month:", financial_month)
 
-            company_id=schedule.company_id,
+        try:
 
-            plant_id=schedule.plant_id,
+            assignment = create_emission_assignment(
 
-            financial_year_id=financial_year.id,
+                company_id=schedule.company_id,
 
-            financial_month_id=financial_month.id,
+                plant_id=schedule.plant_id,
 
-            scope_id=schedule.scope_id,
+                financial_year_id=financial_year.id,
 
+                financial_month_id=financial_month.id,
+
+                scope_id=schedule.scope_id,
+
+                schedule=schedule,
+
+                assignee=schedule.assignee,
+
+                assigner=schedule.assigner,
+
+                reviewer=schedule.reviewer,
+
+                due_date=schedule.end_date,
+
+                priority=schedule.priority,
+
+                notes=schedule.notes,
+
+                source_ids=source_ids,
+            )
+
+            print("Returned Assignment:", assignment)
+
+            if assignment:
+                created.append(assignment)
+                print("Created Count:", len(created))
+            else:
+                print("Returned None")
+
+        except Exception as e:
+
+            print("=" * 60)
+            print("ERROR CREATING ASSIGNMENT")
+            print(type(e).__name__)
+            print(str(e))
+            print("=" * 60)
+
+            raise
+
+        print("Checking Duplicate...")
+
+        exists = EmissionAssignment.objects.filter(
             schedule=schedule,
+            financial_year=financial_year,
+            financial_month=financial_month,
+        ).exists()
 
-            assignee=schedule.assignee,
-
-            assigner=schedule.assigner,
-
-            reviewer=schedule.reviewer,
-
-            due_date=schedule.end_date,
-
-            priority=schedule.priority,
-
-            notes=schedule.notes,
-
-            source_ids=source_ids,
-        )
-
-        created.append(assignment)
+        print("Duplicate Exists:", exists)
 
         # ----------------------------------------
         # Complete One Time Schedule
@@ -217,11 +252,30 @@ def run_daily_schedule_generation(today=None):
 
         schedule.total_assignments_created += 1
 
-
-        schedule.next_run_date = calculate_next_run_date(
+        next_date = calculate_next_run_date(
             schedule,
             today,
         )
+
+        print("===================================")
+        print("Schedule :", schedule.schedule_code)
+        print("Frequency:", schedule.frequency)
+        print("Type     :", schedule.schedule_type)
+        print("Months   :", schedule.selected_months)
+        print("Today    :", today)
+        print("Next Date:", next_date)
+        print("===================================")
+
+        schedule.next_run_date = next_date
+
+        schedule.save(
+            update_fields=[
+                "last_run_date",
+                "next_run_date",
+                "total_assignments_created",
+            ]
+        )
+
 
         schedule.save(
             update_fields=[

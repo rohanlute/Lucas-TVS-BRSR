@@ -2,11 +2,13 @@ from django.urls import path
 from .views_excel import download_scope_template, upload_scope_template
 from .api_views import (ApproveAssignmentView, RejectAssignmentView, CoordinatorApproveAssignmentView,
     CoordinatorRejectAssignmentView,SaveEmissionScheduleAPIView,EmissionScheduleListAPIView,
-    UpdateEmissionScheduleAPIView,ToggleEmissionScheduleAPIView,DeleteEmissionScheduleAPIView)
+    UpdateEmissionScheduleAPIView,ToggleEmissionScheduleAPIView,DeleteEmissionScheduleAPIView,
+    ToggleScheduleStatusAPIView,ScheduleHistoryAPIView)
 from .views import (EmissionAssignmentDashboardView,EmissionsDashboardView,EmissionsDashboardDataView,
     PlantUsersAPIView,SaveEmissionAssignmentAPIView,ScopeDashboardView,ESGDisclosureView,
     CategoryActivitiesView,ActivityFactorView,SaveEmissionTransactionsView,LoadEmissionTransactionsView,
-    ScopeCategoriesView,EmissionAssignmentDetailView,SubmitAssignmentView,CheckAssignedSourcesAPIView,ESGDisclosureDataAPIView)
+    ScopeCategoriesView,EmissionAssignmentDetailView,SubmitAssignmentView,CheckAssignedSourcesAPIView,ESGDisclosureDataAPIView,
+    EmissionSchedulerDashboardView)
 
 app_name = "emission"
 
@@ -48,4 +50,8 @@ urlpatterns = [
     path("api/schedules/<int:schedule_id>/update/",UpdateEmissionScheduleAPIView.as_view(),name="update_schedule"),
     path("api/schedules/<int:schedule_id>/toggle/",ToggleEmissionScheduleAPIView.as_view(),name="toggle_schedule"),
     path("api/schedules/<int:schedule_id>/delete/",DeleteEmissionScheduleAPIView.as_view(),name="delete_schedule"),
+
+    path("scheduler/dashboard/",EmissionSchedulerDashboardView.as_view(),name="scheduler_dashboard"),
+    path("api/scheduler/toggle-status/",ToggleScheduleStatusAPIView.as_view(),name="toggle_schedule_status"),
+    path("api/scheduler/<int:schedule_id>/history/",ScheduleHistoryAPIView.as_view(),name="schedule_history"),
 ]
