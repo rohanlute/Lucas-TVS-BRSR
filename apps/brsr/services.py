@@ -429,5 +429,8 @@ def create_assignment_and_optional_schedule(*, user, section, principle, cleaned
                 f"An assignment already exists for {period_label or period_code} "
                 f"of {period_financial_year}."
             )
+    elif cleaned_data.get("due_date"):
+        assignment.due_date = cleaned_data["due_date"]
+        assignment.save(update_fields=["due_date", "updated_at"])
 
     return assignment, schedule
