@@ -2636,8 +2636,8 @@ function updateProgress() {
         ['<option value="">Select Reviewer</option>'].concat(reviewers.map((item) => `<option value="${item.id}">${escapeHtml(item.name)}${item.department_name ? ` (${escapeHtml(item.department_name)})` : ''}</option>`)).join('') : 
         '<option value="">No eligible reviewer found</option>';
 
-      if (defaultAssignee || assignees[0]) assigneeSelect.value = (defaultAssignee || assignees[0]).id.toString();
-      if (defaultReviewer) reviewerSelect.value = defaultReviewer.id.toString();
+      assigneeSelect.value = "";
+      reviewerSelect.value = "";
     } catch (error) {
       console.error('Error loading assignees:', error);
       assigneeSelect.innerHTML = '<option value="">Error loading assignees</option>';
