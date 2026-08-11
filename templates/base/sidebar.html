@@ -10,7 +10,131 @@
     max-height: 40px;
     width: auto;
 }
+.nxl-navigation .navbar-content {
+    padding: 0 4px;
+}
+.nxl-navigation .nxl-link {
+    padding: 10px 14px;
+    border-radius: 8px;
+    gap: 12px;
+    align-items: center;
+}
+.nxl-navigation .nxl-link .nxl-micon {
+    min-width: 24px;
+    text-align: center;
+    display: inline-flex;
+    justify-content: center;
+}
+.nxl-navigation .nxl-link i,
+.nxl-navigation .nxl-link .feather {
+    font-size: 18px;
+    width: 22px;
+    text-align: center;
+    flex-shrink: 0;
+}
+.nxl-navigation .nxl-link .nxl-mtext {
+    flex: 1;
+    font-weight: 500;
+}
+.nxl-navigation .nxl-arrow {
+    margin-left: auto;
+    font-size: 13px;
+    transition: transform 0.2s;
+}
+.nxl-navigation .nxl-submenu {
+    padding-left: 12px;
+    margin-left: 8px;
+    border-left: 1px solid #e9edf2;
+}
+.nxl-navigation .nxl-submenu .nxl-link {
+    padding: 8px 12px 8px 16px;
+    font-size: 13.5px;
+    gap: 10px;
+}
+.nxl-navigation .nxl-submenu .nxl-link i {
+    font-size: 15px;
+    width: 20px;
+    text-align: center;
+}
+/* align caption */
+.nxl-navigation .nxl-caption label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    color: #7a8799;
+    padding: 8px 12px 4px 12px;
+}
+/* hover states */
+.nxl-navigation .nxl-link:hover {
+    background: #f0f5fe;
+    border-radius: 8px;
+}
+.nxl-navigation .nxl-submenu .nxl-link:hover {
+    background: #f0f5fe;
+    border-radius: 8px;
+}
+/* open state arrow */
+.nxl-navigation .nxl-item.nxl-hasmenu.open > .nxl-link .nxl-arrow i {
+    transform: rotate(90deg);
+}
+.nxl-navigation .nxl-item.nxl-hasmenu.open > .nxl-link {
+    background: #f0f5fe;
+    border-radius: 8px;
+}
+/* bottom ESG badge alignment */
+.nxl-navigation .esg-mini-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f5f8fe;
+    border-radius: 40px;
+    padding: 6px 14px 6px 12px;
+    margin-top: 6px;
+}
+.nxl-navigation .esg-mini-badge i {
+    font-size: 16px;
+    color: #1a4cff;
+}
+.nxl-navigation .esg-mini-badge .esg-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #0b1e33;
+}
+.nxl-navigation .esg-mini-badge .esg-score {
+    font-size: 12px;
+    background: #1a4cff;
+    color: #fff;
+    padding: 0 10px;
+    border-radius: 40px;
+    font-weight: 600;
+    line-height: 20px;
+}
+.nxl-navigation .esg-mini-badge .esg-year {
+    font-size: 11px;
+    color: #4f5b6b;
+    margin-left: auto;
+}
+/* weather row */
+.nxl-navigation .weather-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: #7a8799;
+}
+.nxl-navigation .weather-row i {
+    font-size: 14px;
+    width: 18px;
+    text-align: center;
+}
+.nxl-navigation .weather-row .date-tag {
+    margin-left: auto;
+}
 </style>
+
 <nav class="nxl-navigation">
     <div class="navbar-wrapper">
         <div class="m-header">
@@ -23,42 +147,40 @@
         <div class="navbar-content">
             <ul class="nxl-navbar">
                 <li class="nxl-item nxl-caption">
-                    <label>Navigation</label>
+                    <label><i class="fas fa-compass" style="font-size: 11px;"></i> Navigation</label>
                 </li>
                 <li class="nxl-item">
                 <a class="nxl-link" href="{% url 'accounts:homepage' %}">
-                    <i class="fas fa-bullseye"></i> 
-                    Dashboard
+                    <i class="fas fa-chart-pie"></i> 
+                    <span class="nxl-mtext">Dashboard</span>
                 </a>
                 </li>
                 {% if request.user|has_perm:'ACCESS_COMPANY_MODULE' %}
                 <li class="nxl-item nxl-hasmenu">
                     <a href="javascript:void(0);" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-briefcase"></i></span>
-                        <span class="nxl-mtext">Company</span><span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                        <span class="nxl-micon"><i class="fas fa-building"></i></span>
+                        <span class="nxl-mtext">Company</span><span class="nxl-arrow"><i class="fas fa-chevron-right"></i></span>
                     </a>
                     <ul class="nxl-submenu">
-                        <li class="nxl-item"><a class="nxl-link" href="{% url 'companies:company_list' %}">Company Management</a></li>
+                        <li class="nxl-item"><a class="nxl-link" href="{% url 'companies:company_list' %}"><i class="fas fa-list-ul"></i> Company Management</a></li>
                     </ul>
                 </li>
                 {% endif %}
                 {% if request.user|has_perm:'ACCESS_ORGANIZATIONS_MODULE' %}
                 <li class="nxl-item nxl-hasmenu">
                     <a href="javascript:void(0);" class="nxl-link">
-                        <span class="nxl-micon"><i class="feather-users"></i></span>
-                        <span class="nxl-mtext">Organization Setup</span><span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+                        <span class="nxl-micon"><i class="fas fa-sitemap"></i></span>
+                        <span class="nxl-mtext">Organization Setup</span><span class="nxl-arrow"><i class="fas fa-chevron-right"></i></span>
                     </a>
                     <ul class="nxl-submenu">
-                        {% if request.user|has_perm:'ACCESS_USER_MODULE' %}<li class="nxl-item"><a class="nxl-link" href="{% url 'accounts:user_list' %}">User Management</a></li>{% endif %}
-                        {% if request.user.is_super_admin or request.user.is_superuser or request.user.role and request.user.role.role_code == 'COMPANYADMIN' %}<li class="nxl-item"><a class="nxl-link" href="{% url 'accounts:role_list' %}">Role &amp; Permission</a></li>{% endif %}
-                        <li class="nxl-item"><a class="nxl-link" href="{% url 'accounts:department_list' %}">Departments</a></li>
-                        <li class="nxl-item"><a class="nxl-link" href="{% url 'organizations:plant_list' %}">Plants Management</a></li>
+                        {% if request.user|has_perm:'ACCESS_USER_MODULE' %}<li class="nxl-item"><a class="nxl-link" href="{% url 'accounts:user_list' %}"><i class="fas fa-user-cog"></i> User Management</a></li>{% endif %}
+                        {% if request.user.is_super_admin or request.user.is_superuser or request.user.role and request.user.role.role_code == 'COMPANYADMIN' %}<li class="nxl-item"><a class="nxl-link" href="{% url 'accounts:role_list' %}"><i class="fas fa-user-tag"></i> Role &amp; Permission</a></li>{% endif %}
+                        <li class="nxl-item"><a class="nxl-link" href="{% url 'accounts:department_list' %}"><i class="fas fa-users"></i> Departments</a></li>
+                        <li class="nxl-item"><a class="nxl-link" href="{% url 'organizations:plant_list' %}"><i class="fas fa-industry"></i> Plants Management</a></li>
                         {% if request.user.is_super_admin or request.user.is_superuser %}
-                        <li class="nxl-item"><a class="nxl-link" href="{% url 'organizations:financial_year_list' %}">
-                                Financial Year
-                        </a>
+                        <li class="nxl-item"><a class="nxl-link" href="{% url 'organizations:financial_year_list' %}"><i class="fas fa-calendar-alt"></i> Financial Year</a>
                         </li>
-                        <li class="nxl-item"><a class="nxl-link" href="{% url 'organizations:workflow_configuration_template_list' %}">Workflow Configurations</a></li>
+                        <li class="nxl-item"><a class="nxl-link" href="{% url 'organizations:workflow_configuration_template_list' %}"><i class="fas fa-cogs"></i> Workflow Configurations</a></li>
                         {% endif %}
                         
                     </ul>
@@ -68,11 +190,11 @@
                 <li class="nxl-item nxl-hasmenu">
                     <a href="javascript:void(0);" class="nxl-link">
                         <span class="nxl-micon">
-                            <i class="feather-layout"></i>
+                            <i class="fas fa-file-alt"></i>
                         </span>
                         <span class="nxl-mtext">BRSR</span>
                         <span class="nxl-arrow">
-                            <i class="feather-chevron-right"></i>
+                            <i class="fas fa-chevron-right"></i>
                         </span>
                     </a>
 
@@ -80,28 +202,28 @@
                         {% if request.user|has_perm:'CAN_ASSIGN_QUESTIONS' %}
                         <li class="nxl-item">
                             <a class="nxl-link" href="{% url 'brsr:brsr_list' %}">
-                                Dashboard
+                                <i class="fas fa-columns"></i> Dashboard
                             </a>
                         </li>
                         {% endif %}
                         {% if request.user|has_perm:'VIEW_BRSR_ASSIGNMENT_DASHBOARD' %}
                         <li class="nxl-item">
                             <a class="nxl-link" href="{% url 'brsr:assignment_dashboard' %}">
-                                Assignment Dashboard
+                                <i class="fas fa-tasks"></i> Assignment Dashboard
                             </a>
                         </li>
                         {% endif %}
                         {% if request.user|has_perm:'VIEW_BRSR_APPROVAL_DASHBOARD' %}
                         <li class="nxl-item">
                             <a class="nxl-link" href="{% url 'brsr:approval_dashboard' %}">
-                                Approval Dashboard
+                                <i class="fas fa-check-double"></i> Approval Dashboard
                             </a>
                         </li>
                         {% endif %}
                         {% if request.user|has_perm:'VIEW_ALL_BRSR_DATA' %}
                         <li class="nxl-item">
                             <a class="nxl-link" href="{% url 'brsr:brsr_data_dashboard' %}">
-                               Data Dashboard
+                               <i class="fas fa-database"></i> Data Dashboard
                             </a>
                         </li>
                         {% endif %}
@@ -111,34 +233,34 @@
                <li class="nxl-item nxl-hasmenu">
                     <a href="javascript:void(0);" class="nxl-link">
                         <span class="nxl-micon">
-                            <i class="feather-globe"></i>
+                            <i class="fas fa-leaf"></i>
                         </span>
                         <span class="nxl-mtext">Emissions</span>
                         <span class="nxl-arrow">
-                            <i class="feather-chevron-right"></i>
+                            <i class="fas fa-chevron-right"></i>
                         </span>
                     </a>
 
                     <ul class="nxl-submenu">
                         <li class="nxl-item">
                             <a class="nxl-link" href="{% url 'emission:dashboard' %}">
-                                Dashboard
+                                <i class="fas fa-chart-line"></i> Dashboard
                             </a>
                         </li>
 
                         <li class="nxl-item">
                             <a class="nxl-link" href="{% url 'emission:scope_dataentry' %}">
-                                <span class="nxl-text">Scope Data Entry</span>
+                                <i class="fas fa-pen-alt"></i> <span class="nxl-text">Scope Data Entry</span>
                             </a>
                         </li>
                        <li class="nxl-item">
                         <a class="nxl-link" href="{% url 'emission:assignment_dashboard' %}">
-                            <span class="nxl-text">Assignment</span>
+                            <i class="fas fa-user-check"></i> <span class="nxl-text">Assignment</span>
                         </a>
                     </li>
                     <li class="nxl-item">
                         <a class="nxl-link" href="{% url 'emission:esg-disclosure' %}">
-                            <span class="nxl-text">Report</span>
+                            <i class="fas fa-file-pdf"></i> <span class="nxl-text">Report</span>
                         </a>
                     </li>
                     </ul>
@@ -147,11 +269,11 @@
                 <li class="nxl-item nxl-hasmenu">
                     <a href="javascript:void(0);" class="nxl-link">
                         <span class="nxl-micon">
-                            <i class="feather-send"></i>
+                            <i class="fas fa-th-large"></i>
                         </span>
                         <span class="nxl-mtext">Applications</span>
                         <span class="nxl-arrow">
-                            <i class="feather-chevron-right"></i>
+                            <i class="fas fa-chevron-right"></i>
                         </span>
                     </a>
 
@@ -159,7 +281,7 @@
                         
                         <li class="nxl-item">
                             <a class="nxl-link" href="{% url 'notifications:notification_list' %}">
-                                Notifications
+                                <i class="fas fa-bell"></i> Notifications
                             </a>
                         </li>
 
@@ -172,12 +294,12 @@
                         {% if request.user.is_super_admin or request.user.is_superuser or request.user.role and request.user.role.role_code == 'ADMIN' %}
                         <li class="nxl-item">
                             <a class="nxl-link" href="{% url 'calculator:unit_category_list' %}">
-                                Conversion Calculator Master
+                                <i class="fas fa-calculator"></i> Conversion Calculator Master
                             </a>
                         </li>
                        
                         {% endif %}
-                        <li class="nxl-item"><a class="nxl-link" href="{% url 'organizations:calendar' %}">Calendar</a></li>
+                        <li class="nxl-item"><a class="nxl-link" href="{% url 'organizations:calendar' %}"><i class="fas fa-calendar-day"></i> Calendar</a></li>
                     </ul>
                 </li>
             </ul>
@@ -185,14 +307,14 @@
              <li class="nxl-item">
                 <a class="nxl-link" href="{% url 'goals:dashboard' %}">
                     <i class="fas fa-bullseye"></i> 
-                    Goals
+                    <span class="nxl-mtext">Goals</span>
                 </a>
             </li>
             {% endif %}
             <li class="nxl-item">
                 <a class="nxl-link" href="{% url 'report:generate' %}">
-                    <i class="fas fa-bullseye"></i> 
-                    Report
+                    <i class="fa-solid fa-file-pdf"></i> 
+                    <span class="nxl-mtext">Report</span>
                 </a>
             </li>
         </div>

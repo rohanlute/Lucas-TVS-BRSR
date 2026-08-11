@@ -430,6 +430,7 @@ class BRSRWorkspaceDataAPIView(APIView):
         principle_slug = request.query_params.get("principle_slug")
         question_id = request.query_params.get("question_id")
         assignment_id = request.query_params.get("assignment_id")
+        workspace_mode = request.query_params.get("mode", "")
 
         section, principle = _get_section_principle(section_code, principle_slug)
         if not section:
@@ -474,6 +475,16 @@ class BRSRWorkspaceDataAPIView(APIView):
 
         # Serialize questions - this will now include response data
         serialized_questions = [_serialize_question(question, assignment=assignment, user=request.user) for question in questions]
+        if workspace_mode == "assign":
+            for item in serialized_questions:
+                item["response_value"] = ""
+                item["response_json"] = {}
+                item["review_remark"] = ""
+                item["status"] = "draft"
+                item["status_display"] = "Draft"
+                item["submitted_by"] = ""
+                item["submitted_at"] = None
+                item["is_editable"] = True
         
         # Log what's being returned
         for q in serialized_questions[:5]:
@@ -511,7 +522,7 @@ class BRSRWorkspaceDataAPIView(APIView):
             "assignment_id": assignment_id or "",
             "sections": [_serialize_section(item) for item in section_cards],
             "principles": [_serialize_principle(item) for item in principle_cards],
-            "topics": serialized_questions,  # This now includes response data
+            "topics": serialized_questions,
             "active_question": _serialize_question(active_question, assignment=assignment, user=request.user) if active_question else None,
             "active_question_id": active_question.question_id if active_question else "",
             "counts": _workflow_counts(questions, assignment=assignment),
@@ -582,6 +593,7 @@ class BRSRWorkspaceDataAPIView(APIView):
                 if assignment
                 else None
             ),
+            "workspace_mode": workspace_mode,
         }
         return Response(payload)
 
