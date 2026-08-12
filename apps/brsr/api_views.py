@@ -1117,6 +1117,18 @@ class AssignmentCreateAPIView(APIView):
         )
         if not form.is_valid():
             return Response(form.errors, status=status.HTTP_400_BAD_REQUEST)
+        assignee_id = request.data.get("assignee")
+        assignee = None
+        if assignee_id:
+            try:
+                assignee = User.objects.get(id=assignee_id)
+            except User.DoesNotExist:
+                return Response(
+                    {"detail": f"Assignee with ID {assignee_id} not found."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        if assignee:
+            form.cleaned_data["assignee"] = assignee
         if reviewer:
             form.cleaned_data['reviewer'] = reviewer
 
