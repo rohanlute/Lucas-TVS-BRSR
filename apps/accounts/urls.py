@@ -16,8 +16,8 @@ urlpatterns = [
     # ============= Dashboard =======================
     # -----------------------------------------------
 
-    path('dashboard/',DashboardView.as_view(),name='dashboard'),
-    path('homepage', BRSRDashboardView.as_view(), name='homepage'),
+    path('dashboard/', BRSRDashboardView.as_view(), name='dashboard'),
+    path('homepage/', BRSRDashboardView.as_view(), name='homepage'),
     path('principle/<int:principle_id>/', BRSRPrincipleDetailView.as_view(), name='principle_detail'),
 
     # -----------------------------------------------

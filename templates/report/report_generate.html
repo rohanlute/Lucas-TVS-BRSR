@@ -370,6 +370,19 @@
 
     <!-- Filter Card -->
     <form class="filter-card" method="get" action="{% url 'report:generate' %}" id="filterForm">
+    {% csrf_token %}
+      <div class="filter-field">
+        <label class="filter-label" for="plant_id">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>
+          Plant
+        </label>
+        <select class="year-select" id="plant_id" name="plant_id">
+          {% for plant in plants %}
+            <option value="{{ plant.id }}" {% if plant.id|stringformat:"s" == selected_plant_id %}selected{% endif %}>{{ plant.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
       <div class="filter-field">
         <label class="filter-label" for="reporting_year">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
@@ -392,18 +405,22 @@
       </button>
     </form>
 
-    <div class="section-label">Available Reports — FY {{ selected_year|default:"2024-25" }}</div>
+    <div class="section-label">
+      Available Reports —
+      {% for plant in plants %}{% if plant.id|stringformat:"s" == selected_plant_id %}{{ plant.name }} —{% endif %}{% endfor %}
+      FY {{ selected_year|default:"2024-25" }}
+    </div>
 
     <!-- Report Cards -->
     <div class="report-grid">
-      <!-- BRSR Report Card (Dynamic) -->
-      {% for report in available_reports %}
-      <div class="report-card accent-{{ report.accent }}">
+      <!-- BRSR Report Card -->
+      {% with brsr_report=available_reports.0 %}
+      <div class="report-card accent-{{ brsr_report.accent|default:'blue' }}">
         <div class="report-card-head">
           <div class="report-icon">
-            {% if report.accent == "blue" %}
+            {% if brsr_report.accent == "blue" %}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
-            {% elif report.accent == "purple" %}
+            {% elif brsr_report.accent == "purple" %}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h3l3-9 3 9h3M3 12h18M5 21h14"/></svg>
             {% else %}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 20A7 7 0 019.8 6.1C15.5 5 17 3 17 3s2.5 3-2.7 8c2 2 3.7 4 3.7 6.5a5 5 0 01-7 2.5z"/></svg>
@@ -411,36 +428,52 @@
           </div>
           <div>
             <div class="report-title-row">
-              <h3>{{ report.title }}</h3>
-              <span class="fy-badge">FY {{ report.fy }}</span>
+              <h3>{{ brsr_report.title|default:"BRSR Report" }}</h3>
+              <span class="fy-badge">FY {{ brsr_report.fy|default:selected_year|default:"2024-25" }}</span>
             </div>
-            <p class="report-desc">{{ report.description }}</p>
+            <p class="report-desc">{{ brsr_report.description|default:"Business Responsibility and Sustainability Report covering ESG compliance metrics." }}</p>
           </div>
         </div>
 
         <div class="stat-row">
-          {% for stat in report.stats %}
-          <div class="stat-box">
-            <div class="stat-value {{ stat.color }}">{{ stat.value }}</div>
-            <div class="stat-label">{{ stat.label }}</div>
-          </div>
-          {% endfor %}
+          {% if brsr_report.stats %}
+            {% for stat in brsr_report.stats %}
+            <div class="stat-box">
+              <div class="stat-value {{ stat.color }}">{{ stat.value }}</div>
+              <div class="stat-label">{{ stat.label }}</div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <!-- Default stats if no data available -->
+            <div class="stat-box">
+              <div class="stat-value blue">0</div>
+              <div class="stat-label">Compliant</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value red">0</div>
+              <div class="stat-label">Non-Compliant</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-value green">0</div>
+              <div class="stat-label">Partial</div>
+            </div>
+          {% endif %}
         </div>
 
         <div class="card-actions">
-          <a class="btn btn-primary" href="{{ report.pdf_url }}" target="_blank">
+          <a class="btn btn-primary" href="{{ brsr_report.pdf_url|default:'#' }}" target="_blank">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
             Download PDF
           </a>
-          <a class="btn btn-secondary" href="{{ report.excel_url }}" target="_blank">
+          <a class="btn btn-secondary" href="{{ brsr_report.excel_url|default:'#' }}" target="_blank">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
             Download Excel
           </a>
         </div>
       </div>
-      {% endfor %}
+      {% endwith %}
 
-      <!-- GHG Report Card (Static) -->
+      <!-- GHG Report Card -->
       <div class="report-card accent-purple">
         <div class="report-card-head">
           <div class="report-icon">
@@ -457,25 +490,25 @@
 
         <div class="stat-row">
           <div class="stat-box">
-            <div class="stat-value purple">0</div>
+            <div class="stat-value purple">{{ ghg_report.scope1|default:"0" }}</div>
             <div class="stat-label">Scope 1 (tCO₂e)</div>
           </div>
           <div class="stat-box">
-            <div class="stat-value blue">0</div>
+            <div class="stat-value blue">{{ ghg_report.scope2|default:"0" }}</div>
             <div class="stat-label">Scope 2 (tCO₂e)</div>
           </div>
           <div class="stat-box">
-            <div class="stat-value green">0</div>
+            <div class="stat-value green">{{ ghg_report.total|default:"0" }}</div>
             <div class="stat-label">Total (tCO₂e)</div>
           </div>
         </div>
 
         <div class="card-actions">
-          <a class="btn btn-purple" href="#" target="_blank">
+          <a class="btn btn-purple" href="{{ ghg_report.pdf_url|default:'#' }}" target="_blank">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
             Download PDF
           </a>
-          <a class="btn btn-secondary" href="#" target="_blank">
+          <a class="btn btn-secondary" href="{{ ghg_report.excel_url|default:'#' }}" target="_blank">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
             Download Excel
           </a>
@@ -619,53 +652,277 @@
     }, 4000);
   }
 
- // ===== Generate All Reports =====
-document.getElementById('generateBtn').addEventListener('click', function(e) {
-  e.preventDefault();
-  const selectedYear = document.getElementById('reporting_year').value;
-  const csrfToken = getCsrfToken();
-  const btn = this;
-  const originalText = btn.innerHTML;
+  // ===== Generate All Reports =====
+  document.getElementById('generateBtn').addEventListener('click', function(e) {
+    e.preventDefault();
+    const selectedYear = document.getElementById('reporting_year').value;
+    const selectedPlant = document.getElementById('plant_id').value;
+    const csrfToken = getCsrfToken();
+    const btn = this;
+    const originalText = btn.innerHTML;
 
-  // Show loading state
-  btn.innerHTML = `<span class="loader-spinner"></span> Generating...`;
-  btn.disabled = true;
+    btn.innerHTML = `<span class="loader-spinner"></span> Generating...`;
+    btn.disabled = true;
 
-  fetch('{% url "report:generate_action" %}', {
-    method: 'POST',
-    headers: {
-      'X-CSRFToken': csrfToken,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: `reporting_year=${selectedYear}`
-  })
-  .then(response => response.json())
-  .then(data => {
-    if (data.status === 'success') {
-      showToast(data.message, 'success');
-      // Reload after delay to show updated status
-      setTimeout(() => location.reload(), 1500);
-    } else {
-      showToast(data.message || 'Generation failed', 'error');
-    }
-  })
-  .catch(error => {
-    showToast('Error: ' + error.message, 'error');
-  })
-  .finally(() => {
-    btn.innerHTML = originalText;
-    btn.disabled = false;
+    fetch('{% url "report:generate_action" %}', {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': csrfToken,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `reporting_year=${selectedYear}&plant_id=${selectedPlant}`
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        showToast(data.message, 'success');
+        setTimeout(() => location.reload(), 1500);
+      } else {
+        showToast(data.message || 'Generation failed', 'error');
+      }
+    })
+    .catch(error => {
+      showToast('Error: ' + error.message, 'error');
+    })
+    .finally(() => {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    });
   });
-});
 
   // ===== Reset Button =====
   document.getElementById('resetBtn').addEventListener('click', function() {
     window.location.href = '{% url "report:generate" %}';
   });
 
-  // ===== Year Select Auto-submit =====
+  // ===== Plant / Year Select Auto-submit =====
   document.getElementById('reporting_year').addEventListener('change', function() {
     this.closest('form').submit();
+  });
+  document.getElementById('plant_id').addEventListener('change', function() {
+    this.closest('form').submit();
+  });
+
+  // ====================================================
+  // CONFETTI ANIMATION — TRELLO STYLE
+  // ====================================================
+  (function() {
+    // Check conditions: user logged in AND event date exists AND event_date is not None
+    const isLoggedIn = {{ user.is_authenticated|lower }};
+    const eventDate = {% if event_date %}"{{ event_date }}"{% else %}null{% endif %};
+    const shouldShowConfetti = isLoggedIn && eventDate !== null;
+
+    console.log('Confetti check:', { isLoggedIn, eventDate, shouldShowConfetti });
+
+    if (!shouldShowConfetti) return;
+
+    // DOM refs
+    const overlay = document.getElementById('confetti-overlay');
+    const messageEl = document.getElementById('confetti-message');
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Update message with event name if available
+    const eventName = "{% if event_name %}{{ event_name }}{% else %}🎉 Welcome!{% endif %}";
+    const messageTitle = document.querySelector('#confetti-message h2');
+    if (messageTitle && eventName) {
+      messageTitle.textContent = eventName;
+    }
+
+    // Activate overlay and message
+    overlay.classList.add('active');
+    messageEl.classList.add('active');
+
+    // ─── Configuration ──────────────────────────────
+    const NUM_CONFETTI = 50;
+    const COLORS = [
+      [235, 90, 70],   // red
+      [97, 189, 79],   // green
+      [242, 214, 0],   // yellow
+      [0, 121, 191],   // blue
+      [195, 119, 224], // purple
+      [255, 159, 67],  // orange
+      [255, 99, 132]   // pink
+    ];
+    const PI_2 = 2 * Math.PI;
+
+    // ─── Canvas sizing ──────────────────────────────
+    let w = 0, h = 0;
+    function resizeCanvas() {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // ─── Helpers ──────────────────────────────────────
+    function range(a, b) {
+      return (b - a) * Math.random() + a;
+    }
+
+    // Three drawing styles (Trello original)
+    function drawCircle(x, y, r, color) {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.bezierCurveTo(x - 17, y + 14, x + 13, y + 5, x - 5, y + 22);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = color;
+      ctx.stroke();
+    }
+
+    function drawCircle2(x, y, r, color) {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + 6, y + 9);
+      ctx.lineTo(x + 12, y);
+      ctx.lineTo(x + 6, y - 9);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+
+    function drawCircle3(x, y, r, color) {
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + 5, y + 5);
+      ctx.lineTo(x + 10, y);
+      ctx.lineTo(x + 5, y - 5);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+
+    // ─── Mouse tracking ──────────────────────────────
+    let xpos = 0.5;
+    document.onmousemove = function(e) {
+      if (w) xpos = e.pageX / w;
+    };
+
+    // ─── Confetti class ──────────────────────────────
+    function Confetti() {
+      this.style = COLORS[~~range(0, COLORS.length)];
+      this.rgb = 'rgba(' + this.style[0] + ',' + this.style[1] + ',' + this.style[2];
+      this.r = ~~range(2, 6);
+      this.r2 = 2 * this.r;
+      this.replace();
+    }
+
+    Confetti.prototype.replace = function() {
+      this.opacity = 0;
+      this.dop = 0.03 * range(1, 4);
+      this.x = range(-this.r2, w - this.r2);
+      this.y = range(-20, h - this.r2);
+      this.xmax = w - this.r;
+      this.ymax = h - this.r;
+      this.vx = range(0, 2) + 8 * xpos - 5;
+      this.vy = 0.7 * this.r + range(-1, 1);
+    };
+
+    Confetti.prototype.draw = function() {
+      this.x += this.vx;
+      this.y += this.vy;
+      this.opacity += this.dop;
+      if (1 < this.opacity) {
+        this.opacity = 1;
+        this.dop *= -1;
+      }
+      if (0 > this.opacity || this.y > this.ymax) {
+        this.replace();
+      }
+      if (!(0 < this.x && this.x < this.xmax)) {
+        this.x = (this.x + this.xmax) % this.xmax;
+      }
+      const color = this.rgb + ',' + this.opacity + ')';
+      drawCircle(~~this.x, ~~this.y, this.r, color);
+      drawCircle3(0.5 * ~~this.x, ~~this.y, this.r, color);
+      drawCircle2(1.5 * ~~this.x, 1.5 * ~~this.y, this.r, color);
+    };
+
+    // ─── Instantiate ──────────────────────────────────
+    const confetti = [];
+    for (let i = 0; i < NUM_CONFETTI; i++) {
+      confetti.push(new Confetti());
+    }
+
+    // ─── Animation loop ──────────────────────────────
+    let startTime = Date.now();
+    const DURATION = 10000; // 10 seconds
+
+    function animate() {
+      const elapsed = Date.now() - startTime;
+      
+      // Stop after 10 seconds
+      if (elapsed >= DURATION) {
+        overlay.classList.remove('active');
+        messageEl.classList.remove('active');
+        return;
+      }
+
+      // Fade out message in last 1.5 seconds
+      const remaining = DURATION - elapsed;
+      if (remaining < 1500) {
+        const fadeProgress = remaining / 1500;
+        messageEl.style.opacity = fadeProgress;
+        overlay.style.opacity = fadeProgress;
+      }
+
+      ctx.clearRect(0, 0, w, h);
+      
+      // Update canvas size if changed
+      if (w !== window.innerWidth || h !== window.innerHeight) {
+        resizeCanvas();
+        // reposition confetti
+        confetti.forEach(c => {
+          c.xmax = w - c.r;
+          c.ymax = h - c.r;
+          if (c.x > w) c.x = w - c.r;
+          if (c.y > h) c.y = h - c.r;
+        });
+      }
+
+      for (let i = 0; i < confetti.length; i++) {
+        confetti[i].draw();
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    // ─── Start ────────────────────────────────────────
+    animate();
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+      overlay.classList.remove('active');
+      messageEl.classList.remove('active');
+    });
+
+  })();
+
+  // ====================================================
+  // SCROLL REVEAL
+  // ====================================================
+  const revealEls = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in');
+        io.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12 });
+  revealEls.forEach(el => io.observe(el));
+
+  // ====================================================
+  // FAQ SMOOTH BEHAVIOR
+  // ====================================================
+  document.querySelectorAll('.faq-item summary').forEach(summary => {
+    summary.addEventListener('click', function(e) {
+      const details = this.closest('details');
+      if (details.hasAttribute('open')) {
+        e.preventDefault();
+        details.removeAttribute('open');
+      }
+    });
   });
 </script>
 {% endblock %}
