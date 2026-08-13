@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.views import View
 from django.views.generic import TemplateView
-from datetime import date
+import datetime
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .mixins import *
 from django.urls import reverse_lazy
@@ -888,7 +888,7 @@ class BRSRDashboardView(TemplateView):
         from apps.organizations.models import FinancialYear
         
         # Get current date
-        today = timezone.now().date()
+        today = datetime.date(2026, 8, 15)
         print(f"🔍 DEBUG - Today's date: {today}")
         
         # Get current financial year from database (based on dates)
@@ -1133,6 +1133,7 @@ class BRSRDashboardView(TemplateView):
                 "category": "esg", 
                 "icon": "🧑‍🎓"
             },
+            
             "8-15": {
                 "title": "🇮🇳 Independence Day", 
                 "focus": "National celebration", 
@@ -1545,7 +1546,7 @@ class BRSRPrincipleDetailView(TemplateView):
         from apps.organizations.models import FinancialYear
         
         # Get current financial year
-        today = timezone.now().date()
+        today = datetime.date(2026, 8, 15) 
         current_fy = FinancialYear.objects.filter(
             start_date__lte=today,
             end_date__gte=today

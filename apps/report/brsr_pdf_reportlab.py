@@ -1,4 +1,3 @@
-# apps/report/brsr_pdf_reportlab.py
 """
 Builds the BRSR report as a PDF matching the exact Lucas TVS BRSR PDF format.
 
@@ -41,6 +40,10 @@ STYLING NOTES (matched against the reference PDF screenshots)
 - Every other table-shaped answer (business activities, locations,
   holding/subsidiary companies, gender breakdowns, complaints-by-year,
   etc.) also renders as an actual grid: header row(s) + one row per entry.
+  The row-label column (serial number / row title) is now sized to what
+  it actually contains instead of a fixed width -- see
+  `_label_column_width()` -- so a column of "1"/"2"/"3" doesn't eat a
+  third of the page while the real content columns get squeezed.
 - The cover page is fully custom-drawn (navy background, gold banner with
   company name/CIN, white title panel) via `_draw_cover_page`, and every
   later page gets a running "BRSR {financial_year}" header + page-number
@@ -221,6 +224,10 @@ def _build_styles():
         fontName="Helvetica-Bold",
     ))
     styles.add(ParagraphStyle(
+        name="BRSR_MatrixRowLabelCentered", fontSize=7.5, leading=9.5, textColor=NAVY_TEXT,
+        fontName="Helvetica-Bold", alignment=TA_CENTER,
+    ))
+    styles.add(ParagraphStyle(
         name="BRSR_MatrixValue", fontSize=8, leading=10, textColor=BODY_TEXT,
         fontName="Helvetica", alignment=TA_CENTER,
     ))
@@ -235,6 +242,10 @@ def _build_styles():
     styles.add(ParagraphStyle(
         name="BRSR_MatrixRowLabelSmall", fontSize=6, leading=8, textColor=NAVY_TEXT,
         fontName="Helvetica-Bold",
+    ))
+    styles.add(ParagraphStyle(
+        name="BRSR_MatrixRowLabelSmallCentered", fontSize=6, leading=8, textColor=NAVY_TEXT,
+        fontName="Helvetica-Bold", alignment=TA_CENTER,
     ))
     styles.add(ParagraphStyle(
         name="BRSR_BodyText", fontSize=10.5, leading=14, alignment=TA_JUSTIFY,
@@ -290,8 +301,8 @@ def _create_subject_page(story, styles, company_name, financial_year):
     body_text2 = f"""
     Leveraging our experience and expertise, and in collaboration with the {company_name}
     team, we have developed a comprehensive Business Responsibility & Sustainability
-    Report for the {_display_financial_year(financial_year)}. We believe that our deliverable meets the expectations
-    and requirements of this project.
+    Report for the {_display_financial_year(financial_year)}. We believe that our
+    deliverable meets the expectations and requirements of this project.
     """
     story.append(Paragraph(body_text2.strip(), styles["BRSR_BodyText"]))
     story.append(Spacer(1, 6))
@@ -325,7 +336,7 @@ def _create_toc_page(story, styles):
     story.append(Spacer(1, 14))
 
     principles = [
-        ("Principle 1", "Businesses should conduct and govern themselves with integrity and in a manner that is ethical, transparent, and accountable"),
+        ("Principle 1", "Businesses should conduct and govern themselves with integrity, and in a manner that is ethical, transparent, and accountable"),
         ("Principle 2", "Businesses should provide goods and services in a manner that is sustainable and safe"),
         ("Principle 3", "Businesses should respect and promote the well-being of ALL employees, including those in their value chains"),
         ("Principle 4", "Businesses should respect the interests of and be responsive to ALL their stakeholders"),
@@ -494,6 +505,25 @@ def _create_matrix_grid(field_label, columns, matrix_rows, styles):
     return story_items
 
 
+def _label_column_width(table_rows, is_wide):
+    """
+    Sizes the row-label column to what it actually contains, instead of a
+    fixed 150pt (90pt when wide) regardless of content.
+
+    Tables whose row label is just a serial number ("1", "2", "3" -- e.g.
+    "Details of business activities") were reserving a third of the page
+    for an almost-empty navy column while the real content columns
+    (Description, % of Turnover, ...) got squeezed into what was left.
+    A short numeric/short-text label now gets a narrow column instead.
+    """
+    max_len = max((len(str(row[0])) for row in table_rows if row), default=0)
+    if max_len <= 4:
+        return 26
+    if max_len <= 15:
+        return 90 if is_wide else 110
+    return 90 if is_wide else 150
+
+
 def _create_table_grid(question_text, table_headers, table_rows, styles):
     """
     Renders ANY table-shaped answer as a real grid: navy header row(s) at
@@ -517,7 +547,16 @@ def _create_table_grid(question_text, table_headers, table_rows, styles):
 
     header_style = styles["BRSR_MatrixHeaderSmall"] if is_wide else styles["BRSR_MatrixHeader"]
     value_style = styles["BRSR_MatrixValueSmall"] if is_wide else styles["BRSR_MatrixValue"]
-    row_label_style = styles["BRSR_MatrixRowLabelSmall"] if is_wide else styles["BRSR_MatrixRowLabel"]
+
+    # Short row labels (serial numbers, short codes) read better centered
+    # in their now-narrower column than left-aligned against a lot of
+    # empty space.
+    label_width = _label_column_width(table_rows, is_wide)
+    label_is_short = label_width <= 26
+    if is_wide:
+        row_label_style = styles["BRSR_MatrixRowLabelSmallCentered"] if label_is_short else styles["BRSR_MatrixRowLabelSmall"]
+    else:
+        row_label_style = styles["BRSR_MatrixRowLabelCentered"] if label_is_short else styles["BRSR_MatrixRowLabel"]
 
     data = []
     for header_row in table_headers:
@@ -533,12 +572,8 @@ def _create_table_grid(question_text, table_headers, table_rows, styles):
         data.append(row_cells)
 
     available_width = 480
-    if is_wide:
-        label_width = 90
-        data_width = max(28, (available_width - label_width) / max(num_cols - 1, 1))
-    else:
-        label_width = 150
-        data_width = max(40, (available_width - label_width) / max(num_cols - 1, 1))
+    min_data_width = 28 if is_wide else 40
+    data_width = max(min_data_width, (available_width - label_width) / max(num_cols - 1, 1))
     col_widths = [label_width] + [data_width] * (num_cols - 1)
 
     total_width = sum(col_widths)

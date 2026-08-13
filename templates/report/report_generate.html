@@ -99,6 +99,21 @@
     font-size:13px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
     color:var(--text-muted); margin-top:6px;
   }
+  .section-label .progress-info {
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .section-label .progress-info .answered-count {
+    color: var(--blue);
+  }
+  .section-label .progress-info .total-count {
+    color: var(--text-primary);
+  }
+  .section-label .progress-info .percentage {
+    color: var(--green);
+  }
 
   /* ---------- Report cards ---------- */
   .report-grid{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
@@ -202,40 +217,6 @@
     font-size:12.5px; font-weight:600; color:var(--text-secondary);
     background:#f2f4f7; padding:4px 10px; border-radius:6px; white-space:nowrap;
   }
-  .status-badge{
-    display:inline-flex; align-items:center; gap:6px;
-    font-size:12.5px; font-weight:700;
-    padding:5px 12px; border-radius:999px;
-  }
-  .status-badge.completed{
-    background:var(--badge-green-bg); 
-    color:var(--badge-green-text);
-  }
-  .status-badge.processing{
-    background:var(--badge-amber-bg); 
-    color:var(--badge-amber-text);
-  }
-  .status-badge.draft{
-    background:#f0f0f0; 
-    color:#6b7280;
-  }
-  .status-badge.failed{
-    background:#fde8e8; 
-    color:#dc2626;
-  }
-  .status-badge svg{width:12px; height:12px;}
-
-  .dl-links{display:flex; gap:8px;}
-  .dl-link{
-    display:inline-flex; align-items:center; gap:5px;
-    font-size:12.5px; font-weight:700;
-    border:1px solid var(--border); border-radius:7px;
-    padding:6px 11px; text-decoration:none; background:#fff;
-  }
-  .dl-link svg{width:12px; height:12px;}
-  .dl-link.pdf{color:var(--blue); border-color:#d7e2ff;}
-  .dl-link.xls{color:var(--green); border-color:#cdeedd;}
-  .dl-link:hover{filter:brightness(.96);}
 
   .table-foot{
     display:flex; justify-content:space-between; align-items:center;
@@ -377,6 +358,8 @@
           Plant
         </label>
         <select class="year-select" id="plant_id" name="plant_id">
+          <option value="all" {% if selected_plant_id == "all" %}selected{% endif %}> All Plants</option>
+          
           {% for plant in plants %}
             <option value="{{ plant.id }}" {% if plant.id|stringformat:"s" == selected_plant_id %}selected{% endif %}>{{ plant.name }}</option>
           {% endfor %}
@@ -405,10 +388,28 @@
       </button>
     </form>
 
+    <!-- Section Label with Question Stats -->
     <div class="section-label">
       Available Reports —
-      {% for plant in plants %}{% if plant.id|stringformat:"s" == selected_plant_id %}{{ plant.name }} —{% endif %}{% endfor %}
-      FY {{ selected_year|default:"2024-25" }}
+      {% if selected_plant_id == "all" %}
+        All Plants
+      {% else %}
+        {% for plant in plants %}
+          {% if plant.id|stringformat:"s" == selected_plant_id %}
+            {{ plant.name }}
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+      — FY {{ selected_year|default:"2024-25" }}
+      {% if total_questions > 0 %}
+        <span class="progress-info">
+          <span class="answered-count">{{ answered_questions }}</span>
+          /
+          <span class="total-count">{{ total_questions }}</span>
+          questions answered
+          <span class="percentage">({{ completion_percentage }}% complete)</span>
+        </span>
+      {% endif %}
     </div>
 
     <!-- Report Cards -->
@@ -447,25 +448,25 @@
             <!-- Default stats if no data available -->
             <div class="stat-box">
               <div class="stat-value blue">0</div>
-              <div class="stat-label">Compliant</div>
+              <div class="stat-label">Total Questions</div>
             </div>
             <div class="stat-box">
-              <div class="stat-value red">0</div>
-              <div class="stat-label">Non-Compliant</div>
+              <div class="stat-value blue">0</div>
+              <div class="stat-label">Answered</div>
             </div>
             <div class="stat-box">
-              <div class="stat-value green">0</div>
-              <div class="stat-label">Partial</div>
+              <div class="stat-value green">0%</div>
+              <div class="stat-label">Completion</div>
             </div>
           {% endif %}
         </div>
 
         <div class="card-actions">
-          <a class="btn btn-primary" href="{{ brsr_report.pdf_url|default:'#' }}" target="_blank">
+          <a class="btn btn-primary dl-track" data-report-type="brsr" href="{{ brsr_report.pdf_url|default:'#' }}" target="_blank">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
             Download PDF
           </a>
-          <a class="btn btn-secondary" href="{{ brsr_report.excel_url|default:'#' }}" target="_blank">
+          <a class="btn btn-secondary dl-track" data-report-type="brsr" href="{{ brsr_report.excel_url|default:'#' }}" target="_blank">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
             Download Excel
           </a>
@@ -504,11 +505,11 @@
         </div>
 
         <div class="card-actions">
-          <a class="btn btn-purple" href="{{ ghg_report.pdf_url|default:'#' }}" target="_blank">
+          <a class="btn btn-purple dl-track" data-report-type="ghg" href="{{ ghg_report.pdf_url|default:'#' }}" target="_blank">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5M12 15V3"/></svg>
             Download PDF
           </a>
-          <a class="btn btn-secondary" href="{{ ghg_report.excel_url|default:'#' }}" target="_blank">
+          <a class="btn btn-secondary dl-track" data-report-type="ghg" href="{{ ghg_report.excel_url|default:'#' }}" target="_blank">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/></svg>
             Download Excel
           </a>
@@ -533,8 +534,6 @@
             <th>Type</th>
             <th>Year</th>
             <th>Generated On</th>
-            <th>Status</th>
-            <th>Download</th>
           </tr>
         </thead>
         <tbody>
@@ -551,42 +550,18 @@
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 20A7 7 0 019.8 6.1C15.5 5 17 3 17 3s2.5 3-2.7 8c2 2 3.7 4 3.7 6.5a5 5 0 01-7 2.5z"/></svg>
                   {% endif %}
                 </div>
-                <a href="{{ r.detail_url }}" style="text-decoration:none;color:var(--text-primary);">
+                <span style="font-weight:600;color:var(--text-primary);">
                   {{ r.name }}
-                </a>
+                </span>
               </div>
             </td>
             <td><span class="type-badge {{ r.accent }}">{{ r.type }}</span></td>
             <td><span class="year-tag">FY {{ r.year }}</span></td>
             <td>{{ r.generated_on }}</td>
-            <td>
-              <span class="status-badge {{ r.status_raw|lower }}">
-                {% if r.status_raw == "completed" %}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>
-                {% elif r.status_raw == "processing" or r.status_raw == "draft" %}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                {% else %}
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-                {% endif %}
-                {{ r.status }}
-              </span>
-            </td>
-            <td>
-              <div class="dl-links">
-                <a class="dl-link pdf" href="{{ r.pdf_url }}" target="_blank">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
-                  PDF
-                </a>
-                <a class="dl-link xls" href="{{ r.excel_url }}" target="_blank">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
-                  XLS
-                </a>
-              </div>
-            </td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="6" style="text-align: center; padding: 30px; color: var(--text-secondary);">
+            <td colspan="4" style="text-align: center; padding: 30px; color: var(--text-secondary);">
               No recent reports found for FY {{ selected_year }}
             </td>
           </tr>
@@ -596,10 +571,6 @@
 
       <div class="table-foot">
         <span>{{ recent_reports|length }} of {{ total_reports_count|default:"0" }} reports</span>
-        <span class="foot-status">
-          <span><span class="dot green"></span>{{ completed_count|default:"0" }} completed</span>
-          <span><span class="dot amber"></span>{{ processing_count|default:"0" }} processing</span>
-        </span>
       </div>
     </div>
   </div>
@@ -695,6 +666,31 @@
     window.location.href = '{% url "report:generate" %}';
   });
 
+  // ===== Track individual report downloads =====
+  document.querySelectorAll('.dl-track').forEach(function(link) {
+    link.addEventListener('click', function() {
+      const href = link.getAttribute('href');
+      if (!href || href === '#') return;
+
+      const reportType = link.dataset.reportType;
+      const reportingYear = document.getElementById('reporting_year').value;
+      const plantId = document.getElementById('plant_id').value;
+      const csrfToken = getCsrfToken();
+
+      fetch('{% url "report:track_download" %}', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': csrfToken,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `report_type=${encodeURIComponent(reportType)}&reporting_year=${encodeURIComponent(reportingYear)}&plant_id=${encodeURIComponent(plantId)}`,
+        keepalive: true,
+      }).catch(function() {
+        // Silently ignore -- the download itself must never be blocked
+      });
+    });
+  });
+
   // ===== Plant / Year Select Auto-submit =====
   document.getElementById('reporting_year').addEventListener('change', function() {
     this.closest('form').submit();
@@ -707,46 +703,32 @@
   // CONFETTI ANIMATION — TRELLO STYLE
   // ====================================================
   (function() {
-    // Check conditions: user logged in AND event date exists AND event_date is not None
     const isLoggedIn = {{ user.is_authenticated|lower }};
     const eventDate = {% if event_date %}"{{ event_date }}"{% else %}null{% endif %};
     const shouldShowConfetti = isLoggedIn && eventDate !== null;
 
-    console.log('Confetti check:', { isLoggedIn, eventDate, shouldShowConfetti });
-
     if (!shouldShowConfetti) return;
 
-    // DOM refs
     const overlay = document.getElementById('confetti-overlay');
     const messageEl = document.getElementById('confetti-message');
     const canvas = document.getElementById('confetti-canvas');
     const ctx = canvas.getContext('2d');
 
-    // Update message with event name if available
     const eventName = "{% if event_name %}{{ event_name }}{% else %}🎉 Welcome!{% endif %}";
     const messageTitle = document.querySelector('#confetti-message h2');
     if (messageTitle && eventName) {
       messageTitle.textContent = eventName;
     }
 
-    // Activate overlay and message
     overlay.classList.add('active');
     messageEl.classList.add('active');
 
-    // ─── Configuration ──────────────────────────────
     const NUM_CONFETTI = 50;
     const COLORS = [
-      [235, 90, 70],   // red
-      [97, 189, 79],   // green
-      [242, 214, 0],   // yellow
-      [0, 121, 191],   // blue
-      [195, 119, 224], // purple
-      [255, 159, 67],  // orange
-      [255, 99, 132]   // pink
+      [235, 90, 70], [97, 189, 79], [242, 214, 0],
+      [0, 121, 191], [195, 119, 224], [255, 159, 67], [255, 99, 132]
     ];
-    const PI_2 = 2 * Math.PI;
 
-    // ─── Canvas sizing ──────────────────────────────
     let w = 0, h = 0;
     function resizeCanvas() {
       w = canvas.width = window.innerWidth;
@@ -755,12 +737,10 @@
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // ─── Helpers ──────────────────────────────────────
     function range(a, b) {
       return (b - a) * Math.random() + a;
     }
 
-    // Three drawing styles (Trello original)
     function drawCircle(x, y, r, color) {
       ctx.beginPath();
       ctx.moveTo(x, y);
@@ -792,13 +772,11 @@
       ctx.fill();
     }
 
-    // ─── Mouse tracking ──────────────────────────────
     let xpos = 0.5;
     document.onmousemove = function(e) {
       if (w) xpos = e.pageX / w;
     };
 
-    // ─── Confetti class ──────────────────────────────
     function Confetti() {
       this.style = COLORS[~~range(0, COLORS.length)];
       this.rgb = 'rgba(' + this.style[0] + ',' + this.style[1] + ',' + this.style[2];
@@ -838,27 +816,23 @@
       drawCircle2(1.5 * ~~this.x, 1.5 * ~~this.y, this.r, color);
     };
 
-    // ─── Instantiate ──────────────────────────────────
     const confetti = [];
     for (let i = 0; i < NUM_CONFETTI; i++) {
       confetti.push(new Confetti());
     }
 
-    // ─── Animation loop ──────────────────────────────
     let startTime = Date.now();
-    const DURATION = 10000; // 10 seconds
+    const DURATION = 10000;
 
     function animate() {
       const elapsed = Date.now() - startTime;
       
-      // Stop after 10 seconds
       if (elapsed >= DURATION) {
         overlay.classList.remove('active');
         messageEl.classList.remove('active');
         return;
       }
 
-      // Fade out message in last 1.5 seconds
       const remaining = DURATION - elapsed;
       if (remaining < 1500) {
         const fadeProgress = remaining / 1500;
@@ -868,10 +842,8 @@
 
       ctx.clearRect(0, 0, w, h);
       
-      // Update canvas size if changed
       if (w !== window.innerWidth || h !== window.innerHeight) {
         resizeCanvas();
-        // reposition confetti
         confetti.forEach(c => {
           c.xmax = w - c.r;
           c.ymax = h - c.r;
@@ -887,10 +859,8 @@
       requestAnimationFrame(animate);
     }
 
-    // ─── Start ────────────────────────────────────────
     animate();
 
-    // Cleanup on page unload
     window.addEventListener('beforeunload', function() {
       overlay.classList.remove('active');
       messageEl.classList.remove('active');
