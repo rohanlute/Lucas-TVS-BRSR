@@ -28,6 +28,10 @@
     --font-body:'Inter','Segoe UI',sans-serif;
   }
 
+  table th, table td {
+    text-align: left !important;
+  }
+
   .brsr-shell{
     min-height:calc(100vh - 140px);
     display:grid;
@@ -1370,74 +1374,85 @@
     return template.replace('__question__', encodeURIComponent(questionId));
   }
 
-function statusClass(status) {
+  function statusClass(status) {
     if (!status) return 'todo';
     const statusStr = String(status).toLowerCase();
     const map = { 
-        draft: 'todo', 
-        submitted: 'in-progress', 
-        resubmitted: 'in-progress', 
-        approved: 'approved', 
-        rejected: 'rejected' 
+      draft: 'todo', 
+      submitted: 'in-progress', 
+      resubmitted: 'in-progress', 
+      approved: 'approved', 
+      rejected: 'rejected' 
     };
     return map[statusStr] || 'todo';
-}
+  }
 
   function statusLabel(question) {
     if (!question) return 'Draft';
     if (question.status_display) return question.status_display;
     if (question.status) {
-        return String(question.status).replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      return String(question.status).replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
     return 'Draft';
-}
+  }
 
-function getStoredFieldValue(question, fieldName, fallback = '') {
-    // First check response_json
+  function getStoredFieldValue(question, fieldName, fallback = '') {
     const responseJson = question.response_json && typeof question.response_json === 'object' ? question.response_json : {};
-    
-    // Check if field exists in response_json
     if (Object.prototype.hasOwnProperty.call(responseJson, fieldName)) {
-        const value = responseJson[fieldName];
-        if (value !== null && value !== undefined && value !== '') {
-            return value;
-        }
+      const value = responseJson[fieldName];
+      if (value !== null && value !== undefined && value !== '') {
+        return value;
+      }
     }
-    
-    // If field is 'responseValue', check response_value directly
     if (fieldName === 'responseValue' || fieldName === 'response_value') {
-        if (question.response_value) {
-            return question.response_value;
-        }
+      if (question.response_value) {
+        return question.response_value;
+      }
     }
-    
     return fallback;
-}
-function debugQuestionData(questionId) {
-    const question = state.workspace?.topics?.find(item => getQuestionId(item) === questionId);
-    if (!question) {
-        console.log(`❌ Question ${questionId} not found`);
-        return;
-    }
-    
-    const container = document.querySelector(`.question-container[data-question-id="${CSS.escape(questionId)}"]`);
-    const textarea = container?.querySelector('textarea');
-    const input = container?.querySelector('input');
-    
-    console.log(`🔍 Debug for question ${questionId}:`, {
-        'State data': {
-            response_value: question.response_value,
-            response_json: question.response_json,
-            status: question.status,
-            is_editable: question.is_editable
-        },
-        'UI elements': {
-            textarea_value: textarea?.value,
-            input_value: input?.value,
-            container_exists: !!container
+  }
+
+  function getStoredTableCellValue(question, tableName, rowIndex, fieldName, fallback = '') {
+    const responseJson = question.response_json && typeof question.response_json === 'object' ? question.response_json : {};
+    const tableRows = responseJson[tableName];
+    if (Array.isArray(tableRows)) {
+      const row = tableRows[rowIndex];
+      if (row && Object.prototype.hasOwnProperty.call(row, fieldName)) {
+        const value = row[fieldName];
+        if (value !== null && value !== undefined && value !== '') {
+          return value;
         }
-    });
-}
+      }
+    }
+    return getStoredFieldValue(question, fieldName, fallback);
+  }
+
+  function collectFieldValue(element, scope) {
+    if (!element || !scope) return '';
+
+    if (element.type === 'checkbox') {
+      const groupName = element.dataset.fieldName;
+      if (!groupName) return element.checked;
+
+      const checkboxGroup = scope.querySelectorAll(`input[type="checkbox"][data-field-name="${CSS.escape(groupName)}"]`);
+      if (checkboxGroup.length > 1) {
+        return Array.from(checkboxGroup)
+          .filter((checkbox) => checkbox.checked)
+          .map((checkbox) => checkbox.value);
+      }
+
+      return element.checked;
+    }
+
+    if (element.type === 'radio') {
+      const groupName = element.name;
+      if (!groupName) return '';
+      const checked = scope.querySelector(`input[type="radio"][name="${CSS.escape(groupName)}"]:checked`);
+      return checked ? checked.value : '';
+    }
+
+    return element.value;
+  }
 
   // ============================================================
   // Financial Year Helpers
@@ -1526,7 +1541,7 @@ function debugQuestionData(questionId) {
   }
 
   // ============================================================
-  // Table Helpers
+  // Table Helpers - UPDATED with proper percentage formatting
   // ============================================================
   function updateSerialNumbers(table) {
     const rows = table.querySelectorAll("tbody tr");
@@ -1539,6 +1554,21 @@ function debugQuestionData(questionId) {
     });
   }
 
+  // UPDATED: Properly format percentage values to 2 decimal places
+  function formatPercentageValue(value) {
+    if (value === null || value === undefined || value === '') return '';
+    const num = parseFloat(value);
+    if (isNaN(num) || !isFinite(num)) return '';
+    // Round to 2 decimal places
+    const rounded = Math.round(num * 100) / 100;
+    // If the value is a whole number, show without decimal
+    if (rounded % 1 === 0) {
+      return rounded.toString();
+    }
+    return rounded.toFixed(2);
+  }
+
+  // UPDATED: calculateRowFormulas with proper percentage formatting
   function calculateRowFormulas(row) {
     row.querySelectorAll('input[data-formula]').forEach(output => {
       const formula = output.dataset.formula;
@@ -1561,7 +1591,11 @@ function debugQuestionData(questionId) {
       } catch { result = ""; }
       if (result !== "") {
         const format = output.dataset.format || "number";
-        output.value = format === "percentage" ? `${Number(result)} %` : Number(result);
+        if (format === "percentage") {
+          output.value = formatPercentageValue(result);
+        } else {
+          output.value = Number(result);
+        }
       } else {
         output.value = "";
       }
@@ -1650,6 +1684,7 @@ function debugQuestionData(questionId) {
     const fieldName = field.name || `field_${index + 1}`;
     const fieldLabel = field.label || field.name || `Field ${index + 1}`;
     const fieldValue = getStoredFieldValue(question, fieldName, '');
+    const responseJson = question.response_json && typeof question.response_json === 'object' ? question.response_json : {};
     const disabledAttr = disabled ? 'disabled aria-disabled="true"' : '';
     const fieldType = field.field_type || field.type || 'text';
     const isRequired = field.required === true;
@@ -1738,6 +1773,8 @@ function debugQuestionData(questionId) {
       const processedColumns = replaceFinancialYearPlaceholders(field.columns || []);
       const processedRows = replaceFinancialYearPlaceholdersInFields(field.rows || []);
       const hasGroups = processedRows.some(row => row.group && row.group.trim() !== '');
+      const firstColumnLabel = String(processedColumns[0] || '').trim().toLowerCase();
+      const hasSerialNumberColumn = /^(s\.?\s*no\.?|serial(?:\s*no\.?)?|sl\.?\s*no\.?)$/.test(firstColumnLabel);
 
       let headerHtml = '<tr>';
       processedColumns.forEach((col) => { headerHtml += `<th>${escapeHtml(col)}</th>`; });
@@ -1757,8 +1794,24 @@ function debugQuestionData(questionId) {
       });
       if (currentGroupRows.length > 0) groupedRows.push({ group: currentGroup, rows: currentGroupRows });
 
+      const savedTableRows = Array.isArray(responseJson[field.name]) ? responseJson[field.name] : [];
+      const renderGroups = groupedRows.map((groupData) => ({
+        group: groupData.group,
+        rows: [...groupData.rows],
+      }));
+      if (savedTableRows.length > 0 && renderGroups.length > 0) {
+        let renderedRowCount = renderGroups.reduce((sum, groupData) => sum + groupData.rows.length, 0);
+        const lastGroup = renderGroups[renderGroups.length - 1];
+        const lastTemplateRow = lastGroup.rows[lastGroup.rows.length - 1];
+        while (renderedRowCount < savedTableRows.length) {
+          lastGroup.rows.push(lastTemplateRow);
+          renderedRowCount += 1;
+        }
+      }
+
       let bodyRows = '';
-      groupedRows.forEach((groupData) => {
+      let tableRowIndex = 0;
+      renderGroups.forEach((groupData) => {
         const groupRows = groupData.rows;
         const groupName = groupData.group;
         const rowCount = groupRows.length;
@@ -1768,7 +1821,9 @@ function debugQuestionData(questionId) {
           let rowHtml = '<tr>';
           processedColumns.forEach((col, colIdx) => {
             if (colIdx === 0) {
-              if (hasGroups) {
+              if (hasSerialNumberColumn) {
+                rowHtml += `<td>${tableRowIndex + 1}</td>`;
+              } else if (hasGroups) {
                 if (isFirstInGroup) {
                   rowHtml += `<td class="group-cell" rowspan="${rowCount}">${escapeHtml(groupName || '')}</td>`;
                 }
@@ -1783,7 +1838,7 @@ function debugQuestionData(questionId) {
                 return f.column === colName || f.column === col;
               });
               if (fieldData) {
-                const value = getStoredFieldValue(question, fieldData.name, '');
+                const value = getStoredTableCellValue(question, field.name, tableRowIndex, fieldData.name, '');
                 const fType = fieldData.field_type || fieldData.type || 'text';
                 const fDataValidation = `data-validation="${fType}" data-required="${fieldData.required || false}" data-field-name="${fieldData.name}"`;
                 const fMaxlength = fieldData.maxlength || getFieldMaxlength(fType);
@@ -1819,6 +1874,7 @@ function debugQuestionData(questionId) {
           if (hasDelete) rowHtml += `<td class="text-center"><button type="button" class="btn-brsr btn-brsr-sm danger js-delete-row">Delete</button></td>`;
           rowHtml += '</tr>';
           bodyRows += rowHtml;
+          tableRowIndex += 1;
         });
       });
 
@@ -1845,7 +1901,6 @@ function debugQuestionData(questionId) {
   // Question Renderer
   // ============================================================
   function renderQuestionInput(question, disabled = false) {
-    // CRITICAL: Use the response_value from the question object
     const value = question.response_value || '';
     const responseJson = question.response_json || {};
     const options = Array.isArray(question.options) ? question.options : [];
@@ -1853,93 +1908,83 @@ function debugQuestionData(questionId) {
     const qId = getQuestionId(question);
     const disabledAttr = disabled ? 'disabled aria-disabled="true"' : '';
 
-    // For fields-based questions (complex forms)
     if (fields.length) {
-        // Make sure fields have their values from response_json
-        const processedFields = fields.map(field => {
-            const fieldName = field.name;
-            if (fieldName && responseJson[fieldName] !== undefined) {
-                return { ...field, value: responseJson[fieldName] };
-            }
-            return field;
-        });
-        
-        return `<div class="form-group"><div class="choice-stack">${processedFields.map((field, index) => renderFieldControl(question, field, index, disabled)).join('')}</div></div>`;
+      const processedFields = fields.map(field => {
+        const fieldName = field.name;
+        if (fieldName && responseJson[fieldName] !== undefined) {
+          return { ...field, value: responseJson[fieldName] };
+        }
+        return field;
+      });
+      return `<div class="form-group"><div class="choice-stack">${processedFields.map((field, index) => renderFieldControl(question, field, index, disabled)).join('')}</div></div>`;
     }
 
-    // For simple text/textarea questions
     if (question.question_type === 'textarea' || question.question_type === 'text') {
-        const fieldType = question.field_type || question.question_type || 'text';
-        const isRequired = question.is_required === true;
-        const maxlength = getFieldMaxlength(fieldType);
-        // CRITICAL: Use the value from the question object
-        return `<div class="form-group" data-field-type="${fieldType}">
-            <label class="form-label">Response</label>
-            <textarea class="workspace-textarea form-textarea" id="responseValue-${escapeHtml(qId)}" data-validation="${fieldType}" data-required="${isRequired}" data-field-name="responseValue" ${maxlength ? `maxlength="${maxlength}"` : ''} placeholder="${escapeHtml(question.placeholder_text || 'Type your response here')}" ${disabledAttr}>${escapeHtml(value)}</textarea>
-            <div class="invalid-feedback"></div>
-        </div>`;
+      const fieldType = question.field_type || question.question_type || 'text';
+      const isRequired = question.is_required === true;
+      const maxlength = getFieldMaxlength(fieldType);
+      return `<div class="form-group" data-field-type="${fieldType}">
+        <label class="form-label">Response</label>
+        <textarea class="workspace-textarea form-textarea" id="responseValue-${escapeHtml(qId)}" data-validation="${fieldType}" data-required="${isRequired}" data-field-name="responseValue" ${maxlength ? `maxlength="${maxlength}"` : ''} placeholder="${escapeHtml(question.placeholder_text || 'Type your response here')}" ${disabledAttr}>${escapeHtml(value)}</textarea>
+        <div class="invalid-feedback"></div>
+      </div>`;
     }
 
-    // For number/email/url/etc
     if (question.question_type === 'number' || question.question_type === 'decimal' || question.question_type === 'currency' || question.question_type === 'percentage' || question.question_type === 'year' || question.question_type === 'email' || question.question_type === 'url' || question.question_type === 'date' || question.question_type === 'phone') {
-        const fieldType = question.field_type || question.question_type || 'text';
-        const isRequired = question.is_required === true;
-        const typeMap = { number: 'number', decimal: 'text', currency: 'text', percentage: 'text', year: 'number', email: 'email', url: 'url', date: 'date', phone: 'tel' };
-        const type = typeMap[question.question_type] || 'text';
-        const maxlength = getFieldMaxlength(fieldType);
-        const inputmode = getFieldInputmode(fieldType);
-        const pattern = getFieldPattern(fieldType);
-        // CRITICAL: Use the value from the question object
-        return `<div class="form-group" data-field-type="${fieldType}">
-            <label class="form-label">Response</label>
-            <input class="workspace-input" id="responseValue-${escapeHtml(qId)}" type="${type}" data-validation="${fieldType}" data-required="${isRequired}" data-field-name="responseValue" ${maxlength ? `maxlength="${maxlength}"` : ''} ${inputmode ? `inputmode="${inputmode}"` : ''} ${pattern ? `pattern="${pattern}"` : ''} value="${escapeHtml(value)}" placeholder="${escapeHtml(question.placeholder_text || '')}" ${disabledAttr}>
-            <div class="invalid-feedback"></div>
-        </div>`;
+      const fieldType = question.field_type || question.question_type || 'text';
+      const isRequired = question.is_required === true;
+      const typeMap = { number: 'number', decimal: 'text', currency: 'text', percentage: 'text', year: 'number', email: 'email', url: 'url', date: 'date', phone: 'tel' };
+      const type = typeMap[question.question_type] || 'text';
+      const maxlength = getFieldMaxlength(fieldType);
+      const inputmode = getFieldInputmode(fieldType);
+      const pattern = getFieldPattern(fieldType);
+      return `<div class="form-group" data-field-type="${fieldType}">
+        <label class="form-label">Response</label>
+        <input class="workspace-input" id="responseValue-${escapeHtml(qId)}" type="${type}" data-validation="${fieldType}" data-required="${isRequired}" data-field-name="responseValue" ${maxlength ? `maxlength="${maxlength}"` : ''} ${inputmode ? `inputmode="${inputmode}"` : ''} ${pattern ? `pattern="${pattern}"` : ''} value="${escapeHtml(value)}" placeholder="${escapeHtml(question.placeholder_text || '')}" ${disabledAttr}>
+        <div class="invalid-feedback"></div>
+      </div>`;
     }
 
-    // For radio/yes_no
     if (question.question_type === 'radio' || question.question_type === 'yes_no') {
-        const fieldType = question.field_type || question.question_type || 'text';
-        const isRequired = question.is_required === true;
-        // CRITICAL: Use the value from the question object
-        return `<div class="form-group" data-field-type="${fieldType}">
-            <label class="form-label">Response</label>
-            <div class="choice-stack">
-                ${options.map((option) => {
-                    const label = option.label ?? option.value ?? option;
-                    const optionValue = option.value ?? option.label ?? option;
-                    const checked = String(optionValue) === String(value) ? 'checked' : '';
-                    return `<label class="choice-item">
-                        <input type="radio" name="responseValue-${escapeHtml(qId)}" value="${escapeHtml(optionValue)}" data-validation="${fieldType}" data-required="${isRequired}" data-field-name="responseValue" ${checked} ${disabledAttr}>
-                        <span>${escapeHtml(label)}</span>
-                    </label>`;
-                }).join('')}
-            </div>
-            <div class="invalid-feedback"></div>
-        </div>`;
+      const fieldType = question.field_type || question.question_type || 'text';
+      const isRequired = question.is_required === true;
+      return `<div class="form-group" data-field-type="${fieldType}">
+        <label class="form-label">Response</label>
+        <div class="choice-stack">
+          ${options.map((option) => {
+            const label = option.label ?? option.value ?? option;
+            const optionValue = option.value ?? option.label ?? option;
+            const checked = String(optionValue) === String(value) ? 'checked' : '';
+            return `<label class="choice-item">
+              <input type="radio" name="responseValue-${escapeHtml(qId)}" value="${escapeHtml(optionValue)}" data-validation="${fieldType}" data-required="${isRequired}" data-field-name="responseValue" ${checked} ${disabledAttr}>
+              <span>${escapeHtml(label)}</span>
+            </label>`;
+          }).join('')}
+        </div>
+        <div class="invalid-feedback"></div>
+      </div>`;
     }
 
-    // For checkbox/multi_select
     if (question.question_type === 'checkbox' || question.question_type === 'multi_select') {
-        const selected = String(value || '').split(',').map((item) => item.trim()).filter(Boolean);
-        return `<div class="form-group">
-            <label class="form-label">Choose applicable options</label>
-            <div class="choice-stack">
-                ${options.map((option) => {
-                    const label = option.label ?? option.value ?? option;
-                    const optionValue = option.value ?? option.label ?? option;
-                    const checked = selected.includes(String(optionValue)) ? 'checked' : '';
-                    return `<label class="choice-item">
-                        <input type="checkbox" value="${escapeHtml(optionValue)}" ${checked} ${disabledAttr}>
-                        <span>${escapeHtml(label)}</span>
-                    </label>`;
-                }).join('')}
-            </div>
-        </div>`;
+      const selected = String(value || '').split(',').map((item) => item.trim()).filter(Boolean);
+      return `<div class="form-group">
+        <label class="form-label">Choose applicable options</label>
+        <div class="choice-stack">
+          ${options.map((option) => {
+            const label = option.label ?? option.value ?? option;
+            const optionValue = option.value ?? option.label ?? option;
+            const checked = selected.includes(String(optionValue)) ? 'checked' : '';
+            return `<label class="choice-item">
+              <input type="checkbox" value="${escapeHtml(optionValue)}" ${checked} ${disabledAttr}>
+              <span>${escapeHtml(label)}</span>
+            </label>`;
+          }).join('')}
+        </div>
+      </div>`;
     }
 
     return `<div class="form-group"><label class="form-label">Response</label><textarea class="workspace-textarea form-textarea" id="responseValue-${escapeHtml(qId)}" ${disabledAttr}>${escapeHtml(value)}</textarea></div>`;
-}
+  }
 
   // ============================================================
   // UI Renderers
@@ -2019,7 +2064,7 @@ function debugQuestionData(questionId) {
     return groups;
   }
 
-function renderQuestionCard(question, isActive) {
+  function renderQuestionCard(question, isActive) {
     const selected = isActive ? 'active' : '';
     const qId = getQuestionId(question);
     const currentAssignment = state.workspace?.current_assignment || {};
@@ -2188,8 +2233,7 @@ function renderQuestionCard(question, isActive) {
     if (card) card.classList.toggle('question-selected', checked);
   }
 
-function updateQuestionHeader(workspace, question) {
-    // Use workspace.counts directly
+  function updateQuestionHeader(workspace, question) {
     const completed = workspace.counts?.completed || 0;
     const total = workspace.counts?.total || 0;
     document.getElementById('progressLabel').textContent = `${completed} of ${total}`;
@@ -2223,7 +2267,6 @@ function updateQuestionHeader(workspace, question) {
     const canAssign = !stageType || stageType === 'question_assignment';
     if (assignmentLauncher) assignmentLauncher.style.display = canAssign ? '' : 'none';
 
-    // Show/hide schedule button based on permissions and state
     const scheduleBtn = document.getElementById('createScheduleBtn');
     if (scheduleBtn) {
       scheduleBtn.style.display = canAssign && workspace.current_assignment?.can_act ? '' : 'none';
@@ -2247,7 +2290,7 @@ function updateQuestionHeader(workspace, question) {
     return null;
   }
 
- function collectQuestionPayload(questionId) {
+  function collectQuestionPayload(questionId) {
     const question = state.workspace.topics.find((item) => getQuestionId(item) === questionId);
     if (!question) return null;
 
@@ -2256,35 +2299,46 @@ function updateQuestionHeader(workspace, question) {
 
     let assignmentId = getNumericAssignmentId();
     if (!assignmentId && question.assignment_id && !isNaN(parseInt(question.assignment_id))) {
-        assignmentId = question.assignment_id.toString();
+      assignmentId = question.assignment_id.toString();
     }
     if (!assignmentId) return null;
 
     const payload = { assignment_id: assignmentId };
     const fields = Array.isArray(question.validation_rules && question.validation_rules.fields)
-        ? question.validation_rules.fields : [];
+      ? question.validation_rules.fields : [];
 
     if (fields.length) {
-        // Field/table-based question: read every element that carries
-        // data-field-name (this covers plain fields AND table cells,
-        // since each table cell's name is already unique per row).
-        const responseJson = {};
-        container.querySelectorAll('[data-field-name]').forEach((el) => {
+      const responseJson = {};
+
+      container.querySelectorAll('.data-table[data-table-name]').forEach((table) => {
+        const tableName = table.dataset.tableName;
+        const tbody = table.querySelector('tbody');
+        if (!tableName || !tbody) return;
+
+        const rows = Array.from(tbody.querySelectorAll('tr')).map((row) => {
+          const rowData = {};
+          row.querySelectorAll('[data-field-name]').forEach((el) => {
             const name = el.dataset.fieldName;
             if (!name) return;
-            if (el.type === 'checkbox') {
-                responseJson[name] = el.checked;
-            } else if (el.type === 'radio') {
-                if (el.checked) responseJson[name] = el.value;
-            } else {
-                responseJson[name] = el.value;
-            }
+            rowData[name] = collectFieldValue(el, row);
+          });
+          return rowData;
         });
-        payload.response_json = responseJson;
-        return payload;
+
+        responseJson[tableName] = rows;
+      });
+
+      container.querySelectorAll('.form-group:not([data-field-type="table"]) [data-field-name]').forEach((el) => {
+        if (el.closest('.data-table')) return;
+        const name = el.dataset.fieldName;
+        if (!name) return;
+        responseJson[name] = collectFieldValue(el, el.closest('.form-group') || container);
+      });
+
+      payload.response_json = responseJson;
+      return payload;
     }
 
-    // Simple (non-field) question types
     const textarea = container.querySelector(`textarea[id^="responseValue-"]`);
     if (textarea) payload.response_value = textarea.value;
 
@@ -2296,14 +2350,15 @@ function updateQuestionHeader(workspace, question) {
 
     const checkboxes = container.querySelectorAll('input[type="checkbox"]:checked');
     if (checkboxes.length > 0 && !payload.response_value) {
-        payload.response_value = Array.from(checkboxes).map(el => el.value).join(',');
+      payload.response_value = Array.from(checkboxes).map(el => el.value).join(',');
     }
 
     const select = container.querySelector('select');
     if (select && !payload.response_value) payload.response_value = select.value;
 
     return payload;
-}
+  }
+
   function isBlankResponseValue(value) {
     if (value == null) return true;
     if (typeof value === 'string') return value.trim() === '';
@@ -2321,146 +2376,123 @@ function updateQuestionHeader(workspace, question) {
   // ============================================================
   // API Operations
   // ============================================================
-async function persistQuestion(questionId, { reload = false, showMessage = true } = {}) {
+  async function persistQuestion(questionId, { reload = false, showMessage = true } = {}) {
     const payload = collectQuestionPayload(questionId);
     if (!payload) { 
-        showWorkspaceMessage('Could not collect question data. Please ensure you have an active assignment.', 'error');
-        return false; 
+      showWorkspaceMessage('Could not collect question data. Please ensure you have an active assignment.', 'error');
+      return false; 
     }
     if (!payload.assignment_id) { 
-        showWorkspaceMessage('No assignment found for this question. Please create an assignment first.', 'error');
-        return false; 
+      showWorkspaceMessage('No assignment found for this question. Please create an assignment first.', 'error');
+      return false; 
     }
 
     try {
-        const formData = new FormData();
-        formData.append("assignment_id", payload.assignment_id);
-        formData.append("response_value", payload.response_value || "");
-        formData.append("response_json", JSON.stringify(payload.response_json || {}));
-        
-        const documentInput = document.querySelector(`.js-document-upload[data-question-id="${CSS.escape(questionId)}"]`);
-        if (documentInput && documentInput.files.length) {
-            Array.from(documentInput.files).forEach(file => formData.append("documents", file));
-        }
+      const formData = new FormData();
+      formData.append("assignment_id", payload.assignment_id);
+      formData.append("response_value", payload.response_value || "");
+      formData.append("response_json", JSON.stringify(payload.response_json || {}));
+      
+      const documentInput = document.querySelector(`.js-document-upload[data-question-id="${CSS.escape(questionId)}"]`);
+      if (documentInput && documentInput.files.length) {
+        Array.from(documentInput.files).forEach(file => formData.append("documents", file));
+      }
 
-        const saveUrl = apiUrl(API_SAVE, questionId);
-        console.log('📤 Sending to:', saveUrl);
-        console.log('📤 Assignment ID:', payload.assignment_id);
-        console.log('📤 Response value:', payload.response_value);
-        console.log('📤 Response JSON:', payload.response_json);
-
-        const response = await fetch(saveUrl, {
-            method: "PUT",
-            headers: { 
-                "X-CSRFToken": getCookie("csrftoken")
-            },
-            body: formData,
-        });
-        
-        // Get the raw response text first
-        const responseText = await response.text();
-        console.log('📥 Raw response (first 500 chars):', responseText.substring(0, 500));
-        console.log('📥 Response status:', response.status);
-        console.log('📥 Response headers:', response.headers.get('content-type'));
-        
-        // Try to parse as JSON
-        let data = {};
-        try {
-            data = JSON.parse(responseText);
-            console.log('✅ Successfully parsed JSON:', data);
-        } catch (parseError) {
-            console.error('❌ Failed to parse JSON. Raw response:', responseText);
-            
-            // Show the actual error to the user
-            if (responseText.includes('<!DOCTYPE') || responseText.includes('<html')) {
-                showWorkspaceMessage('Server returned HTML instead of JSON. Check server logs.', 'error');
-            } else {
-                showWorkspaceMessage(`Server returned: ${responseText.substring(0, 100)}...`, 'error');
-            }
-            return false;
+      const saveUrl = apiUrl(API_SAVE, questionId);
+      const response = await fetch(saveUrl, {
+        method: "PUT",
+        headers: { "X-CSRFToken": getCookie("csrftoken") },
+        body: formData,
+      });
+      
+      const responseText = await response.text();
+      let data = {};
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('❌ Failed to parse JSON. Raw response:', responseText);
+        if (responseText.includes('<!DOCTYPE') || responseText.includes('<html')) {
+          showWorkspaceMessage('Server returned HTML instead of JSON. Check server logs.', 'error');
+        } else {
+          showWorkspaceMessage(`Server returned: ${responseText.substring(0, 100)}...`, 'error');
         }
-        
-        if (!response.ok) { 
-            showWorkspaceMessage(data.detail || data.message || 'Unable to save the question.', 'error');
-            return false; 
-        }
-        
-        if (showMessage) {
-            showWorkspaceMessage(data.message || `Draft saved successfully for question ${questionId}.`, 'success');
-        }
-        
-        // Update the workspace state with saved data
-        if (state.workspace && state.workspace.topics) {
-            const questionIndex = state.workspace.topics.findIndex(item => getQuestionId(item) === questionId);
-            if (questionIndex !== -1) {
-                if (data.response_value !== undefined) {
-                    state.workspace.topics[questionIndex].response_value = data.response_value;
-                }
-                if (data.response_json !== undefined) {
-                    state.workspace.topics[questionIndex].response_json = data.response_json;
-                }
-                state.workspace.topics[questionIndex].status = data.status || 'draft';
-                
-                if (state.activeQuestion && getQuestionId(state.activeQuestion) === questionId) {
-                    state.activeQuestion = state.workspace.topics[questionIndex];
-                }
-            }
-        }
-        
-        updateQuestionUI(questionId, data);
-        return true;
-    } catch (error) {
-        console.error('❌ Error saving question:', error);
-        showWorkspaceMessage('An error occurred while saving. Please check the console for details.', 'error');
         return false;
+      }
+      
+      if (!response.ok) { 
+        showWorkspaceMessage(data.detail || data.message || 'Unable to save the question.', 'error');
+        return false; 
+      }
+      
+      if (showMessage) {
+        showWorkspaceMessage(data.message || `Draft saved successfully for question ${questionId}.`, 'success');
+      }
+      
+      if (state.workspace && state.workspace.topics) {
+        const questionIndex = state.workspace.topics.findIndex(item => getQuestionId(item) === questionId);
+        if (questionIndex !== -1) {
+          if (data.response_value !== undefined) {
+            state.workspace.topics[questionIndex].response_value = data.response_value;
+          }
+          if (data.response_json !== undefined) {
+            state.workspace.topics[questionIndex].response_json = data.response_json;
+          }
+          state.workspace.topics[questionIndex].status = data.status || 'draft';
+          
+          if (state.activeQuestion && getQuestionId(state.activeQuestion) === questionId) {
+            state.activeQuestion = state.workspace.topics[questionIndex];
+          }
+        }
+      }
+      
+      updateQuestionUI(questionId, data);
+      return true;
+    } catch (error) {
+      console.error('❌ Error saving question:', error);
+      showWorkspaceMessage('An error occurred while saving. Please check the console for details.', 'error');
+      return false;
     }
-}
-  // ADDED: Helper function to update UI with saved data
-function updateQuestionUI(questionId, data) {
+  }
+
+  function updateQuestionUI(questionId, data) {
     const container = document.querySelector(`.question-container[data-question-id="${CSS.escape(questionId)}"]`);
     if (!container) return;
     
-    // Extract status with fallback
     const status = data?.status || 'draft';
     const statusStr = String(status);
     
-    // Update status badge
     const statusBadge = container.querySelector('.status-badge');
     if (statusBadge) {
-        statusBadge.textContent = statusStr.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        statusBadge.className = `status-badge ${statusClass(statusStr)}`;
+      statusBadge.textContent = statusStr.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      statusBadge.className = `status-badge ${statusClass(statusStr)}`;
     }
     
-    // Update sidebar dot
     const sidebarItem = document.querySelector(`.question-item[data-question-id="${CSS.escape(questionId)}"]`);
     if (sidebarItem) {
-        const dot = sidebarItem.querySelector('.question-dot');
-        if (dot) {
-            dot.className = `question-dot ${statusClass(statusStr)}`;
-        }
+      const dot = sidebarItem.querySelector('.question-dot');
+      if (dot) {
+        dot.className = `question-dot ${statusClass(statusStr)}`;
+      }
     }
     
-    // Update the input field values if they exist in the response
     const responseValue = data?.response_value;
     if (responseValue !== undefined) {
-        const textarea = container.querySelector(`textarea[id^="responseValue-"]`);
-        if (textarea) {
-            textarea.value = responseValue;
-        }
+      const textarea = container.querySelector(`textarea[id^="responseValue-"]`);
+      if (textarea) {
+        textarea.value = responseValue;
+      }
     }
     
-    // Update progress
     updateProgress();
-}
+  }
 
-// ADDED: Update progress function
-function updateProgress() {
+  function updateProgress() {
     if (!state.workspace) return;
     const total = state.workspace.counts?.total || 0;
-    const completed = state.workspace.counts?.completed || 0;  // Use counts.completed
+    const completed = state.workspace.counts?.completed || 0;
     document.getElementById('progressLabel').textContent = `${completed} of ${total}`;
     document.getElementById('progressFill').style.width = total ? `${Math.round((completed / total) * 100)}%` : '0%';
-}
+  }
 
   async function saveQuestion(questionId) {
     await persistQuestion(questionId, { reload: false, showMessage: true });
@@ -2581,7 +2613,6 @@ function updateProgress() {
     fySelect.innerHTML = '<option value="">Select financial year</option>' + 
       workspace.financial_years.map((fy) => `<option value="${escapeHtml(fy.value)}">${escapeHtml(fy.label)}</option>`).join('');
 
-    // Set default financial year to current FY and make it read-only
     const currentFY = getCurrentFinancialYear();
     if (fySelect.querySelector(`option[value="${currentFY}"]`)) {
       fySelect.value = currentFY;
@@ -2625,9 +2656,7 @@ function updateProgress() {
       const response = await fetch(`${API_ASSIGN_OPTIONS}?${params.toString()}`, { headers: { 'Accept': 'application/json' } });
       const payload = await response.json();
       const assignees = payload.assignees || [];
-      const defaultAssignee = payload.default_assignee || null;
       const reviewers = payload.reviewers || [];
-      const defaultReviewer = payload.default_reviewer || null;
 
       assigneeSelect.innerHTML = assignees.length ? 
         ['<option value="">Select Assign To</option>'].concat(assignees.map((item) => `<option value="${item.id}">${escapeHtml(item.name)}${item.department_name ? ` (${escapeHtml(item.department_name)})` : ''}</option>`)).join('') : 
@@ -2866,7 +2895,7 @@ function updateProgress() {
   }
 
   // ============================================================
-  // Calculation Functions
+  // Calculation Functions - UPDATED with proper percentage formatting
   // ============================================================
   function calculateFormulas() {
     document.querySelectorAll("[data-formula]").forEach(output => {
@@ -2881,11 +2910,22 @@ function updateProgress() {
         expression = expression.replace(regex, value);
       });
       let result = "";
-      try { result = eval(expression); if (!isFinite(result)) result = 0; } catch { result = ""; }
+      try { 
+        result = eval(expression); 
+        if (!isFinite(result)) result = 0; 
+      } catch { 
+        result = ""; 
+      }
       if (result !== "") {
         const format = output.dataset.format || "number";
-        output.value = format === "percentage" ? `${Number(result)} %` : Number(result);
-      } else { output.value = ""; }
+        if (format === "percentage") {
+          output.value = formatPercentageValue(result);
+        } else {
+          output.value = Number(result);
+        }
+      } else { 
+        output.value = ""; 
+      }
     });
   }
 
@@ -2899,7 +2939,7 @@ function updateProgress() {
   // ============================================================
   // Workspace Loader
   // ============================================================
-async function loadWorkspace(sectionCode, principleSlug, questionId, assignmentId) {
+  async function loadWorkspace(sectionCode, principleSlug, questionId, assignmentId) {
     const params = new URLSearchParams();
     if (sectionCode) params.set('section_code', sectionCode);
     if (principleSlug) params.set('principle_slug', principleSlug);
@@ -2908,132 +2948,89 @@ async function loadWorkspace(sectionCode, principleSlug, questionId, assignmentI
     if (state.workspaceMode) params.set('mode', state.workspaceMode);
 
     try {
-        const response = await fetch(`${API_WORKSPACE}?${params.toString()}`, { 
-            headers: { 'Accept': 'application/json' } 
+      const response = await fetch(`${API_WORKSPACE}?${params.toString()}`, { 
+        headers: { 'Accept': 'application/json' } 
+      });
+      
+      if (!response.ok) {
+        console.error('❌ Workspace API error:', response.status, response.statusText);
+        showWorkspaceMessage(`Failed to load workspace: ${response.status} ${response.statusText}`, 'error');
+        return;
+      }
+      
+      let workspace = await response.json();
+      
+      if (workspace.topics) {
+        console.log(`📝 Received ${workspace.topics.length} topics from server`);
+      }
+      
+      workspace = processWorkspaceData(workspace);
+      
+      const currentQuestionData = {};
+      const preserveExistingData = state.workspaceMode !== 'assign';
+      if (preserveExistingData && state.workspace && state.workspace.topics) {
+        console.log('📦 Preserving current question data before reload...');
+        state.workspace.topics.forEach(q => {
+          const qId = getQuestionId(q);
+          if (qId) {
+            currentQuestionData[qId] = {
+              response_value: q.response_value,
+              response_json: q.response_json,
+              status: q.status
+            };
+          }
         });
-        
-        if (!response.ok) {
-            console.error('❌ Workspace API error:', response.status, response.statusText);
-            showWorkspaceMessage(`Failed to load workspace: ${response.status} ${response.statusText}`, 'error');
-            return;
-        }
-        
-        let workspace = await response.json();
-        console.log('📥 Raw workspace data received:', workspace);
-        
-        // Log topics to see if response data is coming from server
-        if (workspace.topics) {
-            console.log(`📝 Received ${workspace.topics.length} topics from server`);
-            workspace.topics.forEach((topic, index) => {
-                console.log(`   Topic ${index + 1}:`, {
-                    question_id: topic.question_id,
-                    question_number: topic.question_number,
-                    response_value: topic.response_value || '(empty)',
-                    response_json: topic.response_json ? Object.keys(topic.response_json) : '(empty)',
-                    status: topic.status
-                });
-            });
-        }
-        
-        workspace = processWorkspaceData(workspace);
-        
-        // PRESERVE current question data before overwriting
-        const currentQuestionData = {};
-        const preserveExistingData = state.workspaceMode !== 'assign';
-        if (preserveExistingData && state.workspace && state.workspace.topics) {
-            console.log('📦 Preserving current question data before reload...');
-            state.workspace.topics.forEach(q => {
-                const qId = getQuestionId(q);
-                if (qId) {
-                    currentQuestionData[qId] = {
-                        response_value: q.response_value,
-                        response_json: q.response_json,
-                        status: q.status
-                    };
-                    console.log(`   Preserved data for ${qId}:`, {
-                        response_value: q.response_value || '(empty)',
-                        status: q.status
-                    });
-                }
-            });
-        }
-        
-        // CRITICAL: Check if workspace has response data before overwriting
-        // If the server returned empty data but we have saved data, use the saved data
-        if (preserveExistingData && workspace.topics) {
-            workspace.topics.forEach((q, index) => {
-                const qId = getQuestionId(q);
-                
-                // If server returned empty but we have preserved data, restore it
-                if (qId && currentQuestionData[qId]) {
-                    const hasServerData = q.response_value || (q.response_json && Object.keys(q.response_json).length > 0);
-                    const hasPreservedData = currentQuestionData[qId].response_value || 
-                                            (currentQuestionData[qId].response_json && Object.keys(currentQuestionData[qId].response_json).length > 0);
-                    
-                    if (!hasServerData && hasPreservedData) {
-                        console.log(`🔄 Restoring preserved data for ${qId}`);
-                        workspace.topics[index].response_value = currentQuestionData[qId].response_value;
-                        workspace.topics[index].response_json = currentQuestionData[qId].response_json;
-                        workspace.topics[index].status = currentQuestionData[qId].status;
-                    } else if (hasServerData) {
-                        console.log(`✅ Using server data for ${qId}:`, {
-                            response_value: q.response_value || '(empty)',
-                            status: q.status
-                        });
-                    }
-                }
-            });
-        }
-        
-        // UPDATE state with the workspace data
-        state.workspace = workspace;
-        state.sectionCode = workspace.section.code;
-        state.principleSlug = workspace.principle ? workspace.principle.slug : '';
-        state.questionId = workspace.active_question_id;
-        state.assignmentId = workspace.assignment_id || assignmentId || state.assignmentId;
-        
-        console.log('✅ Workspace loaded successfully:', {
-            section: state.sectionCode,
-            principle: state.principleSlug,
-            questionId: state.questionId,
-            assignmentId: state.assignmentId,
-            topics: workspace.topics?.length || 0
-        });
-
-        const flashMessage = sessionStorage.getItem('brsr_workspace_message');
-        if (flashMessage) { 
-            const isError = flashMessage.includes('⚠️') || flashMessage.includes('error');
-            showWorkspaceMessage(flashMessage, isError ? 'error' : 'success'); 
-            sessionStorage.removeItem('brsr_workspace_message'); 
-        }
-
-        renderSidebar(workspace);
-        renderQuestionDeck(workspace, workspace.active_question_id);
-        refreshSelectedList();
-        
-        // VERIFY the data is displayed correctly
-        console.log('🔍 Verifying UI display...');
-        const questionContainers = document.querySelectorAll('.question-container');
-        questionContainers.forEach(container => {
-            const qId = container.getAttribute('data-question-id');
-            const question = workspace.topics?.find(q => getQuestionId(q) === qId);
-            if (question) {
-                const textarea = container.querySelector('textarea');
-                const input = container.querySelector('input');
-                console.log(`   Question ${qId}:`, {
-                    data_value: question.response_value || '(empty)',
-                    textarea_value: textarea?.value || '(empty)',
-                    input_value: input?.value || '(empty)'
-                });
+      }
+      
+      if (preserveExistingData && workspace.topics) {
+        workspace.topics.forEach((q, index) => {
+          const qId = getQuestionId(q);
+          if (qId && currentQuestionData[qId]) {
+            const hasServerData = q.response_value || (q.response_json && Object.keys(q.response_json).length > 0);
+            const hasPreservedData = currentQuestionData[qId].response_value || 
+                                    (currentQuestionData[qId].response_json && Object.keys(currentQuestionData[qId].response_json).length > 0);
+            
+            if (!hasServerData && hasPreservedData) {
+              console.log(`🔄 Restoring preserved data for ${qId}`);
+              workspace.topics[index].response_value = currentQuestionData[qId].response_value;
+              workspace.topics[index].response_json = currentQuestionData[qId].response_json;
+              workspace.topics[index].status = currentQuestionData[qId].status;
             }
+          }
         });
-        
+      }
+      
+      state.workspace = workspace;
+      state.sectionCode = workspace.section.code;
+      state.principleSlug = workspace.principle ? workspace.principle.slug : '';
+      state.questionId = workspace.active_question_id;
+      state.assignmentId = workspace.assignment_id || assignmentId || state.assignmentId;
+      
+      console.log('✅ Workspace loaded successfully:', {
+        section: state.sectionCode,
+        principle: state.principleSlug,
+        questionId: state.questionId,
+        assignmentId: state.assignmentId,
+        topics: workspace.topics?.length || 0
+      });
+
+      const flashMessage = sessionStorage.getItem('brsr_workspace_message');
+      if (flashMessage) { 
+        const isError = flashMessage.includes('⚠️') || flashMessage.includes('error');
+        showWorkspaceMessage(flashMessage, isError ? 'error' : 'success'); 
+        sessionStorage.removeItem('brsr_workspace_message'); 
+      }
+
+      renderSidebar(workspace);
+      renderQuestionDeck(workspace, workspace.active_question_id);
+      refreshSelectedList();
+      
     } catch (error) {
-        console.error('❌ Error loading workspace:', error);
-        console.error('❌ Error stack:', error.stack);
-        showWorkspaceMessage('Error loading workspace. Please refresh the page.', 'error');
+      console.error('❌ Error loading workspace:', error);
+      console.error('❌ Error stack:', error.stack);
+      showWorkspaceMessage('Error loading workspace. Please refresh the page.', 'error');
     }
-}
+  }
 
   // ============================================================
   // Event Listeners
@@ -3091,7 +3088,6 @@ async function loadWorkspace(sectionCode, principleSlug, questionId, assignmentI
     assignmentForm.addEventListener('submit', submitAssignment);
   }
 
-  // Set default due date to 30 days from now
   const dueDateInput = document.getElementById('assignmentDueDate');
   if (dueDateInput) {
     const date = new Date();

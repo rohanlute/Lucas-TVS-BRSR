@@ -1,4 +1,5 @@
 import json
+import re
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -1282,6 +1283,10 @@ def _readonly_table_html(field, response_json):
     columns = [_replace_fy(c) for c in (field.get("columns") or [])]
     rows = field.get("rows") or []
     has_groups = any((row.get("group") or "").strip() for row in rows)
+    table_name = field.get("name") or ""
+    table_rows = response_json.get(table_name, []) if isinstance(response_json, dict) and table_name else []
+    first_column_label = str(columns[0] if columns else "").strip().lower()
+    has_serial_number_column = bool(re.match(r"^(s\.?\s*no\.?|serial(?:\s*no\.?)?|sl\.?\s*no\.?)$", first_column_label))
 
     header_html = "<tr>" + "".join(f"<th>{escape(col)}</th>" for col in columns) + "</tr>"
 
@@ -1301,8 +1306,60 @@ def _readonly_table_html(field, response_json):
     if current_rows:
         grouped.append((current_group, current_rows))
 
+    saved_rows = response_json.get(table_name, []) if isinstance(response_json, dict) and table_name else []
+    render_groups = [
+        {"group": group_value, "rows": list(group_rows)}
+        for group_value, group_rows in grouped
+    ]
+    if not render_groups and columns:
+        render_groups = [{"group": None, "rows": [{}]}]
+    if isinstance(saved_rows, list) and saved_rows and render_groups:
+        rendered_row_count = sum(len(group_data["rows"]) for group_data in render_groups)
+        last_group = render_groups[-1]
+        last_template_row = last_group["rows"][-1]
+        while rendered_row_count < len(saved_rows):
+            last_group["rows"].append(last_template_row)
+            rendered_row_count += 1
+
     body_html = ""
-    for group_value, group_rows in grouped:
+    table_row_index = 0
+
+    def _cell_value(row_values, column_key, column_index, fallback_values=None):
+        fallback_values = fallback_values or {}
+        normalized_key = str(column_key or "").strip()
+        lower_key = normalized_key.lower()
+        compact_key = re.sub(r"[^a-z0-9]+", "", lower_key)
+
+        def _matches_key(candidate):
+            candidate_text = str(candidate or "").strip()
+            candidate_lower = candidate_text.lower()
+            candidate_compact = re.sub(r"[^a-z0-9]+", "", candidate_lower)
+            return (
+                candidate_text == normalized_key
+                or candidate_lower == lower_key
+                or candidate_compact == compact_key
+            )
+
+        for source in (row_values, fallback_values):
+            if isinstance(source, (list, tuple)):
+                if column_index < len(source):
+                    value = source[column_index]
+                    if value is not None:
+                        return value
+                continue
+            if isinstance(source, dict):
+                if normalized_key and source.get(normalized_key) is not None:
+                    return source.get(normalized_key)
+                if lower_key and source.get(lower_key) is not None:
+                    return source.get(lower_key)
+                for key, value in source.items():
+                    if _matches_key(key) and value is not None:
+                        return value
+        return ""
+
+    for group_data in render_groups:
+        group_value = group_data["group"]
+        group_rows = group_data["rows"]
         row_count = len(group_rows)
         for idx, row in enumerate(group_rows):
             is_first = idx == 0
@@ -1310,7 +1367,9 @@ def _readonly_table_html(field, response_json):
             row_html = "<tr>"
             for col_idx, col in enumerate(columns):
                 if col_idx == 0:
-                    if has_groups:
+                    if has_serial_number_column:
+                        row_html += f"<td>{table_row_index + 1}</td>"
+                    elif has_groups:
                         if is_first:
                             row_html += f'<td class="group-cell" rowspan="{row_count}">{escape(_replace_fy(group_value or ""))}</td>'
                     else:
@@ -1326,7 +1385,8 @@ def _readonly_table_html(field, response_json):
                         if field_data.get("type") == "static":
                             cell_value = field_data.get("value", "")
                         else:
-                            raw_value = response_json.get(field_data.get("name"), "") if isinstance(response_json, dict) else ""
+                            row_values = table_rows[table_row_index] if isinstance(table_rows, list) and table_row_index < len(table_rows) else {}
+                            raw_value = _cell_value(row_values, field_data.get("name"), col_idx, response_json if isinstance(response_json, dict) else {})
                             if field_data.get("type") == "select" and field_data.get("options"):
                                 match = next(
                                     (opt for opt in field_data["options"] if str(opt.get("value", opt)) == str(raw_value)),
@@ -1341,6 +1401,7 @@ def _readonly_table_html(field, response_json):
                         row_html += "<td></td>"
             row_html += "</tr>"
             body_html += row_html
+            table_row_index += 1
 
     return f'''<div class="form-group" data-field-type="table">
       <label class="form-label">{escape(_replace_fy(field.get("label") or ""))}</label>
@@ -2689,6 +2750,7 @@ class AssignmentDetailView(LoginRequiredMixin, TemplateView):
         question_rows = []
         for question in questions:
             response = responses.get(question.id)
+            rendered_html = _render_question_readonly_html(question, response)
 
             # Get the response data
             response_value = ""
@@ -2741,6 +2803,7 @@ class AssignmentDetailView(LoginRequiredMixin, TemplateView):
                 "submitted_at": response.submitted_at if response else None,
                 "reviewed_by": str(response.reviewed_by) if response and response.reviewed_by else "",
                 "reviewed_at": response.reviewed_at if response else None,
+                "rendered_html": rendered_html,
                 "can_act": self._can_act_on_question(assignment, response, user),
             })
 
@@ -2760,6 +2823,7 @@ class AssignmentDetailView(LoginRequiredMixin, TemplateView):
                 "validation_rules": q["validation_rules"],
                 "response_value": q["response_value"],
                 "response_json": q["response_json"],
+                "rendered_html": q["rendered_html"],
             }
             for q in question_rows
         ]

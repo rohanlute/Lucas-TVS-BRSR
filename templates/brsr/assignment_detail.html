@@ -354,6 +354,8 @@
     padding:18px;
     display:grid;
     gap:14px;
+    overflow-x:auto;
+    overflow-y:visible;
   }
 
   .response-box{
@@ -375,6 +377,7 @@
 
   .response-render{
     padding:10px 14px 14px;
+    overflow-x:auto;
   }
 
   .no-response{
@@ -1616,11 +1619,81 @@
     return [];
   }
 
-  function initTableRows(question) {
-    const existing = question.response_json && Array.isArray(question.response_json.rows)
-      ? question.response_json.rows
-      : null;
-    return existing && existing.length ? existing : [];
+  function isRowArray(value) {
+    return Array.isArray(value) && value.length > 0 && value.every((item) => item && typeof item === 'object' && !Array.isArray(item));
+  }
+
+  function getStoredTableRows(question, tableKey = '') {
+    const responseJson = question.response_json && typeof question.response_json === 'object' ? question.response_json : {};
+
+    if (tableKey && isRowArray(responseJson[tableKey])) {
+      return responseJson[tableKey];
+    }
+
+    if (isRowArray(responseJson.rows)) {
+      return responseJson.rows;
+    }
+
+    const tableEntries = Object.entries(responseJson).filter(([, value]) => isRowArray(value));
+    if (tableKey) {
+      const match = tableEntries.find(([key]) => String(key).toLowerCase() === String(tableKey).toLowerCase());
+      if (match) {
+        return match[1];
+      }
+    }
+
+    if (tableEntries.length === 1) {
+      return tableEntries[0][1];
+    }
+
+    return [];
+  }
+
+  function getTableCellValue(rowData, columnKey, columnIndex, fallbackData = {}) {
+    const normalizedKey = String(columnKey || '').trim();
+    const lowerKey = normalizedKey.toLowerCase();
+    const compactKey = lowerKey.replace(/[^a-z0-9]+/g, '');
+
+    const matchesKey = (candidate) => {
+      const candidateText = String(candidate || '').trim();
+      const candidateLower = candidateText.toLowerCase();
+      const candidateCompact = candidateLower.replace(/[^a-z0-9]+/g, '');
+      return (
+        candidateText === normalizedKey ||
+        candidateLower === lowerKey ||
+        candidateCompact === compactKey
+      );
+    };
+
+    const sources = [rowData, fallbackData];
+
+    for (const source of sources) {
+      if (Array.isArray(source)) {
+        if (columnIndex < source.length && source[columnIndex] !== undefined && source[columnIndex] !== null) {
+          return source[columnIndex];
+        }
+        continue;
+      }
+      if (source && typeof source === 'object') {
+        if (normalizedKey && source[normalizedKey] !== undefined && source[normalizedKey] !== null) {
+          return source[normalizedKey];
+        }
+        if (lowerKey && source[lowerKey] !== undefined && source[lowerKey] !== null) {
+          return source[lowerKey];
+        }
+        for (const key of Object.keys(source)) {
+          if (matchesKey(key) && source[key] !== undefined && source[key] !== null) {
+            return source[key];
+          }
+        }
+      }
+    }
+
+    return '';
+  }
+
+  function initTableRows(question, tableKey = '') {
+    return getStoredTableRows(question, tableKey);
   }
 
   function getStoredFieldValue(question, fieldName, fallback = '') {
@@ -1703,15 +1776,9 @@
 
     if (field.kind === 'table') {
       const columns = Array.isArray(field.columns) ? field.columns : [];
-      const rows = Array.isArray(fieldValue) ? fieldValue : [];
-      if (!rows.length) {
-        return `
-          <div class="form-group">
-            <label class="form-label">${escapeHtml(fieldLabel)}</label>
-            <div class="no-response">No data submitted</div>
-          </div>
-        `;
-      }
+      const schemaRows = Array.isArray(field.rows) ? field.rows : [];
+      const savedRows = getStoredTableRows(question, field.name || '');
+      const rows = schemaRows.length ? schemaRows : (savedRows.length ? savedRows : [{}]);
       return `
         <div class="form-group">
           <label class="form-label">${escapeHtml(fieldLabel)}</label>
@@ -1723,10 +1790,14 @@
                 </tr>
               </thead>
               <tbody>
-                ${rows.map((row) => `
+                ${rows.map((row, rowIndex) => `
                   <tr>
-                    ${columns.map((column) => {
-                      const cellValue = row?.[column] ?? row?.[column.toLowerCase()] ?? '';
+                    ${columns.map((column, columnIndex) => {
+                      const columnKey = (column && typeof column === 'object')
+                        ? (column.key || column.name || column.label || '')
+                        : column;
+                      const rowData = savedRows[rowIndex] || question.response_json || {};
+                      const cellValue = getTableCellValue(rowData, columnKey || column, columnIndex, row);
                       return `<td><input type="text" value="${escapeHtml(cellValue)}" ${disabledAttr}></td>`;
                     }).join('')}
                   </tr>
@@ -1753,6 +1824,7 @@
     const fields = Array.isArray(question.validation_rules && question.validation_rules.fields) ? question.validation_rules.fields : [];
     const qId = getQuestionId(question);
     const disabledAttr = 'disabled aria-disabled="true"';
+    const responseJson = question.response_json && typeof question.response_json === 'object' ? question.response_json : {};
 
     if (fields.length) {
       return `
@@ -1852,8 +1924,10 @@
 
     if (['table', 'nested_table', 'matrix', 'repeating_section'].includes(question.question_type)) {
       const columns = defaultTableColumns(question);
-      const rows = initTableRows(question);
-      if (!rows.length) return '<div class="no-response">No response submitted yet</div>';
+      const schema = tableSchema(question);
+      const tableKey = schema.name || schema.table_name || question.table_name || question.question_id || '';
+      const rows = initTableRows(question, tableKey);
+      const renderRows = rows.length ? rows : [{}];
       const headerRows = Array.isArray(schema.header_rows) ? schema.header_rows : [];
       const renderHeader = headerRows.length
         ? headerRows.map((headerRow) => `
@@ -1876,11 +1950,11 @@
                 ${renderHeader}
               </thead>
               <tbody>
-                ${rows.map((row) => `
+                ${renderRows.map((row) => `
                   <tr>
-                    ${columns.map((column) => {
+                    ${columns.map((column, columnIndex) => {
                       const key = column.key || column.name;
-                      const cell = row?.[key] ?? '';
+                      const cell = getTableCellValue(row, key || column, columnIndex, responseJson);
                       const inputType = column.type || 'text';
                       if (inputType === 'textarea') {
                         return `<td><textarea ${disabledAttr}>${escapeHtml(cell)}</textarea></td>`;
@@ -1926,7 +2000,7 @@
       const target = document.getElementById(`response-render-${qId}`);
       if (!target) return;
       try {
-        target.innerHTML = renderQuestionInput(question);
+        target.innerHTML = question.rendered_html || renderQuestionInput(question);
       } catch (error) {
         console.error('Unable to render question', qId, error);
         target.innerHTML = '<div class="no-response">Unable to render this response.</div>';
