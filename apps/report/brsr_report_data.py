@@ -22,16 +22,12 @@ def _fields_of(question):
 
 def _get_field_name(field):
     """Get the name of a field, handling different possible keys."""
-    # Check for 'name' key first
     if 'name' in field:
         return field['name']
-    # Check for 'id' key
     if 'id' in field:
         return field['id']
-    # Check for 'key' key
     if 'key' in field:
         return field['key']
-    # Return None if no name found
     return None
 
 
@@ -44,6 +40,48 @@ def _get_field_label(field):
     if 'text' in field:
         return field['text']
     return ''
+
+
+# ---------------------------------------------------------------------------
+# Financial-year placeholder resolution + column cleanup
+# ---------------------------------------------------------------------------
+
+def _financial_year_labels(financial_year):
+    """
+    ('2026-2027' | '2026-27') -> ('2026-27', '2025-26')
+    Used to resolve {FY0}/{FY1} placeholders in question column headers.
+    """
+    if not financial_year:
+        return "Current Year", "Previous Year"
+    parts = str(financial_year).strip().split("-")
+    try:
+        start = int(parts[0])
+    except (ValueError, IndexError):
+        return str(financial_year), ""
+    current_label = f"{start}-{str(start + 1)[-2:]}"
+    previous_label = f"{start - 1}-{str(start)[-2:]}"
+    return current_label, previous_label
+
+
+def _resolve_placeholders(text, financial_year):
+    if not text or "{" not in str(text):
+        return text
+    current_label, previous_label = _financial_year_labels(financial_year)
+    return str(text).replace("{FY0}", current_label).replace("{FY1}", previous_label)
+
+
+def _clean_columns(columns, financial_year=None):
+    """
+    Drops blank/placeholder entries from a field's column list and resolves
+    {FY0}/{FY1} tokens. The row-label column is always added separately by
+    the header-building code below, so a blank string already present in
+    the schema's own `columns` creates a duplicate column and shifts every
+    answer one column out of place -- this is what caused the Accounts
+    Payables Days table to render "56" under a blank header and leave the
+    real "FY {FY1}" column empty.
+    """
+    cleaned = [c for c in (columns or []) if str(c).strip()]
+    return [_resolve_placeholders(c, financial_year) for c in cleaned]
 
 
 def _answer_for(name, response_json, fallback_value):
@@ -74,6 +112,7 @@ def _answer_for(name, response_json, fallback_value):
 
     return fallback_value or ""
 
+
 def _has_value(value):
     """True if a value (scalar, list, or dict) contains meaningful data."""
     if value is None:
@@ -95,7 +134,11 @@ def _row_has_data(row):
     """
     True if this top-level row (or any of its sub_questions) carries an
     actual submitted answer. Used to drop unanswered questions from the
-    report entirely instead of rendering them blank.
+    report entirely instead of rendering them blank, and reused by
+    get_brsr_stats() below as the single source of truth for what counts
+    as "answered" -- since for table/matrix/checkbox_group questions the
+    real answer lives in sub_questions / table_rows / matrix_rows, not in
+    the row's own top-level answer_value.
     """
     if _has_value(row.get("answer_value")):
         return True
@@ -122,6 +165,8 @@ def _row_has_data(row):
             return True
 
     return False
+
+
 def _is_principle_matrix(field):
     """True if this table field's columns end in exactly P1..P9."""
     columns = field.get("columns", [])
@@ -131,6 +176,39 @@ def _is_principle_matrix(field):
 def _has_year_headers(columns):
     """True if any column looks like a per-year header."""
     return any(("FY" in col or "Financial Year" in col) for col in columns)
+
+
+def _split_label_and_data_columns(columns, rows):
+    """
+    A schema's `columns` list sometimes includes one leading entry that's
+    really the header for the row-label column itself (e.g. "Parameter"
+    labeling rows like "Environmental and social parameters relevant to
+    the product"), not a second data column -- the row only actually has
+    one answer field ("As a percentage to total turnover").
+
+    The header-building code below always prepends a label-column slot on
+    top of whatever's in `columns`, so when `columns` already has one more
+    entry than any row has real fields for, that surplus entry ends up as
+    a phantom data-column header. The row's one real value then lands
+    under it (here, under "Parameter"), leaving the true last column
+    ("As a percentage to total turnover") blank.
+
+    Detects that surplus by comparing declared column count against the
+    actual number of answer fields per row, and returns
+    (label_header, data_columns) so the caller uses the surplus column as
+    the label header instead of manufacturing a blank one.
+    """
+    if not rows or not columns:
+        return "", columns
+
+    max_fields = max((len(row.get("fields", []) or []) for row in rows), default=len(columns))
+    if len(columns) <= max_fields:
+        return "", columns
+
+    surplus = len(columns) - max_fields
+    label_header = columns[surplus - 1]
+    data_columns = columns[surplus:]
+    return label_header, data_columns
 
 
 def _build_matrix_subquestion(field, response_json):
@@ -159,11 +237,8 @@ def _build_matrix_subquestion(field, response_json):
     }
 
 
-def _build_table_subquestion(field, response_json, fallback_question_text):
-    """
-    Builds a grouped table sub_question with header row(s) + data rows.
-    """
-    columns = field.get("columns", [])
+def _build_table_subquestion(field, response_json, fallback_question_text, financial_year=None):
+    columns = _clean_columns(field.get("columns", []), financial_year)
     rows = field.get("rows", [])
     field_name = _get_field_name(field)
 
@@ -184,14 +259,26 @@ def _build_table_subquestion(field, response_json, fallback_question_text):
     # ------------------------------------------------------------------
     raw_value = _answer_for(field_name, response_json, None) if field_name else None
     if isinstance(raw_value, list) and raw_value and all(isinstance(r, dict) for r in raw_value):
-        table_columns = columns or list(raw_value[0].keys())
+        # When the schema doesn't define explicit `columns`, fall back to the
+        # submitted entries' own keys -- but strip any blank/empty key first.
+        # Some submitted rows carry a stray "" key (e.g. from an unnamed
+        # leading form field), and if that lands first, it gets picked as
+        # the label column below, silently shifting every real value one
+        # column to the left of its header (this is what was happening to
+        # the Stakeholder groups table even after columns got cleaned).
+        fallback_cols = [k for k in raw_value[0].keys() if str(k).strip()]
+        table_columns = columns or fallback_cols
         label_col = table_columns[0]
         data_cols = table_columns[1:]
 
         headers = [[""] + data_cols]
         table_rows = []
-        for entry in raw_value:
-            row_values = [entry.get(label_col, "")]
+        for idx, entry in enumerate(raw_value):
+            # Fall back to a 1-based serial number if the row's own label
+            # column (e.g. "S. No") wasn't populated in the submitted data,
+            # instead of leaving that whole first column blank.
+            row_label = entry.get(label_col, "") or str(idx + 1)
+            row_values = [row_label]
             for col in data_cols:
                 val = entry.get(col, "")
                 if val is True or val == "True":
@@ -220,8 +307,10 @@ def _build_table_subquestion(field, response_json, fallback_question_text):
     # ------------------------------------------------------------------
 
     # Build headers
+    label_header, columns = _split_label_and_data_columns(columns, rows)
+
     if _has_year_headers(columns):
-        header_row1 = [""]
+        header_row1 = [label_header]
         header_row2 = [""]
         for col in columns:
             if "FY" in col or "Financial Year" in col:
@@ -233,7 +322,7 @@ def _build_table_subquestion(field, response_json, fallback_question_text):
         # only use the second row if it actually has labels in it
         headers = [header_row1, header_row2] if any(header_row2[1:]) else [header_row1]
     else:
-        headers = [[""] + columns]
+        headers = [[label_header] + columns]
 
     # Build data rows
     table_rows = []
@@ -267,7 +356,7 @@ def _build_table_subquestion(field, response_json, fallback_question_text):
     }
 
 
-def _expand_fields_as_subquestions(question, response):
+def _expand_fields_as_subquestions(question, response, financial_year=None):
     """
     Turns one BRSRQuestion's validation_rules['fields'] into a flat list of
     sub_questions.
@@ -279,22 +368,22 @@ def _expand_fields_as_subquestions(question, response):
     if isinstance(response_json, str):
         try:
             response_json = json.loads(response_json)
-        except:
+        except Exception:
             response_json = {}
 
     sub_questions = []
-    
+
     logger.info(f"Processing question: {question.question_id} - {question.question_text}")
     logger.info(f"Response JSON keys: {list(response_json.keys()) if isinstance(response_json, dict) else 'not a dict'}")
-    
+
     fields = _fields_of(question)
     logger.info(f"Fields found: {len(fields)}")
-    
+
     for field in fields:
         kind = field.get("kind")
         field_label = _get_field_label(field)
         field_name = _get_field_name(field)
-        
+
         logger.info(f"Processing field: {field_label} - kind: {kind} - name: {field_name}")
 
         if kind == "table" and _is_principle_matrix(field):
@@ -303,7 +392,7 @@ def _expand_fields_as_subquestions(question, response):
 
         if kind == "table":
             sub_questions.append(
-                _build_table_subquestion(field, response_json, question.question_text)
+                _build_table_subquestion(field, response_json, question.question_text, financial_year)
             )
             continue
 
@@ -340,13 +429,13 @@ def _expand_fields_as_subquestions(question, response):
                 "sub_questions": [],
             })
             continue
-        
+
         answer_value = _answer_for(field_name, response_json, fallback_value)
-        
+
         # If we still don't have an answer and there's a fallback
         if not answer_value and fallback_value:
             answer_value = fallback_value
-        
+
         sub_questions.append({
             "question_number": "",
             "question_text": field_label,
@@ -357,6 +446,7 @@ def _expand_fields_as_subquestions(question, response):
         })
 
     return sub_questions
+
 
 def _attach_answers(questions, financial_year=None, assignment_id=None, plant_id=None):
     """
@@ -375,9 +465,9 @@ def _attach_answers(questions, financial_year=None, assignment_id=None, plant_id
         responses = responses.filter(assignment_id=assignment_id)
         logger.info(f"Filtered by assignment_id: {assignment_id}")
     elif financial_year or plant_id:
-    # Filter by financial_year and/or plant through Assignment
+        # Filter by financial_year and/or plant through Assignment
         try:
-            from apps.brsr.models import Assignment          # <-- was apps.organizations.models
+            from apps.brsr.models import Assignment
             assignments = Assignment.objects.all()
             if financial_year:
                 assignments = assignments.filter(financial_year=financial_year)
@@ -394,6 +484,7 @@ def _attach_answers(questions, financial_year=None, assignment_id=None, plant_id
                 logger.warning(
                     f"No assignments found for financial_year={financial_year}, plant_id={plant_id}"
                 )
+                # No matching assignments at all -> no responses should show
                 responses = responses.none()
         except (ImportError, AttributeError) as e:
             logger.warning(f"Cannot filter by financial_year/plant_id: {e}")
@@ -409,24 +500,24 @@ def _attach_answers(questions, financial_year=None, assignment_id=None, plant_id
     rows = []
     for q in questions:
         response = response_map.get(q.id)
-        
+
         # Get answer value
         answer_value = ""
         answer_json = {}
         status = "draft"
-        
+
         if response:
             answer_value = response.response_value or ""
             answer_json = response.response_json or {}
             status = response.status or "draft"
-            
+
             # If answer_json is a string, try to parse it
             if isinstance(answer_json, str):
                 try:
                     answer_json = json.loads(answer_json)
-                except:
+                except Exception:
                     answer_json = {}
-        
+
         row_data = {
             "question": q,
             "question_id": q.question_id,
@@ -441,13 +532,69 @@ def _attach_answers(questions, financial_year=None, assignment_id=None, plant_id
             "answer_value": answer_value,
             "answer_json": answer_json,
             "status": status,
-            "sub_questions": _expand_fields_as_subquestions(q, response),
+            "sub_questions": _expand_fields_as_subquestions(q, response, financial_year),
         }
-        
+
         logger.info(f"Row for question {q.question_id}: sub_questions={len(row_data['sub_questions'])}")
         rows.append(row_data)
-    
+
     return rows
+
+
+def get_brsr_stats(financial_year=None, assignment_id=None, plant_id=None):
+    """
+    Returns (total_questions, answered_questions) across ALL active BRSR
+    questions for this financial_year/plant.
+
+    Unlike get_brsr_report_data(), this does NOT drop unanswered questions
+    from the count -- that function filters each section down to only
+    `_row_has_data(row) == True` rows before returning them (by design,
+    since the report/PDF should only render submitted answers), which
+    means the returned structure can never be used to recover the true
+    denominator: "total" there is always silently equal to "answered".
+
+    This function queries the full active question set directly so the
+    "X of Y answered" stat has a real Y, and reuses the same
+    _row_has_data() check the report itself uses (rather than only
+    looking at a row's own top-level answer_value) so "answered" doesn't
+    miss questions whose answer actually lives in sub_questions,
+    table_rows, or matrix_rows -- e.g. table/matrix/checkbox_group
+    question types, where the top-level answer_value is always blank by
+    design and the real answer is nested.
+    """
+    logger.info(
+        f"Getting BRSR stats for financial_year={financial_year}, "
+        f"assignment_id={assignment_id}, plant_id={plant_id}"
+    )
+
+    sections = BRSRSection.objects.filter(is_active=True)
+
+    total = 0
+    answered = 0
+
+    for section in sections:
+        questions_qs = BRSRQuestion.objects.filter(
+            section=section,
+            is_active=True
+        )
+        questions = list(questions_qs)
+
+        if section.code == "section_c":
+            # Section C - only principle-linked questions count here
+            relevant_questions = [q for q in questions if q.principle_id is not None]
+        else:
+            # Section A/B - only non-principle questions
+            relevant_questions = [q for q in questions if q.principle_id is None]
+
+        if not relevant_questions:
+            continue
+
+        rows = _attach_answers(relevant_questions, financial_year, assignment_id, plant_id)
+        total += len(rows)
+        answered += sum(1 for r in rows if _row_has_data(r))
+
+    logger.info(f"BRSR stats result: total={total}, answered={answered}")
+    return total, answered
 
 
 def get_brsr_report_data(financial_year=None, assignment_id=None, plant_id=None):
