@@ -642,7 +642,8 @@ def _create_question_table(rows, styles):
     return story_items
 
 
-def generate_brsr_pdf(financial_year=None, assignment_id=None, company_name="Lucas TVS Ltd", company_cin=""):
+def generate_brsr_pdf(financial_year=None, assignment_id=None, plant_id=None,
+                       company_name="Lucas TVS Ltd", company_cin=""):
     buffer = BytesIO()
 
     doc = SimpleDocTemplate(
@@ -664,7 +665,7 @@ def generate_brsr_pdf(financial_year=None, assignment_id=None, company_name="Luc
 
     try:
         from .brsr_report_data import get_brsr_report_data
-        report_sections = get_brsr_report_data(financial_year, assignment_id)
+        report_sections = get_brsr_report_data(financial_year, assignment_id, plant_id)
     except ImportError:
         report_sections = []
 

@@ -241,10 +241,11 @@ def _safe_sheet_title(title):
     return title[:31] or "Sheet"
 
 
-def generate_brsr_excel(financial_year=None, assignment_id=None, company_name="Lucas TVS Ltd", company_cin=""):
+def generate_brsr_excel(financial_year=None, assignment_id=None, plant_id=None,
+                         company_name="Lucas TVS Ltd", company_cin=""):
     from .brsr_report_data import get_brsr_report_data
 
-    report_sections = get_brsr_report_data(financial_year, assignment_id)
+    report_sections = get_brsr_report_data(financial_year, assignment_id, plant_id)
 
     wb = Workbook()
     wb.remove(wb.active)
