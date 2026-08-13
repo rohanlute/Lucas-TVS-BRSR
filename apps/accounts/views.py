@@ -872,24 +872,15 @@ class BRSRDashboardView(TemplateView):
     template_name = "dashboard/homepage.html"
     
     def dispatch(self, request, *args, **kwargs):
-        print("=" * 60)
-        print("🎯 BRSRDashboardView.dispatch() CALLED")
-        print(f"📝 User: {request.user}")
-        print(f"🔗 Path: {request.path}")
-        print("=" * 60)
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        print("=" * 60)
-        print("📊 BRSRDashboardView.get_context_data() CALLED")
-        print("=" * 60)
         context = super().get_context_data(**kwargs)
         
         from apps.organizations.models import FinancialYear
         
-        # Get current date
-        today = datetime.date(2026, 8, 15)
-        print(f"🔍 DEBUG - Today's date: {today}")
+        # Get today's date
+        today = datetime.date.today()
         
         # Get current financial year from database (based on dates)
         current_fy = FinancialYear.objects.filter(
@@ -1119,21 +1110,22 @@ class BRSRDashboardView(TemplateView):
             },
             
             # August
-            "8-9": {
-                "title": "International Day of the World's Indigenous Peoples", 
-                "focus": "Social responsibility, human rights", 
-                "desc": "Celebrates indigenous peoples and their contributions.", 
-                "category": "esg", 
-                "icon": "🏹"
+            # ✅ ADDED: August 13 - World Organ Donation Day
+            "8-13": {
+                "title": "World Organ Donation Day",
+                "focus": "Health awareness, social responsibility",
+                "desc": "Raises awareness about organ donation and encourages people to become organ donors to save lives.",
+                "category": "ehs",
+                "icon": "❤️"
             },
-            "8-12": {
-                "title": "International Youth Day", 
-                "focus": "Social development, employment", 
-                "desc": "Celebrates the role of youth in society and development.", 
-                "category": "esg", 
-                "icon": "🧑‍🎓"
+            # ✅ ADDED: August 14 - International Cat Day
+            "8-14": {
+                "title": "International Cat Day",
+                "focus": "Animal welfare, biodiversity",
+                "desc": "Celebrates the bond between humans and cats, raises awareness about cat welfare, and promotes responsible pet ownership.",
+                "category": "esg",
+                "icon": "🐱"
             },
-            
             "8-15": {
                 "title": "🇮🇳 Independence Day", 
                 "focus": "National celebration", 
@@ -1298,12 +1290,8 @@ class BRSRDashboardView(TemplateView):
             }
         }
         
-        print(f"🔍 DEBUG - esg_key: {esg_key}")
-        
         # Check if today has an event
         today_event = esg_events.get(esg_key)
-        
-        print(f"🔍 DEBUG - today_event found: {today_event is not None}")
         
         if today_event:
             # Get the event date formatted for display
@@ -1311,7 +1299,6 @@ class BRSRDashboardView(TemplateView):
             event_title = today_event['title']
             event_focus = today_event['focus']
             event_icon = today_event.get('icon', '🎉')
-            event_category = today_event.get('category', 'esg')
             
             # Get the description from the dict (fallback to focus if missing)
             event_desc_text = f'🎯 {today_event.get("desc", event_focus)}'
@@ -1321,10 +1308,6 @@ class BRSRDashboardView(TemplateView):
             context['event_name'] = f'{event_icon} {event_title}'
             context['event_desc'] = event_desc_text
             context['event_icon'] = event_icon
-            
-            print(f"✅ EVENT FOUND - {event_title} ({event_category})")
-            print(f"✅ context['event_date'] = {context['event_date']}")
-            print(f"✅ context['event_name'] = {context['event_name']}")
         else:
             # No event today - check if it's a financial year milestone
             if current_fy and today == current_fy.start_date:
@@ -1332,26 +1315,17 @@ class BRSRDashboardView(TemplateView):
                 context['event_name'] = '🎉 New Financial Year Started!'
                 context['event_desc'] = f'📊 The financial year {current_fy.financial_year} has begun.'
                 context['event_icon'] = '🎉'
-                print(f"✅ Financial Year {current_fy.financial_year} Started")
-
             elif current_fy and today == current_fy.end_date:
                 context['event_date'] = today.strftime('%B %d, %Y')
                 context['event_name'] = '📊 Financial Year Ending'
                 context['event_desc'] = f'⏰ Today is the last day of financial year {current_fy.financial_year}.'
                 context['event_icon'] = '📊'
-                print(f"✅ Financial Year {current_fy.financial_year} Ending")
-
             else:
                 # No event today
                 context['event_date'] = None
                 context['event_name'] = None
                 context['event_desc'] = None
                 context['event_icon'] = None
-                print("❌ No event today")
-        # Add debug variables for the template
-        context['debug_date'] = today.strftime('%Y-%m-%d')
-        context['debug_has_event'] = today_event is not None
-        context['debug_esg_key'] = esg_key
         
         # Get company name from user if available
         company_name = None
@@ -1546,7 +1520,7 @@ class BRSRPrincipleDetailView(TemplateView):
         from apps.organizations.models import FinancialYear
         
         # Get current financial year
-        today = datetime.date(2026, 8, 15) 
+        today = datetime.date.today()  
         current_fy = FinancialYear.objects.filter(
             start_date__lte=today,
             end_date__gte=today

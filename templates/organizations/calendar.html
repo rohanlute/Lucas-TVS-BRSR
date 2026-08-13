@@ -758,7 +758,7 @@
 
 <script>
   // =====================================================================
-  // COMPLETE ESG DATE DATA (WITH DESCRIPTIONS)
+  // COMPLETE ESG DATE DATA (MATCHES BRSRDashboardView)
   // =====================================================================
   function getESGDates(year) {
     return {
@@ -767,10 +767,10 @@
         { title: "🇮🇳 Republic Day", focus: "National celebration", desc: "Celebrates the adoption of the Constitution of India.", category: "national", icon: "🇮🇳" },
         { title: "International Day of Clean Energy", focus: "Renewable energy, Scope 2", desc: "Advocates for renewable energy and energy efficiency worldwide.", category: "esg", icon: "⚡" }
       ],
-      "1-28": [{ title: "Data Privacy Day", focus: "Data governance, privacy", desc: "Raises awareness about privacy and data protection rights.", category: "esg", icon: "🔒" }],
+      "1-28": [{ title: "Data Privacy Day", focus: "Data governance, stakeholder privacy", desc: "Raises awareness about privacy and data protection rights.", category: "esg", icon: "🔒" }],
       
       // February
-      "2-2": [{ title: "World Wetlands Day", focus: "Water, biodiversity", desc: "Highlights the importance of wetlands to humanity and the planet.", category: "esg", icon: "🌿" }],
+      "2-2": [{ title: "World Wetlands Day", focus: "Water, biodiversity, ecosystems", desc: "Highlights the importance of wetlands to humanity and the planet.", category: "esg", icon: "🌿" }],
       "2-4": [{ title: "World Cancer Day", focus: "Employee health & wellbeing", desc: "Raises awareness about cancer prevention and treatment.", category: "ehs", icon: "🎗️" }],
       "2-11": [{ title: "International Day of Women and Girls in Science", focus: "Diversity, inclusion, STEM", desc: "Promotes full and equal access to science for women and girls.", category: "esg", icon: "👩‍🔬" }],
       
@@ -779,13 +779,13 @@
       "3-8": [{ title: "International Women's Day", focus: "Gender diversity, inclusion", desc: "Celebrates women's achievements and calls for gender equality.", category: "esg", icon: "👩" }],
       "3-18": [{ title: "Global Recycling Day", focus: "Waste management, circular economy", desc: "Promotes recycling and the circular economy to reduce waste.", category: "esg", icon: "♻️" }],
       "3-21": [{ title: "International Day of Forests", focus: "Biodiversity, forests", desc: "Raises awareness of the importance of all types of forests.", category: "esg", icon: "🌳" }],
-      "3-22": [{ title: "World Water Day", focus: "Water conservation", desc: "Advocates for sustainable management of freshwater resources.", category: "esg", icon: "💧" }],
-      "3-30": [{ title: "International Day of Zero Waste", focus: "Waste reduction", desc: "Promotes zero-waste initiatives and circular economy.", category: "esg", icon: "🚮" }],
+      "3-22": [{ title: "World Water Day", focus: "Water consumption, water conservation", desc: "Advocates for sustainable management of freshwater resources.", category: "esg", icon: "💧" }],
+      "3-30": [{ title: "International Day of Zero Waste", focus: "Waste reduction, circular economy", desc: "Promotes zero-waste initiatives and circular economy.", category: "esg", icon: "🚮" }],
       
       // April
-      "4-7": [{ title: "World Health Day", focus: "Occupational health", desc: "Raises awareness about global health and wellbeing issues.", category: "ehs", icon: "🏥" }],
+      "4-7": [{ title: "World Health Day", focus: "Occupational & employee health", desc: "Raises awareness about global health and wellbeing issues.", category: "ehs", icon: "🏥" }],
       "4-22": [{ title: "Earth Day", focus: "Environment, climate action", desc: "Demonstrates support for environmental protection and climate action.", category: "esg", icon: "🌍" }],
-      "4-28": [{ title: "World Day for Safety and Health at Work", focus: "EHS, occupational safety", desc: "Promotes the prevention of occupational accidents and diseases.", category: "ehs", icon: "🛡️" }],
+      "4-28": [{ title: "World Day for Safety and Health at Work", focus: "EHS, occupational safety, workplace hazards", desc: "Promotes the prevention of occupational accidents and diseases.", category: "ehs", icon: "🛡️" }],
       
       // May
       "5-1": [{ title: "International Workers' Day", focus: "Labour practices, worker welfare", desc: "Celebrates the labor movement and worker rights globally.", category: "esg", icon: "👷" }],
@@ -793,7 +793,7 @@
       "5-28": [{ title: "International Day of Action for Women's Health", focus: "Employee health, gender", desc: "Advocates for women's health and reproductive rights.", category: "ehs", icon: "💪" }],
       
       // June
-      "6-5": [{ title: "World Environment Day", focus: "Environmental management", desc: "Encourages worldwide awareness and action for the environment.", category: "esg", icon: "🌱" }],
+      "6-5": [{ title: "World Environment Day", focus: "Environmental management, pollution, climate", desc: "Encourages worldwide awareness and action for the environment.", category: "esg", icon: "🌱" }],
       "6-8": [{ title: "World Oceans Day", focus: "Water, marine ecosystems", desc: "Raises awareness of the importance of oceans and marine life.", category: "esg", icon: "🌊" }],
       "6-12": [{ title: "World Day Against Child Labour", focus: "Human rights, supply chain", desc: "Aims to eliminate child labor and protect children.", category: "esg", icon: "👶" }],
       "6-17": [{ title: "World Day to Combat Desertification and Drought", focus: "Water, land, climate", desc: "Highlights land degradation and solutions to combat it.", category: "esg", icon: "🏜️" }],
@@ -801,20 +801,22 @@
       
       // July
       "7-7": [{ title: "World Kiswahili Language Day", focus: "Cultural diversity", desc: "Promotes the preservation and usage of the Kiswahili language.", category: "esg", icon: "🗣️" }],
-      "7-15": [{ title: "World Youth Skills Day", focus: "Skill development", desc: "Highlights the importance of equipping youth with skills for employment.", category: "esg", icon: "🎓" }],
+      "7-15": [{ title: "World Youth Skills Day", focus: "Skill development, employability", desc: "Highlights the importance of equipping youth with skills for employment.", category: "esg", icon: "🎓" }],
       "7-28": [{ title: "World Nature Conservation Day", focus: "Environment, biodiversity", desc: "Encourages sustainable practices to protect nature.", category: "esg", icon: "🌿" }],
       "7-30": [{ title: "World Day Against Trafficking in Persons", focus: "Human rights, supply chain", desc: "Raises awareness of human trafficking and promotes prevention.", category: "esg", icon: "⛓️" }],
       
-      // August
-      "8-9": [{ title: "International Day of the World's Indigenous Peoples", focus: "Social responsibility, rights", desc: "Celebrates indigenous peoples and their contributions.", category: "esg", icon: "🏹" }],
+      // August - Matches BRSRDashboardView
+      "8-9": [{ title: "International Day of the World's Indigenous Peoples", focus: "Social responsibility, human rights", desc: "Celebrates indigenous peoples and their contributions.", category: "esg", icon: "🏹" }],
       "8-12": [{ title: "International Youth Day", focus: "Social development, employment", desc: "Celebrates the role of youth in society and development.", category: "esg", icon: "🧑‍🎓" }],
+      "8-13": [{ title: "World Organ Donation Day", focus: "Health awareness, social responsibility", desc: "Raises awareness about organ donation and encourages people to become organ donors to save lives.", category: "ehs", icon: "❤️" }],
+      "8-14": [{ title: "International Cat Day", focus: "Animal welfare, biodiversity", desc: "Celebrates the bond between humans and cats, raises awareness about cat welfare, and promotes responsible pet ownership.", category: "esg", icon: "🐱" }],
       "8-15": [{ title: "🇮🇳 Independence Day", focus: "National celebration", desc: "Marks India's independence from British rule in 1947.", category: "national", icon: "🇮🇳" }],
       "8-19": [{ title: "World Humanitarian Day", focus: "Social responsibility", desc: "Honors humanitarian workers and celebrates their efforts.", category: "esg", icon: "🤝" }],
-      "8-29": [{ title: "International Day Against Nuclear Tests", focus: "Environmental safety", desc: "Raises awareness about the effects of nuclear weapon test explosions.", category: "esg", icon: "☢️" }],
+      "8-29": [{ title: "International Day Against Nuclear Tests", focus: "Environmental / safety awareness", desc: "Raises awareness about the effects of nuclear weapon test explosions.", category: "esg", icon: "☢️" }],
       
       // September
       "9-7": [{ title: "International Day of Clean Air for Blue Skies", focus: "Air emissions, pollution", desc: "Advocates for clean air and reducing air pollution.", category: "esg", icon: "🌤️" }],
-      "9-16": [{ title: "World Ozone Day", focus: "Ozone, refrigerants, environment", desc: "Celebrates the Montreal Protocol and efforts to protect the ozone layer.", category: "esg", icon: "🛡️" }],
+      "9-16": [{ title: "World Ozone Day", focus: "Ozone, refrigerants, environmental management", desc: "Celebrates the Montreal Protocol and efforts to protect the ozone layer.", category: "esg", icon: "🛡️" }],
       "9-22": [{ title: "World Car-Free Day", focus: "Transport emissions, Scope 3", desc: "Promotes reducing car dependency and encouraging public transport.", category: "esg", icon: "🚶" }],
       "9-25": [{ title: "World Environmental Health Day", focus: "Environmental health, EHS", desc: "Promotes environmental health awareness and disease prevention.", category: "ehs", icon: "🏥" }],
       
@@ -822,7 +824,7 @@
       "10-1": [{ title: "International Day of Older Persons", focus: "Social responsibility, inclusion", desc: "Celebrates older persons and raises awareness of aging issues.", category: "esg", icon: "👴" }],
       "10-4": [{ title: "World Animal Day", focus: "Biodiversity", desc: "Raises awareness about animal welfare and protection.", category: "esg", icon: "🐾" }],
       "10-10": [{ title: "World Mental Health Day", focus: "Employee wellbeing", desc: "Promotes mental health awareness and support for all.", category: "ehs", icon: "🧠" }],
-      "10-13": [{ title: "International Day for Disaster Risk Reduction", focus: "Emergency preparedness", desc: "Promotes reducing disaster risks and building resilience.", category: "ehs", icon: "⚠️" }],
+      "10-13": [{ title: "International Day for Disaster Risk Reduction", focus: "Emergency preparedness, EHS", desc: "Promotes reducing disaster risks and building resilience.", category: "ehs", icon: "⚠️" }],
       "10-16": [{ title: "World Food Day", focus: "Food security, community", desc: "Advocates for global food security and sustainable food systems.", category: "esg", icon: "🍲" }],
       "10-24": [{ title: "United Nations Day", focus: "Sustainability / SDGs", desc: "Marks the anniversary of the UN Charter and the SDGs.", category: "esg", icon: "🌐" }],
       
@@ -835,7 +837,7 @@
       // December
       "12-3": [{ title: "International Day of Persons with Disabilities", focus: "Inclusion, accessibility", desc: "Promotes the rights and well-being of persons with disabilities.", category: "esg", icon: "♿" }],
       "12-5": [{ title: "World Soil Day", focus: "Land, environment, biodiversity", desc: "Highlights the importance of soil health and conservation.", category: "esg", icon: "🌾" }],
-      "12-9": [{ title: "International Anti-Corruption Day", focus: "Governance, ethics", desc: "Raises awareness about corruption and promotes integrity.", category: "esg", icon: "⚖️" }],
+      "12-9": [{ title: "International Anti-Corruption Day", focus: "Governance, ethics, anti-corruption", desc: "Raises awareness about corruption and promotes integrity.", category: "esg", icon: "⚖️" }],
       "12-10": [{ title: "Human Rights Day", focus: "Human rights, labour practices", desc: "Celebrates the adoption of the Universal Declaration of Human Rights.", category: "esg", icon: "✋" }],
       "12-11": [{ title: "International Mountain Day", focus: "Biodiversity, ecosystems", desc: "Acknowledges the importance of mountains for life and climate.", category: "esg", icon: "⛰️" }]
     };
@@ -942,7 +944,6 @@
             chip.title = `Click for details: ${ev.focus}`;
             chip.onclick = (e) => {
               e.stopPropagation();
-              // UPDATED: Shows Title, Description, and Focus
               showToast(`📅 ${ev.title}`, `📝 ${ev.desc || ev.focus}\n\n🎯 ${ev.focus}`);
             };
             cellDiv.appendChild(chip);
@@ -969,7 +970,6 @@
         cellDiv.onclick = () => {
           if (events.length > 0) {
             if (events.length === 1) {
-              // UPDATED: Shows Title, Description, and Focus
               showToast(`📅 ${events[0].title}`, `📝 ${events[0].desc || events[0].focus}\n\n🎯 ${events[0].focus}`);
             } else {
               const allTitles = events.map(ev => `${ev.icon || '📅'} ${ev.title}\n   ${ev.desc || ev.focus}`).join('\n\n');
