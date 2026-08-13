@@ -201,29 +201,25 @@ class TimesheetService:
         )
 
     @classmethod
-    def get_by_assignment(
-        cls,
-        *,
-        assignment,
-        user,
-    ):
+    def exists_for_user(cls, assignment, user):
 
         return Timesheet.objects.filter(
             assignment=assignment,
             user=user,
+        ).exists()
+
+    @classmethod
+    def get_by_assignment(cls, assignment):
+
+        return Timesheet.objects.filter(
+            assignment=assignment
         ).first()
 
     @classmethod
-    def exists(
-        cls,
-        *,
-        assignment,
-        user,
-    ):
+    def exists(cls, assignment):
 
         return Timesheet.objects.filter(
-            assignment=assignment,
-            user=user,
+            assignment=assignment
         ).exists()
 
     @classmethod

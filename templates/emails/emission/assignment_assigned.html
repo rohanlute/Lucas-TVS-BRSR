@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        {% if recipient_type == "reviewer" %}
+            New Emission Review Task
+        {% else %}
+            New Emission Data Collection Task
+        {% endif %}
+    </title>
+</head>
+
+<body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+
+    <table role="presentation"
+           width="100%"
+           cellspacing="0"
+           cellpadding="0"
+           border="0"
+           style="background:#f4f7fb;padding:32px 16px;">
+
+        <tr>
+            <td align="center">
+
+                <table role="presentation"
+                       width="100%"
+                       cellspacing="0"
+                       cellpadding="0"
+                       border="0"
+                       style="max-width:640px;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #e5e7eb;">
+
+                    <!-- ================================================= -->
+                    <!-- HEADER -->
+                    <!-- ================================================= -->
+
+                    <tr>
+                        <td style="padding:32px 32px 24px;background:linear-gradient(135deg,#0f172a 0%,#1d4ed8 100%);color:#ffffff;">
+
+                            <div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;opacity:.8;margin-bottom:8px;">
+                                {% if recipient_type == "reviewer" %}
+                                    Review Task
+                                {% else %}
+                                    New Assignment
+                                {% endif %}
+                            </div>
+
+                            <h1 style="margin:0;font-size:28px;line-height:1.2;">
+
+                                {% if recipient_type == "reviewer" %}
+                                    You Have a New Task to Review
+                                {% else %}
+                                    New Emission Data Collection Task
+                                {% endif %}
+
+                            </h1>
+
+                            <p style="margin:12px 0 0;font-size:15px;line-height:1.6;opacity:.92;">
+
+                                {% if recipient_type == "reviewer" %}
+
+                                    You have been appointed as the reviewer
+                                    for this emission data assignment.
+
+                                {% else %}
+
+                                    A new emission data collection task
+                                    has been assigned to you.
+
+                                {% endif %}
+
+                            </p>
+
+                        </td>
+                    </tr>
+
+
+                    <!-- ================================================= -->
+                    <!-- BODY -->
+                    <!-- ================================================= -->
+
+                    <tr>
+                        <td style="padding:32px;">
+
+                            <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">
+
+                                Hello
+                                {% if recipient_type == "reviewer" %}
+                                    {{ assignment.reviewer.get_full_name|default:assignment.reviewer.username }}
+                                {% else %}
+                                    {{ assignment.assignee.get_full_name|default:assignment.assignee.username }}
+                                {% endif %},
+
+                            </p>
+
+
+                            <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#374151;">
+
+                                {% if recipient_type == "reviewer" %}
+
+                                    You have been appointed as the reviewer
+                                    for the following emission data collection
+                                    assignment. Please review the assignment
+                                    details below.
+
+                                {% else %}
+
+                                    A new emission data collection assignment
+                                    has been created and assigned to you.
+                                    Please review the details below.
+
+                                {% endif %}
+
+                            </p>
+
+
+                            <!-- ================================================= -->
+                            <!-- ASSIGNMENT DETAILS -->
+                            <!-- ================================================= -->
+
+                            <table role="presentation"
+                                   width="100%"
+                                   cellspacing="0"
+                                   cellpadding="0"
+                                   border="0"
+                                   style="border-collapse:collapse;margin:0 0 24px;">
+
+                                <!-- Assignment ID -->
+
+                                <tr>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;width:160px;">
+                                        Assignment ID
+                                    </td>
+
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">
+                                        {{ assignment.assignment_code }}
+                                    </td>
+                                </tr>
+
+
+                                <!-- Scope -->
+
+                                <tr>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">
+                                        Scope
+                                    </td>
+
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">
+                                        {{ assignment.scope.name }}
+                                    </td>
+                                </tr>
+
+
+                                <!-- Plant -->
+
+                                <tr>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">
+                                        Plant
+                                    </td>
+
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">
+                                        {{ assignment.plant.name }}
+                                    </td>
+                                </tr>
+
+
+                                <!-- Financial Year -->
+
+                                <tr>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">
+                                        Financial Year
+                                    </td>
+
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">
+                                        {{ assignment.financial_year.financial_year }}
+                                    </td>
+                                </tr>
+
+
+                                <!-- Financial Month -->
+
+                                <tr>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">
+                                        Reporting Month
+                                    </td>
+
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">
+                                        {{ assignment.financial_month.month_name }}
+                                    </td>
+                                </tr>
+
+
+                                {% if recipient_type == "reviewer" %}
+
+                                    <!-- Assignee -->
+
+                                    <tr>
+                                        <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">
+                                            Assigned To
+                                        </td>
+
+                                        <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">
+                                            {{ assignment.assignee.get_full_name|default:assignment.assignee.username }}
+                                        </td>
+                                    </tr>
+
+                                    <!-- Assigned By -->
+
+                                    <tr>
+                                        <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">
+                                            Assigned By
+                                        </td>
+
+                                        <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">
+                                            {{ assignment.assigner.get_full_name|default:assignment.assigner.username }}
+                                        </td>
+                                    </tr>
+
+                                {% else %}
+
+                                    <!-- Assigned By -->
+
+                                    <tr>
+                                        <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">
+                                            Assigned By
+                                        </td>
+
+                                        <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">
+                                            {{ assignment.assigner.get_full_name|default:assignment.assigner.username }}
+                                        </td>
+                                    </tr>
+
+
+                                    <!-- Due Date -->
+
+                                    <tr>
+                                        <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">
+                                            Due Date
+                                        </td>
+
+                                        <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">
+                                            {{ assignment.due_date|default:"Not Specified" }}
+                                        </td>
+                                    </tr>
+
+                                {% endif %}
+
+                            </table>
+
+
+                            <!-- ================================================= -->
+                            <!-- BUTTON -->
+                            <!-- ================================================= -->
+
+                            <div style="text-align:center;margin:28px 0 24px;">
+
+                                <a href="{{ assignment_url }}"
+                                   style="display:inline-block;background:#1d4ed8;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 28px;border-radius:10px;">
+
+                                    {% if recipient_type == "reviewer" %}
+                                        Review Assignment
+                                    {% else %}
+                                        View Assignment
+                                    {% endif %}
+
+                                </a>
+
+                            </div>
+
+
+                            <!-- ================================================= -->
+                            <!-- URL -->
+                            <!-- ================================================= -->
+
+                            <p style="margin:0 0 12px;font-size:14px;line-height:1.7;color:#4b5563;">
+
+                                If the button does not work, copy and paste
+                                this link into your browser:
+
+                            </p>
+
+
+                            <p style="margin:0 0 24px;font-size:14px;line-height:1.6;word-break:break-all;">
+
+                                <a href="{{ assignment_url }}"
+                                   style="color:#1d4ed8;">
+
+                                    {{ assignment_url }}
+
+                                </a>
+
+                            </p>
+
+
+                            <!-- ================================================= -->
+                            <!-- FOOTER MESSAGE -->
+                            <!-- ================================================= -->
+
+                            <p style="margin:0;font-size:14px;line-height:1.7;color:#6b7280;">
+
+                                {% if recipient_type == "reviewer" %}
+
+                                    You will receive another notification when
+                                    the assignee submits the data for your review.
+
+                                {% else %}
+
+                                    Please log in to complete the assigned
+                                    activity before the due date.
+
+                                {% endif %}
+
+                            </p>
+
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+
+    </table>
+
+</body>
+</html>

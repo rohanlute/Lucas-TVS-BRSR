@@ -9,7 +9,7 @@ from .constants import *
 EVENT_REGISTRY = {
 
     # =====================================================
-    # EMISSION
+    # Assignment Created
     # =====================================================
 
     (
@@ -19,7 +19,12 @@ EVENT_REGISTRY = {
     ): [
         NOTIFICATION,
         TIMESHEET,
+        EMAIL,
     ],
+
+    # =====================================================
+    # Assignee Submitted
+    # =====================================================
 
     (
         EMISSION,
@@ -27,8 +32,12 @@ EVENT_REGISTRY = {
         SUBMITTED,
     ): [
         NOTIFICATION,
-        TIMESHEET,
+        EMAIL,
     ],
+
+    # =====================================================
+    # Reviewer Approved
+    # =====================================================
 
     (
         EMISSION,
@@ -36,8 +45,12 @@ EVENT_REGISTRY = {
         REVIEW_APPROVED,
     ): [
         NOTIFICATION,
-        TIMESHEET,
+        EMAIL,
     ],
+
+    # =====================================================
+    # Reviewer Rejected
+    # =====================================================
 
     (
         EMISSION,
@@ -45,8 +58,12 @@ EVENT_REGISTRY = {
         REVIEW_REJECTED,
     ): [
         NOTIFICATION,
-        TIMESHEET,
+        EMAIL,
     ],
+
+    # =====================================================
+    # Final Approved
+    # =====================================================
 
     (
         EMISSION,
@@ -54,8 +71,12 @@ EVENT_REGISTRY = {
         FINAL_APPROVED,
     ): [
         NOTIFICATION,
-        TIMESHEET,
+        EMAIL,
     ],
+
+    # =====================================================
+    # Final Rejected
+    # =====================================================
 
     (
         EMISSION,
@@ -63,7 +84,7 @@ EVENT_REGISTRY = {
         FINAL_REJECTED,
     ): [
         NOTIFICATION,
-        TIMESHEET,
+        EMAIL,
     ],
 
 }
