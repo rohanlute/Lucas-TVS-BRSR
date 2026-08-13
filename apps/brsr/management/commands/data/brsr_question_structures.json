@@ -335,7 +335,7 @@
             "label": "What is the contribution of exports as a percentage of the total turnover of the entity?",
             "name": "exportPercentage",
             "field_type": "percentage",
-            "type": "text",
+            "type": "number",
             "step": "any",
             "placeholder": "Enter percentage of exports to total turnover",
             "min": 0,
@@ -525,29 +525,29 @@
               {
                 "label": "Permanent Employees Turnover Rate",
                 "fields": [
-                  {"column": "{FY0} Male", "name": "turnoverEmpMaleCY", "type": "number"},
-                  {"column": "{FY0} Female", "name": "turnoverEmpFemaleCY", "type": "number"},
-                  {"column": "{FY0} Total", "name": "turnoverEmpTotalCY", "type": "number"},
-                  {"column": "{FY1} Male", "name": "turnoverEmpMalePY", "type": "number"},
-                  {"column": "{FY1} Female", "name": "turnoverEmpFemalePY", "type": "number"},
-                  {"column": "{FY1} Total", "name": "turnoverEmpTotalPY", "type": "number"},
-                  {"column": "{FY2} Male", "name": "turnoverEmpMalePY2", "type": "number"},
-                  {"column": "{FY2} Female", "name": "turnoverEmpFemalePY2", "type": "number"},
-                  {"column": "{FY2} Total", "name": "turnoverEmpTotalPY2", "type": "number"}
+                  {"column": "{FY0} Male", "name": "turnoverEmpMaleCY", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "{FY0} Female", "name": "turnoverEmpFemaleCY", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "{FY0} Total", "name": "turnoverEmpTotalCY", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "{FY1} Male", "name": "turnoverEmpMalePY", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "{FY1} Female", "name": "turnoverEmpFemalePY", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "{FY1} Total", "name": "turnoverEmpTotalPY", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "{FY2} Male", "name": "turnoverEmpMalePY2", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "{FY2} Female", "name": "turnoverEmpFemalePY2", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "{FY2} Total", "name": "turnoverEmpTotalPY2", "field_type": "percentage", "type": "number", "placeholder": "%"}
                 ]
               },
               {
                 "label": "Permanent Workers Turnover Rate",
                 "fields": [
-                  {"column": "FY {FY0} Male", "name": "turnoverWorkerMaleCY", "type": "number"},
-                  {"column": "FY {FY0} Female", "name": "turnoverWorkerFemaleCY", "type": "number"},
-                  {"column": "FY {FY1} Total", "name": "turnoverWorkerTotalCY", "type": "number"},
-                  {"column": "FY {FY1} Male", "name": "turnoverWorkerMalePY", "type": "number"},
-                  {"column": "FY {FY1} Female", "name": "turnoverWorkerFemalePY", "type": "number"},
-                  {"column": "FY {FY2} Total", "name": "turnoverWorkerTotalPY", "type": "number"},
-                  {"column": "FY {FY2} Male", "name": "turnoverWorkerMalePY2", "type": "number"},
-                  {"column": "FY {FY2} Female", "name": "turnoverWorkerFemalePY2", "type": "number"},
-                  {"column": "FY {FY2} Total", "name": "turnoverWorkerTotalPY2", "type": "number"}
+                  {"column": "{FY0} Male", "name": "turnoverWorkerMaleCY", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "{FY0} Female", "name": "turnoverWorkerFemaleCY", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "{FY0} Total", "name": "turnoverWorkerTotalCY", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "{FY1} Male", "name": "turnoverWorkerMalePY", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "{FY1} Female", "name": "turnoverWorkerFemalePY", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "{FY1} Total", "name": "turnoverWorkerTotalPY", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "{FY2} Male", "name": "turnoverWorkerMalePY2", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "{FY2} Female", "name": "turnoverWorkerFemalePY2", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "{FY2} Total", "name": "turnoverWorkerTotalPY2", "field_type": "percentage", "type": "number", "placeholder": "%"}
                 ]
               }
             ]
@@ -574,7 +574,7 @@
                 "fields": [
                   {"column": "Name of the holding / subsidiary / associate companies / joint ventures (A)", "name": "companyName1", "type": "text", "placeholder": "Company Name"},
                   {"column": "Indicate whether holding/ Subsidiary/ Associate/ Joint Venture", "name": "companyType1", "type": "select", "options": [{"value": "", "label": "Select Type"}, {"value": "Holding", "label": "Holding Company"}, {"value": "Subsidiary", "label": "Subsidiary"}, {"value": "Associate", "label": "Associate Company"}, {"value": "Joint Venture", "label": "Joint Venture"}]},
-                  {"column": "% of shares held by listed entity", "name": "sharesHeld1", "field_type": "percentage", "type": "text", "placeholder": "%", "step": "any", "min": 0, "max": 100},
+                  {"column": "% of shares held by listed entity", "name": "sharesHeld1", "field_type": "percentage", "type": "number", "placeholder": "%", "step": "any", "min": 0, "max": 100},
                   {"column": "Does the entity indicated at column A, participate in the Business Responsibility initiatives of the listed entity? (Yes/No)", "name": "brParticipation1", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]}
                 ]
               },
@@ -583,7 +583,7 @@
                 "fields": [
                   {"column": "Name of the holding / subsidiary / associate companies / joint ventures (A)", "name": "companyName2", "type": "text", "placeholder": "Company Name"},
                   {"column": "Indicate whether holding/ Subsidiary/ Associate/ Joint Venture", "name": "companyType2", "type": "select", "options": [{"value": "", "label": "Select Type"}, {"value": "Holding", "label": "Holding Company"}, {"value": "Subsidiary", "label": "Subsidiary"}, {"value": "Associate", "label": "Associate Company"}, {"value": "Joint Venture", "label": "Joint Venture"}]},
-                  {"column": "% of shares held by listed entity", "name": "sharesHeld2", "field_type": "percentage", "type": "text", "placeholder": "%", "step": "any", "min": 0, "max": 100},
+                  {"column": "% of shares held by listed entity", "name": "sharesHeld2", "field_type": "percentage", "type": "number", "placeholder": "%", "step": "any", "min": 0, "max": 100},
                   {"column": "Does the entity indicated at column A, participate in the Business Responsibility initiatives of the listed entity? (Yes/No)", "name": "brParticipation2", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]}
                 ]
               }
@@ -706,7 +706,7 @@
                   {"column": "Indicate whether risk or opportunity (R/O)", "name": "riskOpportunity1", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Risk", "label": "Risk"}, {"value": "Opportunity", "label": "Opportunity"}]},
                   {"column": "Rationale for identifying the risk/opportunity", "name": "rationale1", "type": "textarea", "placeholder": "Explain rationale"},
                   {"column": "In case of risk, approach to adapt or mitigate", "name": "approach1", "type": "textarea", "placeholder": "Mitigation approach (if risk)"},
-                  {"column": "Financial implications of the risk or opportunity", "name": "financialImplications1", "type": "textarea", "placeholder": "Financial implications"}
+                  {"column": "Financial implications of the risk or opportunity", "name": "financialImplications1", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Positive", "label": "Positive"}, {"value": "Negative", "label": "Negative"}]}
                 ]
               },
               {
@@ -716,7 +716,7 @@
                   {"column": "Indicate whether risk or opportunity (R/O)", "name": "riskOpportunity2", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Risk", "label": "Risk"}, {"value": "Opportunity", "label": "Opportunity"}]},
                   {"column": "Rationale for identifying the risk/opportunity", "name": "rationale2", "type": "textarea", "placeholder": "Explain rationale"},
                   {"column": "In case of risk, approach to adapt or mitigate", "name": "approach2", "type": "textarea", "placeholder": "Mitigation approach (if risk)"},
-                  {"column": "Financial implications of the risk or opportunity", "name": "financialImplications2", "type": "textarea", "placeholder": "Financial implications"}
+                  {"column": "Financial implications of the risk or opportunity", "name": "financialImplications2", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Positive", "label": "Positive"}, {"value": "Negative", "label": "Negative"}]}
                 ]
               }
             ]
@@ -1090,7 +1090,7 @@
                 "fields": [
                   {
                     "column": "Designation",
-                    "type": "static",
+                    "type": "text",
                     "value": "Enter the value",
                     "placeholder": "Enter the Designation"
                   },
@@ -1469,7 +1469,7 @@
                 "fields": [
                   {"column": "Total number of training and awareness programmes held", "name": "e1_bod_total", "type": "number"},
                   {"column": "Topics / principles covered under the training and its impact", "name": "e1_bod_topics", "type": "text"},
-                  {"column": "%age of persons in respective category covered by the awareness programmes", "name": "e1_bod_percent", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "%age of persons in respective category covered by the awareness programmes", "name": "e1_bod_percent", "field_type": "percentage", "type": "number", "placeholder": "%"}
                 ]
               },
               {
@@ -1477,7 +1477,7 @@
                 "fields": [
                   {"column": "Total number of training and awareness programmes held", "name": "e1_kmp_total", "type": "number"},
                   {"column": "Topics / principles covered under the training and its impact", "name": "e1_kmp_topics", "type": "text"},
-                  {"column": "%age of persons in respective category covered by the awareness programmes", "name": "e1_kmp_percent", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "%age of persons in respective category covered by the awareness programmes", "name": "e1_kmp_percent", "field_type": "percentage", "type": "number", "placeholder": "%"}
                 ]
               },
               {
@@ -1485,7 +1485,7 @@
                 "fields": [
                   {"column": "Total number of training and awareness programmes held", "name": "e1_emp_total", "type": "number"},
                   {"column": "Topics / principles covered under the training and its impact", "name": "e1_emp_topics", "type": "text"},
-                  {"column": "%age of persons in respective category covered by the awareness programmes", "name": "e1_emp_percent", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "%age of persons in respective category covered by the awareness programmes", "name": "e1_emp_percent", "field_type": "percentage", "type": "number", "placeholder": "%"}
                 ]
               },
               {
@@ -1493,7 +1493,7 @@
                 "fields": [
                   {"column": "Total number of training and awareness programmes held", "name": "e1_worker_total", "type": "number"},
                   {"column": "Topics / principles covered under the training and its impact", "name": "e1_worker_topics", "type": "text"},
-                  {"column": "%age of persons in respective category covered by the awareness programmes", "name": "e1_worker_percent", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "%age of persons in respective category covered by the awareness programmes", "name": "e1_worker_percent", "field_type": "percentage", "type": "number", "placeholder": "%"}
                 ]
               }
             ]
@@ -1745,8 +1745,8 @@
                 "group": "Concentration of Purchases",
                 "label": "a. Purchases from trading houses as % of total purchases",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "purchase_percent_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "purchase_percent_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "FY {FY0} (Current Financial Year)", "name": "purchase_percent_cy", "field_type": "percentage", "type": "number", "placeholder": "%", "step": "0.01"},
+                  {"column": "FY {FY1} (Previous Financial Year)", "name": "purchase_percent_py", "field_type": "percentage", "type": "number", "placeholder": "%", "step": "0.01"}
                 ]
               },
               {
@@ -1761,16 +1761,16 @@
                 "group": "Concentration of Purchases",
                 "label": "c. Purchases from top 10 trading houses as % of total purchases from trading houses",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "top10_purchase_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "top10_purchase_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "FY {FY0} (Current Financial Year)", "name": "top10_purchase_cy", "field_type": "percentage", "type": "number", "placeholder": "%", "step": "0.01"},
+                  {"column": "FY {FY1} (Previous Financial Year)", "name": "top10_purchase_py", "field_type": "percentage", "type": "number", "placeholder": "%", "step": "0.01"}
                 ]
               },
               {
                 "group": "Concentration of Sales",
                 "label": "a. Sales to dealers/distributors as % of total sales",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "sales_percent_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "sales_percent_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "FY {FY0} (Current Financial Year)", "name": "sales_percent_cy", "field_type": "percentage", "type": "number", "placeholder": "%", "step": "0.01"},
+                  {"column": "FY {FY1} (Previous Financial Year)", "name": "sales_percent_py", "field_type": "percentage", "type": "number", "placeholder": "%", "step": "0.01"}
                 ]
               },
               {
@@ -1785,40 +1785,40 @@
                 "group": "Concentration of Sales",
                 "label": "c. Sales to top 10 dealers/distributors as % of total sales to dealers/distributors",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "top10_sales_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "top10_sales_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "FY {FY0} (Current Financial Year)", "name": "top10_sales_cy", "field_type": "percentage", "type": "number", "placeholder": "%", "step": "0.01"},
+                  {"column": "FY {FY1} (Previous Financial Year)", "name": "top10_sales_py", "field_type": "percentage", "type": "number", "placeholder": "%", "step": "0.01"}
                 ]
               },
               {
                 "group": "Share of RPTs in",
                 "label": "a. Purchases (Purchases with related parties / Total Purchases)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "rpt_purchase_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "rpt_purchase_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "FY {FY0} (Current Financial Year)", "name": "rpt_purchase_cy", "field_type": "percentage", "type": "number", "placeholder": "%", "step": "0.01"},
+                  {"column": "FY {FY1} (Previous Financial Year)", "name": "rpt_purchase_py", "field_type": "percentage", "type": "number", "placeholder": "%", "step": "0.01"}
                 ]
               },
               {
                 "group": "Share of RPTs in",
                 "label": "b. Sales (Sales to related parties / Total Sales)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "rpt_sales_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "rpt_sales_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "FY {FY0} (Current Financial Year)", "name": "rpt_sales_cy", "field_type": "percentage", "type": "number", "placeholder": "%", "step": "0.01"},
+                  {"column": "FY {FY1} (Previous Financial Year)", "name": "rpt_sales_py", "field_type": "percentage", "type": "number", "placeholder": "%", "step": "0.01"}
                 ]
               },
               {
                 "group": "Share of RPTs in",
                 "label": "c. Loans & advances (Loans & advances given to related parties / Total loans & advances)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "rpt_loans_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "rpt_loans_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "FY {FY0} (Current Financial Year)", "name": "rpt_loans_cy", "field_type": "percentage", "type": "number", "placeholder": "%", "step": "0.01"},
+                  {"column": "FY {FY1} (Previous Financial Year)", "name": "rpt_loans_py", "field_type": "percentage", "type": "number", "placeholder": "%", "step": "0.01"}
                 ]
               },
               {
                 "group": "Share of RPTs in",
                 "label": "d. Investments (Investments in related parties / Total Investments made)",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "rpt_investments_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "rpt_investments_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "FY {FY0} (Current Financial Year)", "name": "rpt_investments_cy", "field_type": "percentage", "type": "number", "placeholder": "%", "step": "0.01"},
+                  {"column": "FY {FY1} (Previous Financial Year)", "name": "rpt_investments_py", "field_type": "percentage", "type": "number", "placeholder": "%", "step": "0.01"}
                 ]
               }
             ]
@@ -2053,7 +2053,7 @@
                 "fields": [
                   {"column": "NIC Code", "name": "l1_nic_code", "type": "text", "placeholder": "NIC Code"},
                   {"column": "Name of Product /Service", "name": "l1_product_name", "type": "text", "placeholder": "Product/Service Name"},
-                  {"column": "% Of total Turnover contributed", "name": "l1_turnover_percent", "field_type": "percentage", "type": "text", "placeholder": "%"},
+                  {"column": "% Of total Turnover contributed", "name": "l1_turnover_percent", "field_type": "percentage", "type": "number", "placeholder": "%"},
                   {"column": "Boundary for which the Life Cycle Perspective / Assessment Was conducted", "name": "l1_boundary", "type": "text", "placeholder": "e.g., Cradle-to-Gate"},
                   {"column": "Whether conducted by independent external agency (Yes/No)", "name": "l1_external_agency", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]},
                   {"column": "Results communicated in public domain (Yes/No)", "name": "l1_public_domain", "type": "select", "options": [{"value": "", "label": "Select"}, {"value": "Yes", "label": "Yes"}, {"value": "No", "label": "No"}]}
@@ -2196,7 +2196,7 @@
                 "label": "1",
                 "fields": [
                   {"column": "Indicate product category", "name": "l5_product_category", "type": "text", "placeholder": "e.g., Automotive Parts"},
-                  {"column": "Reclaimed products and their packaging materials as % of total products sold in respective category", "name": "l5_reclaimed_percent", "field_type": "percentage", "type": "text", "placeholder": "e.g., 5%"}
+                  {"column": "Reclaimed products and their packaging materials as % of total products sold in respective category", "name": "l5_reclaimed_percent", "field_type": "percentage", "type": "number", "placeholder": "e.g., 5%"}
                 ]
               }
             ]
@@ -2577,28 +2577,28 @@
               {
                 "label": "Male",
                 "fields": [
-                  {"column": "Permanent employees (Executives) Return to work rate", "name": "e6_male_emp_return", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "Permanent employees (Executives) Retention rate", "name": "e6_male_emp_retention", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "Permanent workers (Non-Executives) Return to work rate", "name": "e6_male_worker_return", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "Permanent workers (Non-Executives) Retention rate", "name": "e6_male_worker_retention", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "Permanent employees (Executives) Return to work rate", "name": "e6_male_emp_return", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "Permanent employees (Executives) Retention rate", "name": "e6_male_emp_retention", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "Permanent workers (Non-Executives) Return to work rate", "name": "e6_male_worker_return", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "Permanent workers (Non-Executives) Retention rate", "name": "e6_male_worker_retention", "field_type": "percentage", "type": "number", "placeholder": "%"}
                 ]
               },
               {
                 "label": "Female",
                 "fields": [
-                  {"column": "Permanent employees (Executives) Return to work rate", "name": "e6_female_emp_return", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "Permanent employees (Executives) Retention rate", "name": "e6_female_emp_retention", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "Permanent workers (Non-Executives) Return to work rate", "name": "e6_female_worker_return", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "Permanent workers (Non-Executives) Retention rate", "name": "e6_female_worker_retention", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "Permanent employees (Executives) Return to work rate", "name": "e6_female_emp_return", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "Permanent employees (Executives) Retention rate", "name": "e6_female_emp_retention", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "Permanent workers (Non-Executives) Return to work rate", "name": "e6_female_worker_return", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "Permanent workers (Non-Executives) Retention rate", "name": "e6_female_worker_retention", "field_type": "percentage", "type": "number", "placeholder": "%"}
                 ]
               },
               {
                 "label": "Total",
                 "fields": [
-                  {"column": "Permanent employees (Executives) Return to work rate", "name": "e6_total_emp_return", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "Permanent employees (Executives) Retention rate", "name": "e6_total_emp_retention", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "Permanent workers (Non-Executives) Return to work rate", "name": "e6_total_worker_return", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "Permanent workers (Non-Executives) Retention rate", "name": "e6_total_worker_retention", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "Permanent employees (Executives) Return to work rate", "name": "e6_total_emp_return", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "Permanent employees (Executives) Retention rate", "name": "e6_total_emp_retention", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "Permanent workers (Non-Executives) Return to work rate", "name": "e6_total_worker_return", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "Permanent workers (Non-Executives) Retention rate", "name": "e6_total_worker_retention", "field_type": "percentage", "type": "number", "placeholder": "%"}
                 ]
               }
             ]
@@ -4896,8 +4896,8 @@
               {
                 "label": "Complaints on POSH as a % of female employees / workers",
                 "fields": [
-                  {"column": "FY {FY0} Current Financial Year", "name": "e7_posh_pct_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} Previous Financial Year", "name": "e7_posh_pct_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "FY {FY0} Current Financial Year", "name": "e7_posh_pct_cy", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "FY {FY1} Previous Financial Year", "name": "e7_posh_pct_py", "field_type": "percentage", "type": "number", "placeholder": "%"}
                 ]
               },
               {
@@ -5127,7 +5127,7 @@
                   {
                     "column": "% of value chain partners (by value of business done with such partners) that were assessed",
                     "name": "l4_sh_text",
-                    "type": "text",
+                    "type": "number",
                     "placeholder": "Enter percentage and details (e.g., 100% - Great place to work, ISO Audits)",
                     "min": 0,
                     "max": 100
@@ -5140,7 +5140,7 @@
                   {
                     "column": "% of value chain partners (by value of business done with such partners) that were assessed",
                     "name": "l4_disc_text",
-                    "type": "text",
+                    "type": "number",
                     "placeholder": "Enter percentage and details (e.g., 100% - Great place to work, ISO Audits)"
                   }
                 ]
@@ -5151,7 +5151,7 @@
                   {
                     "column": "% of value chain partners (by value of business done with such partners) that were assessed",
                     "name": "l4_cl_text",
-                    "type": "text",
+                    "type": "number",
                     "placeholder": "Enter percentage and details (e.g., 100% - Great place to work, ISO Audits)"
                   }
                 ]
@@ -5162,7 +5162,7 @@
                   {
                     "column": "% of value chain partners (by value of business done with such partners) that were assessed",
                     "name": "l4_fl_text",
-                    "type": "text",
+                    "type": "number",
                     "placeholder": "Enter percentage and details (e.g., 100% - Great place to work, ISO Audits)"
                   }
                 ]
@@ -5173,7 +5173,7 @@
                   {
                     "column": "% of value chain partners (by value of business done with such partners) that were assessed",
                     "name": "l4_wages_text",
-                    "type": "text",
+                    "type": "number",
                     "placeholder": "Enter percentage and details (e.g., 100% - Great place to work, ISO Audits)"
                   }
                 ]
@@ -5184,7 +5184,7 @@
                   {
                     "column": "% of value chain partners (by value of business done with such partners) that were assessed",
                     "name": "l4_others_text",
-                    "type": "text",
+                    "type": "number",
                     "placeholder": "Enter percentage and details"
                   }
                 ]
@@ -7302,7 +7302,7 @@
             "label": "Value chain partners assessed for environmental impacts (%)",
             "name": "valueChainPercent",
             "field_type": "percentage",
-            "type": "text",
+            "type": "number",
             "placeholder": "Enter percentage"
           }
         ]
@@ -7610,7 +7610,7 @@
                   {
                     "column": "% of PAFs covered by R&R",
                     "name": "e2_paf_percent",
-                    "type": "text",
+                    "type": "number",
                     "placeholder": "Enter percentage (e.g., 75%)",
                     "field_type": "percentage"
                   },
@@ -7658,15 +7658,15 @@
               {
                 "label": "Directly sourced from MSMEs/ small producers",
                 "fields": [
-                  {"column": "FY {FY0} Current Financial Year", "name": "e4_msme_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} Previous Financial Year", "name": "e4_msme_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "FY {FY0} Current Financial Year", "name": "e4_msme_cy", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "FY {FY1} Previous Financial Year", "name": "e4_msme_py", "field_type": "percentage", "type": "number", "placeholder": "%"}
                 ]
               },
               {
                 "label": "Sourced directly from within the district and neighboring districts",
                 "fields": [
-                  {"column": "FY {FY0} Current Financial Year", "name": "e4_local_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} Previous Financial Year", "name": "e4_local_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "FY {FY0} Current Financial Year", "name": "e4_local_cy", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "FY {FY1} Previous Financial Year", "name": "e4_local_py", "field_type": "percentage", "type": "number", "placeholder": "%"}
                 ]
               }
             ]
@@ -7689,29 +7689,29 @@
               {
                 "label": "Rural",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e5_rural_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e5_rural_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "FY {FY0} (Current Financial Year)", "name": "e5_rural_cy", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e5_rural_py", "field_type": "percentage", "type": "number", "placeholder": "%"}
                 ]
               },
               {
                 "label": "Semi-Urban",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e5_semiurban_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e5_semiurban_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "FY {FY0} (Current Financial Year)", "name": "e5_semiurban_cy", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e5_semiurban_py", "field_type": "percentage", "type": "number", "placeholder": "%"}
                 ]
               },
               {
                 "label": "Urban",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e5_urban_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e5_urban_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "FY {FY0} (Current Financial Year)", "name": "e5_urban_cy", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e5_urban_py", "field_type": "percentage", "type": "number", "placeholder": "%"}
                 ]
               },
               {
                 "label": "Metropolitan",
                 "fields": [
-                  {"column": "FY {FY0} (Current Financial Year)", "name": "e5_metro_cy", "field_type": "percentage", "type": "text", "placeholder": "%"},
-                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e5_metro_py", "field_type": "percentage", "type": "text", "placeholder": "%"}
+                  {"column": "FY {FY0} (Current Financial Year)", "name": "e5_metro_cy", "field_type": "percentage", "type": "number", "placeholder": "%"},
+                  {"column": "FY {FY1} (Previous Financial Year)", "name": "e5_metro_py", "field_type": "percentage", "type": "number", "placeholder": "%"}
                 ]
               }
             ]
@@ -7974,7 +7974,7 @@
                   {
                     "column": "% Of beneficiaries from vulnerable and marginalized groups",
                     "name": "l6_vulnerable_percent",
-                    "type": "text",
+                    "type": "number",
                     "placeholder": "Enter percentage (e.g., 75%)",
                     "field_type": "percentage"
                   }
@@ -8020,15 +8020,15 @@
             "rows": [
               {
                 "label": "Environmental and social parameters relevant to the product",
-                "fields": [{"column": "As a percentage to total turnover", "name": "e2_env_social_percent", "field_type": "percentage", "type": "text", "placeholder": "%"}]
+                "fields": [{"column": "As a percentage to total turnover", "name": "e2_env_social_percent", "field_type": "percentage", "type": "number", "placeholder": "%"}]
               },
               {
                 "label": "Safe and responsible usage",
-                "fields": [{"column": "As a percentage to total turnover", "name": "e2_safe_usage_percent", "field_type": "percentage", "type": "text", "placeholder": "%"}]
+                "fields": [{"column": "As a percentage to total turnover", "name": "e2_safe_usage_percent", "field_type": "percentage", "type": "number", "placeholder": "%"}]
               },
               {
                 "label": "Recycling and/or safe disposal",
-                "fields": [{"column": "As a percentage to total turnover", "name": "e2_recycling_percent", "field_type": "percentage", "type": "text", "placeholder": "%"}]
+                "fields": [{"column": "As a percentage to total turnover", "name": "e2_recycling_percent", "field_type": "percentage", "type": "number", "placeholder": "%"}]
               }
             ]
           }
@@ -8221,7 +8221,7 @@
             "label": "Percentage involving PII",
             "name": "breachesPiiPercent",
             "field_type": "percentage",
-            "type": "text",
+            "type": "number",
             "placeholder": "% involving PII"
           },
           {
@@ -8336,7 +8336,7 @@
             "label": "Percentage involving PII",
             "name": "l5BreachesPiiPercent",
             "field_type": "percentage",
-            "type": "text",
+            "type": "number",
             "placeholder": "% involving PII"
           }
         ]

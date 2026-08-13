@@ -81,16 +81,87 @@
         },
 
         decimal: {
-            test: (v) => /^-?\d+(\.\d+)?$/.test(v.trim()),
-            message: (name) => `${name} must be a valid decimal number.`,
+            test: (v) => {
+                const clean = String(v).replace(/,/g, '');
+                return /^-?\d+(\.\d{1,2})?$/.test(clean);
+            },
+            message: (name) => `${name} must be a valid decimal number with up to 2 decimal places.`,
             inputmode: 'decimal',
+            format: (v) => {
+                let cleaned = String(v).replace(/[^0-9.-]/g, '');
+                const parts = cleaned.split('.');
+                if (parts.length > 2) {
+                    cleaned = parts[0] + '.' + parts.slice(1).join('');
+                }
+                const isNegative = cleaned.startsWith('-');
+                cleaned = cleaned.replace(/-/g, '');
+                const decimalParts = cleaned.split('.');
+                let integerPart = decimalParts[0] || '';
+                let decimalPart = decimalParts[1] || '';
+                if (decimalPart.length > 2) {
+                    decimalPart = decimalPart.slice(0, 2);
+                }
+                if (integerPart) {
+                    integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                }
+                let result = '';
+                if (isNegative && (integerPart || decimalPart)) {
+                    result = '-';
+                }
+                result += integerPart;
+                if (decimalPart) {
+                    result += '.' + decimalPart;
+                }
+                return result;
+            },
         },
 
         percentage: {
-            test: (v) => /^-?\d+(\.\d+)?$/.test(v.trim()),
-            message: (name) => `${name} must be a valid percentage (number only).`,
+            test: (v) => {
+                // Remove commas and percentage signs
+                const clean = String(v).replace(/,/g, '').replace(/%/g, '').trim();
+                if (!/^-?\d+(\.\d{1,2})?$/.test(clean)) {
+                    return false;
+                }
+                const num = parseFloat(clean);
+                return !isNaN(num) && num >= 0 && num <= 100;
+            },
+            message: (name) => `${name} must be a valid percentage between 0 and 100, with up to 2 decimal places.`,
             inputmode: 'decimal',
             maxlength: 10,
+            format: (v) => {
+                let cleaned = String(v).replace(/[^0-9.-]/g, '');
+                const parts = cleaned.split('.');
+                if (parts.length > 2) {
+                    cleaned = parts[0] + '.' + parts.slice(1).join('');
+                }
+                const isNegative = cleaned.startsWith('-');
+                cleaned = cleaned.replace(/-/g, '');
+                const decimalParts = cleaned.split('.');
+                let integerPart = decimalParts[0] || '';
+                let decimalPart = decimalParts[1] || '';
+                if (decimalPart.length > 2) {
+                    decimalPart = decimalPart.slice(0, 2);
+                }
+                if (integerPart.length > 3) {
+                    integerPart = integerPart.slice(0, 3);
+                }
+                if (integerPart) {
+                    integerPart = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                }
+                let result = '';
+                if (isNegative) {
+                    result = '';
+                }
+                result += integerPart;
+                if (decimalPart) {
+                    result += '.' + decimalPart;
+                }
+                if (result === '' || result === '.') {
+                    return '';
+                }
+                return result;
+            },
         },
 
         year: {
@@ -99,34 +170,42 @@
             pattern: '[0-9]{4}',
             inputmode: 'numeric',
             maxlength: 4,
-            format: (v) => v.replace(/[^0-9]/g, '').slice(0, 4),
+            format: (v) => String(v).replace(/[^0-9]/g, '').slice(0, 4),
         },
 
         financial_year: {
             test: (v) => /^[0-9]{4}-[0-9]{4}$/.test(v),
             message: (name) => `${name} must be in format YYYY-YYYY (e.g., 2024-2025).`,
             maxlength: 9,
+            format: (v) => {
+                let cleaned = String(v).replace(/[^0-9-]/g, '');
+                const parts = cleaned.split('-');
+                if (parts.length > 2) {
+                    cleaned = parts[0] + '-' + parts.slice(1).join('');
+                }
+                return cleaned.slice(0, 9);
+            }
         },
 
         cin: {
             test: (v) => /^[A-Z0-9]{21}$/.test(v),
             message: (name) => `${name} must be a valid 21-character Corporate Identification Number.`,
             maxlength: 21,
-            format: (v) => v.toUpperCase().replace(/[^A-Z0-9]/g, ''),
+            format: (v) => String(v).toUpperCase().replace(/[^A-Z0-9]/g, ''),
         },
 
         pan: {
             test: (v) => /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(v),
             message: (name) => `${name} must be a valid 10-character PAN (e.g., ABCDE1234F).`,
             maxlength: 10,
-            format: (v) => v.toUpperCase().replace(/[^A-Z0-9]/g, ''),
+            format: (v) => String(v).toUpperCase().replace(/[^A-Z0-9]/g, ''),
         },
 
         gst: {
             test: (v) => /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[Z]{1}[0-9A-Z]{1}$/.test(v),
             message: (name) => `${name} must be a valid 15-character GSTIN.`,
             maxlength: 15,
-            format: (v) => v.toUpperCase().replace(/[^A-Z0-9]/g, ''),
+            format: (v) => String(v).toUpperCase().replace(/[^A-Z0-9]/g, ''),
         },
 
         aadhaar: {
@@ -135,7 +214,7 @@
             pattern: '[0-9]{12}',
             inputmode: 'numeric',
             maxlength: 12,
-            format: (v) => v.replace(/[^0-9]/g, '').slice(0, 12),
+            format: (v) => String(v).replace(/[^0-9]/g, '').slice(0, 12),
         },
 
         pin_code: {
@@ -144,14 +223,14 @@
             pattern: '[0-9]{6}',
             inputmode: 'numeric',
             maxlength: 6,
-            format: (v) => v.replace(/[^0-9]/g, '').slice(0, 6),
+            format: (v) => String(v).replace(/[^0-9]/g, '').slice(0, 6),
         },
 
         ifsc: {
             test: (v) => /^[A-Z]{4}0[A-Z0-9]{6}$/.test(v),
             message: (name) => `${name} must be a valid 11-character IFSC code (e.g., SBIN0001234).`,
             maxlength: 11,
-            format: (v) => v.toUpperCase().replace(/[^A-Z0-9]/g, ''),
+            format: (v) => String(v).toUpperCase().replace(/[^A-Z0-9]/g, ''),
         },
 
         account_number: {
@@ -159,31 +238,114 @@
             message: (name) => `${name} must be a valid account number (9-18 digits).`,
             inputmode: 'numeric',
             maxlength: 18,
-            format: (v) => v.replace(/[^0-9]/g, ''),
+            format: (v) => String(v).replace(/[^0-9]/g, ''),
         },
 
         number_with_unit: {
-            test: (v) => /^\d+(\.\d+)?\s*(cr|crore|lakh|thousand|k|m)?$/i.test(v.trim()),
-            message: (name) => `${name} must be a valid number with optional unit (cr, lakh, thousand, k, m).`,
+            test: (v) => {
+                // Remove commas and clean the input
+                const clean = String(v).replace(/,/g, '').trim().toLowerCase();
+                // Allow numbers with optional decimal and unit (cr, crore, lakh, thousand, k, m)
+                return /^(\d+(\.\d+)?)\s*(cr|crore|lakh|thousand|k|m)?$/i.test(clean);
+            },
+            message: (name) => `${name} must be a valid number with optional unit (cr, crore, lakh, thousand, k, m).`,
             inputmode: 'text',
             maxlength: 50,
+            format: (v) => {
+                // If the value is empty, return it
+                if (!v) return v;
+                
+                // If the input is just letters (unit being typed), return it as-is
+                if (/^[a-zA-Z]+$/.test(v)) {
+                    return v;
+                }
+                
+                // For mixed input, format the number part but preserve the unit
+                // Extract number and unit parts
+                let numberPart = '';
+                let unitPart = '';
+                
+                // Try to match number with commas and optional unit
+                const match = v.match(/^([\d,]*\.?[\d,]*)\s*([a-zA-Z]*)$/);
+                if (match) {
+                    numberPart = match[1] || '';
+                    unitPart = match[2] || '';
+                } else {
+                    // If no match, just return the input as-is
+                    return v;
+                }
+                
+                // If there's no number part, return the input as-is
+                if (!numberPart) return v;
+                
+                // Remove commas to process the number
+                const rawNumber = numberPart.replace(/,/g, '');
+                
+                // If there's no valid number, return the input as-is
+                if (!rawNumber || !/^\d*\.?\d*$/.test(rawNumber)) {
+                    return v;
+                }
+                
+                // Split integer and decimal parts
+                const parts = rawNumber.split('.');
+                let intPart = parts[0] || '0';
+                const decPart = parts[1] || '';
+                
+                // Remove leading zeros
+                if (intPart.length > 1 && intPart.startsWith('0')) {
+                    intPart = intPart.replace(/^0+/, '');
+                    if (intPart === '') intPart = '0';
+                }
+                
+                // Format integer part with commas (only if it's a valid number)
+                let formattedInt = intPart;
+                if (intPart && intPart !== '0' && /^\d+$/.test(intPart)) {
+                    formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                }
+                
+                // Limit decimal places to 2
+                const formattedDec = decPart.slice(0, 2);
+                
+                // Build the formatted number
+                let formattedNumber = formattedInt;
+                if (formattedDec) {
+                    formattedNumber += '.' + formattedDec;
+                }
+                
+                // Combine number and unit
+                return formattedNumber + (unitPart ? ' ' + unitPart : '');
+            }
         },
 
         text: {
-            test: (v) => true, // Always valid for text, only check required separately
+            test: (v) => true,
             message: (name) => `${name} is required.`,
         },
 
         textarea: {
-            test: (v) => true, // Always valid for textarea, only check required separately
+            test: (v) => true,
             message: (name) => `${name} is required.`,
         },
 
     };
 
     // ============================================================
-    // 2. CORE VALIDATION FUNCTIONS
+    // 2. HELPER FUNCTIONS
     // ============================================================
+
+    /**
+     * Format a value as percentage with 2 decimal places
+     */
+    function formatPercentageValue(value) {
+        if (value === null || value === undefined || value === '') return '';
+        const num = parseFloat(value);
+        if (isNaN(num) || !isFinite(num)) return '';
+        const rounded = Math.round(num * 100) / 100;
+        if (rounded % 1 === 0) {
+            return rounded.toString();
+        }
+        return rounded.toFixed(2);
+    }
 
     /**
      * Get validator for a field type
@@ -240,7 +402,6 @@
 
     /**
      * Show validation state on an element
-     * Only show errors if the field has been blurred (touched) or during form submission
      */
     function showValidation(element, valid, message, forceShow = false) {
         const formGroup = element.closest('.form-group, td, .table-cell');
@@ -287,7 +448,7 @@
             if (input) {
                 input.classList.remove('is-invalid');
                 // Only show is-valid if field has content
-                if (element.value && element.value.trim() !== '') {
+                if (element.value && String(element.value).trim() !== '') {
                     input.classList.add('is-valid');
                 } else {
                     input.classList.remove('is-valid');
@@ -407,9 +568,7 @@
             }
         });
 
-        // On change (for selects, checkboxes, radios)
         element.addEventListener('change', function(e) {
-            // For radios and checkboxes, validate on change if already blurred
             if (this.type === 'radio' || this.type === 'checkbox') {
                 if (this.dataset.blurred === 'true') {
                     markBlurred(this);
@@ -441,7 +600,6 @@
                 return;
             }
             
-            // Regular inputs
             if (this.dataset.blurred === 'true') {
                 const result = validateField(this);
                 showValidation(this, result.valid, result.message, false);
@@ -460,20 +618,33 @@
         });
 
         // Restrict input based on field type (only for specific types)
+        // FIXED: Better cursor position handling
         element.addEventListener('input', function(e) {
             const fieldType = this.dataset.validation || 'text';
             const validator = getValidator(fieldType);
             if (validator && typeof validator.format === 'function') {
-                const cursorPos = this.selectionStart;
                 const oldValue = this.value;
-                const newValue = validator.format(this.value);
+                const cursorPos = this.selectionStart;
+                const newValue = validator.format(oldValue);
                 if (newValue !== oldValue) {
+                    // Calculate how many characters were added/removed before the cursor
+                    const diff = newValue.length - oldValue.length;
                     this.value = newValue;
-                    const newCursorPos = Math.min(cursorPos, newValue.length);
+                    // Adjust cursor position by the difference, but clamp to valid range
+                    const newCursorPos = Math.max(0, Math.min(cursorPos + diff, newValue.length));
                     this.setSelectionRange(newCursorPos, newCursorPos);
                 }
             }
         });
+
+        if (element.closest('td') && element.dataset.formula) {
+            element.addEventListener('input', function(e) {
+                const event = new CustomEvent('table-cell-change', {
+                    detail: { element: this }
+                });
+                document.dispatchEvent(event);
+            });
+        }
     }
 
     /**
@@ -516,8 +687,8 @@
                 }
                 return;
             }
-
             // For checkbox groups
+
             if (input.type === 'checkbox' && input.closest('.choice-stack')) {
                 const groupName = input.dataset.fieldName;
                 const groupKey = `checkbox_${groupName}`;
@@ -525,17 +696,17 @@
                 groups.add(groupKey);
                 const groupInputs = document.querySelectorAll(`input[type="checkbox"][data-field-name="${groupName}"]`);
                 const firstInput = groupInputs[0];
-                if (firstInput && firstInput.closest('.form-group')) {
                     // Mark all as blurred before validation
+                if (firstInput && firstInput.closest('.form-group')) {
                     groupInputs.forEach(inp => inp.dataset.blurred = 'true');
                     const result = validateField(firstInput);
                     showValidation(firstInput, result.valid, result.message, true);
                     if (!result.valid) allValid = false;
                 }
                 return;
+            // Regular inputs - mark as blurred before validation
             }
 
-            // Regular inputs - mark as blurred before validation
             input.dataset.blurred = 'true';
             const result = validateField(input);
             showValidation(input, result.valid, result.message, true);
@@ -560,46 +731,42 @@
 
     // ============================================================
     // 5. PUBLIC API
+        // Core functions
     // ============================================================
 
     window.BRSRValidation = {
-        // Core functions
         getValidator: getValidator,
         validateField: validateField,
         validateForm: validateForm,
         showValidation: showValidation,
+        // Attachment
         clearValidation: clearValidation,
         performValidation: performValidation,
         markBlurred: markBlurred,
-
-        // Attachment
+        // Validator registry
         attachValidation: attachValidation,
         attachValidationToContainer: attachValidationToContainer,
-
-        // Validator registry
         validators: VALIDATORS,
+        formatPercentageValue: formatPercentageValue,
     };
 
     // ============================================================
     // 6. DOM READY - AUTO-INIT
-    // ============================================================
-
     // Auto-attach to existing inputs when DOM is ready
-    document.addEventListener('DOMContentLoaded', function() {
         // Attach to all existing validation inputs
+    // ============================================================
+        // Watch for new content via MutationObserver
+    document.addEventListener('DOMContentLoaded', function() {
         const inputs = document.querySelectorAll('[data-validation]');
         inputs.forEach(input => attachValidation(input));
 
-        // Watch for new content via MutationObserver
         const observer = new MutationObserver(function(mutations) {
             mutations.forEach(mutation => {
                 mutation.addedNodes.forEach(node => {
-                    if (node.nodeType === 1) { // Element node
-                        // Check if node itself has data-validation
+                    if (node.nodeType === 1) {
                         if (node.hasAttribute && node.hasAttribute('data-validation')) {
                             attachValidation(node);
                         }
-                        // Check descendants
                         const descendants = node.querySelectorAll ? node.querySelectorAll('[data-validation]') : [];
                         descendants.forEach(el => attachValidation(el));
                     }
