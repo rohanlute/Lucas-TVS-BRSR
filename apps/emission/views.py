@@ -24,6 +24,10 @@ from django.utils import timezone
 from apps.accounts.models import User
 from decimal import Decimal
 
+# Notication and Timesheet 
+from apps.common_events.event_context import EventContext
+from apps.common_events.constants import *
+from apps.common_events.services import EventService
 
 # apps/emission/views.py - Updated EmissionsDashboardView
 
@@ -690,8 +694,6 @@ from .models import EmissionAssignmentSource
 
 
 User = get_user_model()
-
-
 class SaveEmissionAssignmentAPIView(APIView):
 
     @transaction.atomic
@@ -774,95 +776,9 @@ class SaveEmissionAssignmentAPIView(APIView):
 
                 notes=data.get("notes"),
 
-                status="ASSIGNED",
+                source_ids=source_ids,
 
             )
-            print("After Create:", assignment.id, assignment.status)
-            source_ids = data.get("source_ids", [])
-
-            for source_id in source_ids:
-
-                EmissionAssignmentSource.objects.create(
-
-                    assignment=assignment,
-
-                    source_id=source_id,
-
-                )
-
-            # -------------------------------------------------------
-            # Start Workflow
-            # -------------------------------------------------------
-
-            workflow_template = ApprovalConfigurationTemplate.objects.filter(
-                company_id=assignment.company_id,is_active=True,).first()
-
-            if not workflow_template:
-                return Response(
-                    {
-                        "success": False,
-                        "message": "No active EMISSION workflow configuration found for this company."
-                    },
-                    status=400,)
-
-            # Save template in assignment
-            assignment.workflow_template = workflow_template
-            assignment.save(update_fields=["workflow_template"])
-
-            # Create workflow task (starts at first stage)
-            workflow_task = WorkflowConfigurationEngine.start(template=workflow_template,target=assignment,
-                first_assignee=request.user,)
-
-            # Skip Question Assignment stage
-            workflow_task = WorkflowConfigurationEngine.advance_to_next_stage(
-                task=workflow_task,user=request.user,next_assignee=assignment.assignee,)
-
-            # Save workflow task
-            assignment.workflow_task = workflow_task
-            assignment.save(update_fields=["workflow_task"])
-
-            # ----------------------------------------
-            # Create Notification
-            # ----------------------------------------
-            NotificationService.notify(event="ASSIGN_SCOPE",assignment=assignment,sender=request.user,)
-
-            print("After Create:", assignment.status)
-
-            assignment.workflow_template = workflow_template
-            assignment.save(update_fields=["workflow_template"])
-            assignment.refresh_from_db()
-            print("After Template:", assignment.status)
-
-            workflow_task = WorkflowConfigurationEngine.start(
-                template=workflow_template,
-                target=assignment,
-                first_assignee=request.user,
-            )
-            assignment.refresh_from_db()
-            print("After Start:", assignment.status)
-
-            workflow_task = WorkflowConfigurationEngine.advance_to_next_stage(
-                task=workflow_task,
-                user=request.user,
-                next_assignee=assignment.assignee,
-            )
-            assignment.refresh_from_db()
-            print("After Advance:", assignment.status)
-
-            assignment.workflow_task = workflow_task
-            assignment.save(update_fields=["workflow_task"])
-            assignment.refresh_from_db()
-            print("After Task Save:", assignment.status)
-
-            NotificationService.notify(
-                event="ASSIGN_SCOPE",
-                assignment=assignment,
-                sender=request.user,
-            )
-            assignment.refresh_from_db()
-            print("After Notification:", assignment.status)
-            assignment.refresh_from_db()
-            print("Before Return:", assignment.id, assignment.status)
 
             return Response(
                 {
@@ -885,7 +801,6 @@ class SaveEmissionAssignmentAPIView(APIView):
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
 # apps/emission/views.py - Complete updated ESGDisclosureView with category completion
 
 class ESGDisclosureView(TemplateView):
@@ -2517,6 +2432,15 @@ class SubmitAssignmentView(View):
                     "review_comments",
                 ]
             )
+            # Call the data
+            context = EventContext(
+                module=EMISSION,
+                entity=ASSIGNMENT,
+                action=SUBMITTED,
+                target=assignment,
+                actor=request.user,
+            )
+            EventService.publish(context)
 
             return JsonResponse({
                 "success": True,
@@ -2587,3 +2511,50 @@ class CheckAssignedSourcesAPIView(APIView):
             "success": True,
             "assigned_sources": assigned_sources
         })
+    
+
+
+
+
+
+
+
+
+
+
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views import View
+from django.shortcuts import render
+
+from .models import EmissionAssignmentSchedule
+
+
+class EmissionSchedulerDashboardView(LoginRequiredMixin, View):
+
+    template_name = "emission/scheduler_dashboard.html"
+
+    def get(self, request):
+
+        schedules = (
+            EmissionAssignmentSchedule.objects
+            .select_related(
+                "company",
+                "plant",
+                "scope",
+                "assignee",
+            )
+            .prefetch_related(
+                "generated_assignments",
+            )
+            .order_by("next_run_date")
+        )
+
+        context = {
+            "schedules": schedules,
+        }
+
+        return render(
+            request,
+            self.template_name,
+            context,
+        )

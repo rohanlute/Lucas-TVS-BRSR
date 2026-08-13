@@ -1,0 +1,299 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<div class="container-fluid mt-4">
+
+    <h3>
+        Recurring Assignment Scheduler
+    </h3>
+
+    <table class="table table-bordered table-hover mt-4">
+
+        <thead>
+
+            <tr>
+
+                <th>Code</th>
+
+                <th>Name</th>
+
+                <th>Company</th>
+
+                <th>Plant</th>
+
+                <th>Scope</th>
+
+                <th>Frequency</th>
+
+                <th>Next Run</th>
+
+                <th>Last Run</th>
+
+                <th>Status</th>
+
+                <th>Generated</th>
+
+                <th width="250">
+                    Action
+                </th>
+
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            {% for schedule in schedules %}
+
+            <tr>
+
+                <td>
+                    {{ schedule.schedule_code }}
+                </td>
+
+                <td>
+                    {{ schedule.name }}
+                </td>
+
+                <td>
+                    {{ schedule.company }}
+                </td>
+
+                <td>
+                    {{ schedule.plant }}
+                </td>
+
+                <td>
+                    {{ schedule.scope }}
+                </td>
+
+                <td>
+                    {{ schedule.get_frequency_display }}
+                </td>
+
+                <td>
+                    {{ schedule.next_run_date }}
+                </td>
+
+                <td>
+                    {{ schedule.last_run_date|default:"-" }}
+                </td>
+
+                <td>
+
+                    <button
+                        class="btn btn-sm {% if schedule.is_active %}btn-warning{% else %}btn-success{% endif %}"
+                        onclick="toggleSchedule({{ schedule.id }})">
+
+                        {% if schedule.is_active %}
+                            Pause
+                        {% else %}
+                            Resume
+                        {% endif %}
+
+                    </button>
+
+                </td>
+
+                <td>
+                    {{ schedule.total_assignments_created }}
+                </td>
+
+                <td>
+
+                    <button
+                        class="btn btn-sm btn-info"
+                        onclick="showHistory({{ schedule.id }})">
+
+                        History
+
+                    </button>
+
+                    {% if schedule.is_active %}
+
+                        <button
+                            class="btn btn-sm btn-warning">
+                            Pause
+                        </button>
+
+                    {% else %}
+
+                        <button
+                            class="btn btn-sm btn-success">
+                            Resume
+                        </button>
+
+                    {% endif %}
+
+                </td>
+
+            </tr>
+
+            {% empty %}
+
+            <tr>
+
+                <td colspan="11" class="text-center">
+
+                    No schedules found.
+
+                </td>
+
+            </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+
+<div class="modal fade" id="historyModal" tabindex="-1">
+
+    <div class="modal-dialog modal-lg">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+                    Schedule History
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+            <div class="modal-body">
+
+                <table class="table table-bordered">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Assignment</th>
+
+                            <th>FY</th>
+
+                            <th>Month</th>
+
+                            <th>Assignee</th>
+
+                            <th>Status</th>
+
+                            <th>Created</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody id="historyTableBody">
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<script>
+
+function toggleSchedule(scheduleId) {
+
+    fetch("{% url 'emission:toggle_schedule_status' %}", {
+
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}",
+        },
+
+        body: JSON.stringify({
+            schedule_id: scheduleId
+        })
+
+    })
+
+    .then(response => response.json())
+
+    .then(data => {
+
+        if (data.success) {
+
+            location.reload();
+
+        } else {
+
+            alert(data.message);
+
+        }
+
+    });
+
+}
+
+
+
+function showHistory(scheduleId) {
+
+    fetch(`/emission/api/scheduler/${scheduleId}/history/`)
+
+    .then(response => response.json())
+
+    .then(data => {
+
+        const tbody = document.getElementById("historyTableBody");
+
+        tbody.innerHTML = "";
+
+        data.history.forEach(item => {
+
+            tbody.innerHTML += `
+                <tr>
+
+                    <td>${item.assignment_code}</td>
+
+                    <td>${item.financial_year}</td>
+
+                    <td>${item.financial_month}</td>
+
+                    <td>${item.assignee}</td>
+
+                    <td>${item.status}</td>
+
+                    <td>${item.created_at}</td>
+
+                </tr>
+            `;
+
+        });
+
+        const modal = new bootstrap.Modal(
+            document.getElementById("historyModal")
+        );
+
+        modal.show();
+
+    });
+
+}
+</script>
+
+{% endblock %}

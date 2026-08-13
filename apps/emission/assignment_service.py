@@ -3,7 +3,14 @@ from django.db import transaction
 from apps.organizations.models import ApprovalConfigurationTemplate
 from apps.organizations.workflow_configuration_engine import WorkflowConfigurationEngine
 
-from apps.notifications.services import NotificationService
+from apps.common_events.event_context import EventContext
+from apps.common_events.services import EventService
+
+from apps.common_events.constants import (
+    EMISSION,
+    ASSIGNMENT,
+    ASSIGNED,
+)
 
 from .models import (
     EmissionAssignment,
@@ -35,6 +42,15 @@ def create_emission_assignment(
     1. Manual Assignment
     2. Automatic Scheduler
     """
+    print("=" * 60)
+    print("Creating Assignment")
+    print("Company :", company_id)
+    print("Plant   :", plant_id)
+    print("FY      :", financial_year_id)
+    print("Month   :", financial_month_id)
+    print("Scope   :", scope_id)
+    print("Sources :", source_ids)
+    print("=" * 60)
 
     source_ids = source_ids or []
 
@@ -69,7 +85,7 @@ def create_emission_assignment(
         status="ASSIGNED",
 
     )
-
+    print("Assignment Created:", assignment.assignment_code)
     # ----------------------------------------
     # Create Assignment Sources
     # ----------------------------------------
@@ -83,6 +99,7 @@ def create_emission_assignment(
             source_id=source_id,
 
         )
+    print("Sources Linked")
 
     # -------------------------------------------------------
     # Start Workflow
@@ -98,29 +115,53 @@ def create_emission_assignment(
             "No active EMISSION workflow configuration found for this company."
         )
 
+    print("Workflow Template:", workflow_template)
+
+
     assignment.workflow_template = workflow_template
     assignment.save(update_fields=["workflow_template"])
-
+    print("Workflow Started")
     workflow_task = WorkflowConfigurationEngine.start(
         template=workflow_template,
         target=assignment,
         first_assignee=assigner,
     )
-
+    
     workflow_task = WorkflowConfigurationEngine.advance_to_next_stage(
         task=workflow_task,
         user=assigner,
         next_assignee=assignee,
     )
-
+    print("Workflow Advanced")
     assignment.workflow_task = workflow_task
     assignment.save(update_fields=["workflow_task"])
 
     # -------------------------------------------------------
-    # Notification
+    # Publish Common Event
     # -------------------------------------------------------
 
-    NotificationService.notify(event="ASSIGN_SCOPE",assignment=assignment,sender=assigner,)
+    print("Publishing Event")
+
+    context = EventContext(
+
+        module=EMISSION,
+
+        entity=ASSIGNMENT,
+
+        action=ASSIGNED,
+
+        target=assignment,
+
+        actor=assigner,
+
+    )
+
+    EventService.publish(context)
+
+    print("Event Published")
+    print("Returning Assignment:", assignment.assignment_code)
+
+    return assignment
 
     return assignment
 
