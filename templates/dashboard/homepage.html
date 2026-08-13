@@ -46,6 +46,200 @@
     width: 100%;
     padding: 24px 32px 32px 32px;
     background: transparent;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ===== CONFETTI OVERLAY ===== */
+  #confetti-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 9999;
+    display: none;
+  }
+
+  #confetti-overlay.active {
+    display: block;
+    pointer-events: none;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  #confetti-overlay canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ===== THE POPUP CARD WITH FIXED SIZE & BOLD TEXT ===== */
+  .youth-day-card {
+    position:fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10000;
+    
+    width: 600px;
+    height: 380px;
+    max-width: 90vw;
+    max-height: 80vh;
+
+    background-image: url("{% static 'images/avatar/esg.webp' %}"); 
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: transparent !important; 
+
+    border-radius: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.2);
+    
+    display: none; /* Hidden by default, shown by JS */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 30px;
+    animation: popIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  /* When the JS makes it active, show the block */
+  .youth-day-card.active {
+    display: flex;
+  }
+
+  /* ===== FORCE SCROLL LOCK ON PAGE LOAD ===== */
+  .lock-scroll {
+    overflow: hidden !important;
+    height: 100vh !important;
+  }
+
+  @keyframes popIn {
+    0% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.8);
+    }
+    100% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+
+  /* ===== THE CLOSE (X) BUTTON - TOP RIGHT CORNER ===== */
+  .close-btn {
+    position: absolute !important;
+    top: 15px !important;
+    right: 15px !important;
+    left: auto !important;
+    bottom: auto !important;
+    margin: 0 !important;
+    
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    z-index: 10;
+    line-height: 0;
+  }
+
+  .close-btn:hover {
+    background: rgba(255, 0, 0, 0.8);
+    transform: scale(1.1);
+  }
+
+  /* ===== DARK GRADIENT OVERLAY TO MAKE TEXT POP ===== */
+  .youth-day-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.5) 100%);
+    border-radius: 20px;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* Keep text and emojis ON TOP of the dark overlay */
+  .youth-day-card > * {
+    position: relative;
+    z-index: 2;
+  }
+
+  /* ===== BOLD TEXT STYLES ===== */
+  .youth-day-card h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    margin: 0 0 8px;
+    color: #ffffff;
+    text-shadow: 0px 2px 8px rgba(0, 0, 0, 0.6);
+  }
+
+  .youth-day-card p {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 8px;
+    text-shadow: 0px 2px 8px rgba(0, 0, 0, 0.6);
+  }
+
+  /* NEW: Description Text */
+  .youth-day-card .event-desc {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f0f0f0;
+    margin: 0 0 16px;
+    text-shadow: 0px 2px 8px rgba(0, 0, 0, 0.6);
+    opacity: 0.9;
+  }
+
+  .youth-day-card .event-date {
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(4px);
+    color: #1a2332;
+    padding: 8px 20px;
+    border-radius: 20px;
+    text-shadow: none;
+  }
+  
+  .youth-day-card .emoji {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 8px;
+    filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.3));
+  }
+
+  /* ===== RESPONSIVE ADJUSTMENTS ===== */
+  @media (max-width: 768px) {
+    .youth-day-card {
+      width: 90vw;
+      height: auto;
+      min-height: 300px;
+      padding: 24px;
+    }
+    .youth-day-card h2 {
+      font-size: 22px;
+    }
+    .youth-day-card .emoji {
+      font-size: 36px;
+    }
   }
 
   /* ===== HERO SECTION - WHITE BACKGROUND ===== */
@@ -822,10 +1016,42 @@
     }
   }
 </style>
+
+
+
+<!-- ===== PASS DJANGO VARIABLES TO YOUR EXTERNAL JS ===== -->
+<script>
+  window.USER_IS_AUTHENTICATED = {{ user.is_authenticated|lower }};
+  window.EVENT_DATE = {% if event_date %}"{{ event_date }}"{% else %}null{% endif %};
+  window.EVENT_NAME = {% if event_name %}"{{ event_name }}"{% else %}null{% endif %};
+  window.EVENT_DESC = {% if event_desc %}"{{ event_desc }}"{% else %}null{% endif %};
+</script>
+
+<!-- ===== LOAD YOUR EXTERNAL JS FILE ===== -->
+<script src="{% static 'js/confetti.js' %}"></script>
 {% endblock %}
 
 {% block content %}
 
+<!-- ===== CONFETTI OVERLAY ===== -->
+<div id="confetti-overlay">
+  <canvas id="confetti-canvas"></canvas>
+</div>
+
+<!-- ===== CONFETTI MESSAGE ===== -->
+<div class="youth-day-card" id="confetti-message">
+  
+  <button class="close-btn" id="close-confetti-btn" aria-label="Close celebration">✕</button>
+
+  <span class="emoji">🎉</span>
+  <h2 id="card-title">{% if event_name %}{{ event_name }}{% else %}Welcome!{% endif %}</h2>
+  <p class="event-desc" id="card-desc">{% if event_desc %}{{ event_desc }}{% else %}Celebrating today's special occasion!{% endif %}</p>
+  {% if event_date %}
+  <span class="event-date">📅 {{ event_date }}</span>
+  {% endif %}
+</div>
+
+<!-- ===== MAIN CONTENT ===== -->
 <div class="brsr-wrapper">
   
   <!-- ================= HERO - WHITE BACKGROUND ================= -->
@@ -1067,8 +1293,11 @@
 
 </div>
 
+<!-- ===== SCROLL REVEAL AND FAQ JS ===== -->
 <script>
-  // Scroll reveal
+  // ====================================================
+  // SCROLL REVEAL
+  // ====================================================
   const revealEls = document.querySelectorAll('.reveal');
   const io = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -1080,7 +1309,9 @@
   }, { threshold: 0.12 });
   revealEls.forEach(el => io.observe(el));
 
-  // FAQ smooth behavior
+  // ====================================================
+  // FAQ SMOOTH BEHAVIOR
+  // ====================================================
   document.querySelectorAll('.faq-item summary').forEach(summary => {
     summary.addEventListener('click', function(e) {
       const details = this.closest('details');

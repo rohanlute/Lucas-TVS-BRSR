@@ -26,8 +26,6 @@ def _company_from_request(request):
 
 
 class BRSRReportPreviewView(LoginRequiredMixin, TemplateView):
-    """On-screen HTML preview of the BRSR report."""
-
     login_url = "accounts:login"
     template_name = "report/brsr_report.html"
 
@@ -35,30 +33,32 @@ class BRSRReportPreviewView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         financial_year = self.request.GET.get("financial_year")
         assignment_id = self.request.GET.get("assignment_id")
+        plant_id = self.request.GET.get("plant_id")
 
-        # Log the parameters for debugging
-        logger.info(f"BRSRReportPreviewView - financial_year: {financial_year}, assignment_id: {assignment_id}")
-        
-        # Get report data
+        logger.info(
+            f"BRSRReportPreviewView - financial_year: {financial_year}, "
+            f"assignment_id: {assignment_id}, plant_id: {plant_id}"
+        )
+
         try:
             report_sections = get_brsr_report_data(
                 financial_year=financial_year,
-                assignment_id=assignment_id
+                assignment_id=assignment_id,
+                plant_id=plant_id,
             )
             logger.info(f"Found {len(report_sections)} report sections")
         except Exception as e:
             logger.error(f"Error getting report data: {e}")
             report_sections = []
-        
+
         context["report_sections"] = report_sections
         context["financial_year"] = financial_year or "FY 2024-25"
+        context["plant_id"] = plant_id
         context["company_name"] = _company_from_request(self.request)["name"]
         return context
 
 
 class BRSRReportPDFDownloadView(LoginRequiredMixin, TemplateView):
-    """Streams the report as a PDF built with ReportLab in Lucas TVS format."""
-
     login_url = "accounts:login"
 
     def get(self, request, *args, **kwargs):
@@ -66,9 +66,12 @@ class BRSRReportPDFDownloadView(LoginRequiredMixin, TemplateView):
 
         financial_year = request.GET.get("financial_year")
         assignment_id = request.GET.get("assignment_id")
+        plant_id = request.GET.get("plant_id")
 
-        # Log the parameters for debugging
-        logger.info(f"BRSRReportPDFDownloadView - financial_year: {financial_year}, assignment_id: {assignment_id}")
+        logger.info(
+            f"BRSRReportPDFDownloadView - financial_year: {financial_year}, "
+            f"assignment_id: {assignment_id}, plant_id: {plant_id}"
+        )
 
         company = _company_from_request(request)
 
@@ -76,6 +79,7 @@ class BRSRReportPDFDownloadView(LoginRequiredMixin, TemplateView):
             buffer = generate_brsr_pdf(
                 financial_year=financial_year,
                 assignment_id=assignment_id,
+                plant_id=plant_id,
                 company_name=company["name"],
                 company_cin=company["cin"],
             )
@@ -86,18 +90,10 @@ class BRSRReportPDFDownloadView(LoginRequiredMixin, TemplateView):
             return response
         except Exception as e:
             logger.error(f"Error generating PDF: {e}")
-            # Return error response
             return HttpResponse(f"Error generating PDF: {str(e)}", status=500)
 
 
 class BRSRReportExcelDownloadView(LoginRequiredMixin, TemplateView):
-    """
-    Streams the report as an .xlsx workbook built with openpyxl, matching
-    the PDF's structure: one sheet per Section A/B and per Principle, with
-    matrix (P1-P9) and table-shaped answers rendered as real grids -- not
-    flattened into a single "Answer" column like the previous version.
-    """
-
     login_url = "accounts:login"
 
     def get(self, request, *args, **kwargs):
@@ -105,9 +101,12 @@ class BRSRReportExcelDownloadView(LoginRequiredMixin, TemplateView):
 
         financial_year = request.GET.get("financial_year")
         assignment_id = request.GET.get("assignment_id")
+        plant_id = request.GET.get("plant_id")
 
-        # Log the parameters for debugging
-        logger.info(f"BRSRReportExcelDownloadView - financial_year: {financial_year}, assignment_id: {assignment_id}")
+        logger.info(
+            f"BRSRReportExcelDownloadView - financial_year: {financial_year}, "
+            f"assignment_id: {assignment_id}, plant_id: {plant_id}"
+        )
 
         company = _company_from_request(request)
 
@@ -115,6 +114,7 @@ class BRSRReportExcelDownloadView(LoginRequiredMixin, TemplateView):
             buffer = generate_brsr_excel(
                 financial_year=financial_year,
                 assignment_id=assignment_id,
+                plant_id=plant_id,
                 company_name=company["name"],
                 company_cin=company["cin"],
             )
@@ -128,5 +128,4 @@ class BRSRReportExcelDownloadView(LoginRequiredMixin, TemplateView):
             return response
         except Exception as e:
             logger.error(f"Error generating Excel: {e}")
-            # Return error response
             return HttpResponse(f"Error generating Excel: {str(e)}", status=500)

@@ -16,8 +16,7 @@ urlpatterns = [
     # Generate Action
     path('generate/', views.ReportGenerateView.as_view(), name='generate_action'),
     
-    # Report Detail
-    path('detail/<int:pk>/', views.ReportDetailView.as_view(), name='report_detail'),
+    path('detail/<int:pk>/', views.ReportDetailView.as_view(), name='report_detail_by_pk'),
     path('detail/', views.ReportDetailView.as_view(), name='report_detail'),
     
     # Download Reports

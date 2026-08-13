@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.views import View
 from django.views.generic import TemplateView
+from datetime import date
 from django.contrib.auth.mixins import LoginRequiredMixin
 from .mixins import *
 from django.urls import reverse_lazy
@@ -863,22 +864,32 @@ class DepartmentDeleteView(LoginRequiredMixin, DeleteView):
         messages.success(request, f'Department "{department_name}" deleted successfully.')
         return response
     
-# accounts/views.py - Updated BRSR Views
-
 class BRSRDashboardView(TemplateView):
     """
     Renders the BRSR (Business Responsibility & Sustainability Report) 
     project overview page with ESG framework information.
     """
     template_name = "dashboard/homepage.html"
+    
+    def dispatch(self, request, *args, **kwargs):
+        print("=" * 60)
+        print("🎯 BRSRDashboardView.dispatch() CALLED")
+        print(f"📝 User: {request.user}")
+        print(f"🔗 Path: {request.path}")
+        print("=" * 60)
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
+        print("=" * 60)
+        print("📊 BRSRDashboardView.get_context_data() CALLED")
+        print("=" * 60)
         context = super().get_context_data(**kwargs)
         
         from apps.organizations.models import FinancialYear
         
         # Get current date
         today = timezone.now().date()
+        print(f"🔍 DEBUG - Today's date: {today}")
         
         # Get current financial year from database (based on dates)
         current_fy = FinancialYear.objects.filter(
@@ -892,19 +903,454 @@ class BRSRDashboardView(TemplateView):
         
         # Set financial year display name
         if current_fy:
-            # Use the financial_year field which stores "2022-2023" format
             context['current_fy'] = current_fy.financial_year
         else:
-            # Fallback if no financial year exists
             current_year = timezone.now().year
             context['current_fy'] = f"{current_year-1}-{current_year}"
         
-        # Also pass the full financial year object for other uses
         context['current_fy_obj'] = current_fy
+        context['current_year'] = timezone.now().year
         
-        # Get current year for display
-        current_year = timezone.now().year
-        context['current_year'] = current_year
+        # ============================================================
+        # 👇 CHECK IF TODAY HAS AN ESG EVENT
+        # ============================================================
+        
+        # Get today's date in the format used by the ESG calendar
+        today_month = today.month
+        today_day = today.day
+        esg_key = f"{today_month}-{today_day}"
+        
+        # Define all ESG events (same data as in calendar)
+        esg_events = {
+            # January
+            "1-26": {
+                "title": "🇮🇳 Republic Day", 
+                "focus": "National celebration", 
+                "desc": "Celebrates the adoption of the Constitution of India.", 
+                "category": "national", 
+                "icon": "🇮🇳"
+            },
+            "1-28": {
+                "title": "Data Privacy Day", 
+                "focus": "Data governance, stakeholder privacy", 
+                "desc": "Raises awareness about privacy and data protection rights.", 
+                "category": "esg", 
+                "icon": "🔒"
+            },
+            
+            # February
+            "2-2": {
+                "title": "World Wetlands Day", 
+                "focus": "Water, biodiversity, ecosystems", 
+                "desc": "Highlights the importance of wetlands to humanity and the planet.", 
+                "category": "esg", 
+                "icon": "🌿"
+            },
+            "2-4": {
+                "title": "World Cancer Day", 
+                "focus": "Employee health & wellbeing", 
+                "desc": "Raises awareness about cancer prevention and treatment.", 
+                "category": "ehs", 
+                "icon": "🎗️"
+            },
+            "2-11": {
+                "title": "International Day of Women and Girls in Science", 
+                "focus": "Diversity, inclusion, STEM", 
+                "desc": "Promotes full and equal access to science for women and girls.", 
+                "category": "esg", 
+                "icon": "👩‍🔬"
+            },
+            
+            # March
+            "3-3": {
+                "title": "World Wildlife Day", 
+                "focus": "Biodiversity", 
+                "desc": "Celebrates and raises awareness of the world's wild animals and plants.", 
+                "category": "esg", 
+                "icon": "🐘"
+            },
+            "3-8": {
+                "title": "International Women's Day", 
+                "focus": "Gender diversity, inclusion", 
+                "desc": "Celebrates women's achievements and calls for gender equality.", 
+                "category": "esg", 
+                "icon": "👩"
+            },
+            "3-18": {
+                "title": "Global Recycling Day", 
+                "focus": "Waste management, circular economy", 
+                "desc": "Promotes recycling and the circular economy to reduce waste.", 
+                "category": "esg", 
+                "icon": "♻️"
+            },
+            "3-21": {
+                "title": "International Day of Forests", 
+                "focus": "Biodiversity, forests", 
+                "desc": "Raises awareness of the importance of all types of forests.", 
+                "category": "esg", 
+                "icon": "🌳"
+            },
+            "3-22": {
+                "title": "World Water Day", 
+                "focus": "Water consumption, water conservation", 
+                "desc": "Advocates for sustainable management of freshwater resources.", 
+                "category": "esg", 
+                "icon": "💧"
+            },
+            "3-30": {
+                "title": "International Day of Zero Waste", 
+                "focus": "Waste reduction, circular economy", 
+                "desc": "Promotes zero-waste initiatives and circular economy.", 
+                "category": "esg", 
+                "icon": "🚮"
+            },
+            
+            # April
+            "4-7": {
+                "title": "World Health Day", 
+                "focus": "Occupational & employee health", 
+                "desc": "Raises awareness about global health and wellbeing issues.", 
+                "category": "ehs", 
+                "icon": "🏥"
+            },
+            "4-22": {
+                "title": "Earth Day", 
+                "focus": "Environment, climate action", 
+                "desc": "Demonstrates support for environmental protection and climate action.", 
+                "category": "esg", 
+                "icon": "🌍"
+            },
+            "4-28": {
+                "title": "World Day for Safety and Health at Work", 
+                "focus": "EHS, occupational safety, workplace hazards", 
+                "desc": "Promotes the prevention of occupational accidents and diseases.", 
+                "category": "ehs", 
+                "icon": "🛡️"
+            },
+            
+            # May
+            "5-1": {
+                "title": "International Workers' Day", 
+                "focus": "Labour practices, worker welfare", 
+                "desc": "Celebrates the labor movement and worker rights globally.", 
+                "category": "esg", 
+                "icon": "👷"
+            },
+            "5-22": {
+                "title": "International Day for Biological Diversity", 
+                "focus": "Biodiversity", 
+                "desc": "Promotes biodiversity and sustainable ecosystems.", 
+                "category": "esg", 
+                "icon": "🦋"
+            },
+            "5-28": {
+                "title": "International Day of Action for Women's Health", 
+                "focus": "Employee health, gender", 
+                "desc": "Advocates for women's health and reproductive rights.", 
+                "category": "ehs", 
+                "icon": "💪"
+            },
+            
+            # June
+            "6-5": {
+                "title": "World Environment Day", 
+                "focus": "Environmental management, pollution, climate", 
+                "desc": "Encourages worldwide awareness and action for the environment.", 
+                "category": "esg", 
+                "icon": "🌱"
+            },
+            "6-8": {
+                "title": "World Oceans Day", 
+                "focus": "Water, marine ecosystems", 
+                "desc": "Raises awareness of the importance of oceans and marine life.", 
+                "category": "esg", 
+                "icon": "🌊"
+            },
+            "6-12": {
+                "title": "World Day Against Child Labour", 
+                "focus": "Human rights, supply chain", 
+                "desc": "Aims to eliminate child labor and protect children.", 
+                "category": "esg", 
+                "icon": "👶"
+            },
+            "6-17": {
+                "title": "World Day to Combat Desertification and Drought", 
+                "focus": "Water, land, climate", 
+                "desc": "Highlights land degradation and solutions to combat it.", 
+                "category": "esg", 
+                "icon": "🏜️"
+            },
+            "6-26": {
+                "title": "International Day Against Drug Abuse", 
+                "focus": "Employee health & safety", 
+                "desc": "Promotes drug abuse prevention and treatment in workplaces.", 
+                "category": "ehs", 
+                "icon": "🚫"
+            },
+            
+            # July
+            "7-7": {
+                "title": "World Kiswahili Language Day", 
+                "focus": "Cultural diversity", 
+                "desc": "Promotes the preservation and usage of the Kiswahili language.", 
+                "category": "esg", 
+                "icon": "🗣️"
+            },
+            "7-15": {
+                "title": "World Youth Skills Day", 
+                "focus": "Skill development, employability", 
+                "desc": "Highlights the importance of equipping youth with skills for employment.", 
+                "category": "esg", 
+                "icon": "🎓"
+            },
+            "7-28": {
+                "title": "World Nature Conservation Day", 
+                "focus": "Environment, biodiversity", 
+                "desc": "Encourages sustainable practices to protect nature.", 
+                "category": "esg", 
+                "icon": "🌿"
+            },
+            "7-30": {
+                "title": "World Day Against Trafficking in Persons", 
+                "focus": "Human rights, supply chain", 
+                "desc": "Raises awareness of human trafficking and promotes prevention.", 
+                "category": "esg", 
+                "icon": "⛓️"
+            },
+            
+            # August
+            "8-9": {
+                "title": "International Day of the World's Indigenous Peoples", 
+                "focus": "Social responsibility, human rights", 
+                "desc": "Celebrates indigenous peoples and their contributions.", 
+                "category": "esg", 
+                "icon": "🏹"
+            },
+            "8-12": {
+                "title": "International Youth Day", 
+                "focus": "Social development, employment", 
+                "desc": "Celebrates the role of youth in society and development.", 
+                "category": "esg", 
+                "icon": "🧑‍🎓"
+            },
+            "8-15": {
+                "title": "🇮🇳 Independence Day", 
+                "focus": "National celebration", 
+                "desc": "Marks India's independence from British rule in 1947.", 
+                "category": "national", 
+                "icon": "🇮🇳"
+            },
+            "8-19": {
+                "title": "World Humanitarian Day", 
+                "focus": "Social responsibility", 
+                "desc": "Honors humanitarian workers and celebrates their efforts.", 
+                "category": "esg", 
+                "icon": "🤝"
+            },
+            "8-29": {
+                "title": "International Day Against Nuclear Tests", 
+                "focus": "Environmental / safety awareness", 
+                "desc": "Raises awareness about the effects of nuclear weapon test explosions.", 
+                "category": "esg", 
+                "icon": "☢️"
+            },
+            
+            # September
+            "9-7": {
+                "title": "International Day of Clean Air for Blue Skies", 
+                "focus": "Air emissions, pollution", 
+                "desc": "Advocates for clean air and reducing air pollution.", 
+                "category": "esg", 
+                "icon": "🌤️"
+            },
+            "9-16": {
+                "title": "World Ozone Day", 
+                "focus": "Ozone, refrigerants, environmental management", 
+                "desc": "Celebrates the Montreal Protocol and efforts to protect the ozone layer.", 
+                "category": "esg", 
+                "icon": "🛡️"
+            },
+            "9-22": {
+                "title": "World Car-Free Day", 
+                "focus": "Transport emissions, Scope 3", 
+                "desc": "Promotes reducing car dependency and encouraging public transport.", 
+                "category": "esg", 
+                "icon": "🚶"
+            },
+            "9-25": {
+                "title": "World Environmental Health Day", 
+                "focus": "Environmental health, EHS", 
+                "desc": "Promotes environmental health awareness and disease prevention.", 
+                "category": "ehs", 
+                "icon": "🏥"
+            },
+            
+            # October
+            "10-1": {
+                "title": "International Day of Older Persons", 
+                "focus": "Social responsibility, inclusion", 
+                "desc": "Celebrates older persons and raises awareness of aging issues.", 
+                "category": "esg", 
+                "icon": "👴"
+            },
+            "10-4": {
+                "title": "World Animal Day", 
+                "focus": "Biodiversity", 
+                "desc": "Raises awareness about animal welfare and protection.", 
+                "category": "esg", 
+                "icon": "🐾"
+            },
+            "10-10": {
+                "title": "World Mental Health Day", 
+                "focus": "Employee wellbeing", 
+                "desc": "Promotes mental health awareness and support for all.", 
+                "category": "ehs", 
+                "icon": "🧠"
+            },
+            "10-13": {
+                "title": "International Day for Disaster Risk Reduction", 
+                "focus": "Emergency preparedness, EHS", 
+                "desc": "Promotes reducing disaster risks and building resilience.", 
+                "category": "ehs", 
+                "icon": "⚠️"
+            },
+            "10-16": {
+                "title": "World Food Day", 
+                "focus": "Food security, community", 
+                "desc": "Advocates for global food security and sustainable food systems.", 
+                "category": "esg", 
+                "icon": "🍲"
+            },
+            "10-24": {
+                "title": "United Nations Day", 
+                "focus": "Sustainability / SDGs", 
+                "desc": "Marks the anniversary of the UN Charter and the SDGs.", 
+                "category": "esg", 
+                "icon": "🌐"
+            },
+            
+            # November
+            "11-6": {
+                "title": "International Day for Preventing Exploitation of Environment in War", 
+                "focus": "Environmental protection", 
+                "desc": "Protects the environment during armed conflicts.", 
+                "category": "esg", 
+                "icon": "☮️"
+            },
+            "11-14": {
+                "title": "World Diabetes Day", 
+                "focus": "Employee health", 
+                "desc": "Raises awareness about diabetes prevention and management.", 
+                "category": "ehs", 
+                "icon": "💉"
+            },
+            "11-19": {
+                "title": "World Toilet Day", 
+                "focus": "Water, sanitation, hygiene", 
+                "desc": "Advocates for safe sanitation and water management.", 
+                "category": "esg", 
+                "icon": "🚽"
+            },
+            "11-25": {
+                "title": "International Day for Elimination of Violence Against Women", 
+                "focus": "Workplace/social responsibility", 
+                "desc": "Promotes ending violence against women and girls globally.", 
+                "category": "esg", 
+                "icon": "✊"
+            },
+            
+            # December
+            "12-3": {
+                "title": "International Day of Persons with Disabilities", 
+                "focus": "Inclusion, accessibility", 
+                "desc": "Promotes the rights and well-being of persons with disabilities.", 
+                "category": "esg", 
+                "icon": "♿"
+            },
+            "12-5": {
+                "title": "World Soil Day", 
+                "focus": "Land, environment, biodiversity", 
+                "desc": "Highlights the importance of soil health and conservation.", 
+                "category": "esg", 
+                "icon": "🌾"
+            },
+            "12-9": {
+                "title": "International Anti-Corruption Day", 
+                "focus": "Governance, ethics, anti-corruption", 
+                "desc": "Raises awareness about corruption and promotes integrity.", 
+                "category": "esg", 
+                "icon": "⚖️"
+            },
+            "12-10": {
+                "title": "Human Rights Day", 
+                "focus": "Human rights, labour practices", 
+                "desc": "Celebrates the adoption of the Universal Declaration of Human Rights.", 
+                "category": "esg", 
+                "icon": "✋"
+            },
+            "12-11": {
+                "title": "International Mountain Day", 
+                "focus": "Biodiversity, ecosystems", 
+                "desc": "Acknowledges the importance of mountains for life and climate.", 
+                "category": "esg", 
+                "icon": "⛰️"
+            }
+        }
+        
+        print(f"🔍 DEBUG - esg_key: {esg_key}")
+        
+        # Check if today has an event
+        today_event = esg_events.get(esg_key)
+        
+        print(f"🔍 DEBUG - today_event found: {today_event is not None}")
+        
+        if today_event:
+            # Get the event date formatted for display
+            event_date_display = today.strftime('%B %d, %Y')
+            event_title = today_event['title']
+            event_focus = today_event['focus']
+            event_icon = today_event.get('icon', '🎉')
+            event_category = today_event.get('category', 'esg')
+            
+            # Get the description from the dict (fallback to focus if missing)
+            event_desc_text = f'🎯 {today_event.get("desc", event_focus)}'
+            
+            # Set context for confetti
+            context['event_date'] = event_date_display
+            context['event_name'] = f'{event_icon} {event_title}'
+            context['event_desc'] = event_desc_text
+            context['event_icon'] = event_icon
+            
+            print(f"✅ EVENT FOUND - {event_title} ({event_category})")
+            print(f"✅ context['event_date'] = {context['event_date']}")
+            print(f"✅ context['event_name'] = {context['event_name']}")
+        else:
+            # No event today - check if it's a financial year milestone
+            if current_fy and today == current_fy.start_date:
+                context['event_date'] = today.strftime('%B %d, %Y')
+                context['event_name'] = '🎉 New Financial Year Started!'
+                context['event_desc'] = f'📊 The financial year {current_fy.financial_year} has begun.'
+                context['event_icon'] = '🎉'
+                print(f"✅ Financial Year {current_fy.financial_year} Started")
+
+            elif current_fy and today == current_fy.end_date:
+                context['event_date'] = today.strftime('%B %d, %Y')
+                context['event_name'] = '📊 Financial Year Ending'
+                context['event_desc'] = f'⏰ Today is the last day of financial year {current_fy.financial_year}.'
+                context['event_icon'] = '📊'
+                print(f"✅ Financial Year {current_fy.financial_year} Ending")
+
+            else:
+                # No event today
+                context['event_date'] = None
+                context['event_name'] = None
+                context['event_desc'] = None
+                context['event_icon'] = None
+                print("❌ No event today")
+        # Add debug variables for the template
+        context['debug_date'] = today.strftime('%Y-%m-%d')
+        context['debug_has_event'] = today_event is not None
+        context['debug_esg_key'] = esg_key
         
         # Get company name from user if available
         company_name = None
@@ -916,7 +1362,7 @@ class BRSRDashboardView(TemplateView):
                 pass
         
         context['company_name'] = company_name or 'Your Company'
-        context['total_companies'] = 1000  # Static value for display
+        context['total_companies'] = 1000
         
         # ESG Score data for the ring chart
         context['esg_breakdown'] = {
@@ -1082,29 +1528,9 @@ class BRSRDashboardView(TemplateView):
         ]
         
         # User assignments (mock data)
-        if self.request.user.is_authenticated:
-            context['user_assignments'] = 2  # Mock count
-        else:
-            context['user_assignments'] = 0
+        context['user_assignments'] = 2 if self.request.user.is_authenticated else 0
         
         return context
-
-    def get(self, request, *args, **kwargs):
-        # Check if PDF download is requested
-        if request.GET.get('download_pdf'):
-            pdf_buffer = generate_brsr_pdf_report(
-                company_name=request.user.company.company_name if request.user.is_authenticated and hasattr(request.user, 'company') else None,
-                user=request.user,
-            )
-            
-            timestamp = timezone.now().strftime('%Y%m%d_%H%M%S')
-            filename = f"brsr_overview_report_{timestamp}.pdf"
-            
-            response = HttpResponse(pdf_buffer.getvalue(), content_type='application/pdf')
-            response['Content-Disposition'] = f'attachment; filename="{filename}"'
-            return response
-        
-        return super().get(request, *args, **kwargs)
 
 
 class BRSRPrincipleDetailView(TemplateView):
@@ -1152,7 +1578,118 @@ class BRSRPrincipleDetailView(TemplateView):
                 ],
                 'related_sdgs': ['SDG 16', 'SDG 17']
             },
-            # ... rest of the principles remain the same
+            2: {
+                'id': 2,
+                'code': 'P2',
+                'title': 'Safe & sustainable goods',
+                'short_description': 'Products and services are safe and sustainable across their full lifecycle.',
+                'description': 'Businesses should provide products and services that are safe and contribute to sustainability throughout their lifecycle. This includes responsible sourcing, manufacturing, and disposal.',
+                'indicators': [
+                    {'name': 'Product Safety Policy', 'essential': True, 'description': 'Policy on product safety'},
+                    {'name': 'Sustainable Sourcing', 'essential': True, 'description': 'Sustainable procurement practices'},
+                    {'name': 'Lifecycle Assessment', 'essential': False, 'description': 'Environmental impact assessment'},
+                    {'name': 'Circular Economy Initiatives', 'essential': False, 'description': 'Recycling and reuse programs'}
+                ],
+                'related_sdgs': ['SDG 9', 'SDG 12']
+            },
+            3: {
+                'id': 3,
+                'code': 'P3',
+                'title': 'Employee wellbeing',
+                'short_description': 'Businesses respect and promote the wellbeing of all employees, including value-chain workers.',
+                'description': 'Businesses should promote the well-being of all employees, including those in their value chains. This includes fair wages, safe working conditions, and opportunities for growth.',
+                'indicators': [
+                    {'name': 'Employee Health & Safety', 'essential': True, 'description': 'Occupational health and safety'},
+                    {'name': 'Fair Wages', 'essential': True, 'description': 'Living wage policies'},
+                    {'name': 'Employee Development', 'essential': False, 'description': 'Training and development programs'},
+                    {'name': 'Work-Life Balance', 'essential': False, 'description': 'Flexible work arrangements'}
+                ],
+                'related_sdgs': ['SDG 3', 'SDG 8']
+            },
+            4: {
+                'id': 4,
+                'code': 'P4',
+                'title': 'Stakeholder interests',
+                'short_description': 'Businesses respect the interests of, and are responsive to, all stakeholders.',
+                'description': 'Businesses should respect the interests of and be responsive to all its stakeholders. This includes shareholders, employees, communities, and the environment.',
+                'indicators': [
+                    {'name': 'Stakeholder Engagement', 'essential': True, 'description': 'Stakeholder mapping and engagement'},
+                    {'name': 'Grievance Mechanism', 'essential': True, 'description': 'Complaint resolution process'},
+                    {'name': 'Community Investment', 'essential': False, 'description': 'Community development programs'},
+                    {'name': 'Transparent Communication', 'essential': False, 'description': 'Regular stakeholder updates'}
+                ],
+                'related_sdgs': ['SDG 16', 'SDG 17']
+            },
+            5: {
+                'id': 5,
+                'code': 'P5',
+                'title': 'Human rights',
+                'short_description': 'Businesses respect and promote human rights across their operations.',
+                'description': 'Businesses should respect and promote human rights. This includes avoiding complicity in human rights abuses and addressing any adverse human rights impacts.',
+                'indicators': [
+                    {'name': 'Human Rights Policy', 'essential': True, 'description': 'Human rights commitment'},
+                    {'name': 'Due Diligence', 'essential': True, 'description': 'Human rights risk assessment'},
+                    {'name': 'Child Labour Prevention', 'essential': False, 'description': 'Child labour monitoring'},
+                    {'name': 'Modern Slavery', 'essential': False, 'description': 'Anti-slavery measures'}
+                ],
+                'related_sdgs': ['SDG 5', 'SDG 8', 'SDG 16']
+            },
+            6: {
+                'id': 6,
+                'code': 'P6',
+                'title': 'Environmental protection',
+                'short_description': 'Businesses respect and make efforts to protect and restore the environment.',
+                'description': 'Businesses should respect and protect the environment. This includes reducing environmental impacts, using resources efficiently, and restoring ecosystems.',
+                'indicators': [
+                    {'name': 'Environmental Policy', 'essential': True, 'description': 'Environmental management'},
+                    {'name': 'Carbon Footprint', 'essential': True, 'description': 'Greenhouse gas emissions'},
+                    {'name': 'Water Management', 'essential': False, 'description': 'Water conservation'},
+                    {'name': 'Biodiversity Conservation', 'essential': False, 'description': 'Biodiversity protection'}
+                ],
+                'related_sdgs': ['SDG 6', 'SDG 13', 'SDG 14', 'SDG 15']
+            },
+            7: {
+                'id': 7,
+                'code': 'P7',
+                'title': 'Responsible advocacy',
+                'short_description': 'Policy engagement and advocacy are conducted in a responsible manner.',
+                'description': 'Businesses should engage in public policy advocacy in a responsible manner. This includes transparency in political contributions and lobbying activities.',
+                'indicators': [
+                    {'name': 'Political Contributions', 'essential': True, 'description': 'Political spending transparency'},
+                    {'name': 'Lobbying Activities', 'essential': True, 'description': 'Lobbying policy'},
+                    {'name': 'Policy Engagement', 'essential': False, 'description': 'Public policy participation'},
+                    {'name': 'Anti-Corruption', 'essential': False, 'description': 'Anti-bribery measures'}
+                ],
+                'related_sdgs': ['SDG 16']
+            },
+            8: {
+                'id': 8,
+                'code': 'P8',
+                'title': 'Inclusive growth',
+                'short_description': 'Businesses support equitable development and inclusive growth for all.',
+                'description': 'Businesses should support inclusive growth and equitable development. This includes creating opportunities for marginalized communities and promoting diversity.',
+                'indicators': [
+                    {'name': 'Diversity Policy', 'essential': True, 'description': 'Diversity and inclusion'},
+                    {'name': 'Local Sourcing', 'essential': True, 'description': 'Local procurement'},
+                    {'name': 'Skill Development', 'essential': False, 'description': 'Vocational training'},
+                    {'name': 'Social Inclusion', 'essential': False, 'description': 'Community engagement'}
+                ],
+                'related_sdgs': ['SDG 1', 'SDG 5', 'SDG 10']
+            },
+            9: {
+                'id': 9,
+                'code': 'P9',
+                'title': 'Consumer value',
+                'short_description': 'Businesses engage with and provide value to consumers responsibly.',
+                'description': 'Businesses should provide value to consumers in a responsible manner. This includes fair pricing, product quality, and responsible marketing practices.',
+                'indicators': [
+                    {'name': 'Consumer Policy', 'essential': True, 'description': 'Consumer protection policy'},
+                    {'name': 'Product Quality', 'essential': True, 'description': 'Quality assurance'},
+                    {'name': 'Responsible Marketing', 'essential': False, 'description': 'Ethical advertising'},
+                    {'name': 'Consumer Feedback', 'essential': False, 'description': 'Consumer complaint mechanism'}
+                ],
+                'related_sdgs': ['SDG 12']
+            }
         }
         
         context['principle'] = principles.get(principle_id, principles[1])
