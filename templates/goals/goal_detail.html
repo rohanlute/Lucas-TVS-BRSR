@@ -217,6 +217,30 @@
         display: inline;
     }
 
+    /* Saved/Locked KPI styles */
+    .metric-tab .saved-badge {
+        display: none;
+        font-size: 10px;
+        color: #28a745;
+        margin-top: 2px;
+    }
+
+    .metric-tab.saved .saved-badge {
+        display: block;
+    }
+
+    .metric-tab.locked {
+        border-color: #28a745;
+    }
+
+    .metric-tab.locked::after {
+        content: '🔒';
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        font-size: 12px;
+    }
+
     .gd-grid {
         display: grid;
         grid-template-columns: 320px 1fr;
@@ -230,6 +254,7 @@
         gap: 16px;
     }
 
+    /* ===== STAT CARDS - NO ELLIPSIS, JUST SMALLER FONT ===== */
     .stat-row {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -243,7 +268,9 @@
         padding: 12px 14px;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
+        min-width: 0;
+        overflow: visible;
     }
 
     .stat-mini-card .stat-label {
@@ -255,17 +282,41 @@
         color: #8a94a6;
         text-transform: uppercase;
         letter-spacing: 0.3px;
+        white-space: nowrap;
     }
 
     .stat-mini-card .stat-label i {
         font-size: 12px;
         color: #8a94a6;
+        flex-shrink: 0;
     }
 
     .stat-mini-card .stat-value {
         font-size: 24px;
         font-weight: 700;
         color: #1a2332;
+        line-height: 1.2;
+        overflow: visible;
+        white-space: normal;
+        word-break: break-word;
+        transition: font-size 0.2s ease;
+    }
+
+    /* Responsive font sizes - NO ELLIPSIS, just smaller text */
+    .stat-mini-card .stat-value.size-large {
+        font-size: 20px;
+    }
+
+    .stat-mini-card .stat-value.size-xlarge {
+        font-size: 16px;
+    }
+
+    .stat-mini-card .stat-value.size-xxlarge {
+        font-size: 13px;
+    }
+
+    .stat-mini-card .stat-value.size-xxxlarge {
+        font-size: 11px;
     }
 
     .stat-mini-card .stat-value.current {
@@ -285,6 +336,8 @@
         font-weight: 600;
         color: #6b7a8f;
         margin-top: 2px;
+        overflow: visible;
+        white-space: normal;
     }
 
     .plant-scope-badge {
@@ -469,40 +522,98 @@
         transform: none;
     }
 
-    /* Read-only config panel styles */
-    .config-panel.read-only .config-field input,
-    .config-panel.read-only .config-field select {
+    .config-save-btn.unlock-btn {
+        background: #ff9f43;
+    }
+
+    .config-save-btn.unlock-btn:hover {
+        background: #e68a2e;
+        box-shadow: 0 4px 14px rgba(255, 159, 67, 0.3);
+    }
+
+    /* Locked config panel styles */
+    .config-panel.kpi-locked .config-field input,
+    .config-panel.kpi-locked .config-field select {
         background: #f4f6fb;
         cursor: not-allowed;
         color: #1a2332 !important;
         opacity: 1;
     }
 
-    .config-panel.read-only .config-field input:focus,
-    .config-panel.read-only .config-field select:focus {
+    .config-panel.kpi-locked .config-field input:focus,
+    .config-panel.kpi-locked .config-field select:focus {
         border-color: #e4e9f0;
         box-shadow: none;
     }
 
-    .config-panel.read-only .config-save-btn {
+    .config-panel.kpi-locked .config-save-btn {
         display: none;
     }
 
-    .config-panel.read-only .read-only-notice {
+    .config-panel.kpi-locked .unlock-btn-container {
         display: block;
+    }
+
+    .config-panel:not(.kpi-locked) .unlock-btn-container {
+        display: none;
+    }
+
+    .config-panel .unlock-btn-container {
+        display: none;
+    }
+
+    .lock-notice {
+        display: none;
         text-align: center;
         padding: 12px;
-        background: #f0f4ff;
+        background: #e8f5e9;
         border-radius: 8px;
-        color: #3454d1;
+        color: #2e7d32;
         font-size: 13px;
         font-weight: 500;
         margin-top: 12px;
-        border: 1px dashed #3454d1;
+        border: 1px dashed #28a745;
     }
 
-    .read-only-notice {
+    .config-panel.kpi-locked .lock-notice {
+        display: block;
+    }
+
+    /* View-only styles */
+    .config-panel.view-only .config-field input,
+    .config-panel.view-only .config-field select {
+        background: #f4f6fb;
+        cursor: not-allowed;
+        color: #1a2332 !important;
+        opacity: 1;
+    }
+
+    .config-panel.view-only .config-field input:focus,
+    .config-panel.view-only .config-field select:focus {
+        border-color: #e4e9f0;
+        box-shadow: none;
+    }
+
+    .config-panel.view-only .config-save-btn,
+    .config-panel.view-only .unlock-btn-container {
+        display: none !important;
+    }
+
+    .view-only-notice {
         display: none;
+        text-align: center;
+        padding: 12px;
+        background: #f5f5f5;
+        border-radius: 8px;
+        color: #616161;
+        font-size: 13px;
+        font-weight: 500;
+        margin-top: 12px;
+        border: 1px dashed #b0b8c4;
+    }
+
+    .config-panel.view-only .view-only-notice {
+        display: block;
     }
 
     .role-badge {
@@ -795,6 +906,26 @@
         .chart-card {
             min-height: 300px;
         }
+
+        .stat-mini-card .stat-value {
+            font-size: 20px;
+        }
+        
+        .stat-mini-card .stat-value.size-large {
+            font-size: 18px;
+        }
+        
+        .stat-mini-card .stat-value.size-xlarge {
+            font-size: 15px;
+        }
+        
+        .stat-mini-card .stat-value.size-xxlarge {
+            font-size: 12px;
+        }
+        
+        .stat-mini-card .stat-value.size-xxxlarge {
+            font-size: 10px;
+        }
     }
 </style>
 {% endblock %}
@@ -901,11 +1032,12 @@
         {% if metrics %}
             {% for metric_name, values in metrics.items %}
                 <button type="button"
-                        class="metric-tab {% if forloop.first %}active{% endif %}"
+                        class="metric-tab {% if forloop.first %}active{% endif %} {% if values.is_saved %}saved locked{% endif %}"
                         data-metric="{{ metric_name }}"
                         data-unit="{{ values.unit }}"
                         data-kpi-id="{{ values.kpi_id }}"
                         data-current-value="{{ values.current|default:0 }}"
+                        data-is-saved="{% if values.is_saved %}true{% else %}false{% endif %}"
                         onclick="selectMetric('{{ metric_name }}')">
                     {{ metric_name }}
                     <span class="metric-unit">{{ values.unit }}</span>
@@ -921,6 +1053,9 @@
                     </span>
                     <span class="kpi-current-indicator">
                         <i class="fas fa-circle" style="font-size: 6px; color: #28a745;"></i>
+                    </span>
+                    <span class="saved-badge">
+                        <i class="fas fa-check-circle"></i> Saved
                     </span>
                 </button>
             {% endfor %}
@@ -958,7 +1093,7 @@
             </div>
 
             <!-- Config Panel -->
-            <div class="config-panel {% if not can_manage_goals %}read-only{% endif %}" id="configPanel">
+            <div class="config-panel {% if not can_manage_goals %}view-only{% elif active_kpi_saved %}kpi-locked{% endif %}" id="configPanel">
                 <span class="plant-scope-badge" id="plantScopeBadge">
                     <i class="fas fa-globe"></i> All Plants
                 </span>
@@ -969,6 +1104,7 @@
                     <input type="hidden" name="kpi_name" id="selectedKPI" value="">
                     <input type="hidden" name="kpi_id" id="selectedKPIId" value="">
                     <input type="hidden" name="plant_id" id="selectedPlantIdInput" value="">
+                    <input type="hidden" name="unlock_kpi" id="unlockKPI" value="false">
 
                     <div class="config-field">
                         <label for="baselineYear">Baseline Year <span class="text-danger">*</span></label>
@@ -980,7 +1116,7 @@
                     <div class="config-field">
                         <label for="baselineValue">Baseline Value <span class="text-danger">*</span></label>
                         <input type="number" class="form-control-mini" id="baselineValue" name="baseline_value"
-                               value="" required min="0" step="0.01" placeholder="Enter value" {% if not can_manage_goals %}readonly{% endif %}>
+                               value="" required min="0" step="0.01" placeholder="Enter value" {% if not can_manage_goals %}disabled{% endif %}>
                     </div>
 
                     <div class="config-field">
@@ -994,7 +1130,7 @@
                         <label for="targetReduction">Target Reduction <span class="text-danger">*</span></label>
                         <div class="pct-wrap">
                             <input type="number" class="form-control-mini" id="targetReduction" name="target_reduction"
-                                   value="" required min="0" max="100" step="0.01" placeholder="Enter %" {% if not can_manage_goals %}readonly{% endif %}>
+                                   value="" required min="0" max="100" step="0.01" placeholder="Enter %" {% if not can_manage_goals %}disabled{% endif %}>
                             <span>%</span>
                         </div>
                     </div>
@@ -1008,20 +1144,29 @@
                     <div class="config-field">
                         <label for="unitInput">Unit <span class="text-danger">*</span></label>
                         <input type="text" class="form-control-mini" id="unitInput" name="unit"
-                               value="" placeholder="e.g. Kilolitre, tCO₂e" {% if not can_manage_goals %}readonly{% endif %}>
+                               value="" placeholder="e.g. Kilolitre, tCO₂e" {% if not can_manage_goals %}disabled{% endif %}>
                     </div>
 
-                    <!-- Save Button - Only show for authorized users -->
                     {% if can_manage_goals %}
                         <button type="submit" class="config-save-btn" id="saveConfigBtn">
                             <i class="fas fa-save"></i> Save
                         </button>
-                    {% comment %} {% else %}
-                        <div class="read-only-notice" style="display: block; text-align: center; padding: 12px; background: #f0f4ff; border-radius: 8px; color: #3454d1; font-size: 13px; font-weight: 500; margin-top: 12px; border: 1px dashed #3454d1;">
-                            <i class="fas fa-info-circle me-2"></i>
-                            You are viewing this configuration in read-only mode. 
-                            Please contact your ESG Coordinator to make changes.
-                        </div> {% endcomment %}
+
+                        <div class="unlock-btn-container">
+                            <button type="button" class="config-save-btn unlock-btn" id="unlockConfigBtn">
+                                <i class="fas fa-unlock"></i> Unlock for Editing
+                            </button>
+                        </div>
+
+                        <div class="lock-notice" id="lockNotice">
+                            <i class="fas fa-lock me-2"></i>
+                            This KPI configuration is locked.
+                        </div>
+                    {% else %}
+                        <div class="view-only-notice" id="viewOnlyNotice" style="display:block;">
+                            <i class="fas fa-eye me-2"></i>
+                            You have view-only access.
+                        </div>
                     {% endif %}
                 </form>
             </div>
@@ -1067,9 +1212,10 @@
 {{ selected_goal|json_script:"selectedGoalData" }}
 {{ per_kpi_configs|json_script:"perKpiConfigs" }}
 {{ plants_json|json_script:"plantsData" }}
+{{ saved_kpis|json_script:"savedKpisData" }}
+{{ can_manage_goals|json_script:"canManageGoalsData" }}
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // ===== DATA =====
@@ -1080,6 +1226,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedGoalInitial = JSON.parse(document.getElementById('selectedGoalData').textContent || '""');
     const perKpiConfigs = JSON.parse(document.getElementById('perKpiConfigs').textContent || '{}');
     const plantsData = JSON.parse(document.getElementById('plantsData').textContent || '[]');
+    const savedKpis = JSON.parse(document.getElementById('savedKpisData').textContent || '[]');
+    const canManageGoals = JSON.parse(document.getElementById('canManageGoalsData')?.textContent || 'false');
 
     // ===== DOM ELEMENTS =====
     const statCurrent = document.getElementById('statCurrent');
@@ -1101,6 +1249,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const baselineValueInput = document.getElementById('baselineValue');
     const targetReductionInput = document.getElementById('targetReduction');
     const targetValueInput = document.getElementById('targetValue');
+    const configPanel = document.getElementById('configPanel');
+    const saveBtn = document.getElementById('saveConfigBtn');
+    const unlockBtn = document.getElementById('unlockConfigBtn');
+    const unlockKPIInput = document.getElementById('unlockKPI');
 
     const metricNames = Object.keys(metricsData);
     let activeMetric = metricNames.length > 0 ? metricNames[0] : null;
@@ -1121,8 +1273,88 @@ document.addEventListener('DOMContentLoaded', function() {
         'Target': true
     };
 
-    // ===== CHECK IF USER CAN EDIT =====
-    const canEdit = {{ can_manage_goals|yesno:"true,false" }};
+    // ===== HELPER FUNCTIONS FOR STAT CARD NUMBER FORMATTING =====
+    
+    /**
+     * Format a number with appropriate decimal places based on its magnitude
+     * - Numbers < 1000: show 2 decimal places
+     * - Numbers >= 1000 and < 10000: show 1 decimal place
+     * - Numbers >= 10000: show 0 decimal places (whole numbers)
+     */
+    function formatStatValue(val) {
+        if (val === undefined || val === null || isNaN(val)) return '0';
+        const num = parseFloat(val);
+        const absNum = Math.abs(num);
+        
+        if (absNum >= 10000) {
+            return num.toFixed(0);
+        } else if (absNum >= 1000) {
+            return num.toFixed(1);
+        } else {
+            return num.toFixed(2);
+        }
+    }
+
+    /**
+     * Adjust font size of stat value based on number length
+     * NO ELLIPSIS - just shrink the font size
+     */
+    function adjustStatFontSize(element, value) {
+        if (!element) return;
+        
+        const numStr = String(value);
+        const length = numStr.length;
+        
+        // Remove existing size classes
+        element.classList.remove('size-large', 'size-xlarge', 'size-xxlarge', 'size-xxxlarge');
+        
+        // Apply appropriate class based on number length
+        if (length > 12) {
+            element.classList.add('size-xxxlarge'); // 11px
+        } else if (length > 9) {
+            element.classList.add('size-xxlarge'); // 13px
+        } else if (length > 7) {
+            element.classList.add('size-xlarge'); // 16px
+        } else if (length > 5) {
+            element.classList.add('size-large'); // 20px
+        }
+        // Default size (24px) for numbers with 5 or fewer characters
+    }
+
+    /**
+     * Update all stat cards with properly formatted values
+     */
+    function updateStatValues(current, baseline, target, unit) {
+        const currentStr = formatStatValue(current);
+        const baselineStr = formatStatValue(baseline);
+        const targetStr = formatStatValue(target);
+        
+        statCurrent.textContent = currentStr;
+        statBaseline.textContent = baselineStr;
+        statTarget.textContent = targetStr;
+        
+        // Adjust font sizes based on number length (NO ELLIPSIS)
+        adjustStatFontSize(statCurrent, currentStr);
+        adjustStatFontSize(statBaseline, baselineStr);
+        adjustStatFontSize(statTarget, targetStr);
+        
+        // Update units
+        updateStatUnits(unit);
+    }
+
+    // ===== CHECK IF KPI IS SAVED =====
+    function isKPISaved(metricName, plantId) {
+        const plantIdValue = String(plantId || getCurrentPlantId() || 'all');
+        return savedKpis.some(kpi => 
+            kpi.metric_name === metricName && 
+            String(kpi.plant_id) === plantIdValue &&
+            kpi.is_saved === true
+        );
+    }
+
+    function getCurrentPlantId() {
+        return document.getElementById('plantFilter')?.value || '';
+    }
 
     // ===== HELPER FUNCTIONS =====
     function getPlantFilterFromURL() {
@@ -1133,10 +1365,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const plantFilterValue = getPlantFilterFromURL();
     if (plantFilterValue && plantFilter) {
         plantFilter.value = plantFilterValue;
-    }
-
-    function getCurrentPlantId() {
-        return document.getElementById('plantFilter')?.value || '';
     }
 
     function buildConfigKey(topic, goal, metricName, plantId) {
@@ -1196,8 +1424,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (tab.dataset.metric === metricName) {
                 const valueSpan = tab.querySelector('.kpi-current-value .value-number');
                 if (valueSpan) {
-                    valueSpan.textContent = currentValue !== undefined && currentValue !== null ?
-                        parseFloat(currentValue).toFixed(2) : '0.00';
+                    const formatted = formatStatValue(currentValue);
+                    valueSpan.textContent = formatted;
                 }
                 const unitSpan = tab.querySelector('.kpi-current-value .value-unit-small');
                 if (unitSpan && unit) {
@@ -1208,11 +1436,53 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ===== UPDATE CONFIG PANEL LOCK / VIEW-ONLY STATE =====
+    function updateConfigPanelLock(metricName, plantId) {
+        const saved = isKPISaved(metricName, plantId);
+        const allFields = document.querySelectorAll('#configForm input, #configForm select');
+        const unlockContainer = document.querySelector('.unlock-btn-container');
+        const lockNotice = document.getElementById('lockNotice');
+        const viewOnlyNotice = document.getElementById('viewOnlyNotice');
+
+        if (!canManageGoals) {
+            configPanel.classList.remove('kpi-locked');
+            configPanel.classList.add('view-only');
+            allFields.forEach(el => {
+                if (el.id !== 'unlockKPI') el.disabled = true;
+            });
+            if (saveBtn) saveBtn.style.display = 'none';
+            if (unlockContainer) unlockContainer.style.display = 'none';
+            if (lockNotice) lockNotice.style.display = 'none';
+            if (viewOnlyNotice) viewOnlyNotice.style.display = 'block';
+            return;
+        }
+
+        configPanel.classList.remove('view-only');
+        if (viewOnlyNotice) viewOnlyNotice.style.display = 'none';
+
+        if (saved) {
+            configPanel.classList.add('kpi-locked');
+            allFields.forEach(el => {
+                if (el.id !== 'unlockKPI') el.disabled = true;
+            });
+            if (saveBtn) saveBtn.style.display = 'none';
+            if (unlockContainer) unlockContainer.style.display = 'block';
+            if (lockNotice) lockNotice.style.display = 'block';
+        } else {
+            configPanel.classList.remove('kpi-locked');
+            allFields.forEach(el => {
+                if (el.id !== 'unlockKPI') el.disabled = false;
+            });
+            if (saveBtn) saveBtn.style.display = 'flex';
+            if (unlockContainer) unlockContainer.style.display = 'none';
+            if (lockNotice) lockNotice.style.display = 'none';
+        }
+    }
+
     // ===== LEGEND TOGGLE =====
     window.toggleLegend = function(label) {
         legendStates[label] = !legendStates[label];
         
-        // Update legend item styling
         const items = document.querySelectorAll('.chart-legend-item');
         items.forEach(item => {
             if (item.textContent.includes(label)) {
@@ -1224,7 +1494,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Update chart
         if (chartInstance) {
             let datasetIndex = -1;
             if (label === 'Baseline') {
@@ -1280,8 +1549,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     const data = result.data;
                     const currentVal = parseFloat(data.current_value) || 0;
 
+                    // Update stat values with proper formatting
+                    updateStatValues(currentVal, data.baseline_value, data.target_value, data.unit);
                     updateMetricTabValue(metricName, currentVal, data.unit);
-                    statCurrent.textContent = currentVal.toFixed(2);
+                    
                     chartData.currentValue = currentVal;
 
                     if (metricsData[metricName]) {
@@ -1290,14 +1561,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
 
                     if (data.baseline_value !== undefined) {
-                        statBaseline.textContent = parseFloat(data.baseline_value || 0).toFixed(2);
                         baselineValueInput.value = data.baseline_value || '';
                     }
                     if (data.baseline_year !== undefined) {
                         baselineYearSelect.value = data.baseline_year || '';
                     }
                     if (data.target_value !== undefined) {
-                        statTarget.textContent = parseFloat(data.target_value || 0).toFixed(2);
                         targetValueInput.value = data.target_value || '';
                     }
                     if (data.target_year !== undefined) {
@@ -1312,11 +1581,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
 
                     updatePlantScopeBadge(plantId, data.is_plant_specific);
+                    updateConfigPanelLock(metricName, plantId);
 
                     if (activeMetric) {
                         renderChart(activeMetric);
                         if (currentVal > 0) {
-                            statCurrent.textContent = currentVal.toFixed(2);
                             chartData.currentValue = currentVal;
                         }
                     }
@@ -1371,19 +1640,17 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedKPIIdInput.value = metric.kpi_id || '';
         selectedPlantIdInput.value = plantId || '';
 
-        statBaseline.textContent = kpiConfig.baseline_value ? parseFloat(kpiConfig.baseline_value).toFixed(2) : '0.00';
-        statTarget.textContent = kpiConfig.target_value ? parseFloat(kpiConfig.target_value).toFixed(2) : '0.00';
-
-        if (currentValue > 0) {
-            statCurrent.textContent = currentValue.toFixed(2);
-            chartData.currentValue = currentValue;
-        } else if (metric.current && metric.current > 0) {
-            statCurrent.textContent = parseFloat(metric.current).toFixed(2);
-            chartData.currentValue = parseFloat(metric.current);
-        }
+        // Update stat values with proper formatting
+        updateStatValues(
+            currentValue || metric.current || 0,
+            kpiConfig.baseline_value || 0,
+            kpiConfig.target_value || 0,
+            kpiConfig.unit || metric.unit || ''
+        );
 
         updateStatUnits(kpiConfig.unit || metric.unit || '');
         updatePlantScopeBadge(plantId, kpiConfig.plant_id ? true : false);
+        updateConfigPanelLock(metricName, plantId);
 
         configData.baseline_year = kpiConfig.baseline_year || '';
         configData.baseline_value = kpiConfig.baseline_value || '';
@@ -1426,109 +1693,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     }
-    // ===== SAVE UNSAVED CONFIG TO SESSION =====
-    function saveUnsavedConfig(metricName) {
-        // Only save if user can edit
-        if (!canEdit) return;
-        
-        const topic = materialTopicValue;
-        const goal = document.getElementById('selectedGoal').value || selectedGoalInitial;
-        const plantId = getCurrentPlantId();
-        const plantKey = plantId || 'all';
-        
-        // Get current form values
-        const formData = {
-            baseline_year: document.getElementById('baselineYear').value,
-            baseline_value: document.getElementById('baselineValue').value,
-            target_year: document.getElementById('targetYear').value,
-            target_reduction: document.getElementById('targetReduction').value,
-            target_value: document.getElementById('targetValue').value,
-            unit: document.getElementById('unitInput').value,
-        };
-        
-        // Check if any field has value (to determine if there are unsaved changes)
-        const hasValues = Object.values(formData).some(val => val !== '' && val !== null && val !== undefined);
-        
-        if (!hasValues) {
-            // Clear unsaved config if all fields are empty
-            const unsavedKey = `${topic}_${goal}_${metricName}_${plantKey}`;
-            let unsavedConfigs = JSON.parse(sessionStorage.getItem('unsaved_kpi_configs') || '{}');
-            delete unsavedConfigs[unsavedKey];
-            sessionStorage.setItem('unsaved_kpi_configs', JSON.stringify(unsavedConfigs));
-            return;
-        }
-        
-        // Save to sessionStorage (this will be sent to server on page load)
-        const unsavedKey = `${topic}_${goal}_${metricName}_${plantKey}`;
-        let unsavedConfigs = JSON.parse(sessionStorage.getItem('unsaved_kpi_configs') || '{}');
-        unsavedConfigs[unsavedKey] = {
-            ...formData,
-            timestamp: new Date().getTime()
-        };
-        sessionStorage.setItem('unsaved_kpi_configs', JSON.stringify(unsavedConfigs));
-        
-        console.log(`Saved unsaved config for ${metricName}:`, formData);
-    }
 
-    // ===== RESTORE UNSAVED CONFIG FROM SESSION =====
-    function restoreUnsavedConfig(metricName) {
-        // Only restore if user can edit
-        if (!canEdit) return false;
-        
-        const topic = materialTopicValue;
-        const goal = document.getElementById('selectedGoal').value || selectedGoalInitial;
-        const plantId = getCurrentPlantId();
-        const plantKey = plantId || 'all';
-        
-        const unsavedKey = `${topic}_${goal}_${metricName}_${plantKey}`;
-        const unsavedConfigs = JSON.parse(sessionStorage.getItem('unsaved_kpi_configs') || '{}');
-        const config = unsavedConfigs[unsavedKey];
-        
-        if (config) {
-            document.getElementById('baselineYear').value = config.baseline_year || '';
-            document.getElementById('baselineValue').value = config.baseline_value || '';
-            document.getElementById('targetYear').value = config.target_year || '';
-            document.getElementById('targetReduction').value = config.target_reduction || '';
-            document.getElementById('targetValue').value = config.target_value || '';
-            document.getElementById('unitInput').value = config.unit || '';
-            
-            // Update stat cards
-            if (config.baseline_value) {
-                document.getElementById('statBaseline').textContent = parseFloat(config.baseline_value).toFixed(2);
-            }
-            if (config.target_value) {
-                document.getElementById('statTarget').textContent = parseFloat(config.target_value).toFixed(2);
-            }
-            if (config.unit) {
-                updateStatUnits(config.unit);
-            }
-            
-            return true;
-        }
-        return false;
-    }
-
-    // ===== CLEAR UNSAVED CONFIG =====
-    function clearUnsavedConfig(metricName) {
-        const topic = materialTopicValue;
-        const goal = document.getElementById('selectedGoal').value || selectedGoalInitial;
-        const plantId = getCurrentPlantId();
-        const plantKey = plantId || 'all';
-        
-        const unsavedKey = `${topic}_${goal}_${metricName}_${plantKey}`;
-        let unsavedConfigs = JSON.parse(sessionStorage.getItem('unsaved_kpi_configs') || '{}');
-        delete unsavedConfigs[unsavedKey];
-        sessionStorage.setItem('unsaved_kpi_configs', JSON.stringify(unsavedConfigs));
-    }
     // ===== SELECT METRIC =====
     window.selectMetric = function(metricName) {
-        // Save current unsaved config before switching
-        if (activeMetric && activeMetric !== metricName) {
-            saveUnsavedConfig(activeMetric);
-        }
-        
-        const currentValue = parseFloat(statCurrent.textContent) || chartData.currentValue || 0;
-
         activeMetric = metricName;
         document.querySelectorAll('.metric-tab').forEach(function(tab) {
             tab.classList.remove('active');
@@ -1538,38 +1705,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         chartTitle.textContent = metricName;
 
-        // Try to restore unsaved config first
-        const hasUnsaved = restoreUnsavedConfig(metricName);
-        
-        if (!hasUnsaved) {
-            // If no unsaved config, load from server
-            loadKPIConfig(metricName);
-        } else {
-            // Update the UI to reflect unsaved changes
-            const metric = metricsData[metricName];
-            if (metric) {
-                const baselineVal = parseFloat(document.getElementById('baselineValue').value) || 0;
-                const targetVal = parseFloat(document.getElementById('targetValue').value) || 0;
-                const unit = document.getElementById('unitInput').value || metric.unit || '';
-                
-                // Update stat cards
-                if (baselineVal > 0) {
-                    document.getElementById('statBaseline').textContent = baselineVal.toFixed(2);
-                }
-                if (targetVal > 0) {
-                    document.getElementById('statTarget').textContent = targetVal.toFixed(2);
-                }
-                if (unit) {
-                    updateStatUnits(unit);
-                }
-                
-                // Update chart
-                renderChart(metricName);
-            }
-        }
+        loadKPIConfig(metricName);
 
+        const currentValue = parseFloat(statCurrent.textContent) || chartData.currentValue || 0;
         if (currentValue > 0) {
-            statCurrent.textContent = currentValue.toFixed(2);
+            statCurrent.textContent = formatStatValue(currentValue);
             chartData.currentValue = currentValue;
         }
 
@@ -1577,7 +1717,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (activeTab) {
             const tabCurrentValue = parseFloat(activeTab.dataset.currentValue) || 0;
             if (tabCurrentValue > 0) {
-                statCurrent.textContent = tabCurrentValue.toFixed(2);
+                statCurrent.textContent = formatStatValue(tabCurrentValue);
                 chartData.currentValue = tabCurrentValue;
             }
         }
@@ -1645,11 +1785,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const currentValue = parseFloat(statCurrent.textContent) || chartData.currentValue || 0;
 
-        statBaseline.textContent = baselineValue.toFixed(2);
-        statTarget.textContent = targetValue.toFixed(2);
+        statBaseline.textContent = formatStatValue(baselineValue);
+        statTarget.textContent = formatStatValue(targetValue);
 
         if (currentValue > 0) {
-            statCurrent.textContent = currentValue.toFixed(2);
+            statCurrent.textContent = formatStatValue(currentValue);
             chartData.currentValue = currentValue;
         }
 
@@ -1681,9 +1821,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const years = getYearRange(baselineYear, targetYear);
         const numYears = years.length;
 
-        // ===== DATA CALCULATION =====
-        // Baseline and Projected stay flat at the baseline value the whole way through.
-        // Only Target slopes down from the baseline value to the target value.
         const baselineData = years.map(() => baselineValue);
         const projectedDataFlat = years.map(() => baselineValue);
         const targetDeclineData = years.map((_, index) => {
@@ -1701,7 +1838,6 @@ document.addEventListener('DOMContentLoaded', function() {
             currentValue: currentValue
         };
 
-        // ===== CREATE DATASETS =====
         const datasets = [
             {
                 label: 'Baseline',
@@ -1714,13 +1850,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 pointBorderColor: '#ffffff',
                 pointBorderWidth: 1,
                 fill: false,
-                order: 0,
-                datalabels: {
-                    align: 'top',
-                    anchor: 'end',
-                    offset: 6,
-                    color: '#ff9f43'
-                }
+                order: 0
             },
             {
                 label: 'Projected',
@@ -1733,13 +1863,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 pointBorderColor: '#ffffff',
                 pointBorderWidth: 1,
                 fill: false,
-                order: 1,
-                datalabels: {
-                    align: 'bottom',
-                    anchor: 'end',
-                    offset: 6,
-                    color: '#3454d1'
-                }
+                order: 1
             },
             {
                 label: 'Target',
@@ -1752,13 +1876,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 pointBorderColor: '#ffffff',
                 pointBorderWidth: 1,
                 fill: false,
-                order: 2,
-                datalabels: {
-                    align: 'top',
-                    anchor: 'end',
-                    offset: 6,
-                    color: '#28a745'
-                }
+                order: 2
             }
         ];
 
@@ -1766,7 +1884,6 @@ document.addEventListener('DOMContentLoaded', function() {
         chartInstance = new Chart(ctx, {
             type: 'line',
             data: { labels: years, datasets: datasets },
-            plugins: [ChartDataLabels],
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -1776,13 +1893,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 plugins: {
                     legend: { 
-                        display: false  // We use custom legend
-                    },
-                    datalabels: {
-                        font: { size: 11, weight: '700' },
-                        formatter: function(value) {
-                            return Math.round(value);
-                        }
+                        display: false
                     },
                     tooltip: {
                         backgroundColor: '#ffffff',
@@ -1851,7 +1962,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Apply legend states
         Object.keys(legendStates).forEach(label => {
             let datasetIndex = -1;
             if (label === 'Baseline') {
@@ -1886,7 +1996,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (activeMetric) {
             renderChart(activeMetric);
             if (currentValue > 0) {
-                statCurrent.textContent = currentValue.toFixed(2);
+                statCurrent.textContent = formatStatValue(currentValue);
                 chartData.currentValue = currentValue;
             }
         }
@@ -1931,6 +2041,49 @@ document.addEventListener('DOMContentLoaded', function() {
         if (url) window.location.href = url;
     };
 
+    // ===== UNLOCK HANDLER =====
+    if (unlockBtn) {
+        unlockBtn.addEventListener('click', function() {
+            if (!canManageGoals) {
+                showToast('You do not have permission to unlock this KPI.', 'error');
+                return;
+            }
+            if (activeMetric) {
+                unlockKPIInput.value = 'true';
+                const form = document.getElementById('configForm');
+                const formData = new FormData(form);
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': csrftoken,
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showToast('KPI unlocked for editing!', 'success');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        showToast(data.message || 'Failed to unlock KPI.', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('An error occurred. Please try again.', 'error');
+                })
+                .finally(() => {
+                    unlockKPIInput.value = 'false';
+                });
+            }
+        });
+    }
+
     // ===== INITIALIZE =====
     populateYearDropdowns();
 
@@ -1950,7 +2103,7 @@ document.addEventListener('DOMContentLoaded', function() {
             firstTab.classList.add('active');
             const currentValue = parseFloat(firstTab.dataset.currentValue) || 0;
             if (currentValue > 0) {
-                statCurrent.textContent = currentValue.toFixed(2);
+                statCurrent.textContent = formatStatValue(currentValue);
                 chartData.currentValue = currentValue;
             }
         }
@@ -1976,7 +2129,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const currentValue = parseFloat(statCurrent.textContent) || chartData.currentValue || 0;
             renderChart(activeMetric);
             if (currentValue > 0) {
-                statCurrent.textContent = currentValue.toFixed(2);
+                statCurrent.textContent = formatStatValue(currentValue);
                 chartData.currentValue = currentValue;
             }
         }
@@ -1987,7 +2140,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const currentValue = parseFloat(statCurrent.textContent) || chartData.currentValue || 0;
             renderChart(activeMetric);
             if (currentValue > 0) {
-                statCurrent.textContent = currentValue.toFixed(2);
+                statCurrent.textContent = formatStatValue(currentValue);
                 chartData.currentValue = currentValue;
             }
         }
@@ -1995,22 +2148,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ===== CONFIG FORM SUBMISSION =====
     const configForm = document.getElementById('configForm');
-    const saveBtn = document.getElementById('saveConfigBtn');
-
     if (configForm) {
         configForm.addEventListener('submit', function(e) {
             e.preventDefault();
 
-            // If user can't edit, prevent submission
-            if (!canEdit) {
-                showToast('You do not have permission to save configuration.', 'error');
+            if (!canManageGoals) {
+                showToast('You have view-only access. Only ESG Head or ESG Coordinator can save changes.', 'error');
+                return;
+            }
+
+            if (configPanel.classList.contains('kpi-locked')) {
+                showToast('This KPI is locked. Click "Unlock for Editing" to make changes.', 'error');
                 return;
             }
 
             const inputs = this.querySelectorAll('input, select');
             let isValid = true;
             inputs.forEach(input => {
-                if (input.hasAttribute('required') && !input.value) {
+                if (input.hasAttribute('required') && !input.value && input.id !== 'unlockKPI') {
                     input.classList.add('is-invalid');
                     isValid = false;
                 } else {
@@ -2050,45 +2205,9 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.status === 'success') {
                     showToast(data.message || 'Configuration saved successfully!', 'success');
-                    if (data.data) {
-                        const savedPlantId = data.data.plant_id || '';
-                        const configKey = buildConfigKey(materialTopicValue, selectedGoalInitial, selectedKPIInput.value, savedPlantId);
-                        perKpiConfigs[configKey] = {
-                            baseline_year: data.data.baseline_year || '',
-                            baseline_value: data.data.baseline_value || '',
-                            target_year: data.data.target_year || '',
-                            target_reduction: data.data.target_reduction || '',
-                            target_value: data.data.target_value || '',
-                            unit: data.data.unit || '',
-                            selected_goal: selectedGoalInitial,
-                            selected_kpi: selectedKPIInput.value,
-                            kpi_id: data.data.kpi_id || '',
-                            plant_id: savedPlantId || null
-                        };
-
-                        baselineValueInput.value = data.data.baseline_value || '';
-                        targetValueInput.value = data.data.target_value || '';
-                        unitInput.value = data.data.unit || '';
-                        updateStatUnits(data.data.unit || '');
-
-                        if (metricsData[selectedKPIInput.value]) {
-                            metricsData[selectedKPIInput.value].is_plant_specific = !!savedPlantId;
-                        }
-                        updatePlantScopeBadge(savedPlantId, !!savedPlantId);
-
-                        const currentValue = parseFloat(statCurrent.textContent) || chartData.currentValue || 0;
-
-                        if (activeMetric) {
-                            renderChart(activeMetric);
-                            if (currentValue > 0) {
-                                statCurrent.textContent = currentValue.toFixed(2);
-                                chartData.currentValue = currentValue;
-                            }
-                        }
-                        
-                        // Clear unsaved config after successful save
-                        clearUnsavedConfig(selectedKPIInput.value);
-                    }
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
                 } else {
                     showToast(data.message || 'An error occurred. Please try again.', 'error');
                 }
