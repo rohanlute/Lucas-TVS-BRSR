@@ -84,7 +84,7 @@ MATERIAL_TOPICS_MAPPING = {
                 'metrics': {
                     'Diesel Consumption': {
                         'unit': 'L',
-                        'activity_keyword': 'Diesel Vehicle',  # ✅ Fixed
+                        'activity_keyword': 'Diesel Vehicle',
                         'source_keyword': '',
                         'category_keyword': 'Mobile Combustion'
                     },
@@ -102,7 +102,7 @@ MATERIAL_TOPICS_MAPPING = {
                     },
                     'Total Fuel Consumption': {
                         'unit': 'L, kg',
-                        'activity_keyword': 'Diesel Vehicle,Petrol,CNG',  # ✅ Fixed
+                        'activity_keyword': 'Diesel Vehicle,Petrol,CNG',
                         'source_keyword': '',
                         'category_keyword': 'Mobile Combustion'
                     },
@@ -132,31 +132,31 @@ MATERIAL_TOPICS_MAPPING = {
                     },
                     'Clinker Production': {
                         'unit': 't',
-                        'activity_keyword': 'Clinker Production',  # ✅ Fixed - exact match
+                        'activity_keyword': 'Clinker Production',
                         'source_keyword': '',
                         'category_keyword': 'Process Emissions'
                     },
                     'Lime Production': {
                         'unit': 't',
-                        'activity_keyword': 'Lime Production',  # ✅ Fixed - exact match
+                        'activity_keyword': 'Lime Production',
                         'source_keyword': '',
                         'category_keyword': 'Process Emissions'
                     },
                     'Steel Production': {
                         'unit': 't',
-                        'activity_keyword': 'Steel Production',  # ✅ Fixed - exact match
+                        'activity_keyword': 'Steel Production',
                         'source_keyword': '',
                         'category_keyword': 'Process Emissions'
                     },
                     'Ammonia Production': {
                         'unit': 't',
-                        'activity_keyword': 'Ammonia Production',  # ✅ Fixed - exact match
+                        'activity_keyword': 'Ammonia Production',
                         'source_keyword': '',
                         'category_keyword': 'Process Emissions'
                     },
                     'Nitric Acid Production': {
                         'unit': 't',
-                        'activity_keyword': 'Nitric Acid Production',  # ✅ Fixed - exact match
+                        'activity_keyword': 'Nitric Acid Production',
                         'source_keyword': '',
                         'category_keyword': 'Process Emissions'
                     },
@@ -176,7 +176,7 @@ MATERIAL_TOPICS_MAPPING = {
                     },
                     'Total Refrigerant & Gas Leakage': {
                         'unit': 'kg',
-                        'activity_keyword': 'HFC-134a Leakage,HFC-410A Leakage,R-22 Leakage,SF₆ Leakage,CO₂ Fire Extinguisher Discharge',  # ✅ Fixed - exact match
+                        'activity_keyword': 'HFC-134a Leakage,HFC-410A Leakage,R-22 Leakage,SF₆ Leakage,CO₂ Fire Extinguisher Discharge',
                         'source_keyword': '',
                         'category_keyword': 'Fugitive Emissions'
                     },
@@ -197,7 +197,7 @@ MATERIAL_TOPICS_MAPPING = {
                     },
                     'Purchased Electricity GHG Emissions': {
                         'unit': 'tCO₂e',
-                        'activity_keyword': '',  # ✅ Fixed - emission KPI
+                        'activity_keyword': '',
                         'source_keyword': '',
                         'category_keyword': 'Purchased Electricity'
                     },
@@ -211,19 +211,19 @@ MATERIAL_TOPICS_MAPPING = {
                 'metrics': {
                     'Purchased Steam Consumption': {
                         'unit': 'Tonnes or GJ',
-                        'activity_keyword': 'Purchased Steam',  # ✅ Fixed - exact match
+                        'activity_keyword': 'Purchased Steam',
                         'source_keyword': '',
                         'category_keyword': 'Purchased Steam'
                     },
                     'Purchased Heat Consumption': {
                         'unit': 'GJ',
-                        'activity_keyword': 'Purchased Heating',  # ✅ Fixed - exact match
+                        'activity_keyword': 'Purchased Heating',
                         'source_keyword': '',
                         'category_keyword': 'Purchased Heating'
                     },
                     'Purchased Cooling Consumption': {
                         'unit': 'kWh',
-                        'activity_keyword': 'Purchased Cooling',  # ✅ Fixed - exact match
+                        'activity_keyword': 'Purchased Cooling',
                         'source_keyword': '',
                         'category_keyword': 'Purchased Cooling'
                     },
@@ -246,7 +246,7 @@ MATERIAL_TOPICS_MAPPING = {
                         'unit': 'tCO₂e',
                         'activity_keyword': '',
                         'source_keyword': '',
-                        'category_keyword': 'Purchased Goods & Services'  # ✅ Fixed - exact match
+                        'category_keyword': 'Purchased Goods & Services'
                     },
                 }
             },
@@ -260,7 +260,7 @@ MATERIAL_TOPICS_MAPPING = {
                         'unit': 'tCO₂e',
                         'activity_keyword': '',
                         'source_keyword': '',
-                        'category_keyword': 'Capital Goods'  # ✅ Fixed - exact match
+                        'category_keyword': 'Capital Goods'
                     },
                 }
             },
@@ -320,49 +320,50 @@ from apps.accounts.models import Role  # Already imported, but ensure it's there
 
 def get_user_role_code(user):
     """
-    Helper function to get user role code from User model
-    Supports both FK to Role model and CharField
+    Resolve a normalized role code: ESG_HEAD, ESG_COORDINATOR, SUPERADMIN, or VIEWER.
+    Tolerant of casing/spacing differences in the underlying Role model.
     """
     if not user or not user.is_authenticated:
         return 'VIEWER'
-    
+
+    role_code = None
+    role_name = None
     if hasattr(user, 'role') and user.role:
-        if hasattr(user.role, 'role_code'):
-            return user.role.role_code
-        elif hasattr(user.role, 'role_name'):
-            # Try to get role code from role name
-            role_name = user.role.role_name
-            if 'ESG Head' in role_name or 'ESG Coordinator' in role_name or 'Super Admin' in role_name:
-                if 'Head' in role_name:
-                    return 'ESG_HEAD'
-                elif 'Coordinator' in role_name:
-                    return 'ESG_COORDINATOR'
-                elif 'Super' in role_name:
-                    return 'SUPERADMIN'
-            return 'VIEWER'
-        else:
-            return str(user.role)
+        role_code = getattr(user.role, 'role_code', None)
+        role_name = getattr(user.role, 'role_name', None)
+
+    if role_code:
+        code = str(role_code).strip().upper().replace(' ', '_').replace('-', '_')
+        if 'HEAD' in code:
+            return 'ESG_HEAD'
+        if 'COORDINATOR' in code:
+            return 'ESG_COORDINATOR'
+        if 'SUPER' in code:
+            return 'SUPERADMIN'
+
+    if role_name:
+        name = role_name.strip().lower()
+        if 'head' in name:
+            return 'ESG_HEAD'
+        if 'coordinator' in name:
+            return 'ESG_COORDINATOR'
+        if 'super' in name:
+            return 'SUPERADMIN'
+
     return 'VIEWER'
+
 
 def user_has_goal_management_permission(user):
     """
-    Check if user has permission to manage goals (add, delete, edit)
+    ONLY ESG Head and ESG Coordinator can create/edit/save goal & KPI data.
+    Superadmin is intentionally excluded — view-only unless you want it added.
     """
-    role_code = get_user_role_code(user)
-    allowed_roles = ['ESG_HEAD', 'ESG_COORDINATOR', 'SUPERADMIN']
-    # Also check by role name
-    if hasattr(user, 'role') and user.role:
-        if hasattr(user.role, 'role_name'):
-            allowed_names = ['ESG Head', 'ESG Coordinator', 'Super Admin']
-            if user.role.role_name in allowed_names:
-                return True
-    return role_code in allowed_roles
+    return get_user_role_code(user) in ('ESG_HEAD', 'ESG_COORDINATOR')
+
 
 def user_has_delete_permission(user):
-    """
-    Check if user has delete permissions
-    """
     return user_has_goal_management_permission(user)
+
 def get_topic_icon(topic):
     """Get FontAwesome icon for a material topic"""
     icon_map = {
@@ -1075,6 +1076,13 @@ class GoalDetailView(LoginRequiredMixin, TemplateView):
         material_topic = self.kwargs.get('material_topic')
         goal_name = self.request.GET.get('goal', '')
 
+        # ===== ADD USER ROLE TO CONTEXT =====
+        user = self.request.user
+        context['user_role'] = get_user_role_code(user)
+        context['user_role_name'] = user.role.role_name if hasattr(user, 'role') and user.role else 'Viewer'
+        context['can_manage_goals'] = user_has_goal_management_permission(user)
+        context['can_delete_goals'] = user_has_delete_permission(user)
+
         # ===== GET PLANT FILTER FROM REQUEST =====
         selected_plant_id = self.request.GET.get('plant_id')
         if selected_plant_id:
@@ -1123,6 +1131,15 @@ class GoalDetailView(LoginRequiredMixin, TemplateView):
                     plant_id=selected_plant_id
                 ) if hasattr(kpi, 'get_current_value') else 0
                 plant_config = kpi.get_config_for_plant(selected_plant_id)
+                
+                # Check if KPI has saved configuration
+                is_saved = bool(
+                    plant_config.get('baseline_value') or 
+                    plant_config.get('target_value') or 
+                    plant_config.get('baseline_year') or 
+                    plant_config.get('target_year')
+                )
+                
                 kpi_list.append({
                     'name': kpi.name,
                     'unit': plant_config['unit'] or kpi.unit,
@@ -1136,6 +1153,7 @@ class GoalDetailView(LoginRequiredMixin, TemplateView):
                     'from_mapping': False,
                     'is_from_db': True,
                     'is_plant_specific': plant_config['is_plant_specific'],
+                    'is_saved': is_saved,  # Add this flag
                 })
 
             goals.append({
@@ -1162,6 +1180,7 @@ class GoalDetailView(LoginRequiredMixin, TemplateView):
                         for metric_name, metric_info in metrics.items():
                             current_value = 0
                             kpi_id = None
+                            is_saved = False
                             try:
                                 kpi = KPI.objects.get(
                                     goal__material_topic__name=material_topic,
@@ -1173,6 +1192,13 @@ class GoalDetailView(LoginRequiredMixin, TemplateView):
                                     plant_id=selected_plant_id
                                 )
                                 kpi_id = kpi.id
+                                plant_config = kpi.get_config_for_plant(selected_plant_id)
+                                is_saved = bool(
+                                    plant_config.get('baseline_value') or 
+                                    plant_config.get('target_value') or 
+                                    plant_config.get('baseline_year') or 
+                                    plant_config.get('target_year')
+                                )
                             except KPI.DoesNotExist:
                                 pass
 
@@ -1182,6 +1208,7 @@ class GoalDetailView(LoginRequiredMixin, TemplateView):
                                 'kpi_id': kpi_id,
                                 'current_value': current_value,
                                 'from_mapping': True,
+                                'is_saved': is_saved,  # Add this flag
                             })
 
                 goals.append({
@@ -1204,6 +1231,7 @@ class GoalDetailView(LoginRequiredMixin, TemplateView):
         metrics_dict = {}
         active_unit = ''
         per_kpi_configs = {}
+        saved_kpis = []  # Track saved KPIs
 
         # Key used to namespace per-KPI config by plant selection ('all' when no plant chosen)
         plant_key = selected_plant_id if selected_plant_id else 'all'
@@ -1225,6 +1253,21 @@ class GoalDetailView(LoginRequiredMixin, TemplateView):
 
                     # ===== RESOLVE PLANT-SPECIFIC (OR AGGREGATE) CONFIG =====
                     plant_config = kpi.get_config_for_plant(selected_plant_id)
+                    
+                    # Check if KPI has saved configuration
+                    is_saved = bool(
+                        plant_config.get('baseline_value') or 
+                        plant_config.get('target_value') or 
+                        plant_config.get('baseline_year') or 
+                        plant_config.get('target_year')
+                    )
+                    
+                    if is_saved:
+                        saved_kpis.append({
+                            'metric_name': kpi.name,
+                            'plant_id': selected_plant_id or 'all',
+                            'is_saved': True
+                        })
 
                     metrics_dict[kpi.name] = {
                         'current': current_value,
@@ -1239,6 +1282,7 @@ class GoalDetailView(LoginRequiredMixin, TemplateView):
                         'target_reduction': float(plant_config['target_reduction']) if plant_config['target_reduction'] else 0,
                         'is_from_db': True,
                         'is_plant_specific': plant_config['is_plant_specific'],
+                        'is_saved': is_saved,  # Add this flag
                     }
 
                     # Build per-kpi config from database, namespaced by plant
@@ -1254,6 +1298,7 @@ class GoalDetailView(LoginRequiredMixin, TemplateView):
                         'selected_kpi': kpi.name,
                         'kpi_id': kpi.id,
                         'plant_id': selected_plant_id,
+                        'is_saved': is_saved,  # Add this flag
                     }
 
                 if db_kpis.exists():
@@ -1266,6 +1311,7 @@ class GoalDetailView(LoginRequiredMixin, TemplateView):
                 for metric in metrics_list:
                     # Try to find if KPI exists in database
                     kpi_id = None
+                    is_saved = False
                     try:
                         kpi = KPI.objects.get(
                             goal__material_topic__name=material_topic,
@@ -1274,6 +1320,19 @@ class GoalDetailView(LoginRequiredMixin, TemplateView):
                             is_active=True
                         )
                         kpi_id = kpi.id
+                        plant_config = kpi.get_config_for_plant(selected_plant_id)
+                        is_saved = bool(
+                            plant_config.get('baseline_value') or 
+                            plant_config.get('target_value') or 
+                            plant_config.get('baseline_year') or 
+                            plant_config.get('target_year')
+                        )
+                        if is_saved:
+                            saved_kpis.append({
+                                'metric_name': metric.get('name'),
+                                'plant_id': selected_plant_id or 'all',
+                                'is_saved': True
+                            })
                     except KPI.DoesNotExist:
                         pass
 
@@ -1289,6 +1348,7 @@ class GoalDetailView(LoginRequiredMixin, TemplateView):
                         'target_year': '',
                         'target_reduction': 0,
                         'is_from_db': False,
+                        'is_saved': is_saved,  # Add this flag
                     }
 
                 if metrics_list and len(metrics_list) > 0:
@@ -1303,6 +1363,7 @@ class GoalDetailView(LoginRequiredMixin, TemplateView):
                 for metric_name, metric_info in metrics_from_mapping.items():
                     # Try to find if KPI exists in database
                     kpi_id = None
+                    is_saved = False
                     try:
                         kpi = KPI.objects.get(
                             goal__material_topic__name=material_topic,
@@ -1311,6 +1372,19 @@ class GoalDetailView(LoginRequiredMixin, TemplateView):
                             is_active=True
                         )
                         kpi_id = kpi.id
+                        plant_config = kpi.get_config_for_plant(selected_plant_id)
+                        is_saved = bool(
+                            plant_config.get('baseline_value') or 
+                            plant_config.get('target_value') or 
+                            plant_config.get('baseline_year') or 
+                            plant_config.get('target_year')
+                        )
+                        if is_saved:
+                            saved_kpis.append({
+                                'metric_name': metric_name,
+                                'plant_id': selected_plant_id or 'all',
+                                'is_saved': True
+                            })
                     except KPI.DoesNotExist:
                         pass
 
@@ -1326,6 +1400,7 @@ class GoalDetailView(LoginRequiredMixin, TemplateView):
                         'target_year': '',
                         'target_reduction': 0,
                         'is_from_db': False,
+                        'is_saved': is_saved,  # Add this flag
                     }
                 if metrics_from_mapping:
                     active_unit = list(metrics_from_mapping.values())[0].get('unit', '')
@@ -1348,6 +1423,13 @@ class GoalDetailView(LoginRequiredMixin, TemplateView):
             if first_kpi_name:
                 config_key = f"{material_topic}_{selected_goal_name}_{first_kpi_name}_{plant_key}"
                 default_config = session_configs.get(config_key, {})
+
+        # ===== CHECK IF ACTIVE KPI IS SAVED =====
+        active_kpi_saved = False
+        if selected_goal_name and metrics_dict:
+            first_kpi_name = list(metrics_dict.keys())[0] if metrics_dict else None
+            if first_kpi_name:
+                active_kpi_saved = metrics_dict[first_kpi_name].get('is_saved', False)
 
         # ===== PREPARE METRICS WITH THEIR CONFIGS (plant-namespaced) =====
         metrics_with_config = {}
@@ -1377,6 +1459,7 @@ class GoalDetailView(LoginRequiredMixin, TemplateView):
         metrics_json = json.dumps(metrics_with_config)
         per_kpi_configs_json = json.dumps(session_configs)
         plants_json = json.dumps(plant_list)
+        saved_kpis_json = json.dumps(saved_kpis)
 
         context.update({
             'material_topic': material_topic,
@@ -1392,6 +1475,9 @@ class GoalDetailView(LoginRequiredMixin, TemplateView):
             'total_goals': len(goals),
             'selected_goal': selected_goal_name,
             'active_unit': active_unit,
+            'active_kpi_saved': active_kpi_saved,
+            'saved_kpis': saved_kpis,  # Pass saved KPIs to template
+            'saved_kpis_json': saved_kpis_json,
             # Plant filter data
             'plants': plant_list,
             'selected_plant_id': selected_plant_id,
@@ -1409,6 +1495,11 @@ class GoalConfigUpdateView(LoginRequiredMixin, View):
         return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
+        if not user_has_goal_management_permission(request.user):
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Only ESG Head or ESG Coordinator can edit KPI targets.'
+            }, status=403)
         try:
             material_topic = self.kwargs.get('material_topic')
 
@@ -1422,6 +1513,7 @@ class GoalConfigUpdateView(LoginRequiredMixin, View):
             kpi_name = data.get('kpi_name', '')
             kpi_id = data.get('kpi_id', '')
             plant_id_raw = data.get('plant_id', '')
+            unlock_kpi = data.get('unlock_kpi', 'false') == 'true'
 
             baseline_year = data.get('baseline_year', '')
             baseline_value = data.get('baseline_value', '')
@@ -1437,6 +1529,7 @@ class GoalConfigUpdateView(LoginRequiredMixin, View):
             logger.info(f"kpi_name: {kpi_name}")
             logger.info(f"kpi_id: {kpi_id}")
             logger.info(f"plant_id: {plant_id_raw}")
+            logger.info(f"unlock_kpi: {unlock_kpi}")
             logger.info("=" * 50)
 
             # VALIDATION
@@ -1498,6 +1591,27 @@ class GoalConfigUpdateView(LoginRequiredMixin, View):
                         'message': f'KPI not found: {kpi_name or kpi_id}'
                     }, status=404)
 
+                if unlock_kpi:
+                    # ===== UNLOCK KPI =====
+                    # This doesn't delete the config, it just allows editing again
+                    # We remove the "saved" flag from session
+                    configs = request.session.get('goal_configs', {})
+                    plant_key = plant_id if plant_id else 'all'
+                    config_key = f"{material_topic}_{goal_name}_{kpi.name}_{plant_key}"
+                    
+                    if config_key in configs:
+                        # Mark as unsaved by removing is_saved flag or setting to False
+                        if 'is_saved' in configs[config_key]:
+                            configs[config_key]['is_saved'] = False
+                        request.session['goal_configs'] = configs
+                        request.session.modified = True
+                    
+                    logger.info(f"Unlocked KPI '{kpi.name}' for editing")
+                    return JsonResponse({
+                        'status': 'success',
+                        'message': f'KPI "{kpi.name}" unlocked for editing.'
+                    })
+
                 if plant_id:
                     # ===== SAVE / UPDATE PLANT-SPECIFIC TARGET =====
                     plant_target, _ = KPIPlantTarget.objects.get_or_create(
@@ -1540,6 +1654,7 @@ class GoalConfigUpdateView(LoginRequiredMixin, View):
                         'target_reduction': str(plant_target.target_reduction) if plant_target.target_reduction else '',
                         'target_value': str(plant_target.target_value) if plant_target.target_value else '',
                         'unit': plant_target.unit or kpi.unit,
+                        'is_saved': True,  # Mark as saved
                     }
                     config_key = f"{material_topic}_{goal_name}_{kpi.name}_{plant_id}"
                     success_message = f'Configuration saved for KPI: {kpi.name} (Plant ID {plant_id})'
@@ -1575,6 +1690,7 @@ class GoalConfigUpdateView(LoginRequiredMixin, View):
                         'target_reduction': str(kpi.target_reduction) if kpi.target_reduction else '',
                         'target_value': str(kpi.target_value) if kpi.target_value else '',
                         'unit': kpi.unit,
+                        'is_saved': True,  # Mark as saved
                     }
                     config_key = f"{material_topic}_{goal_name}_{kpi.name}_all"
                     success_message = f'Configuration saved for KPI: {kpi.name} (All Plants)'
@@ -1585,6 +1701,7 @@ class GoalConfigUpdateView(LoginRequiredMixin, View):
                     **response_data,
                     'selected_goal': goal_name,
                     'selected_kpi': kpi.name,
+                    'is_saved': True,
                 }
                 request.session['goal_configs'] = configs
                 request.session.modified = True
@@ -1642,8 +1759,6 @@ class GoalMetricsAPIView(LoginRequiredMixin, View):
 
 
 # ===== KPI CURRENT VALUE API VIEW =====
-
-# apps/goals/views.py
 
 class KPICurrentValueAPIView(LoginRequiredMixin, View):
     """
@@ -1736,14 +1851,12 @@ class KPICurrentValueAPIView(LoginRequiredMixin, View):
             # ===== RESOLVE PLANT-SPECIFIC (OR AGGREGATE) BASELINE/TARGET =====
             plant_config = kpi.get_config_for_plant(plant_id)
 
-            # ✅ FIX: Get current value with ALL filters, but don't filter by status
-            # Only filter by status if specifically requested
+            # Get current value with ALL filters
             statuses = request.GET.get('statuses')
             if statuses:
                 statuses = statuses.split(',')
             else:
-                # ✅ Include all statuses by default (DRAFT, SUBMITTED, APPROVED, REJECTED)
-                statuses = None  # None means include ALL statuses
+                statuses = None
             
             current_value = kpi.get_current_value(
                 company_id=company_id,
@@ -1751,7 +1864,7 @@ class KPICurrentValueAPIView(LoginRequiredMixin, View):
                 financial_year_id=financial_year_id,
                 financial_month_id=financial_month_id,
                 assignment_id=assignment_id,
-                statuses=statuses  # None = all statuses
+                statuses=statuses
             )
 
             # Log the result
@@ -1803,6 +1916,7 @@ class KPICurrentValueAPIView(LoginRequiredMixin, View):
                 'success': False,
                 'message': f'Error fetching current value: {str(e)}'
             }, status=500)
+
 
 # ===== KPI CONFIG API VIEW =====
 
@@ -1897,6 +2011,12 @@ class KPIConfigAPIView(LoginRequiredMixin, View):
                     'kpi_id': kpi.id,
                     'plant_id': plant_id,
                     'is_plant_specific': plant_config.get('is_plant_specific', False),
+                    'is_saved': bool(
+                        plant_config.get('baseline_value') or 
+                        plant_config.get('target_value') or 
+                        plant_config.get('baseline_year') or 
+                        plant_config.get('target_year')
+                    ),
                 }
             })
             
