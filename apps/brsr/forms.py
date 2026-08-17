@@ -16,6 +16,16 @@ class BRSRAssignmentForm(forms.Form):
         choices=(),
         widget=forms.Select(attrs={"class": "form-select"}),
     )
+    data_scope = forms.ChoiceField(
+        choices=Assignment.DATA_SCOPE_CHOICES,
+        required=False,
+        widget=forms.HiddenInput(),
+    )
+    company_level = forms.BooleanField(
+        required=False,
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        label="Company Level Assignment",
+    )
     # For GenericForeignKey, we need to use content_type and object_id
     assigner_content_type = forms.ModelChoiceField(
         queryset=ContentType.objects.all(),
@@ -97,6 +107,14 @@ class BRSRAssignmentForm(forms.Form):
 
     def clean(self):
         cleaned = super().clean()
+        data_scope = cleaned.get("data_scope") or "plant"
+        if cleaned.get("company_level") or data_scope == "company":
+            cleaned["data_scope"] = "company"
+            cleaned["company_level"] = True
+        else:
+            cleaned["data_scope"] = "plant"
+            cleaned["company_level"] = False
+
         frequency = cleaned.get("data_collection_frequency")
         if not frequency:
             return cleaned

@@ -218,6 +218,7 @@ def create_assignment_from_schedule(schedule: AssignmentSchedule, financial_year
         "financial_year": financial_year,
         "assignee": schedule.assignee,
         "reviewer": schedule.reviewer,
+        "data_scope": schedule.data_scope or "plant",
         "priority": schedule.priority,
         "notes": schedule.notes,
         "due_date": _period_due_date(schedule, trigger_date),
@@ -277,7 +278,7 @@ def build_schedule(*, created_by, plant, section, principle, financial_year,
                     assignee, reviewer, frequency, weekly_start_day=None,
                     weekly_end_day=None, selected_months=None,
                     selected_quarters=None, priority='medium', due_period_days=None, notes='',
-                    name='', workflow_template=None, question_queryset=None):
+                    name='', workflow_template=None, question_queryset=None, data_scope='plant'):
     """
     Persist a reusable AssignmentSchedule carrying every bit of context a
     manually created assignment also carries (assigner/created_by, assignee,
@@ -310,6 +311,7 @@ def build_schedule(*, created_by, plant, section, principle, financial_year,
         created_by=created_by,
         assignee_content_type=user_ct,
         assignee_object_id=assignee.pk,
+        data_scope=data_scope,
     )
     if reviewer is not None:
         schedule.reviewer_content_type = user_ct
@@ -349,6 +351,8 @@ def create_assignment_and_optional_schedule(*, user, section, principle, cleaned
         _resolve_brsr_assignee,
         _resolve_brsr_reviewer,
         _is_section_locked_for_new_assignment,
+        _is_company_section_locked_for_new_assignment,
+        _resolve_company_for_plant,
     )
 
     frequency = cleaned_data.get("data_collection_frequency")
@@ -357,31 +361,40 @@ def create_assignment_and_optional_schedule(*, user, section, principle, cleaned
 
     plant = cleaned_data["plant"]
     financial_year = cleaned_data["financial_year"]
+    data_scope = cleaned_data.get("data_scope") or "plant"
+    if data_scope not in {"plant", "company"}:
+        raise ValueError("Invalid data_scope; must be 'plant' or 'company'.")
 
-    if _is_section_locked_for_new_assignment(user, plant, section, principle, financial_year):
-        raise ValueError(
-            "This section has already been sent for Pre-Final Approval for this "
-            "plant and financial year. No new assignment can be created until "
-            "the current one is approved or rejected."
-        )
+    if data_scope == "company":
+        company = _resolve_company_for_plant(plant)
+        if not company:
+            raise ValueError(
+                "Could not resolve a company for the selected plant; a company-level "
+                "assignment requires a plant that belongs to a company."
+            )
+        if _is_company_section_locked_for_new_assignment(user, company, section, principle, financial_year):
+            raise ValueError(
+                "This section has already been sent for Pre-Final Approval at the company "
+                "level for this financial year. No new company-level assignment can be "
+                "created until the current one is approved or rejected."
+            )
+    else:
+        if _is_section_locked_for_new_assignment(user, plant, section, principle, financial_year):
+            raise ValueError(
+                "This section has already been sent for Pre-Final Approval for this "
+                "plant and financial year. No new assignment can be created until "
+                "the current one is approved or rejected."
+            )
 
     workflow_template = _resolve_brsr_workflow_template(user=user, plant=plant)
     if not workflow_template or not workflow_template.first_stage:
         raise ValueError("No active BRSR workflow template with stages is configured for this company.")
 
-    assignee = _resolve_brsr_assignee(
-        plant, workflow_template,
-        selected_assignee=cleaned_data.get("assignee"),
-        current_user=user,
-    )
+    assignee = _resolve_brsr_assignee(plant, workflow_template, selected_assignee=cleaned_data.get("assignee"), current_user=user)
     if assignee is None:
         raise ValueError("No eligible assignee matches the first stage of the configured BRSR workflow.")
 
-    reviewer = _resolve_brsr_reviewer(
-        plant, workflow_template,
-        selected_reviewer=cleaned_data.get("reviewer"),
-        current_user=user,
-    )
+    reviewer = _resolve_brsr_reviewer(plant, workflow_template, selected_reviewer=cleaned_data.get("reviewer"), current_user=user)
     if cleaned_data.get("reviewer") is not None and reviewer is None:
         raise ValueError(
             "The selected reviewer is not eligible for the review stage of this "
@@ -408,6 +421,7 @@ def create_assignment_and_optional_schedule(*, user, section, principle, cleaned
         name=cleaned_data.get("schedule_name") or "",
         workflow_template=workflow_template,
         question_queryset=question_queryset,
+        data_scope=data_scope,
     )
 
     today = timezone.localdate()

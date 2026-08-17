@@ -104,10 +104,14 @@ def _assignment_queryset_for_user(user):
     # Check if user has a company
     if getattr(user, "company_id", None):
         return queryset.filter(plant__created_by__company_id=user.company_id)
-    
-    # For regular users, filter by assigned plants
-    plant_ids = user.assigned_plants.filter(is_active=True).values_list("id", flat=True)
-    return queryset.filter(plant_id__in=plant_ids)
+
+    assigned_plants = user.assigned_plants.filter(is_active=True)
+    plant_ids = assigned_plants.values_list("id", flat=True)
+    company_ids = list(assigned_plants.values_list("created_by__company_id", flat=True).distinct())
+    return queryset.filter(
+        Q(plant_id__in=plant_ids)
+        | Q(data_scope="company", plant__created_by__company_id__in=company_ids)
+    )
 
 
 def _resolve_brsr_workflow_template(user=None, plant=None):
@@ -495,7 +499,7 @@ def _build_brsr_selection_filters(user, request):
         selected_plant = plants[0]
 
     financial_years = list(
-        Assignment.objects.filter(plant__in=plants)
+        _scope_assignments_for_plants(plants)
         .order_by("-financial_year")
         .values_list("financial_year", flat=True)
         .distinct()
@@ -522,11 +526,7 @@ def _is_assignment_ready_for_pre_final(assignment):
     if task.is_completed:
         return False
     current_stage = task.current_stage
-    return bool(
-        current_stage
-        and current_stage.stage_type == "approval"
-        and assignment.overall_status == "completed"
-    )
+    return bool(current_stage and current_stage.stage_type == "approval")
 
 
 def _section_principle_assignments_for_pre_final(user, plant, section, principle, financial_year):
@@ -1051,26 +1051,61 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
     plant = cleaned_data["plant"]
     financial_year = cleaned_data["financial_year"]
     period_code = cleaned_data.get("period_code")
+    data_scope = cleaned_data.get("data_scope") or "plant"
+    if data_scope not in {"plant", "company"}:
+        raise ValueError("Invalid data_scope; must be 'plant' or 'company'.")
     question_ids = list(question_queryset.values_list("id", flat=True))
-    if _is_section_locked_for_new_assignment(user, plant, section, principle, financial_year, question_ids=question_ids):
-        existing_assignments = _plant_scope_assignment_queryset(user, plant).filter(
-            section_id=section.id, 
-            financial_year=financial_year
-        )
-        if principle:
-            existing_assignments = existing_assignments.filter(principle_id=principle.id)
-        else:
-            existing_assignments = existing_assignments.filter(principle__isnull=True)
-        
-        existing_question_ids = set()
-        for assignment in existing_assignments:
-            existing_question_ids.update(assignment.questions.values_list("id", flat=True))
-        
-        duplicate_questions = [q_id for q_id in question_ids if q_id in existing_question_ids]
-        raise ValueError(
-            f"The following questions are already assigned to this plant and financial year: {duplicate_questions}. "
-            "Please select different questions or complete the existing assignment first."
-        ) 
+
+    if data_scope == "company":
+        company = _resolve_company_for_plant(plant)
+        if not company:
+            raise ValueError(
+                "Could not resolve a company for the selected plant; a company-level "
+                "assignment requires a plant that belongs to a company."
+            )
+        if _plant_level_conflict_for_company(company, section, principle, financial_year, question_ids):
+            raise ValueError(
+                "Some of these questions already have plant-level assignment(s) within this "
+                "company for this financial year. Complete or remove those before creating a "
+                "company-level assignment covering the same questions."
+            )
+        if _is_company_section_locked_for_new_assignment(user, company, section, principle, financial_year, question_ids=question_ids):
+            existing_assignments = _company_scope_assignment_queryset(company).filter(
+                section_id=section.id, financial_year=financial_year
+            )
+            existing_assignments = existing_assignments.filter(principle_id=principle.id) if principle else existing_assignments.filter(principle__isnull=True)
+            existing_question_ids = set()
+            for assignment in existing_assignments:
+                existing_question_ids.update(assignment.questions.values_list("id", flat=True))
+            duplicate_questions = [q_id for q_id in question_ids if q_id in existing_question_ids]
+            raise ValueError(
+                f"The following questions already have a company-level assignment for this "
+                f"financial year: {duplicate_questions}. Select different questions or "
+                "complete the existing company-level assignment first."
+            )
+    else:
+        company = _resolve_company_for_plant(plant)
+        if company and _is_company_section_locked_for_new_assignment(user, company, section, principle, financial_year, question_ids=question_ids):
+            raise ValueError(
+                "These questions are already covered by a company-level assignment for this "
+                "financial year. Company-level data cannot be split into separate plant-level "
+                "assignments — use the existing company-level assignment instead."
+            )
+        if _is_section_locked_for_new_assignment(user, plant, section, principle, financial_year, question_ids=question_ids):
+            existing_assignments = _plant_scope_assignment_queryset(user, plant).filter(
+                section_id=section.id,
+                financial_year=financial_year
+            )
+            existing_assignments = existing_assignments.filter(principle_id=principle.id) if principle else existing_assignments.filter(principle__isnull=True)
+            existing_question_ids = set()
+            for assignment in existing_assignments:
+                existing_question_ids.update(assignment.questions.values_list("id", flat=True))
+            duplicate_questions = [q_id for q_id in question_ids if q_id in existing_question_ids]
+            raise ValueError(
+                f"The following questions are already assigned to this plant and financial year: {duplicate_questions}. "
+                "Please select different questions or complete the existing assignment first."
+            )
+
     force_create = cleaned_data.get("force_create", False)
     workflow_template = workflow_template_override or _resolve_brsr_workflow_template(user=user, plant=plant)
     if not workflow_template:
@@ -1078,24 +1113,11 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
     if not workflow_template.first_stage:
         raise ValueError("The configured BRSR workflow template has no stages.")
 
-    assignee = _resolve_brsr_assignee(
-        plant,
-        workflow_template,
-        selected_assignee=cleaned_data.get("assignee"),
-        current_user=user,
-    )
+    assignee = _resolve_brsr_assignee(plant, workflow_template, selected_assignee=cleaned_data.get("assignee"), current_user=user)
     if assignee is None:
-        raise ValueError(
-            "No eligible assignee matches the first stage of the configured BRSR workflow."
-        )
+        raise ValueError("No eligible assignee matches the first stage of the configured BRSR workflow.")
 
-    reviewer = _resolve_brsr_reviewer(
-        plant,
-        workflow_template,
-        selected_reviewer=cleaned_data.get("reviewer"),
-        current_user=user,
-    )
-
+    reviewer = _resolve_brsr_reviewer(plant, workflow_template, selected_reviewer=cleaned_data.get("reviewer"), current_user=user)
     if cleaned_data.get("reviewer") is not None and reviewer is None:
         raise ValueError(
             "The selected reviewer is not eligible for the review stage of this "
@@ -1113,6 +1135,7 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
         financial_year=cleaned_data["financial_year"],
         workflow_template=workflow_template,
         data_collection_frequency=cleaned_data.get("data_collection_frequency") or "",
+        data_scope=data_scope,
         assigner_content_type=user_ct,
         assigner_object_id=assigner.pk,
         assignee_content_type=user_ct,
@@ -1125,21 +1148,14 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
     )
     assignment.questions.set(question_queryset)
     if reviewer is not None:
-        AssignmentReviewer.objects.create(
-            assignment=assignment,
-            reviewer_content_type=user_ct,
-            reviewer_object_id=reviewer.pk,
-        )
+        AssignmentReviewer.objects.create(assignment=assignment, reviewer_content_type=user_ct, reviewer_object_id=reviewer.pk)
     for question in question_queryset:
-        QuestionResponse.objects.get_or_create(
-            assignment=assignment,
-            question=question,
-        )
+        QuestionResponse.objects.get_or_create(assignment=assignment, question=question)
     _ensure_assignment_workflow_task(assignment, current_user=user)
     _advance_assignment_to_entry_stage(assignment, actor=user)
     from .notifications import notify_assignment_created
     notify_assignment_created(assignment)
-    
+
     return assignment
 
 
@@ -1645,6 +1661,114 @@ def _aggregate_response_jsons(response_jsons):
                     aggregated[key] = value
     return aggregated
 
+def _resolve_company_for_plant(plant):
+    return getattr(getattr(plant, "created_by", None), "company", None)
+
+
+def _company_ids_for_plants(plants):
+    company_ids = []
+    for plant in plants:
+        company_id = getattr(getattr(plant, "created_by", None), "company_id", None)
+        if company_id:
+            company_ids.append(company_id)
+    return list(dict.fromkeys(company_ids))
+
+
+def _scope_assignments_for_plants(plants):
+    queryset = Assignment.objects.filter(plant__in=plants)
+    company_ids = _company_ids_for_plants(plants)
+    if company_ids:
+        queryset = queryset | Assignment.objects.filter(
+            data_scope="company",
+            plant__created_by__company_id__in=company_ids,
+        )
+    return queryset.distinct()
+
+
+def _scope_assignments_for_plant(plant):
+    queryset = Assignment.objects.filter(plant=plant)
+    company = _resolve_company_for_plant(plant)
+    if company:
+        queryset = queryset | Assignment.objects.filter(
+            data_scope="company",
+            plant__created_by__company=company,
+        )
+    return queryset.distinct()
+
+
+def _company_scope_assignment_queryset(company):
+    if not company:
+        return Assignment.objects.none()
+    return Assignment.objects.filter(
+        data_scope="company",
+        plant__created_by__company=company,
+    )
+
+
+def _is_company_section_locked_for_new_assignment(user, company, section, principle, financial_year, question_ids=None):
+    """
+    Company-level equivalent of _is_section_locked_for_new_assignment:
+    - with question_ids: True if any of those questions already belong to
+      an existing company-level assignment for this section/principle/FY
+      (duplicate prevention).
+    - without question_ids: True if any existing company-level assignment
+      for this section/principle/FY has already reached Pre-Final/Final
+      Approval (lock check), mirroring the plant-level rule.
+    """
+    if not company or not section or not financial_year:
+        return False
+
+    assignments = list(
+        _company_scope_assignment_queryset(company)
+        .filter(section_id=section.id, financial_year=financial_year)
+        .select_related("plant", "section", "principle", "workflow_template")
+        .prefetch_related("questions")
+    )
+    if principle:
+        assignments = [a for a in assignments if a.principle_id == principle.id]
+    else:
+        assignments = [a for a in assignments if a.principle_id is None]
+
+    if not assignments:
+        return False
+
+    if question_ids:
+        existing_question_ids = set()
+        for assignment in assignments:
+            existing_question_ids.update(assignment.questions.values_list("id", flat=True))
+        return any(q_id in existing_question_ids for q_id in question_ids)
+
+    locked_stages = {"pre_final_approval", "final_approval"}
+    for assignment in assignments:
+        _ensure_assignment_workflow_task(assignment, current_user=user)
+        task = assignment.workflow_task
+        if not task:
+            continue
+        if task.is_completed:
+            return True
+        if task.current_stage and task.current_stage.stage_type in locked_stages:
+            return True
+    return False
+
+
+def _plant_level_conflict_for_company(company, section, principle, financial_year, question_ids):
+    """True if any of question_ids already have a plant-level assignment
+    somewhere in `company` for this section/principle/FY — used to stop a
+    company-level assignment from being created on top of plant-level data
+    that already exists for the same questions (validation requirement)."""
+    if not company or not question_ids:
+        return False
+    assignments = Assignment.objects.filter(
+        data_scope="plant",
+        plant__created_by__company=company,
+        section_id=section.id,
+        financial_year=financial_year,
+    ).prefetch_related("questions")
+    assignments = assignments.filter(principle_id=principle.id) if principle else assignments.filter(principle__isnull=True)
+    existing_question_ids = set()
+    for assignment in assignments:
+        existing_question_ids.update(assignment.questions.values_list("id", flat=True))
+    return any(q_id in existing_question_ids for q_id in question_ids)
 
 class _AggregatedResponse:
     """Lightweight stand-in for a QuestionResponse so the existing
@@ -1690,7 +1814,7 @@ def _aggregate_response_stats(responses_qs):
 
 
 def _plant_brsr_stats(plant, financial_year=None):
-    responses = QuestionResponse.objects.filter(assignment__plant=plant)
+    responses = QuestionResponse.objects.filter(assignment__in=_scope_assignments_for_plant(plant))
     if financial_year:
         responses = responses.filter(assignment__financial_year=financial_year)
     return _aggregate_response_stats(responses)
@@ -1711,7 +1835,7 @@ def _build_brsr_data_groups(plants, financial_year=None):
     assignment) plus an aggregated 'All periods' view — the template turns
     this into a period-selector dropdown per plant block.
     """
-    assignments = Assignment.objects.filter(plant__in=plants)
+    assignments = _scope_assignments_for_plants(plants)
     if financial_year:
         assignments = assignments.filter(financial_year=financial_year)
     assignments = assignments.select_related("plant").prefetch_related(
@@ -1731,6 +1855,17 @@ def _build_brsr_data_groups(plants, financial_year=None):
         frequency = assignment.data_collection_frequency or ""
         period_code = assignment.period_code or ""
         period_label = assignment.period_label or period_code or assignment.financial_year
+        assignment_company = _resolve_company_for_plant(assignment.plant)
+        if assignment.data_scope == "company" and assignment_company:
+            target_plants = [
+                plant
+                for plant in plants
+                if _resolve_company_for_plant(plant) == assignment_company
+            ]
+            if not target_plants and assignment.plant in plants:
+                target_plants = [assignment.plant]
+        else:
+            target_plants = [assignment.plant] if assignment.plant in plants else []
 
         for question in assignment.questions.all():
             response = responses_by_qid.get(question.id)
@@ -1741,20 +1876,21 @@ def _build_brsr_data_groups(plants, financial_year=None):
                 continue
 
             question_meta[question.id] = question
-            plant_bucket = question_plant_period_data.setdefault(question.id, {})
-            period_bucket = plant_bucket.setdefault(assignment.plant_id, {})
             key = period_code or f"__single__{assignment.id}"
-            existing = period_bucket.get(key)
-            if not existing or (response.updated_at and response.updated_at > existing["updated_at"]):
-                period_bucket[key] = {
-                    "plant": assignment.plant,
-                    "response": response,
-                    "financial_year": assignment.financial_year,
-                    "updated_at": response.updated_at,
-                    "frequency": frequency,
-                    "period_code": period_code,
-                    "period_label": period_label,
-                }
+            for plant in target_plants:
+                plant_bucket = question_plant_period_data.setdefault(question.id, {})
+                period_bucket = plant_bucket.setdefault(plant.id, {})
+                existing = period_bucket.get(key)
+                if not existing or (response.updated_at and response.updated_at > existing["updated_at"]):
+                    period_bucket[key] = {
+                        "plant": plant,
+                        "response": response,
+                        "financial_year": assignment.financial_year,
+                        "updated_at": response.updated_at,
+                        "frequency": frequency,
+                        "period_code": period_code,
+                        "period_label": period_label,
+                    }
 
     sections = {}
     for qid, question in question_meta.items():
@@ -3326,7 +3462,7 @@ class BRSRPlantDataView(LoginRequiredMixin, TemplateView):
         plant = self.plant
 
         financial_years = list(
-            Assignment.objects.filter(plant=plant)
+            _scope_assignments_for_plant(plant)
             .order_by("-financial_year")
             .values_list("financial_year", flat=True)
             .distinct()
@@ -3366,7 +3502,7 @@ class BRSRCompanyDataView(LoginRequiredMixin, TemplateView):
         plants = list(_dashboard_plant_queryset(user))
 
         financial_years = list(
-            Assignment.objects.filter(plant__in=plants)
+            _scope_assignments_for_plants(plants)
             .order_by("-financial_year")
             .values_list("financial_year", flat=True)
             .distinct()
