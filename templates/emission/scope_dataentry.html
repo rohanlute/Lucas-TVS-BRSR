@@ -1806,6 +1806,27 @@
                             <option value="yearly">Yearly</option>
                         </select>
                     </div>
+                    <div class="col-md-12">
+                        <label class="tool-label">Next Schedule</label>
+
+                        <div id="nextScheduleBox"
+                            class="p-3 rounded-3"
+                            style="
+                                background:#eff6ff;
+                                border:1px solid #bfdbfe;
+                                color:#1e3a8a;
+                            ">
+
+                            <div class="fw-bold" id="nextScheduleRange">
+                                01-Sep-2026 to 07-Sep-2026
+                            </div>
+
+                            <div class="small mt-1" id="nextScheduleNote">
+                                Next schedule will start from the 1st of next month.
+                            </div>
+
+                        </div>
+                    </div>
                     <div class="col-12">
                         <label class="tool-label">Notes</label>
                         <textarea class="workspace-textarea" rows="3" id="assignNotes" placeholder="Add instructions for the assignee..."></textarea>
@@ -3390,6 +3411,25 @@ if (assignModal) {
     });
 }
 
+// =============================================
+// UPDATE NEXT SCHEDULE WHEN FREQUENCY / DUE DATE CHANGES
+// =============================================
+
+document.getElementById("frequencySelect").addEventListener(
+    "change",
+    getNextSchedule
+);
+
+document.getElementById("dueDateInput").addEventListener(
+    "change",
+    getNextSchedule
+);
+
+
+// =============================================
+// ASSIGN FORM SUBMIT
+// =============================================
+
 if (assignForm) {
     assignForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -3720,6 +3760,116 @@ if (coordinatorRejectBtn) {
 
     });
 
+}
+
+
+
+// =============================================
+// NEXT SCHEDULE CALCULATION
+// =============================================
+
+function formatScheduleDate(date) {
+    const day = String(date.getDate()).padStart(2, "0");
+
+    const months = [
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ];
+
+    return `${day}-${months[date.getMonth()]}-${date.getFullYear()}`;
+}
+
+
+function getNextMonthFirstDate() {
+
+    const today = new Date();
+
+    return new Date(
+        today.getFullYear(),
+        today.getMonth() + 1,
+        1
+    );
+}
+
+
+function getNextSchedule() {
+
+    const frequency = document.getElementById("frequencySelect").value;
+    const dueDateValue = document.getElementById("dueDateInput").value;
+
+    const rangeElement = document.getElementById("nextScheduleRange");
+    const noteElement = document.getElementById("nextScheduleNote");
+
+    if (!rangeElement || !noteElement) {
+        return;
+    }
+
+    if (!dueDateValue) {
+        rangeElement.textContent = "-";
+        noteElement.textContent = "Select a due date.";
+        return;
+    }
+
+    const startDate = getNextMonthFirstDate();
+
+    // Convert selected due date
+    const dueDate = new Date(dueDateValue + "T00:00:00");
+
+    // Validate due date
+    if (dueDate < startDate) {
+
+        rangeElement.textContent = "Invalid Schedule";
+
+        noteElement.textContent =
+            `Due date must be on or after ${formatScheduleDate(startDate)}.`;
+
+        return;
+    }
+
+    // Frequency details
+    const frequencyMap = {
+        monthly: {
+            label: "Monthly",
+            months: 1
+        },
+        quarterly: {
+            label: "Quarterly",
+            months: 3
+        },
+        half_yearly: {
+            label: "Half Yearly",
+            months: 6
+        },
+        yearly: {
+            label: "Yearly",
+            months: 12
+        }
+    };
+
+    const config = frequencyMap[frequency];
+
+    if (!config) {
+        return;
+    }
+
+    // Calculate next occurrence
+    const nextOccurrence = new Date(startDate);
+
+    nextOccurrence.setMonth(
+        nextOccurrence.getMonth() + config.months
+    );
+
+    rangeElement.textContent =
+        `${formatScheduleDate(startDate)} to ${formatScheduleDate(dueDate)}`;
+
+    noteElement.innerHTML = `
+        <strong>${config.label}</strong> schedule.
+        Session starts on the 1st of next month and ends on the selected due date.
+        <br>
+        <span class="text-muted">
+            Next occurrence: ${formatScheduleDate(nextOccurrence)}
+        </span>
+    `;
 }
 </script>
 {% endblock %}
