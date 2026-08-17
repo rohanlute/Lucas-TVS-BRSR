@@ -17,18 +17,23 @@ class TimesheetHandler:
         if not timesheet:
             return
 
-        # -------------------------------------------------------
-        # Prevent duplicate for the same assignment and user
-        # -------------------------------------------------------
+        assignment = timesheet["assignment"]
+        user = timesheet["user"]
 
-        if TimesheetService.exists(
-            assignment=timesheet["assignment"],
-            user=timesheet["user"],
+        # -------------------------------------------------
+        # Prevent duplicate Timesheet
+        # -------------------------------------------------
+
+        if TimesheetService.exists_for_user(
+            assignment=assignment,
+            user=user,
         ):
             return
 
-        # -------------------------------------------------------
+        # -------------------------------------------------
         # Create Timesheet
-        # -------------------------------------------------------
+        # -------------------------------------------------
 
-        TimesheetService.create(**timesheet)
+        TimesheetService.create(
+            **timesheet
+        )

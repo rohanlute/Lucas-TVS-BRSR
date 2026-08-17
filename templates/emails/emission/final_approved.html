@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emission Assignment Fully Approved</title>
+</head>
+
+<body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+
+<table role="presentation"
+       width="100%"
+       cellspacing="0"
+       cellpadding="0"
+       border="0"
+       style="background:#f4f7fb;padding:32px 16px;">
+
+    <tr>
+        <td align="center">
+
+            <table role="presentation"
+                   width="100%"
+                   cellspacing="0"
+                   cellpadding="0"
+                   border="0"
+                   style="max-width:640px;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #e5e7eb;">
+
+                <!-- HEADER -->
+
+                <tr>
+                    <td style="padding:32px 32px 24px;background:linear-gradient(135deg,#0f172a 0%,#1d4ed8 100%);color:#ffffff;">
+
+                        <div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;opacity:.8;margin-bottom:8px;">
+                            Final Approval Completed
+                        </div>
+
+                        <h1 style="margin:0;font-size:28px;line-height:1.2;">
+                            Emission Assignment Fully Approved
+                        </h1>
+
+                        <p style="margin:12px 0 0;font-size:15px;line-height:1.6;opacity:.92;">
+                            The emission data has completed the review and approval process.
+                        </p>
+
+                    </td>
+                </tr>
+
+
+                <!-- BODY -->
+
+                <tr>
+                    <td style="padding:32px;">
+
+                        <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">
+
+                            Hello
+                            {% if recipient_type == "assignee" %}
+                                {{ assignment.assignee.get_full_name|default:assignment.assignee.username }}
+                            {% else %}
+                                {{ assignment.reviewer.get_full_name|default:assignment.reviewer.username }}
+                            {% endif %},
+
+                        </p>
+
+
+                        <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#374151;">
+
+                            The <strong>{{ assignment.scope.name }}</strong>
+                            emission assignment has successfully completed
+                            the review and final approval process.
+
+                            {% if recipient_type == "assignee" %}
+
+                                Your submitted data has been fully approved.
+
+                            {% else %}
+
+                                The submission you reviewed has received final approval.
+
+                            {% endif %}
+
+                        </p>
+
+
+                        <!-- SUCCESS MESSAGE -->
+
+                        <table role="presentation"
+                               width="100%"
+                               cellspacing="0"
+                               cellpadding="0"
+                               border="0"
+                               style="margin:0 0 24px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;">
+
+                            <tr>
+                                <td style="padding:18px;">
+
+                                    <div style="font-size:14px;font-weight:700;color:#166534;margin-bottom:6px;">
+                                        ✓ Approval Completed
+                                    </div>
+
+                                    <div style="font-size:14px;line-height:1.7;color:#166534;">
+                                        This assignment has been approved and no further action is required.
+                                    </div>
+
+                                </td>
+                            </tr>
+
+                        </table>
+
+
+                        <!-- ASSIGNMENT DETAILS -->
+
+                        <table role="presentation"
+                               width="100%"
+                               cellspacing="0"
+                               cellpadding="0"
+                               border="0"
+                               style="border-collapse:collapse;margin:0 0 24px;">
+
+                            <tr>
+                                <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;width:160px;">
+                                    Assignment ID
+                                </td>
+
+                                <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">
+                                    {{ assignment.assignment_code }}
+                                </td>
+                            </tr>
+
+
+                            <tr>
+                                <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">
+                                    Scope
+                                </td>
+
+                                <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">
+                                    {{ assignment.scope.name }}
+                                </td>
+                            </tr>
+
+
+                            <tr>
+                                <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">
+                                    Plant
+                                </td>
+
+                                <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">
+                                    {{ assignment.plant.name }}
+                                </td>
+                            </tr>
+
+
+                            <tr>
+                                <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">
+                                    Reporting Month
+                                </td>
+
+                                <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">
+                                    {{ assignment.financial_month.month_name }}
+                                </td>
+                            </tr>
+
+
+                            <tr>
+                                <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">
+                                    Financial Year
+                                </td>
+
+                                <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">
+                                    {{ assignment.financial_year.financial_year }}
+                                </td>
+                            </tr>
+
+
+                            <tr>
+                                <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">
+                                    Reviewed By
+                                </td>
+
+                                <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">
+                                    {{ assignment.reviewer.get_full_name|default:assignment.reviewer.username }}
+                                </td>
+                            </tr>
+
+
+                            <tr>
+                                <td style="padding:12px 0;color:#6b7280;">
+                                    Final Approved By
+                                </td>
+
+                                <td style="padding:12px 0;color:#111827;font-weight:600;">
+                                    {{ assignment.assigner.get_full_name|default:assignment.assigner.username }}
+                                </td>
+                            </tr>
+
+                        </table>
+
+
+                        <!-- BUTTON -->
+
+                        <div style="text-align:center;margin:28px 0 24px;">
+
+                            <a href="{{ assignment_url }}"
+                               style="display:inline-block;background:#1d4ed8;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 28px;border-radius:10px;">
+
+                                View Approved Assignment
+
+                            </a>
+
+                        </div>
+
+
+                        <!-- URL -->
+
+                        <p style="margin:0 0 12px;font-size:14px;line-height:1.7;color:#4b5563;">
+                            If the button does not work, copy and paste this link into your browser:
+                        </p>
+
+                        <p style="margin:0 0 24px;font-size:14px;line-height:1.6;word-break:break-all;">
+
+                            <a href="{{ assignment_url }}"
+                               style="color:#1d4ed8;">
+
+                                {{ assignment_url }}
+
+                            </a>
+
+                        </p>
+
+
+                        <p style="margin:0;font-size:14px;line-height:1.7;color:#6b7280;">
+                            No further action is required for this assignment.
+                        </p>
+
+                    </td>
+                </tr>
+
+            </table>
+
+        </td>
+    </tr>
+
+</table>
+
+</body>
+</html>

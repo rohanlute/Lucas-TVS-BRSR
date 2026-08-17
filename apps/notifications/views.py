@@ -71,8 +71,14 @@ def mark_timesheet_viewed(request, timesheet_id):
         timesheet = Timesheet.objects.get(id=timesheet_id)
         
         # Check if user has permission (is the owner or assignee)
-        if timesheet.user != request.user and timesheet.assignment.assignee != request.user:
-            return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+        if timesheet.user != request.user:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "error": "Permission denied",
+                },
+                status=403,
+            )
         
         # Mark as viewed
         timesheet.mark_as_viewed()

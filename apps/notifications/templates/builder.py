@@ -24,87 +24,119 @@ class NotificationTemplateBuilder:
         assignment = context.target
         sender = context.actor
 
-        # -------------------------------------------------------
-        # EMISSION
-        # -------------------------------------------------------
+        # =====================================================
+        # EMISSION ASSIGNMENT
+        # =====================================================
 
         if (
             context.module == EMISSION
             and context.entity == ASSIGNMENT
         ):
 
-            # ---------------------------------------------------
-            # Assignment Created
-            # ---------------------------------------------------
+            # -------------------------------------------------
+            # ASSIGNED
+            # -------------------------------------------------
 
             if context.action == ASSIGNED:
 
                 if recipient_type == "assignee":
-                    return AssignmentNotificationTemplates.assigned_to_assignee(
-                        assignment,
-                        sender,
+
+                    return (
+                        AssignmentNotificationTemplates
+                        .assigned_to_assignee(
+                            assignment,
+                            sender,
+                        )
                     )
 
                 if recipient_type == "reviewer":
-                    return AssignmentNotificationTemplates.assigned_to_reviewer(
-                        assignment,
-                        sender,
+
+                    return (
+                        AssignmentNotificationTemplates
+                        .assigned_to_reviewer(
+                            assignment,
+                            sender,
+                        )
                     )
 
-            # ---------------------------------------------------
-            # Assignment Submitted
-            # ---------------------------------------------------
+            # -------------------------------------------------
+            # SUBMITTED
+            # -------------------------------------------------
 
             elif context.action == SUBMITTED:
 
                 if recipient_type == "reviewer_submit":
-                    return AssignmentNotificationTemplates.submitted_to_reviewer(
-                        assignment,
-                        sender,
+
+                    return (
+                        AssignmentNotificationTemplates
+                        .submitted_to_reviewer(
+                            assignment,
+                            sender,
+                        )
                     )
 
-            # ---------------------------------------------------
-            # Reviewer Approved
-            # ---------------------------------------------------
-
-            elif context.action == REVIEW_APPROVED:
-
-                return AssignmentNotificationTemplates.review_approved(
-                    assignment,
-                    sender,
-                )
-
-            # ---------------------------------------------------
-            # Reviewer Rejected
-            # ---------------------------------------------------
+            # -------------------------------------------------
+            # REVIEW REJECTED
+            # -------------------------------------------------
 
             elif context.action == REVIEW_REJECTED:
 
-                return AssignmentNotificationTemplates.review_rejected(
-                    assignment,
-                    sender,
-                )
+                if recipient_type == "assignee":
 
-            # ---------------------------------------------------
-            # Final Approved
-            # ---------------------------------------------------
+                    return (
+                        AssignmentNotificationTemplates
+                        .review_rejected(
+                            assignment,
+                            sender,
+                        )
+                    )
+
+            # -------------------------------------------------
+            # REVIEW APPROVED
+            # -------------------------------------------------
+
+            elif context.action == REVIEW_APPROVED:
+
+                if recipient_type == "review_approved":
+
+                    return (
+                        AssignmentNotificationTemplates
+                        .review_approved(
+                            assignment,
+                            sender,
+                        )
+                    )
+
+            # -------------------------------------------------
+            # FINAL APPROVED
+            # -------------------------------------------------
 
             elif context.action == FINAL_APPROVED:
 
-                return AssignmentNotificationTemplates.final_approved(
-                    assignment,
-                    sender,
-                )
+                if recipient_type == "final_approved":
 
-            # ---------------------------------------------------
-            # Final Rejected
-            # ---------------------------------------------------
+                    return (
+                        AssignmentNotificationTemplates
+                        .final_approved(
+                            assignment,
+                            sender,
+                        )
+                    )
+
+            # -------------------------------------------------
+            # FINAL REJECTED
+            # -------------------------------------------------
 
             elif context.action == FINAL_REJECTED:
 
-                return AssignmentNotificationTemplates.final_rejected(
-                    assignment,
-                    sender,
-                )
+                if recipient_type == "final_rejected":
+
+                    return (
+                        AssignmentNotificationTemplates
+                        .final_rejected(
+                            assignment,
+                            sender,
+                        )
+                    )
 
         return None
