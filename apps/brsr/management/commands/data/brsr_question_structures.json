@@ -520,7 +520,30 @@
             "kind": "table",
             "label": "Turnover rate for permanent employees and workers",
             "name": "turnoverRate",
-            "columns": ["Particulars", "{FY0} Male", "{FY0} Female", "{FY0} Total", "{FY1} Male", "{FY1} Female", "{FY1} Total", "{FY2} Male", "{FY2} Female", "{FY2} Total"],
+            "columns": [
+              "Particulars",
+              "{FY0} Male",
+              "{FY0} Female",
+              "{FY0} Total",
+              "{FY1} Male",
+              "{FY1} Female",
+              "{FY1} Total",
+              "{FY2} Male",
+              "{FY2} Female",
+              "{FY2} Total"
+            ],
+            "formula_row": [
+              "",
+              "(Male left ÷ Avg Male) × 100",
+              "(Female left ÷ Avg Female) × 100",
+              "(Total left ÷ Avg Total) × 100",
+              "(Male left ÷ Avg Male) × 100",
+              "(Female left ÷ Avg Female) × 100",
+              "(Total left ÷ Avg Total) × 100",
+              "(Male left ÷ Avg Male) × 100",
+              "(Female left ÷ Avg Female) × 100",
+              "(Total left ÷ Avg Total) × 100"
+            ],
             "rows": [
               {
                 "label": "Permanent Employees Turnover Rate",
