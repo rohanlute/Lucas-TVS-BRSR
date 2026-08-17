@@ -227,7 +227,8 @@
                     </ul>
                 </li>
                 {% endif %}
-               <li class="nxl-item nxl-hasmenu">
+              {% if request.user|has_perm:'ACCESS_EMISSION_MODULE' %}
+                <li class="nxl-item nxl-hasmenu">
                     <a href="javascript:void(0);" class="nxl-link">
                         <span class="nxl-micon">
                             <i class="fas fa-leaf"></i>
@@ -239,29 +240,40 @@
                     </a>
 
                     <ul class="nxl-submenu">
+                        {% if request.user|has_perm:'VIEW_EMISSION_DASHBOARD' %}
                         <li class="nxl-item">
                             <a class="nxl-link" href="{% url 'emission:dashboard' %}">
                                 <i class="fas fa-chart-line"></i> Dashboard
                             </a>
                         </li>
+                        {% endif %}
 
+                        {% if request.user|has_perm:'ACCESS_SCOPE_DATA_ENTRY' %}
                         <li class="nxl-item">
                             <a class="nxl-link" href="{% url 'emission:scope_dataentry' %}">
                                 <i class="fas fa-pen-alt"></i> <span class="nxl-text">Scope Data Entry</span>
                             </a>
                         </li>
-                       <li class="nxl-item">
-                        <a class="nxl-link" href="{% url 'emission:assignment_dashboard' %}">
-                            <i class="fas fa-user-check"></i> <span class="nxl-text">Assignment</span>
-                        </a>
-                    </li>
-                    <li class="nxl-item">
-                        <a class="nxl-link" href="{% url 'emission:esg-disclosure' %}">
-                            <i class="fas fa-file-pdf"></i> <span class="nxl-text">Report</span>
-                        </a>
-                    </li>
+                        {% endif %}
+
+                        {% if request.user|has_perm:'VIEW_ASSIGNMENT_DASHBOARD' %}
+                        <li class="nxl-item">
+                            <a class="nxl-link" href="{% url 'emission:assignment_dashboard' %}">
+                                <i class="fas fa-user-check"></i> <span class="nxl-text">Assignment</span>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% if request.user|has_perm:'VIEW_EMISSION_REPORT' %}
+                        <li class="nxl-item">
+                            <a class="nxl-link" href="{% url 'emission:esg-disclosure' %}">
+                                <i class="fas fa-file-pdf"></i> <span class="nxl-text">Report</span>
+                            </a>
+                        </li>
+                        {% endif %}
                     </ul>
                 </li>
+                {% endif %}
 
                 <li class="nxl-item nxl-hasmenu">
                     <a href="javascript:void(0);" class="nxl-link">

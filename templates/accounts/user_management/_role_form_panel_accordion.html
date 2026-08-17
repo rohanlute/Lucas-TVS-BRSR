@@ -1,0 +1,658 @@
+{% load static %}
+
+<style>
+    /* Permission action buttons */
+    .permission-action-buttons {
+        margin-left: auto;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .role-card .card-header .d-flex {
+        width: 100%;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .role-card .card-header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .permission-panel {
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 14px;
+        background: #fff;
+    }
+
+    /* Accordion Styles */
+    .permission-accordion .accordion-item {
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 10px !important;
+        margin-bottom: 0.75rem;
+        overflow: hidden;
+    }
+
+    .permission-accordion .accordion-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .permission-accordion .accordion-button {
+        padding: 0.85rem 1.25rem;
+        background: #fafbfc;
+        font-weight: 500;
+        border: none;
+        transition: all 0.2s ease;
+        font-size: 0.95rem;
+        font-family: inherit;
+    }
+
+    .permission-accordion .accordion-button:not(.collapsed) {
+        background: #f0f2f5;
+        color: #1a1a2e;
+        box-shadow: none;
+    }
+
+    .permission-accordion .accordion-button:hover {
+        background: #f0f2f5;
+    }
+
+    .permission-accordion .accordion-button:focus {
+        box-shadow: none;
+        border-color: rgba(0, 0, 0, 0.1);
+    }
+
+    .permission-accordion .accordion-button::after {
+        background-size: 0.8rem;
+        width: 0.8rem;
+        height: 0.8rem;
+    }
+
+    .permission-accordion .accordion-button .module-icon {
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        font-size: 14px;
+        flex-shrink: 0;
+        color: #555;
+        background: transparent;
+    }
+
+    .permission-accordion .accordion-body {
+        padding: 1.25rem;
+        background: #fff;
+    }
+
+    .permission-list {
+        max-height: 400px;
+        overflow-y: auto;
+        padding-right: 0.5rem;
+    }
+
+    .permission-list::-webkit-scrollbar {
+        width: 5px;
+    }
+
+    .permission-list::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+
+    .permission-list::-webkit-scrollbar-thumb {
+        background: #c1c7cd;
+        border-radius: 10px;
+    }
+
+    .permission-list::-webkit-scrollbar-thumb:hover {
+        background: #a8b0b8;
+    }
+
+    .permission-item {
+        padding: 0.7rem 1rem;
+        border: 1px solid #eaeef2;
+        border-radius: 10px;
+        background: #fafbfc;
+        margin-bottom: 0.6rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+    .permission-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .permission-item:hover {
+        border-color: #c5cdd8;
+        background: #f5f6f8;
+    }
+
+    .permission-item .form-check-input {
+        cursor: pointer;
+        width: 1rem;
+        height: 1rem;
+        margin-top: 0.15rem;
+        border-color: #c5cdd8;
+    }
+
+    .permission-item .form-check-input:checked {
+        background-color: #4A6CF7;
+        border-color: #4A6CF7;
+    }
+
+    .permission-item .form-check-input:checked:focus {
+        box-shadow: 0 0 0 0.2rem rgba(74, 108, 247, 0.15);
+    }
+
+    .permission-code {
+        font-size: 12px;
+        color: #7a8799;
+        font-family: inherit;
+        font-weight: 400;
+        letter-spacing: 0.2px;
+    }
+
+    .permission-type-badge {
+        font-size: 10px;
+        padding: 0.15rem 0.6rem;
+        border-radius: 12px;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        flex-shrink: 0;
+        font-family: inherit;
+        color: #555;
+        background: #eaeef2;
+    }
+
+    .module-count-badge {
+        font-size: 12px;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        font-weight: 500;
+        font-family: inherit;
+        color: #555;
+        background: #eaeef2;
+    }
+
+    .module-selected-badge {
+        font-size: 12px;
+        padding: 0.2rem 0.6rem;
+        border-radius: 12px;
+        display: none;
+        font-weight: 500;
+        font-family: inherit;
+        color: #28a745;
+        background: #e8f5e9;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .module-selected-badge.has-selected {
+        display: inline-block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: scale(0.9); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+    .select-all-module {
+        font-size: 13px;
+        font-weight: 500;
+        color: #4A6CF7;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.3rem 0;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        font-family: inherit;
+    }
+
+    .select-all-module:hover {
+        color: #3a5bd9;
+    }
+
+    .select-all-module .form-check-input {
+        width: 1rem;
+        height: 1rem;
+        cursor: pointer;
+        border-color: #c5cdd8;
+    }
+
+    .select-all-module .form-check-input:checked {
+        background-color: #4A6CF7;
+        border-color: #4A6CF7;
+    }
+
+    .select-all-module .form-check-input:indeterminate {
+        background-color: #4A6CF7;
+        border-color: #4A6CF7;
+    }
+
+    .permission-action-buttons .btn-light {
+        color: #555;
+        background: #f0f2f5;
+        border: 1px solid #e0e4e8;
+        transition: all 0.2s ease;
+        font-family: inherit;
+    }
+
+    .permission-action-buttons .btn-light:hover {
+        background: #e4e7ec;
+        border-color: #c5cdd8;
+    }
+
+    .permission-action-buttons .btn-light-brand {
+        color: #4A6CF7;
+        background: #eef4ff;
+        border: 1px solid #dce4fc;
+        transition: all 0.2s ease;
+        font-family: inherit;
+    }
+
+    .permission-action-buttons .btn-light-brand:hover {
+        background: #4A6CF7;
+        color: #fff;
+        border-color: #4A6CF7;
+    }
+
+    .permission-action-buttons .btn-light-danger {
+        color: #dc3545;
+        background: #fde8ea;
+        border: 1px solid #fad5d8;
+        transition: all 0.2s ease;
+        font-family: inherit;
+    }
+
+    .permission-action-buttons .btn-light-danger:hover {
+        background: #dc3545;
+        color: #fff;
+        border-color: #dc3545;
+    }
+
+    @media (max-width: 576px) {
+        .permission-action-buttons {
+            width: 100%;
+            justify-content: flex-end;
+            margin-top: 0.5rem;
+        }
+        
+        .permission-action-buttons .btn {
+            font-size: 0.75rem;
+            padding: 0.3rem 0.6rem;
+        }
+        
+        .permission-action-buttons .btn i {
+            margin-right: 0.25rem !important;
+        }
+
+        .permission-accordion .accordion-button {
+            padding: 0.6rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        .permission-accordion .accordion-button .module-icon {
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+        }
+
+        .permission-item {
+            padding: 0.5rem 0.75rem;
+        }
+
+        .permission-item .form-check-input {
+            width: 0.9rem;
+            height: 0.9rem;
+        }
+
+        .permission-type-badge {
+            font-size: 9px;
+            padding: 0.15rem 0.5rem;
+        }
+    }
+
+    /* Form styling */
+    .form-control:focus, .form-select:focus {
+        border-color: #4A6CF7;
+        box-shadow: 0 0 0 0.2rem rgba(74, 108, 247, 0.15);
+    }
+
+    .form-label {
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .fs-12 {
+        font-size: 0.75rem;
+    }
+
+    .badge {
+        font-weight: 500;
+    }
+</style>
+
+<div class="card border-0 shadow-sm role-card">
+    <div class="card-header bg-white py-3">
+        <div class="d-flex align-items-center flex-wrap gap-2">
+            <div>
+                <h5 class="mb-1 fw-bold text-dark">{{ form_title }}</h5>
+                <p class="text-muted mb-0 fs-12">{{ form_description }}</p>
+            </div>
+            <div class="permission-action-buttons">
+                <button type="button" class="btn btn-light-brand btn-sm" id="selectAllPermissions">
+                    <i class="fas fa-check-double me-1"></i> Select All
+                </button>
+                <button type="button" class="btn btn-light-danger btn-sm" id="deselectAllPermissions">
+                    <i class="fas fa-times-circle me-1"></i> Deselect All
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-4">
+        {% if form.non_field_errors %}
+            <div class="alert alert-danger">
+                {{ form.non_field_errors|striptags }}
+            </div>
+        {% endif %}
+        <div class="row g-4">
+            <!-- Left Column - Role Details -->
+            <div class="col-xl-5">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label for="{{ form.role_code.id_for_label }}" class="form-label">
+                            Role Code <span class="text-danger">*</span>
+                        </label>
+                        {{ form.role_code }}
+                        {% if form.role_code.errors %}
+                            <div class="invalid-feedback d-block">{{ form.role_code.errors|striptags }}</div>
+                        {% endif %}
+                        {% if form.role_code.help_text %}
+                            <small class="text-muted fs-12">{{ form.role_code.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-12">
+                        <label for="{{ form.role_name.id_for_label }}" class="form-label">
+                            Role Name <span class="text-danger">*</span>
+                        </label>
+                        {{ form.role_name }}
+                        {% if form.role_name.errors %}
+                            <div class="invalid-feedback d-block">{{ form.role_name.errors|striptags }}</div>
+                        {% endif %}
+                        {% if form.role_name.help_text %}
+                            <small class="text-muted fs-12">{{ form.role_name.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-12">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">{{ form.description.errors|striptags }}</div>
+                        {% endif %}
+                        {% if form.description.help_text %}
+                            <small class="text-muted fs-12">{{ form.description.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="col-12">
+                        <div class="d-flex align-items-center justify-content-between p-3 rounded-3 bg-light">
+                            <div>
+                                <div class="fw-semibold">Status</div>
+                                <div class="text-muted fs-12">Inactive roles stay saved but can be hidden from workflows.</div>
+                            </div>
+                            <div class="form-check form-switch">
+                                {{ form.is_active }}
+                                <label class="form-check-label ms-2" for="{{ form.is_active.id_for_label }}">
+                                    {% if form.is_active.value %}Active{% else %}Inactive{% endif %}
+                                </label>
+                            </div>
+                        </div>
+                        {% if form.is_active.errors %}
+                            <div class="invalid-feedback d-block">{{ form.is_active.errors|striptags }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Permissions Accordion -->
+            <div class="col-xl-7">
+                <div class="permission-panel p-3">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <h6 class="mb-0 fw-bold">
+                                <i class="fas fa-shield-alt me-2" style="color: #6c7a8a;"></i>Permissions
+                            </h6>
+                            <small class="text-muted">Choose the access that should be granted to this role.</small>
+                        </div>
+                        <span class="badge bg-light text-dark fs-12" id="totalSelectedCount">
+                            <i class="fas fa-check-circle me-1" style="color: #28a745;"></i>
+                            {{ selected_permission_ids|length }} selected
+                        </span>
+                    </div>
+
+                    {% if permissions_by_module %}
+                        <div class="permission-accordion accordion" id="permissionsAccordion">
+                            {% for module_name, permissions in permissions_by_module.items %}
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" 
+                                                type="button" 
+                                                data-bs-toggle="collapse" 
+                                                data-bs-target="#module-{{ module_name|slugify }}" 
+                                                aria-expanded="false">
+                                            <div class="d-flex align-items-center gap-3 w-100">
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="module-icon">
+                                                        {% if module_name == 'Company' %}
+                                                            <i class="fas fa-building"></i>
+                                                        {% elif module_name == 'Organization' %}
+                                                            <i class="fas fa-sitemap"></i>
+                                                        {% elif module_name == 'User' %}
+                                                            <i class="fas fa-users"></i>
+                                                        {% elif module_name == 'BRSR' %}
+                                                            <i class="fas fa-file-alt"></i>
+                                                        {% elif module_name == 'Emission' %}
+                                                            <i class="fas fa-leaf"></i>
+                                                        {% elif module_name == 'Goal' %}
+                                                            <i class="fas fa-bullseye"></i>
+                                                        {% else %}
+                                                            <i class="fas fa-cube"></i>
+                                                        {% endif %}
+                                                    </span>
+                                                    <strong>{{ module_name }}</strong>
+                                                </div>
+                                                <span class="module-count-badge" data-module="{{ module_name|slugify }}">
+                                                    {{ permissions|length }}
+                                                </span>
+                                                <span class="module-selected-badge" 
+                                                      data-module="{{ module_name|slugify }}" 
+                                                      id="selected-{{ module_name|slugify }}">
+                                                    <i class="fas fa-check me-1"></i>
+                                                    <span class="selected-count">0</span>
+                                                </span>
+                                            </div>
+                                        </button>
+                                    </h2>
+                                    <div id="module-{{ module_name|slugify }}" 
+                                         class="accordion-collapse collapse"
+                                         data-bs-parent="#permissionsAccordion">
+                                        <div class="accordion-body">
+                                            <div class="mb-3 d-flex align-items-center justify-content-between border-bottom pb-2">
+                                                <label class="select-all-module" for="select-all-{{ module_name|slugify }}">
+                                                    <input type="checkbox" 
+                                                           class="form-check-input me-2 select-all-checkbox" 
+                                                           id="select-all-{{ module_name|slugify }}"
+                                                           data-module="{{ module_name|slugify }}">
+                                                    Select All {{ module_name }} Permissions
+                                                </label>
+                                            </div>
+                                            <div class="permission-list">
+                                                {% for permission in permissions %}
+                                                    <label class="permission-item d-flex align-items-start gap-3 mb-0" for="permission_{{ permission.pk }}">
+                                                        <div class="form-check mb-0">
+                                                            <input
+                                                                type="checkbox"
+                                                                class="form-check-input permission-checkbox"
+                                                                id="permission_{{ permission.pk }}"
+                                                                name="permissions"
+                                                                value="{{ permission.pk }}"
+                                                                data-module="{{ module_name|slugify }}"
+                                                                {% if permission.pk in selected_permission_ids %}checked{% endif %}>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <div class="fw-semibold" style="font-size: 0.95rem;">{{ permission.name }}</div>
+                                                            <div class="permission-code">{{ permission.code }}</div>
+                                                            {% if permission.description %}
+                                                                <small class="text-muted d-block mt-1">{{ permission.description }}</small>
+                                                            {% endif %}
+                                                        </div>
+                                                        <span class="permission-type-badge">{{ permission.permission_type }}</span>
+                                                    </label>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3 d-block"></i>
+                            <div class="fw-semibold mb-2">No permissions found</div>
+                            <div class="text-muted fs-12">Run the permission seeder before creating roles.</div>
+                        </div>
+                    {% endif %}
+
+                    {% if form.permissions.errors %}
+                        <div class="invalid-feedback d-block mt-2">{{ form.permissions.errors|striptags }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const selectAllBtn = document.getElementById('selectAllPermissions');
+    const deselectAllBtn = document.getElementById('deselectAllPermissions');
+    const permissionChecks = document.querySelectorAll('input[name="permissions"]');
+    const statusToggle = document.querySelector('input[name="is_active"]');
+    const statusLabel = statusToggle ? statusToggle.closest('.form-check').querySelector('.form-check-label') : null;
+
+    // Select All button
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener('click', function () {
+            permissionChecks.forEach(function (checkbox) {
+                checkbox.checked = true;
+            });
+            updateCounts();
+        });
+    }
+
+    // Deselect All button
+    if (deselectAllBtn) {
+        deselectAllBtn.addEventListener('click', function () {
+            permissionChecks.forEach(function (checkbox) {
+                checkbox.checked = false;
+            });
+            updateCounts();
+        });
+    }
+
+    // Individual permission checkbox changes
+    permissionChecks.forEach(function (checkbox) {
+        checkbox.addEventListener('change', function () {
+            updateCounts();
+        });
+    });
+
+    // "Select All" for each module
+    document.querySelectorAll('.select-all-checkbox').forEach(function (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function () {
+            const moduleName = this.dataset.module;
+            const checkboxes = document.querySelectorAll(`.permission-checkbox[data-module="${moduleName}"]`);
+            checkboxes.forEach(function (checkbox) {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+            updateCounts();
+        });
+    });
+
+    // Update all counts
+    function updateCounts() {
+        // Total selected
+        const totalChecked = document.querySelectorAll('.permission-checkbox:checked').length;
+        const totalSelectedSpan = document.getElementById('totalSelectedCount');
+        if (totalSelectedSpan) {
+            totalSelectedSpan.innerHTML = `<i class="fas fa-check-circle me-1" style="color: #28a745;"></i> ${totalChecked} selected`;
+        }
+
+        // Module-wise selected
+        const modules = document.querySelectorAll('.module-count-badge');
+        modules.forEach(function (moduleBadge) {
+            const moduleName = moduleBadge.dataset.module;
+            const moduleCheckboxes = document.querySelectorAll(`.permission-checkbox[data-module="${moduleName}"]`);
+            const selectedInModule = document.querySelectorAll(`.permission-checkbox[data-module="${moduleName}"]:checked`).length;
+            
+            // Selected badge
+            const selectedBadge = document.querySelector(`.module-selected-badge[data-module="${moduleName}"]`);
+            if (selectedBadge) {
+                const countSpan = selectedBadge.querySelector('.selected-count');
+                if (countSpan) {
+                    countSpan.textContent = selectedInModule;
+                }
+                if (selectedInModule > 0) {
+                    selectedBadge.classList.add('has-selected');
+                    selectedBadge.style.display = 'inline-block';
+                } else {
+                    selectedBadge.classList.remove('has-selected');
+                    selectedBadge.style.display = 'none';
+                }
+            }
+
+            // Select-all checkbox state
+            const selectAllCheckbox = document.querySelector(`.select-all-checkbox[data-module="${moduleName}"]`);
+            if (selectAllCheckbox) {
+                const totalInModule = moduleCheckboxes.length;
+                if (selectedInModule === totalInModule && totalInModule > 0) {
+                    selectAllCheckbox.checked = true;
+                    selectAllCheckbox.indeterminate = false;
+                } else if (selectedInModule === 0) {
+                    selectAllCheckbox.checked = false;
+                    selectAllCheckbox.indeterminate = false;
+                } else {
+                    selectAllCheckbox.checked = false;
+                    selectAllCheckbox.indeterminate = true;
+                }
+            }
+        });
+    }
+
+    // Status toggle
+    if (statusToggle && statusLabel) {
+        const syncStatusLabel = function () {
+            statusLabel.textContent = statusToggle.checked ? 'Active' : 'Inactive';
+        };
+        syncStatusLabel();
+        statusToggle.addEventListener('change', syncStatusLabel);
+    }
+
+    // Initial count
+    updateCounts();
+
+    // Add indeterminate state styling for select-all checkboxes
+    document.querySelectorAll('.select-all-checkbox').forEach(function (checkbox) {
+        checkbox.addEventListener('change', function() {
+            if (this.indeterminate) {
+                this.indeterminate = false;
+            }
+        });
+    });
+});
+</script>

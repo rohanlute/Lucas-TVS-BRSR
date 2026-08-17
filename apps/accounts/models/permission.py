@@ -6,6 +6,7 @@ class Permissions(models.Model):
     code = models.CharField(max_length=100, unique=True)
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True, null=True)
+    module_name = models.TextField(blank=True, null=True)
     permission_type = models.CharField(
         max_length=20,
         choices=[
