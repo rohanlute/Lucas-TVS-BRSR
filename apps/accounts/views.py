@@ -671,7 +671,6 @@ class UserDeleteView(LoginRequiredMixin, View):
         messages.success(request, 'User deleted successfully.')
         return redirect('accounts:user_list')
 
-
 class RolePermissionContextMixin:
     form_class = RolePermissionForm
     role_template_name = None
@@ -689,13 +688,43 @@ class RolePermissionContextMixin:
 
         return set()
 
+    def get_permissions_by_module(self):
+        """Get all permissions grouped by module name in specific order"""
+        permissions = Permissions.objects.all().order_by('module_name', 'display_order', 'name')
+        
+        # Group by module_name
+        permissions_by_module = {}
+        for permission in permissions:
+            module_name = permission.module_name or 'Other'
+            if module_name not in permissions_by_module:
+                permissions_by_module[module_name] = []
+            permissions_by_module[module_name].append(permission)
+        
+        # Define custom order: User, Company, Organization, BRSR, Emission, Goal
+        custom_order = ['User', 'Company', 'Organization', 'BRSR', 'Emission', 'Goal']
+        
+        # Sort according to custom order
+        sorted_modules = {}
+        for module in custom_order:
+            if module in permissions_by_module:
+                sorted_modules[module] = permissions_by_module[module]
+        
+        # Add any remaining modules not in custom order (e.g., 'Other')
+        for module, perms in permissions_by_module.items():
+            if module not in sorted_modules:
+                sorted_modules[module] = perms
+        
+        return sorted_modules
+
     def get_role_form_context(self, form, role=None):
         context = {
             'form': form,
             'page_title': 'Role & Permission',
-            'role_permissions': Permissions.objects.order_by('display_order', 'name'),
+            'permissions_by_module': self.get_permissions_by_module(),
             'selected_permission_ids': self.get_selected_permission_ids(role),
             'is_edit': bool(role),
+            'form_title': 'Edit Role' if role else 'Create Role',
+            'form_description': 'Update role information and assign permissions.' if role else 'Add a new role and assign permissions to it.',
         }
 
         if role:
@@ -707,7 +736,6 @@ class RolePermissionContextMixin:
         role = form.save()
         messages.success(self.request, f"Role '{role.role_name}' saved successfully.")
         return redirect(self.get_success_url())
-
 
 class RoleListView(LoginRequiredMixin, ListView):
     model = Role
@@ -724,30 +752,23 @@ class RoleListView(LoginRequiredMixin, ListView):
 class RoleCreateView(RolePermissionContextMixin, LoginRequiredMixin, CreateView):
     model = Role
     form_class = RolePermissionForm
-
     template_name = 'accounts/user_management/role_create.html'
-
     success_url = reverse_lazy('accounts:role_list')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(self.get_role_form_context(context['form']))
+        # Pass permissions_by_module to template with custom order
+        context['permissions_by_module'] = self.get_permissions_by_module()
+        context['selected_permission_ids'] = []
+        context['form_title'] = 'Create Role'
+        context['form_description'] = 'Add a new role and assign permissions to it.'
         return context
-
-    def form_valid(self, form):
-        role = form.save()
-        messages.success(self.request, f"Role '{role.role_name}' created successfully.")
-        return redirect(self.success_url)
 
 
 class RoleUpdateView(RolePermissionContextMixin, LoginRequiredMixin, UpdateView):
-
     model = Role
-
     form_class = RolePermissionForm
-
     template_name = 'accounts/user_management/role_edit.html'
-
     success_url = reverse_lazy('accounts:role_list')
 
     def get_queryset(self):
@@ -755,14 +776,12 @@ class RoleUpdateView(RolePermissionContextMixin, LoginRequiredMixin, UpdateView)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(self.get_role_form_context(context['form'], self.object))
+        # Pass permissions_by_module to template with custom order
+        context['permissions_by_module'] = self.get_permissions_by_module()
+        context['selected_permission_ids'] = list(self.object.permissions.values_list('pk', flat=True))
+        context['form_title'] = 'Edit Role'
+        context['form_description'] = 'Update role information and assign permissions.'
         return context
-
-    def form_valid(self, form):
-        role = form.save()
-        messages.success(self.request, f"Role '{role.role_name}' updated successfully.")
-        return redirect(self.success_url)
-    
 # -----------------------------------------------
 # ============= Department =======================
 # -----------------------------------------------

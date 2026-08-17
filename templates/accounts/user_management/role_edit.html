@@ -19,79 +19,54 @@
         border-radius: 14px;
         background: #fff;
     }
-
-    .role-edit-page .permission-list {
-        max-height: 420px;
-        overflow-y: auto;
-        padding-right: 0.5rem;
-    }
-
-    .role-edit-page .permission-item {
-        padding: 0.6rem 0.75rem;
-        border: 1px solid rgba(0, 0, 0, 0.06);
-        border-radius: 12px;
-        background: #fafbfc;
-        margin-bottom: 0.6rem;
-        transition: all 0.2s ease;
-    }
-
-    .role-edit-page .permission-item:hover {
-        border-color: rgba(13, 110, 253, 0.22);
-        background: #f4f8ff;
-    }
-
-    .role-edit-page .permission-code {
-        font-size: 11px;
-        letter-spacing: 0.04em;
-    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="role-edit-page">
-<form method="POST" novalidate>
-{% csrf_token %}
-<div class="page-header">
-    <div class="page-header-left d-flex align-items-center">
-        <div class="page-header-title">
-            <h5 class="m-b-10">Edit Role</h5>
-        </div>
-        <ul class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'accounts:dashboard' %}">Home</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'accounts:role_list' %}">Role &amp; Permission</a></li>
-            <li class="breadcrumb-item">Edit</li>
-        </ul>
-    </div>
-    <div class="page-header-right ms-auto">
-        <div class="page-header-right-items">
-            <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
-                <a href="{% url 'accounts:role_list' %}" class="btn btn-light-brand">
-                    <i class="feather-arrow-left me-2"></i>
-                    <span>Back to List</span>
-                </a>
-                <button type="submit" class="btn btn-primary">
-                    <i class="feather-save me-2"></i>
-                    <span>Update Role</span>
-                </button>
+    <form method="POST" novalidate>
+        {% csrf_token %}
+        <div class="page-header">
+            <div class="page-header-left d-flex align-items-center">
+                <div class="page-header-title">
+                    <h5 class="m-b-10">Edit Role</h5>
+                </div>
+                <ul class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'accounts:dashboard' %}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'accounts:role_list' %}">Role &amp; Permission</a></li>
+                    <li class="breadcrumb-item">Edit</li>
+                </ul>
+            </div>
+            <div class="page-header-right ms-auto">
+                <div class="page-header-right-items">
+                    <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                        <a href="{% url 'accounts:role_list' %}" class="btn btn-light-brand">
+                            <i class="feather-arrow-left me-2"></i>
+                            <span>Back to List</span>
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="feather-save me-2"></i>
+                            <span>Update Role</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
 
-<div class="main-content">
-    {% if messages %}
-        <div class="mb-4">
-            {% for message in messages %}
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <div class="main-content">
+            {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
                 </div>
-            {% endfor %}
-        </div>
-    {% endif %}
+            {% endif %}
 
-    {% include 'accounts/user_management/_role_form_panel.html' with form_title='Edit Role' form_description='Update the role details and permissions.' %}
-</div>
-</form>
+            {% include 'accounts/user_management/_role_form_panel_accordion.html' %}
+        </div>
+    </form>
 </div>
 {% endblock %}
