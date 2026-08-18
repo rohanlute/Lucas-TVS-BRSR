@@ -1,5 +1,6 @@
 from django.db import transaction
-
+import calendar
+from django.utils import timezone
 from apps.organizations.models import ApprovalConfigurationTemplate
 from apps.organizations.workflow_configuration_engine import WorkflowConfigurationEngine
 
@@ -20,6 +21,87 @@ from .models import (
 from .utils import generate_assignment_code
 
 
+def calculate_assignment_due_date(frequency, start_date=None):
+    """
+    Calculate assignment due date based on frequency.
+
+    Start date defaults to today.
+    """
+
+    start_date = start_date or timezone.localdate()
+
+    if not frequency:
+        return None
+
+    frequency = frequency.upper()
+
+    # -----------------------------------------
+    # MONTHLY
+    # -----------------------------------------
+    if frequency == "MONTHLY":
+
+        last_day = calendar.monthrange(
+            start_date.year,
+            start_date.month
+        )[1]
+
+        return start_date.replace(
+            day=last_day
+        )
+
+    # -----------------------------------------
+    # QUARTERLY
+    # -----------------------------------------
+    elif frequency == "QUARTERLY":
+
+        quarter_end_month = (
+            ((start_date.month - 1) // 3) + 1
+        ) * 3
+
+        last_day = calendar.monthrange(
+            start_date.year,
+            quarter_end_month
+        )[1]
+
+        return start_date.replace(
+            month=quarter_end_month,
+            day=last_day
+        )
+
+    # -----------------------------------------
+    # HALF YEARLY
+    # -----------------------------------------
+    elif frequency == "HALF_YEARLY":
+
+        end_month = (
+            6
+            if start_date.month <= 6
+            else 12
+        )
+
+        last_day = calendar.monthrange(
+            start_date.year,
+            end_month
+        )[1]
+
+        return start_date.replace(
+            month=end_month,
+            day=last_day
+        )
+
+    # -----------------------------------------
+    # YEARLY
+    # -----------------------------------------
+    elif frequency == "YEARLY":
+
+        return start_date.replace(
+            month=12,
+            day=31
+        )
+
+    return None
+
+
 def create_emission_assignment(
     *,
     company_id,
@@ -32,6 +114,7 @@ def create_emission_assignment(
     reviewer=None,
     due_date=None,
     priority="MEDIUM",
+    frequency=None,
     notes="",
     source_ids=None,
     schedule=None,
@@ -54,6 +137,12 @@ def create_emission_assignment(
 
     source_ids = source_ids or []
 
+    if frequency:
+        due_date = calculate_assignment_due_date(
+            frequency=frequency,
+            start_date=timezone.localdate(),
+        )
+
     assignment = EmissionAssignment.objects.create(
 
         assignment_code=generate_assignment_code(),
@@ -69,6 +158,8 @@ def create_emission_assignment(
         scope_id=scope_id,
 
         schedule=schedule,
+
+        frequency=frequency,
 
         assignee=assignee,
 

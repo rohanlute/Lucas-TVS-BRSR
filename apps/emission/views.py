@@ -772,6 +772,8 @@ class SaveEmissionAssignmentAPIView(APIView):
 
                 due_date=data.get("due_date"),
 
+                frequency=data.get("frequency"),
+
                 priority=data.get("priority"),
 
                 notes=data.get("notes"),

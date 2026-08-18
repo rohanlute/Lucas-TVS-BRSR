@@ -14,6 +14,12 @@ from decimal import Decimal
 from django.utils import timezone
 from django.contrib.postgres.fields import ArrayField
 from django.conf import settings
+FREQUENCY_CHOICES = [
+    ("MONTHLY", "Monthly"),
+    ("QUARTERLY", "Quarterly"),
+    ("HALF_YEARLY", "Half Yearly"),
+    ("YEARLY", "Yearly"),
+]
 
 class EmissionScope(models.Model):
     code = models.CharField(max_length=10, unique=True)
@@ -271,6 +277,13 @@ class EmissionAssignment(models.Model):
         null=True,
         blank=True,
         related_name="generated_assignments",
+    )
+
+    frequency = models.CharField(
+        max_length=20,
+        choices=FREQUENCY_CHOICES,
+        null=True,
+        blank=True,
     )
 
     workflow_template = models.ForeignKey(

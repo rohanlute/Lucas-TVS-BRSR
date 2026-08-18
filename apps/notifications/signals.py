@@ -5,6 +5,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 from apps.emission.models import EmissionAssignment
 from .models import Timesheet, Notification
+from apps.common_events.adapters.emission_adapter import EmissionAdapter
 
 @receiver(post_save, sender=EmissionAssignment)
 def update_timesheet_on_assignment_update(sender, instance, created, **kwargs):
@@ -22,8 +23,9 @@ def update_timesheet_on_assignment_update(sender, instance, created, **kwargs):
                 timesheet.title = f"Timesheet: {instance.name}"
             
             # Update dates if changed
-            if instance.due_date:
-                timesheet.end_date = instance.due_date
+            start_date, end_date = EmissionAdapter.calculate_timesheet_dates(instance)
+            timesheet.start_date = start_date
+            timesheet.end_date = end_date
             
             # Update status based on assignment
             print(f"\n📝 Updating timesheet for assignment {instance.id}")

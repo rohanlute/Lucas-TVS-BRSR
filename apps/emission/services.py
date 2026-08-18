@@ -16,6 +16,9 @@ import logging
 from django.utils import timezone
 from .assignment_service import create_emission_assignment
 from .models import EmissionAssignment, EmissionAssignmentSchedule
+from .service.assignment_reminder_service import (
+    EmissionAssignmentReminderService,
+)
 
 from apps.organizations.models import (
     FinancialYear,
@@ -88,11 +91,73 @@ def due_schedules(today=None):
     )
 
 
+def run_daily_assignment_reminders(today=None):
+    """
+    Process due-date reminders for all active emission assignments.
+    """
+
+    today = today or timezone.localdate()
+
+    assignments = (
+        EmissionAssignment.objects
+        .filter(
+            due_date__isnull=False,
+            status__in=[
+                "ASSIGNED",
+                "IN_PROGRESS",
+                "SUBMITTED",
+                "REVIEW_APPROVED",
+            ],
+        )
+        .select_related(
+            "company",
+            "plant",
+            "scope",
+            "assigner",
+            "assignee",
+            "reviewer",
+            "workflow_task",
+            "workflow_task__current_stage",
+        )
+    )
+
+    processed = 0
+
+    for assignment in assignments:
+
+        try:
+
+            EmissionAssignmentReminderService.process_assignment(
+                assignment
+            )
+
+            processed += 1
+
+        except Exception as e:
+
+            logger.exception(
+                "Reminder processing failed for assignment %s: %s",
+                assignment.assignment_code,
+                e,
+            )
+
+    logger.info(
+        "Emission assignment reminders processed: %s",
+        processed,
+    )
+
+    return processed
 
 
 def run_daily_schedule_generation(today=None):
 
     today = today or timezone.localdate()
+
+    # -------------------------------------------------
+    # Process due-date reminders
+    # -------------------------------------------------
+
+    run_daily_assignment_reminders(today)
 
     financial_year = get_financial_year(today)
 
@@ -176,6 +241,8 @@ def run_daily_schedule_generation(today=None):
                 scope_id=schedule.scope_id,
 
                 schedule=schedule,
+
+                frequency=schedule.frequency,
 
                 assignee=schedule.assignee,
 

@@ -105,6 +105,8 @@ class EmissionAssignmentCreateAPIView(APIView):
 
                 due_date=data.get("due_date"),
 
+                frequency=data.get("frequency"),
+
                 priority=data.get("priority", "MEDIUM"),
 
                 notes=data.get("notes", ""),
@@ -822,3 +824,233 @@ class ScheduleHistoryAPIView(APIView):
             "schedule": schedule.schedule_code,
             "history": data,
         })
+    
+
+from decimal import Decimal
+from datetime import timedelta
+from django.http import JsonResponse
+
+from .models import EmissionTransaction
+from apps.organizations.models import FinancialYear
+
+
+def ScopeTotalsAPIView(request):
+
+    company_id = request.GET.get("company")
+    plant_id = request.GET.get("plant")
+    financial_year_id = request.GET.get("financial_year")
+    financial_month_id = request.GET.get("financial_month")
+
+    if not all([
+        company_id,
+        plant_id,
+        financial_year_id,
+        financial_month_id
+    ]):
+        return JsonResponse({
+            "success": False,
+            "message": "Missing required filters."
+        })
+
+    # ==========================================================
+    # CURRENT FINANCIAL YEAR
+    # ==========================================================
+
+    try:
+        current_fy = FinancialYear.objects.get(
+            id=financial_year_id
+        )
+    except FinancialYear.DoesNotExist:
+
+        return JsonResponse({
+            "success": False,
+            "message": "Financial year not found."
+        })
+
+    # ==========================================================
+    # FIND PREVIOUS FINANCIAL YEAR
+    # ==========================================================
+
+    previous_fy = FinancialYear.objects.filter(
+        start_date__lt=current_fy.start_date
+    ).order_by("-start_date").first()
+
+    print("CURRENT FY:", current_fy.financial_year)
+    print("CURRENT FY START:", current_fy.start_date)
+
+    if previous_fy:
+        print("PREVIOUS FY:", previous_fy.financial_year)
+        print("PREVIOUS FY START:", previous_fy.start_date)
+        print("PREVIOUS FY END:", previous_fy.end_date)
+    else:
+        print("NO PREVIOUS FINANCIAL YEAR FOUND")
+
+    # ==========================================================
+    # CURRENT YEAR TRANSACTIONS
+    # ==========================================================
+
+    current_transactions = EmissionTransaction.objects.filter(
+        company_id=company_id,
+        financial_year_id=current_fy.id,
+        financial_month_id=financial_month_id,
+    )
+
+    # ==========================================================
+    # PLANT FILTER
+    # ==========================================================
+
+    if plant_id != "ALL":
+
+        current_transactions = current_transactions.filter(
+            plant_id=plant_id
+        )
+
+    else:
+
+        allowed_plant_ids = request.user.assigned_plants.values_list(
+            "id",
+            flat=True
+        )
+
+        current_transactions = current_transactions.filter(
+            plant_id__in=allowed_plant_ids
+        )
+
+    # ==========================================================
+    # PREVIOUS YEAR TRANSACTIONS
+    # ==========================================================
+
+    previous_transactions = EmissionTransaction.objects.none()
+
+    if previous_fy:
+
+        previous_transactions = EmissionTransaction.objects.filter(
+            company_id=company_id,
+            financial_year_id=previous_fy.id,
+            financial_month_id=financial_month_id,
+        )
+
+        if plant_id != "ALL":
+
+            previous_transactions = previous_transactions.filter(
+                plant_id=plant_id
+            )
+
+        else:
+
+            previous_transactions = previous_transactions.filter(
+                plant_id__in=allowed_plant_ids
+            )
+
+    # ==========================================================
+    # INITIAL TOTALS
+    # ==========================================================
+
+    current_totals = {
+        "S1": Decimal("0"),
+        "S2": Decimal("0"),
+        "S3": Decimal("0"),
+    }
+
+    previous_totals = {
+        "S1": None,
+        "S2": None,
+        "S3": None,
+    }
+
+    # ==========================================================
+    # CURRENT YEAR CALCULATION
+    # ==========================================================
+
+    for transaction in current_transactions.select_related(
+        "activity__category__scope"
+    ):
+
+        scope_code = transaction.activity.category.scope.code
+
+        if scope_code in current_totals:
+
+            current_totals[scope_code] += (
+                transaction.total_emission or Decimal("0")
+            )
+
+    # ==========================================================
+    # PREVIOUS YEAR CALCULATION
+    # ==========================================================
+
+    if previous_fy:
+
+        previous_totals = {
+            "S1": Decimal("0"),
+            "S2": Decimal("0"),
+            "S3": Decimal("0"),
+        }
+
+        for transaction in previous_transactions.select_related(
+            "activity__category__scope"
+        ):
+
+            scope_code = transaction.activity.category.scope.code
+
+            if scope_code in previous_totals:
+
+                previous_totals[scope_code] += (
+                    transaction.total_emission or Decimal("0")
+                )
+
+        # If there are no previous-year transactions at all,
+        # return None instead of showing 0 as previous data.
+        if not previous_transactions.exists():
+
+            previous_totals = {
+                "S1": None,
+                "S2": None,
+                "S3": None,
+            }
+
+    # ==========================================================
+    # RESPONSE
+    # ==========================================================
+
+    return JsonResponse({
+
+        "success": True,
+
+        "current": {
+            "S1": float(
+                current_totals["S1"] / Decimal("1000")
+            ),
+            "S2": float(
+                current_totals["S2"] / Decimal("1000")
+            ),
+            "S3": float(
+                current_totals["S3"] / Decimal("1000")
+            ),
+        },
+
+        "previous": {
+            "S1": (
+                float(previous_totals["S1"] / Decimal("1000"))
+                if previous_totals["S1"] is not None
+                else None
+            ),
+            "S2": (
+                float(previous_totals["S2"] / Decimal("1000"))
+                if previous_totals["S2"] is not None
+                else None
+            ),
+            "S3": (
+                float(previous_totals["S3"] / Decimal("1000"))
+                if previous_totals["S3"] is not None
+                else None
+            ),
+        },
+
+        "current_year": current_fy.financial_year,
+
+        "previous_year": (
+            previous_fy.financial_year
+            if previous_fy
+            else None
+        ),
+    })

@@ -169,7 +169,6 @@ class FinancialYearListView(LoginRequiredMixin, ListView):
         return context
 
 from datetime import date
-
 class FinancialYearCreateView(LoginRequiredMixin, CreateView):
     model = FinancialYear
     form_class = FinancialYearForm
@@ -179,23 +178,19 @@ class FinancialYearCreateView(LoginRequiredMixin, CreateView):
     def get_initial(self):
         initial = super().get_initial()
 
-        current_year = date.today().year
-        initial["financial_year"] = f"{current_year}-{current_year + 1}"
+        today = date.today()
+
+        if today.month >= 4:
+            start_year = today.year
+        else:
+            start_year = today.year - 1
+
+        initial["financial_year"] = (
+            f"{start_year}-{start_year + 1}"
+        )
 
         return initial
-class FinancialYearCreateView(LoginRequiredMixin, CreateView):
-    model = FinancialYear
-    form_class = FinancialYearForm
-    template_name = "organizations/financial_years/financial_year_form.html"
-    success_url = reverse_lazy("organizations:financial_year_list")
-    
-    def get_initial(self):
-        initial = super().get_initial()
 
-        current_year = date.today().year
-        initial["financial_year"] = f"{current_year}-{current_year + 1}"
-
-        return initial
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["page_title"] = "Create Financial Year"
@@ -215,8 +210,7 @@ class FinancialYearCreateView(LoginRequiredMixin, CreateView):
     def form_invalid(self, form):
         print(form.errors)
         return super().form_invalid(form)
-
-
+    
 class FinancialYearUpdateView(LoginRequiredMixin, UpdateView):
     model = FinancialYear
     form_class = FinancialYearForm

@@ -1,4 +1,7 @@
 from django.conf import settings
+import calendar
+from datetime import date
+from django.utils import timezone
 from apps.common_events.constants import (
     EMISSION,
     ASSIGNMENT,
@@ -333,12 +336,102 @@ class EmissionAdapter:
     # =====================================================
 
     @classmethod
+    def calculate_timesheet_dates(cls, assignment):
+        """
+        Calculate the Timesheet period from the assignment schedule.
+
+        Start date = today
+        End date   = end of the current frequency period
+        """
+        print("\n========== TIMESHEET DATE DEBUG ==========")
+        print("Assignment:", assignment.assignment_code)
+        print("Today:", timezone.localdate())
+        print("Schedule:", assignment.schedule)
+        print("Assignment Frequency:", assignment.frequency)
+        print("Assignment Due Date:", assignment.due_date)
+        print("==========================================\n")
+
+        today = timezone.localdate()
+
+        start_date = today
+
+        frequency = assignment.frequency
+
+        if not frequency:
+            return today, assignment.due_date
+
+        # -----------------------------------------
+        # MONTHLY
+        # -----------------------------------------
+        if frequency == "MONTHLY":
+            last_day = calendar.monthrange(
+                today.year,
+                today.month
+            )[1]
+
+            end_date = today.replace(day=last_day)
+
+        # -----------------------------------------
+        # QUARTERLY
+        # -----------------------------------------
+        elif frequency == "QUARTERLY":
+
+            quarter_end_month = (
+                ((today.month - 1) // 3) + 1
+            ) * 3
+
+            last_day = calendar.monthrange(
+                today.year,
+                quarter_end_month
+            )[1]
+
+            end_date = today.replace(
+                month=quarter_end_month,
+                day=last_day
+            )
+
+        # -----------------------------------------
+        # HALF YEARLY
+        # -----------------------------------------
+        elif frequency == "HALF_YEARLY":
+
+            if today.month <= 6:
+                end_month = 6
+            else:
+                end_month = 12
+
+            last_day = calendar.monthrange(
+                today.year,
+                end_month
+            )[1]
+
+            end_date = today.replace(
+                month=end_month,
+                day=last_day
+            )
+
+        # -----------------------------------------
+        # YEARLY
+        # -----------------------------------------
+        elif frequency == "YEARLY":
+
+            end_date = today.replace(
+                month=12,
+                day=31
+            )
+
+        # -----------------------------------------
+        # Unknown frequency
+        # -----------------------------------------
+        else:
+            end_date = assignment.due_date
+
+        return today, end_date
+
+    @classmethod
     def build_timesheet(cls, context):
 
-        # IMPORTANT:
-        # Timesheet is only created for ASSIGNED event.
-        # No reviewer/final-stage timesheets.
-
+        # Timesheet is only created for ASSIGNED event
         if context.action != ASSIGNED:
             return None
 
@@ -347,8 +440,19 @@ class EmissionAdapter:
         if not assignment.assignee:
             return None
 
-        return {
+        # -----------------------------------------
+        # Calculate current Timesheet period
+        # -----------------------------------------
 
+        start_date, end_date = cls.calculate_timesheet_dates(
+            assignment
+        )
+        print("\n========== BUILD TIMESHEET DEBUG ==========")
+        print("Start Date:", start_date)
+        print("End Date:", end_date)
+        print("===========================================\n")
+
+        return {
             "user": assignment.assignee,
 
             "assignment": assignment,
@@ -366,16 +470,15 @@ class EmissionAdapter:
                 f"({assignment.assignment_code})"
             ),
 
-            "start_date": assignment.created_at,
+            "start_date": start_date,
 
-            "end_date": assignment.due_date,
+            "end_date": end_date,
 
             "status": "assigned",
 
             "hours_worked": 0,
 
             "notification": None,
-
         }
 
     # =====================================================
