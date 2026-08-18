@@ -92,7 +92,7 @@ class Command(BaseCommand):
         self.create_esg_coord_role()
         
         # Department Roles
-        self.create_dept_approver_role()
+        self.create_dept_reviewer_role()
         self.create_dept_user_role()
         
         # Plant Roles
@@ -193,13 +193,13 @@ class Command(BaseCommand):
         role.permissions.set(perms)
         self.stdout.write(f'  ✓ {"Created" if created else "Updated"}: ESG-COORD role ({perms.count()} permissions)')
 
-    def create_dept_approver_role(self):
-        """Create Department Approver role"""
+    def create_dept_reviewer_role(self):
+        """Create Department Reviewer role"""
         role, created = Role.objects.get_or_create(
-            role_code='DEPT-APPR',
+            role_code='DEPT-REVIEW',
             defaults={
-                'role_name': 'Department Approver',
-                'description': 'Reviews and approves data submitted by data-entry users within the department',
+                'role_name': 'Department Reviewer',
+                'description': 'Reviews data submitted by data-entry users within the department',
                 'is_active': True
             }
         )
@@ -213,7 +213,7 @@ class Command(BaseCommand):
         ]
         perms = Permissions.objects.filter(code__in=perm_codes)
         role.permissions.set(perms)
-        self.stdout.write(f'  ✓ {"Created" if created else "Updated"}: DEPT-APPR role ({perms.count()} permissions)')
+        self.stdout.write(f'  ✓ {"Created" if created else "Updated"}: DEPT-REVIEW role ({perms.count()} permissions)')
 
     def create_dept_user_role(self):
         """Create Department User role"""

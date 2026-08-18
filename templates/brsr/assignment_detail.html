@@ -1453,6 +1453,7 @@
 
     const assignmentId = document.getElementById('approveAssignmentBtn').getAttribute('data-assignment-id')
       || document.getElementById('rejectAssignmentBtn').getAttribute('data-assignment-id');
+    let actionResult = null;
 
     try {
       const url = action === 'approve' ? APPROVE_URL : REJECT_URL;
@@ -1464,6 +1465,7 @@
         payload.remark = remark;
       }
       const result = await postAction(url, payload);
+      actionResult = result;
       successCount = 1;
       statusText.textContent = result.message || `Assignment ${action === 'approve' ? 'approved' : 'rejected'} successfully.`;
     } catch (error) {
@@ -1476,19 +1478,24 @@
     }
 
     // Update final status
-    if (errorCount === 0) {
-      statusEl.className = 'action-status success';
-      statusIcon.textContent = '✅';
-      statusText.textContent = `Assignment ${action === 'approve' ? 'approved' : 'rejected'} successfully.`;
-      showDetailMessage(
-        `Assignment ${action === 'approve' ? 'approved' : 'rejected'} successfully.`, 
-        'success',
-        `1 action processed.`
-      );
-    } else {
-      statusEl.className = 'action-status error';
-      statusIcon.textContent = '❌';
-      statusText.textContent = `Failed to process assignment action.`;
+      if (errorCount === 0) {
+        statusEl.className = 'action-status success';
+        statusIcon.textContent = '✅';
+        statusText.textContent = `Assignment ${action === 'approve' ? 'approved' : 'rejected'} successfully.`;
+        sessionStorage.setItem('brsr_workspace_message', actionResult?.message || `Assignment ${action === 'approve' ? 'approved' : 'rejected'} successfully.`);
+        showDetailMessage(
+          `Assignment ${action === 'approve' ? 'approved' : 'rejected'} successfully.`, 
+          'success',
+          `1 action processed.`
+        );
+        const redirectUrl = actionResult?.redirect_url || "{{ approval_dashboard_url|escapejs }}";
+        window.setTimeout(() => {
+          window.location.href = redirectUrl;
+        }, 400);
+      } else {
+        statusEl.className = 'action-status error';
+        statusIcon.textContent = '❌';
+        statusText.textContent = `Failed to process assignment action.`;
       showDetailMessage(
         `Failed to process assignment action.`, 
         'error',
@@ -1508,11 +1515,6 @@
 
     buttons.forEach(btn => btn.disabled = false);
     if (remarkField) remarkField.disabled = false;
-
-    // Reload after a delay if all succeeded
-    if (errorCount === 0 && successCount > 0) {
-      setTimeout(() => window.location.reload(), 2000);
-    }
   }
 
   // Approve all pending

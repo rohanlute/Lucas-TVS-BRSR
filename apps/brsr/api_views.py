@@ -856,6 +856,8 @@ class QuestionSubmitAPIView(APIView):
                 "workflow_task": result["workflow_task"],
                 "missing_questions": result["missing_questions"],
                 "message": result["message"],
+                "redirect_url": reverse("brsr:assignment_dashboard"),
+                "should_redirect": True,
             }
         )
 
@@ -883,6 +885,7 @@ class QuestionApproveAPIView(APIView):
                 "workflow_task": result["workflow_task"],
                 "message": result["message"],
                 "redirect_url": reverse("brsr:approval_dashboard"),
+                "should_redirect": True,
             }
         )
 
@@ -902,6 +905,8 @@ class QuestionRejectAPIView(APIView):
                 "status": "rejected",
                 "workflow_task": result["workflow_task"],
                 "message": result["message"],
+                "redirect_url": reverse("brsr:approval_dashboard"),
+                "should_redirect": True,
             }
         )
 
@@ -1058,6 +1063,7 @@ class AssignmentApproveAPIView(APIView):
                 "workflow_task": result["workflow_task"],
                 "message": result["message"],
                 "redirect_url": reverse("brsr:approval_dashboard"),
+                "should_redirect": True,
             }
         )
 
@@ -1074,6 +1080,8 @@ class AssignmentRejectAPIView(APIView):
                 "status": "rejected",
                 "workflow_task": result["workflow_task"],
                 "message": result["message"],
+                "redirect_url": reverse("brsr:approval_dashboard"),
+                "should_redirect": True,
             }
         )
 

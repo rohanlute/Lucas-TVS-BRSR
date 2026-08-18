@@ -2604,8 +2604,10 @@
         setButtonLoading(btn, false);
         return;
       }
-      showWorkspaceMessage(data.message || 'Assignment submitted successfully.', 'success');
-      await loadWorkspace(state.sectionCode, state.principleSlug, state.questionId, state.assignmentId);
+      const message = data.message || 'Assignment submitted successfully.';
+      sessionStorage.setItem('brsr_workspace_message', message);
+      const redirectUrl = data.redirect_url || "{{ assignment_dashboard_url|escapejs }}";
+      window.location.href = redirectUrl;
     } catch (error) {
       console.error('Error submitting assignment:', error);
       alert('An error occurred while submitting the assignment. Please check the console for details.');

@@ -16,7 +16,11 @@
     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; flex-shrink:0;">
       {% if is_company_view %}
         <span class="status-badge {{ q.dot_status|default:'draft' }}">
-          {{ q.plant_entries|length }} plant{{ q.plant_entries|length|pluralize }}
+          {% if q.contributing_plants %}
+            {{ q.contributing_plants }} plant{{ q.contributing_plants|pluralize }} combined
+          {% else %}
+            Combined
+          {% endif %}
         </span>
       {% else %}
         {% for entry in q.plant_entries %}
