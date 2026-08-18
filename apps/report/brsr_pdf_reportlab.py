@@ -49,6 +49,19 @@ STYLING NOTES (matched against the reference PDF screenshots)
   later page gets a running "BRSR {financial_year}" header + page-number
   footer via `_draw_later_page` -- both wired in through SimpleDocTemplate's
   onFirstPage/onLaterPages hooks in generate_brsr_pdf().
+
+--------------------------------------------------------------------------
+COMBINED ("All Plants") ANSWERS
+--------------------------------------------------------------------------
+When the report data comes from get_brsr_report_data_all_plants(), a
+combined text answer can be a {plant_name: answer} dict instead of a plain
+string (see brsr_report_data.format_combined_answer_for_display). Every
+place below that stringifies an answer_value / table cell / matrix cell
+routes through format_combined_answer_for_display() first so a dict
+renders as one "Plant: answer" line per plant instead of Python's dict
+repr, and generate_brsr_pdf() accepts a precomputed `report_sections` so
+the caller can pass in combined data instead of a single plant's.
+--------------------------------------------------------------------------
 """
 
 from io import BytesIO
@@ -66,6 +79,8 @@ from reportlab.platypus import (
     Table,
     TableStyle,
 )
+
+from .brsr_report_data import format_combined_answer_for_display
 
 # ---------------------------------------------------------------------------
 # Lucas TVS color palette -- navy + gold, matched against the source PDF
@@ -377,11 +392,13 @@ def _looks_like_link(value):
 
 
 def _answer_paragraph(value, styles):
+    value = format_combined_answer_for_display(value)
     if not value:
         return Paragraph("-", styles["BRSR_AnswerBlank"])
+    text = str(value).replace("\n", "<br/>")
     if _looks_like_link(str(value)):
-        return Paragraph(str(value), styles["BRSR_AnswerLink"])
-    return Paragraph(str(value), styles["BRSR_AnswerText"])
+        return Paragraph(text, styles["BRSR_AnswerLink"])
+    return Paragraph(text, styles["BRSR_AnswerText"])
 
 
 def _is_roman_heading(value):
@@ -469,14 +486,15 @@ def _create_matrix_grid(field_label, columns, matrix_rows, styles):
         values = mrow.get("values", {})
         cells = []
         for col in columns:
-            val = values.get(col, "")
+            val = format_combined_answer_for_display(values.get(col, ""))
             if val is True or val == "True":
                 val = "Yes"
             elif val is False or val == "False":
                 val = ""
             elif val is None:
                 val = "-"
-            cells.append(Paragraph(str(val) if val not in ("", "-") else "-", styles["BRSR_MatrixValue"]))
+            text = str(val).replace("\n", "<br/>") if val not in ("", "-") else "-"
+            cells.append(Paragraph(text, styles["BRSR_MatrixValue"]))
         data.append([row_label] + cells)
 
     label_col_width = 170
@@ -568,7 +586,9 @@ def _create_table_grid(question_text, table_headers, table_rows, styles):
             if i == 0:
                 row_cells.append(Paragraph(str(cell) if cell else "", row_label_style))
             else:
-                row_cells.append(Paragraph(str(cell) if cell not in (None, "") else "-", value_style))
+                cell = format_combined_answer_for_display(cell)
+                text = str(cell).replace("\n", "<br/>") if cell not in (None, "") else "-"
+                row_cells.append(Paragraph(text, value_style))
         data.append(row_cells)
 
     available_width = 480
@@ -678,7 +698,14 @@ def _create_question_table(rows, styles):
 
 
 def generate_brsr_pdf(financial_year=None, assignment_id=None, plant_id=None,
-                       company_name="Lucas TVS Ltd", company_cin=""):
+                       company_name="Lucas TVS Ltd", company_cin="", report_sections=None):
+    """
+    report_sections: optional precomputed section blocks (same shape as
+    get_brsr_report_data()'s return value). Pass this in for the "All
+    Plants" combined report (built via
+    brsr_report_data.get_brsr_report_data_all_plants()) instead of letting
+    this function fetch a single plant's data itself.
+    """
     buffer = BytesIO()
 
     doc = SimpleDocTemplate(
@@ -698,11 +725,12 @@ def generate_brsr_pdf(financial_year=None, assignment_id=None, plant_id=None,
     _create_subject_page(story, styles, company_name, financial_year)
     _create_toc_page(story, styles)
 
-    try:
-        from .brsr_report_data import get_brsr_report_data
-        report_sections = get_brsr_report_data(financial_year, assignment_id, plant_id)
-    except ImportError:
-        report_sections = []
+    if report_sections is None:
+        try:
+            from .brsr_report_data import get_brsr_report_data
+            report_sections = get_brsr_report_data(financial_year, assignment_id, plant_id)
+        except ImportError:
+            report_sections = []
 
     for block in report_sections:
         section = block.get("section", {})

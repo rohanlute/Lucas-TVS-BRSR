@@ -96,6 +96,14 @@ def _get_plant_display_name(plant_id):
 # that live in sub_questions / table_rows / matrix_rows for table, matrix,
 # and checkbox_group question types, not just a row's own top-level
 # answer_value.
+#
+# NOTE: for "all plants", these stats are still aggregated by SUMMING each
+# plant's own (total, answered) pair (see the plant_id == "all" branch
+# below) rather than by combining answers first -- "total questions" and
+# "answered questions" are counts, so summing per-plant counts is already
+# correct and doesn't need the value-combining logic in
+# get_brsr_report_data_all_plants(). That combiner is only used for the
+# actual PDF/Excel/preview report content (apps/report/views_brsr.py).
 
 def _brsr_report_stats(financial_year, plant_id=None):
     """
@@ -172,11 +180,12 @@ def _available_reports(selected_year, plant_id=None, request=None):
     logger.info("=== _available_reports results ===")
     logger.info(f"total_q: {total_q}, answered_q: {answered_q}, progress: {progress}")
 
-    # Build plant query string
-    if plant_id and plant_id != "all":
-        plant_qs = f"&plant_id={plant_id}"
-    else:
-        plant_qs = ""
+    # Always pass plant_id through explicitly (including "all") so the
+    # BRSR PDF/Excel views can tell "no plant selected" apart from
+    # "combine every plant" -- dropping "all" here previously made the
+    # download views default to a single-plant/None path instead of the
+    # explicit "all plants" combiner.
+    plant_qs = f"&plant_id={plant_id}" if plant_id else ""
 
     # Get plant name for display
     plant_display = _get_plant_display_name(plant_id)
@@ -207,10 +216,62 @@ def _available_reports(selected_year, plant_id=None, request=None):
     return reports
 
 
+"""
+PATCH for apps/report/views.py
+
+Bug: _build_brsr_report_entry() computed "All Plants" stats via
+get_brsr_stats(plant_id=None), which does NOT sum per-plant answers.
+It filters Assignments by financial_year only (across every plant in the
+whole system, ignoring company scoping) and then, inside _attach_answers,
+keeps only the MOST RECENTLY UPDATED response per question -- silently
+dropping every other plant's answer instead of combining them.
+
+This only affected the Recent-Reports table's stats/status label for
+"All Plants" downloads (via ReportTrackDownloadView), not the actual
+PDF/Excel content -- that already correctly routes through
+get_brsr_report_data_all_plants(). But the Recent Reports row for an
+"All Plants" download could show a wrong total/answered/status, and in
+some cases total=0 (if no single Assignment matches financial_year alone
+without a plant filter), making the row look broken.
+
+Fix: when plant_id is "all"/None, sum get_brsr_stats() across each of
+the company's active plants -- same approach views._brsr_report_stats()
+already uses correctly for the report card stats.
+
+------------------------------------------------------------------------
+BEFORE (apps/report/views.py):
+------------------------------------------------------------------------
+
+def _build_brsr_report_entry(plant_id, plant_name, reporting_year):
+    total, answered = get_brsr_stats(
+        financial_year=reporting_year,
+        plant_id=None if plant_id in (None, "all") else plant_id,
+    )
+    progress = round((answered / total * 100), 1) if total else 0
+    ...
+
+------------------------------------------------------------------------
+AFTER:
+------------------------------------------------------------------------
+"""
+
+# Paste this whole function over the existing _build_brsr_report_entry
+# in apps/report/views.py. Everything below the stats calculation is
+# unchanged from the original -- only how total/answered are computed
+# for the "all plants" case has changed.
+
 def _build_brsr_report_entry(plant_id, plant_name, reporting_year):
     """
     Builds one Recent-Reports row for a BRSR report, using REAL completion
     data from get_brsr_stats() instead of a hardcoded "Completed" status.
+
+    For plant_id in (None, "all"), stats are summed across each active
+    plant individually -- get_brsr_stats(plant_id=None) is NOT the same
+    as "all plants combined": it ignores company scoping and, via
+    _attach_answers, keeps only the most-recently-updated response per
+    question system-wide, silently dropping every other plant's answer.
+    Summing per-plant (total, answered) pairs avoids that entirely, same
+    approach as views._brsr_report_stats().
 
     status_raw is derived honestly from how much of the questionnaire is
     actually answered:
@@ -218,10 +279,33 @@ def _build_brsr_report_entry(plant_id, plant_name, reporting_year):
       - "processing" -> some but not all answered
       - "draft"      -> nothing answered yet
     """
-    total, answered = get_brsr_stats(
-        financial_year=reporting_year,
-        plant_id=None if plant_id in (None, "all") else plant_id,
-    )
+    from apps.organizations.models import Plant
+
+    is_all = plant_id in (None, "all")
+
+    if is_all:
+        total = 0
+        answered = 0
+        for plant in Plant.objects.filter(is_active=True):
+            try:
+                p_total, p_answered = get_brsr_stats(
+                    financial_year=reporting_year,
+                    plant_id=plant.id,
+                )
+                total += p_total
+                answered += p_answered
+            except Exception:
+                logger.exception(
+                    f"Error getting BRSR stats for plant {plant.id} "
+                    f"(financial_year={reporting_year})"
+                )
+                continue
+    else:
+        total, answered = get_brsr_stats(
+            financial_year=reporting_year,
+            plant_id=plant_id,
+        )
+
     progress = round((answered / total * 100), 1) if total else 0
 
     if total and answered >= total:
@@ -250,6 +334,17 @@ def _build_brsr_report_entry(plant_id, plant_name, reporting_year):
         "excel_url": f"{reverse('report:brsr_report_excel')}?financial_year={reporting_year}{plant_qs}",
         "detail_url": f"{reverse('report:report_detail')}?year={reporting_year}&type=brsr{plant_qs}",
     }
+
+
+# Note: this does NOT scope by request.user.company the way
+# views._plants()/_brsr_report_stats() do for non-superadmins, because
+# _build_brsr_report_entry() has no `request` argument today. If you
+# want "All Plants" stats scoped to the calling user's company rather
+# than every active plant system-wide, pass `request` through from both
+# call sites (ReportGenerateView.post and ReportTrackDownloadView.post)
+# and filter Plant.objects the same way _plants(request) does. Flagging
+# this rather than silently changing the function signature, since it
+# touches two call sites.
 
 
 def _build_ghg_report_entry(plant_id, plant_name, reporting_year):
