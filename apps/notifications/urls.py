@@ -12,11 +12,8 @@ urlpatterns = [
     # Add these two new URLs
     path("mark-read/<int:notification_id>/", views.mark_notification_as_read, name="mark_notification_read"),
     path("mark-all-read/", views.mark_all_notifications_as_read, name="mark_all_read"),
-    path('api/timesheets/mark-viewed/<int:timesheet_id>/', 
-         views.mark_timesheet_viewed, 
-         name='mark_timesheet_viewed'),
-    
-    path('api/timesheets/mark-all-viewed/', 
-         views.mark_all_timesheets_viewed, 
-         name='mark_all_timesheets_viewed'),
+    path('api/timesheets/mark-viewed/<int:timesheet_id>/', views.mark_timesheet_viewed, name='mark_timesheet_viewed'),
+    path('api/timesheets/mark-all-viewed/', views.mark_all_timesheets_viewed, name='mark_all_timesheets_viewed'),
+    path("toggle-favourite/<int:notification_id>/", views.toggle_notification_favourite, name="toggle_notification_favourite"),
+    path("delete/<int:notification_id>/", views.delete_notification, name="delete_notification"),
 ]

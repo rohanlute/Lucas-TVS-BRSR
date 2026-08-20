@@ -7,8 +7,8 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 import json
 from apps.accounts.mixins import SuperAdminRequiredMixin
-from .models import Notification,Timesheet
-
+from .models import Notification,Timesheet, NotificationUserState
+from django.core.paginator import Paginator
 
 class NotificationListView(LoginRequiredMixin, TemplateView):
     login_url = "accounts:login"
@@ -16,14 +16,98 @@ class NotificationListView(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["page_title"] = "Notification Master"
-        context["notifications"] = (
-            Notification.objects
-            .filter(recipient=self.request.user)
-            .select_related("sender", "company")
-            .order_by("-created_at")
+
+        user = self.request.user
+
+        notification_filter = self.request.GET.get("filter", "all")
+        # -------------------------------------------------------
+        # Notifications for current user
+        # -------------------------------------------------------
+        notifications = (Notification.objects.filter(recipient=user).exclude(
+                user_states__user=user,user_states__is_deleted=True,)
+            .select_related("sender","company",)
+            .prefetch_related("user_states",).order_by("-created_at")
         )
+
+        if notification_filter == "favourite":
+            notifications = notifications.filter(
+                user_states__user=user,user_states__is_favourite=True,)
+
+        if notification_filter == "unread":
+            notifications = notifications.filter(is_read=False)
+
+        if notification_filter == "brsr":
+            notifications = notifications.filter(module=Notification.ModuleChoices.BRSR)
+
+        if notification_filter == "emission":
+            notifications = notifications.filter(module=Notification.ModuleChoices.EMISSION)
+
+        if notification_filter == "goals":
+            notifications = notifications.filter(module=Notification.ModuleChoices.GOALS)
+
+        if notification_filter == "archived":
+            notifications = notifications.filter(
+                user_states__user=user,user_states__is_archived=True,)
+
+        # ==========================================
+        # PAGINATION: 10 NOTIFICATIONS PER PAGE
+        # ==========================================
+
+        paginator = Paginator(notifications, 10)
+
+        page_number = self.request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+
+        # -------------------------------------------------------
+        # Attach current user's notification state
+        # -------------------------------------------------------
+        notification_states = {
+            state.notification_id: state
+            for state in NotificationUserState.objects.filter(
+                user=user,
+                notification__recipient=user,
+            )
+        }
+
+        for notification in notifications:
+            notification.user_state = notification_states.get(
+                notification.id
+            )
+
+        context["page_title"] = "Notification Master"
+        context["notifications"] = notifications
+        context["page_obj"] = page_obj
+        context["paginator"] = paginator
+
         return context
+
+
+
+@login_required
+@csrf_exempt
+def delete_notification(request, notification_id):
+
+    if request.method != "POST":
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "Invalid method",
+            },
+            status=405,
+        )
+
+    notification = get_object_or_404(Notification,id=notification_id,recipient=request.user,)
+
+    state, created = NotificationUserState.objects.get_or_create(notification=notification,user=request.user,)
+
+    state.is_deleted = True
+
+    state.save(update_fields=["is_deleted","updated_at",])
+
+    return JsonResponse({
+        "success": True,
+        "message": "Notification deleted successfully.",
+    })
 
 
 # Add these new functions
@@ -45,6 +129,84 @@ def mark_notification_as_read(request, notification_id):
         except Notification.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'Notification not found'}, status=404)
     return JsonResponse({'success': False, 'error': 'Invalid method'}, status=405)
+
+
+@login_required
+@csrf_exempt
+def toggle_notification_favourite(request, notification_id):
+
+    print("\n=================================")
+    print("⭐ FAVOURITE API CALLED")
+    print("User:", request.user.username)
+    print("Notification ID:", notification_id)
+    print("Method:", request.method)
+    print("Body:", request.body)
+    print("=================================")
+
+    if request.method != "POST":
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "Invalid method",
+            },
+            status=405,
+        )
+
+    notification = get_object_or_404(
+        Notification,
+        id=notification_id,
+        recipient=request.user,
+    )
+
+    try:
+        data = json.loads(request.body)
+
+        print("Parsed data:", data)
+
+        is_favourite = bool(
+            data.get("is_favourite", False)
+        )
+
+        print("Requested favourite:", is_favourite)
+
+    except (json.JSONDecodeError, TypeError) as e:
+
+        print("❌ JSON ERROR:", e)
+
+        return JsonResponse(
+            {
+                "success": False,
+                "error": "Invalid request data",
+            },
+            status=400,
+        )
+
+    state, created = NotificationUserState.objects.get_or_create(
+        notification=notification,
+        user=request.user,
+    )
+
+    print("State created:", created)
+    print("Previous favourite:", state.is_favourite)
+
+    state.is_favourite = is_favourite
+
+    state.save(
+        update_fields=[
+            "is_favourite",
+            "updated_at",
+        ]
+    )
+
+    print("New favourite:", state.is_favourite)
+    print("=================================\n")
+
+    return JsonResponse({
+        "success": True,
+        "is_favourite": state.is_favourite,
+    })
+
+
 
 
 @login_required

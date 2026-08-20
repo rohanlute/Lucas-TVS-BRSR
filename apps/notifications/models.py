@@ -23,6 +23,7 @@ class Notification(models.Model):
         SUBMITTED = "SUBMITTED", "Submitted"
         APPROVED = "APPROVED", "Approved"
         REJECTED = "REJECTED", "Rejected"
+        CREATED = "CREATED", "Created"
         REMINDER = "REMINDER", "Reminder"
         OVERDUE = "OVERDUE", "Overdue"
 
@@ -116,6 +117,78 @@ class Notification(models.Model):
                 self.notification_code = f"NT{next_number:06d}"
 
         super().save(*args, **kwargs)
+
+
+
+
+# ============ user-specific Notification State===============
+class NotificationUserState(models.Model):
+    """
+    Stores notification actions that are specific to one user.
+
+    The Notification itself remains shared, while favourite,
+    archive and delete are maintained independently for each user.
+    """
+
+    notification = models.ForeignKey(
+        Notification,
+        on_delete=models.CASCADE,
+        related_name="user_states",
+    )
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="notification_states",
+    )
+
+    is_favourite = models.BooleanField(
+        default=False
+    )
+
+    is_archived = models.BooleanField(
+        default=False
+    )
+
+    is_deleted = models.BooleanField(
+        default=False
+    )
+
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    updated_at = models.DateTimeField(
+        auto_now=True
+    )
+
+    class Meta:
+        db_table = "notification_user_states"
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=["notification", "user"],
+                name="unique_notification_user_state",
+            )
+        ]
+
+        indexes = [
+            models.Index(
+                fields=["user", "is_favourite"]
+            ),
+            models.Index(
+                fields=["user", "is_archived"]
+            ),
+            models.Index(
+                fields=["user", "is_deleted"]
+            ),
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.user.username} - "
+            f"{self.notification.notification_code}"
+        )
 
 
 # ====== TIMESHEET MODEL ======

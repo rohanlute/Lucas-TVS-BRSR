@@ -292,6 +292,84 @@ class KPI(models.Model):
                 return 0.0
         return float(total)
 
+    def has_current_data(self,company_id=None,plant_id=None,financial_year_id=None,
+        financial_month_id=None,assignment_id=None,statuses=None,):
+        """
+        Check whether at least one emission transaction exists
+        for this KPI and the supplied filters.
+
+        Returns:
+            True  -> matching transaction exists
+            False -> no matching transaction exists
+        """
+        from apps.emission.models import EmissionTransaction
+        filters = Q()
+        if plant_id:
+            filters &= Q(plant_id=plant_id)
+
+        if company_id:
+            filters &= Q(company_id=company_id)
+
+        if financial_year_id:
+            filters &= Q(financial_year_id=financial_year_id)
+
+        if financial_month_id:
+            filters &= Q(financial_month_id=financial_month_id)
+
+        if assignment_id:
+            filters &= Q(assignment_id=assignment_id)
+
+        if statuses:
+            filters &= Q(status__in=statuses)
+
+        # Category filter
+        if self.category_keyword and self.category_keyword.strip():
+            category_filter = Q()
+
+            keywords = [
+                kw.strip()
+                for kw in self.category_keyword.split(',')
+            ]
+
+            for kw in keywords:
+                if kw:
+                    category_filter |= Q(
+                        activity__category__name=kw
+                    )
+
+            if category_filter:
+                filters &= category_filter
+
+        # Determine whether this is an emission KPI
+        is_emission_kpi = (
+            'tco2' in self.unit.lower()
+            or 'tco₂' in self.unit.lower()
+            or 'tco2e' in self.unit.lower()
+            or 'tco₂e' in self.unit.lower()
+        )
+
+        # Consumption KPI activity filter
+        if not is_emission_kpi:
+            if self.activity_keyword and self.activity_keyword.strip():
+                activity_filter = Q()
+                keywords = [
+                    kw.strip()
+                    for kw in self.activity_keyword.split(',')
+                ]
+
+                for kw in keywords:
+                    if kw:
+                        activity_filter |= Q(
+                            activity__name=kw
+                        )
+
+                if activity_filter:
+                    filters &= activity_filter
+
+        return EmissionTransaction.objects.filter(
+            filters
+        ).exists()
+
     def get_total_scope_emission(self, scope_code=None, plant_id=None, company_id=None,
                                  financial_year_id=None, financial_month_id=None):
         """
@@ -427,6 +505,85 @@ class KPI(models.Model):
             return 'In Progress'
         else:
             return 'At Risk'
+
+    def get_notification_status(self,current_value,baseline_value=None,target_value=None,has_data=True):
+        """
+        Determine KPI notification status based on
+        Current, Baseline and Target.
+
+        Designed for reduction-type KPIs.
+        """
+
+        if current_value is None:
+            return "NO_DATA"
+
+        if not has_data:
+            return "NO_DATA"
+
+        current_value = float(current_value)
+
+        baseline_value = (float(baseline_value)
+            if baseline_value is not None
+            else float(self.baseline_value or 0)
+        )
+
+        target_value = (
+            float(target_value)
+            if target_value is not None
+            else float(self.target_value or 0)
+        )
+
+        # ---------------------------------------------------------
+        # No baseline / target configured
+        # ---------------------------------------------------------
+        if baseline_value == 0 and target_value == 0:
+            return "NO_TARGET"
+
+        # ---------------------------------------------------------
+        # TARGET ACHIEVED
+        #
+        # Current has reached or gone below target.
+        # ---------------------------------------------------------
+        if current_value <= target_value:
+            return "TARGET_ACHIEVED"
+
+        # ---------------------------------------------------------
+        # NEAR TARGET
+        #
+        # Current is within 10% above the target.
+        #
+        # Example:
+        # Target = 75
+        # 10% of 75 = 7.5
+        # Near-target range = 75 to 82.5
+        # ---------------------------------------------------------
+        if target_value > 0:
+            near_target_limit = target_value * 1.10
+            if current_value <= near_target_limit:
+                return "NEAR_TARGET"
+
+        # ---------------------------------------------------------
+        # AT RISK / CRITICAL
+        #
+        # Current has crossed the baseline.
+        # ---------------------------------------------------------
+        if current_value > baseline_value:
+            if baseline_value != 0:
+                excess_percentage = (
+                    (current_value - baseline_value)
+                    / abs(baseline_value)
+                ) * 100
+
+                # 10% or more above baseline
+                if excess_percentage >= 10:
+                    return "CRITICAL"
+
+            return "AT_RISK"
+
+        # ---------------------------------------------------------
+        # Normal progress
+        # ---------------------------------------------------------
+        return "IN_PROGRESS"
 
 
 class KPIPlantTarget(models.Model):

@@ -20,7 +20,9 @@ from django.db.models import Sum, Q
 import logging
 import json
 
-from apps.goals.models import *  # noqa: F401,F403  (includes KPIPlantTarget)
+from apps.goals.models import *
+
+from apps.notifications.services import NotificationService
 
 logger = logging.getLogger(__name__)
 
@@ -798,6 +800,31 @@ class AddGoalView(LoginRequiredMixin, View):
                     'updated_by': request.user,
                 }
             )
+
+            # =====================================================
+            # GOAL CREATED NOTIFICATION
+            # =====================================================
+            if created:
+                try:
+                    NotificationService.notify(
+                        "GOAL_CREATED",
+                        goal=goal,
+                        sender=request.user,
+                    )
+
+                    logger.info(
+                        f"Goal creation notifications sent for "
+                        f"Goal '{goal.name}'"
+                    )
+
+                except Exception as notification_error:
+                    # Notification failure should NOT prevent
+                    # the Goal itself from being created.
+                    logger.error(
+                        f"Error sending Goal creation notification: "
+                        f"{notification_error}",
+                        exc_info=True
+                    )
 
             # ===== CREATE KPIs FROM MAPPING =====
             topic_data = MATERIAL_TOPICS_MAPPING.get(material_topic_name, {})

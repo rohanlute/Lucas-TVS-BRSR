@@ -708,7 +708,8 @@
                                 <div class="notifications-item {% if not notification.is_read %}unread-notification{% else %}read-notification{% endif %}" 
                                      data-notification-id="{{ notification.id }}"
                                      data-assignment-id="{{ notification.reference_id|default:'' }}"
-                                     onclick="handleNotificationClick({{ notification.id }}, this, '{{ notification.reference_id|default:'' }}')">
+                                     onclick="handleNotificationClick({{ notification.id }},
+                                            this,'{{ notification.reference_id|default:'' }}','{{ notification.module }}')">
                                     
                                     {% if request.user.profile_image %}
                                         <img src="{{ request.user.profile_image.url }}" 
@@ -726,8 +727,15 @@
                                         </div>
                                         
                                         <div class="notification-assigned">
-                                            <i class="fas fa-user-check"></i>
-                                            Assigned by: <span class="assigner-name">{{ notification.sender.get_full_name|default:notification.sender.username }}</span>
+                                            {% if notification.module == "GOALS" %}
+                                                Created by:
+                                            {% else %}
+                                                Assigned by:
+                                            {% endif %}
+
+                                            <span class="assigner-name">
+                                                {{ notification.sender.get_full_name|default:notification.sender.username }}
+                                            </span>
                                         </div>
                                         
                                         <div class="notification-time-wrapper">
@@ -1286,10 +1294,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ====== NOTIFICATION CLICK HANDLER ======
-    window.handleNotificationClick = function(notificationId, element, referenceId) {
+    window.handleNotificationClick = function(notificationId,element,referenceId,module) {
+        const redirect = () => {
+            // Goal notifications
+            if (module === 'GOALS') {
+                window.location.href = '/goals/';
+                return;
+            }
+            // Existing Emission notifications
+            redirectToAssignment(referenceId);
+        };
+
         if (element && element.classList.contains('unread-notification')) {
             element.style.backgroundColor = '#e8f0fe';
-            
+
             fetch(`/notifications/mark-read/${notificationId}/`, {
                 method: 'POST',
                 headers: {
@@ -1302,8 +1320,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.success) {
                     element.classList.remove('unread-notification');
                     element.classList.add('read-notification');
-                    
-                    const badge = element.querySelector('.notification-badge-new');
+                    const badge = element.querySelector(
+                        '.notification-badge-new'
+                    );
                     if (badge) {
                         badge.style.transition = 'opacity 0.3s, transform 0.3s';
                         badge.style.opacity = '0';
@@ -1312,28 +1331,28 @@ document.addEventListener('DOMContentLoaded', function() {
                             badge.remove();
                         }, 300);
                     }
-                    
                     element.style.backgroundColor = '#ffffff';
                     updateNotificationCount();
-                    
                     element.style.backgroundColor = '#e8f5e9';
                     setTimeout(() => {
                         element.style.backgroundColor = '#ffffff';
                     }, 400);
-                    
                     setTimeout(() => {
-                        redirectToAssignment(referenceId);
+                        redirect();
                     }, 300);
                 } else {
-                    redirectToAssignment(referenceId);
+                    redirect();
                 }
             })
             .catch(error => {
-                console.error('Error marking notification as read:', error);
-                redirectToAssignment(referenceId);
+                console.error(
+                    'Error marking notification as read:',
+                    error
+                );
+                redirect();
             });
         } else {
-            redirectToAssignment(referenceId);
+            redirect();
         }
     };
 

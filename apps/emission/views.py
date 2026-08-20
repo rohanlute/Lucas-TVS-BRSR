@@ -12,6 +12,8 @@ from rest_framework.views import APIView
 from django.db import transaction
 import json
 from django.views.generic import (ListView,CreateView,UpdateView,DeleteView,)
+
+from apps.organizations.services import financial_year
 from .models import EmissionTransaction
 from .forms import EmissionTransactionForm
 from .models import *
@@ -28,7 +30,11 @@ from decimal import Decimal
 from apps.common_events.event_context import EventContext
 from apps.common_events.constants import *
 from apps.common_events.services import EventService
+from apps.goals.models import KPI
+from apps.goals.services.notification import GoalNotificationService
 
+import logging
+logger = logging.getLogger(__name__)
 # apps/emission/views.py - Updated EmissionsDashboardView
 
 class EmissionsDashboardView(TemplateView):
@@ -1782,7 +1788,10 @@ class SaveEmissionTransactionsView(View):
             fy_id = data["financial_year"]
             month_id = data["financial_month"]
             assignment_id = data.get("assignment")
-
+            company = get_object_or_404(Company, id=company_id)
+            plant = get_object_or_404(Plant, id=plant_id)
+            financial_year = get_object_or_404(FinancialYear, id=fy_id)
+            financial_month = get_object_or_404(FinancialMonth, id=month_id)
             assignment = None
             assigned_source_ids = set()
 
@@ -1871,6 +1880,62 @@ class SaveEmissionTransactionsView(View):
             ):
                 assignment.status = "IN_PROGRESS"
                 assignment.save(update_fields=["status"])
+
+
+            # ---------------------------------------------------
+            # Check Goal KPIs after emission data is saved
+            # ---------------------------------------------------
+            try:
+
+                goal_kpis = (
+                    KPI.objects
+                    .filter(
+                        is_active=True,
+                        goal__is_active=True,
+                        goal__material_topic__is_active=True,
+                    )
+                    .select_related(
+                        "goal",
+                        "goal__material_topic",
+                    )
+                )
+
+                # Users who have access to Goal module
+                goal_users = (
+                    User.objects
+                    .filter(
+                        is_active=True,
+                        role__is_active=True,
+                        company_id=company_id,
+                        role__permissions__code="ACCESS_GOAL_MODULE",
+                        role__permissions__module_name="Goal",
+                        role__permissions__permission_type="MODULE_ACCESS",
+                    )
+                    .distinct()
+                )
+
+                for kpi in goal_kpis:
+
+                    for recipient in goal_users:
+
+                        GoalNotificationService.check_kpi(
+                            kpi=kpi,
+                            company=company,
+                            recipient=recipient,
+                            plant=plant,
+                            financial_year=financial_year,
+                            financial_month=financial_month,
+                            assignment=assignment,
+                        )
+
+            except Exception as goal_error:
+
+                # Do not fail emission saving if Goal notification
+                # checking encounters an error.
+                logger.exception(
+                    "Goal KPI notification check failed: %s",
+                    goal_error,
+                )
 
             return JsonResponse(
                 {
@@ -1978,26 +2043,46 @@ class LoadEmissionTransactionsView(View):
                 .values(
                     "activity_id",
                     "source_id",
-                    "emission_factor",
-                    "status",
                 )
                 .annotate(
                     quantity=Sum("quantity"),
                     total_emission=Sum("total_emission"),
                 )
+                .order_by("activity_id", "source_id")
             )
 
             for transaction in transactions:
 
+                # Get emission factor for display
+                latest_transaction = (
+                    EmissionTransaction.objects
+                    .filter(
+                        company_id=company,
+                        financial_year_id=financial_year,
+                        financial_month_id=financial_month,
+                        activity_id=transaction["activity_id"],
+                        source_id=transaction["source_id"],
+                    )
+                    .order_by("-id")
+                    .first()
+                )
+
                 data.append({
                     "activity": transaction["activity_id"],
                     "source": transaction["source_id"],
-                    "quantity": str(transaction["quantity"]),
-                    "factor": str(transaction["emission_factor"]),
-                    "total": str(transaction["total_emission"]),
-                    "status": transaction["status"],
+                    "quantity": str(transaction["quantity"] or 0),
+                    "factor": str(
+                        latest_transaction.emission_factor
+                        if latest_transaction
+                        else 0
+                    ),
+                    "total": str(transaction["total_emission"] or 0),
+                    "status": (
+                        latest_transaction.status
+                        if latest_transaction
+                        else ""
+                    ),
                 })
-
         # ====================================================
         # Single Plant
         # ====================================================
