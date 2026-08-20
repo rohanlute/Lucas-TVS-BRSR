@@ -1,4 +1,3 @@
-# apps/report/brsr_excel_openpyxl.py
 """
 Builds the BRSR report as an .xlsx workbook matching the same structure as
 the PDF (brsr_pdf_reportlab.py): navy/gold styling, one sheet per Section
@@ -20,6 +19,16 @@ plain strings/lists, with no ReportLab Paragraph/Table objects involved.
 So it's exactly as reusable here as it is there: import it, walk the same
 items, and Excel + PDF can never structurally diverge from each other
 again.
+
+--------------------------------------------------------------------------
+COMBINED ("All Plants") ANSWERS
+--------------------------------------------------------------------------
+Same as the PDF module: a combined answer can be a {plant_name: answer}
+dict (see brsr_report_data.format_combined_answer_for_display). Every
+cell-writing helper below routes the value through that function first,
+so a dict renders as one "Plant: answer" line per cell instead of
+Python's dict repr, and generate_brsr_excel() accepts a precomputed
+`report_sections` so the caller can pass in combined data.
 """
 
 import io
@@ -29,6 +38,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
 from .brsr_pdf_reportlab import _flatten_rows, _display_financial_year, _short_company_name
+from .brsr_report_data import format_combined_answer_for_display
 
 # ---------------------------------------------------------------------------
 # Palette -- matches brsr_pdf_reportlab.py's NAVY/GOLD_BORDER/etc.
@@ -112,6 +122,8 @@ def _fmt_bool(value):
 
 
 def _write_plain_row(ws, row, number, text, answer):
+    answer = format_combined_answer_for_display(answer)
+
     num_cell = ws.cell(row=row, column=1, value=f"{number}." if number else "")
     num_cell.font = FONT_BLACK_BOLD
     num_cell.alignment = Alignment(horizontal="right", vertical="top")
@@ -163,7 +175,7 @@ def _write_matrix_grid(ws, row, label, columns, matrix_rows):
 
         values = mrow.get("values", {})
         for i, col_name in enumerate(columns):
-            val = _fmt_bool(values.get(col_name, ""))
+            val = format_combined_answer_for_display(_fmt_bool(values.get(col_name, "")))
             v_cell = ws.cell(row=row, column=3 + i, value=val if val not in (None, "") else "-")
             v_cell.font = FONT_BLACK
             v_cell.alignment = WRAP_CENTER
@@ -193,6 +205,7 @@ def _write_table_grid(ws, row, question_text, table_headers, table_rows):
     for data_row in table_rows:
         for i, val in enumerate(data_row):
             display_val = val if val not in (None, "") else ("" if i == 0 else "-")
+            display_val = format_combined_answer_for_display(display_val)
             c = ws.cell(row=row, column=1 + i, value=_fmt_bool(display_val))
             if i == 0:
                 c.font = FONT_WHITE_BOLD
@@ -242,10 +255,16 @@ def _safe_sheet_title(title):
 
 
 def generate_brsr_excel(financial_year=None, assignment_id=None, plant_id=None,
-                         company_name="Lucas TVS Ltd", company_cin=""):
-    from .brsr_report_data import get_brsr_report_data
-
-    report_sections = get_brsr_report_data(financial_year, assignment_id, plant_id)
+                         company_name="Lucas TVS Ltd", company_cin="", report_sections=None):
+    """
+    report_sections: optional precomputed section blocks (same shape as
+    get_brsr_report_data()'s return value). Pass this in for the "All
+    Plants" combined report instead of letting this function fetch a
+    single plant's data itself.
+    """
+    if report_sections is None:
+        from .brsr_report_data import get_brsr_report_data
+        report_sections = get_brsr_report_data(financial_year, assignment_id, plant_id)
 
     wb = Workbook()
     wb.remove(wb.active)

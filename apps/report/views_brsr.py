@@ -5,6 +5,13 @@ PDF generation uses ReportLab, Excel generation uses openpyxl -- both
 matching the Lucas TVS format and both driven off the same
 brsr_report_data.get_brsr_report_data() + brsr_pdf_reportlab._flatten_rows
 normalization, so the two outputs can't structurally drift apart.
+
+When plant_id is missing or "all", every view routes through
+get_brsr_report_data_all_plants() instead of get_brsr_report_data(plant_id=None):
+the latter's per-question "most recently updated response" logic silently
+drops every plant's answer except one, whereas the "all plants" combiner
+sums numeric answers and dict-collects text answers per plant so nothing
+is lost -- see brsr_report_data.py for the combining logic itself.
 """
 
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -12,7 +19,7 @@ from django.http import HttpResponse
 from django.views.generic import TemplateView
 import logging
 
-from .brsr_report_data import get_brsr_report_data
+from .brsr_report_data import get_brsr_report_data, get_brsr_report_data_all_plants
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +30,42 @@ def _company_from_request(request):
         "name": getattr(company, "company_name", None) or "Lucas TVS Ltd",
         "cin": getattr(company, "cin_number", None) or "",
     }
+
+
+def _is_all_plants(plant_id):
+    return not plant_id or plant_id == "all"
+
+
+def _company_plant_ids(request):
+    """
+    Must mirror apps.report.views._plants() exactly, so the plant list
+    shown in the dropdown and the plants actually combined into "All
+    Plants" never diverge.
+    """
+    from apps.organizations.models import Plant
+
+    if not request.user.is_super_admin:
+        return list(
+            Plant.objects.filter(
+                is_active=True,
+                created_by__company=request.user.company,
+            ).values_list("id", flat=True)
+        )
+    return list(Plant.objects.filter(is_active=True).values_list("id", flat=True))
+
+
+def _get_report_sections(request, financial_year, assignment_id, plant_id):
+    if _is_all_plants(plant_id):
+        return get_brsr_report_data_all_plants(
+            financial_year=financial_year,
+            assignment_id=assignment_id,
+            plant_ids=_company_plant_ids(request),
+        )
+    return get_brsr_report_data(
+        financial_year=financial_year,
+        assignment_id=assignment_id,
+        plant_id=plant_id,
+    )
 
 
 class BRSRReportPreviewView(LoginRequiredMixin, TemplateView):
@@ -41,11 +84,7 @@ class BRSRReportPreviewView(LoginRequiredMixin, TemplateView):
         )
 
         try:
-            report_sections = get_brsr_report_data(
-                financial_year=financial_year,
-                assignment_id=assignment_id,
-                plant_id=plant_id,
-            )
+            report_sections = _get_report_sections(self.request, financial_year, assignment_id, plant_id)
             logger.info(f"Found {len(report_sections)} report sections")
         except Exception as e:
             logger.error(f"Error getting report data: {e}")
@@ -76,15 +115,18 @@ class BRSRReportPDFDownloadView(LoginRequiredMixin, TemplateView):
         company = _company_from_request(request)
 
         try:
+            report_sections = _get_report_sections(request, financial_year, assignment_id, plant_id)
             buffer = generate_brsr_pdf(
                 financial_year=financial_year,
                 assignment_id=assignment_id,
                 plant_id=plant_id,
                 company_name=company["name"],
                 company_cin=company["cin"],
+                report_sections=report_sections,
             )
 
-            filename = f"Lucas_TVS_BRSR_Report_{(financial_year or 'FY2024-25').replace(' ', '_')}.pdf"
+            suffix = "All_Plants" if _is_all_plants(plant_id) else ""
+            filename = f"Lucas_TVS_BRSR_Report_{suffix + '_' if suffix else ''}{(financial_year or 'FY2024-25').replace(' ', '_')}.pdf"
             response = HttpResponse(buffer.getvalue(), content_type="application/pdf")
             response["Content-Disposition"] = f'attachment; filename="{filename}"'
             return response
@@ -111,15 +153,18 @@ class BRSRReportExcelDownloadView(LoginRequiredMixin, TemplateView):
         company = _company_from_request(request)
 
         try:
+            report_sections = _get_report_sections(request, financial_year, assignment_id, plant_id)
             buffer = generate_brsr_excel(
                 financial_year=financial_year,
                 assignment_id=assignment_id,
                 plant_id=plant_id,
                 company_name=company["name"],
                 company_cin=company["cin"],
+                report_sections=report_sections,
             )
 
-            filename = f"Lucas_TVS_BRSR_Report_{(financial_year or 'FY2024-25').replace(' ', '_')}.xlsx"
+            suffix = "All_Plants" if _is_all_plants(plant_id) else ""
+            filename = f"Lucas_TVS_BRSR_Report_{suffix + '_' if suffix else ''}{(financial_year or 'FY2024-25').replace(' ', '_')}.xlsx"
             response = HttpResponse(
                 buffer.getvalue(),
                 content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
