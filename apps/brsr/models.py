@@ -265,6 +265,7 @@ class Assignment(models.Model):
     requires a new FK column or a new near-duplicate model.
     """
     PRIORITY_CHOICES = [('low', 'Low'), ('medium', 'Medium'), ('high', 'High'), ('urgent', 'Urgent')]
+    DATA_SCOPE_CHOICES = [('plant', 'Plant-wise'),('company', 'Company-wide'),]
 
     assignment_id = models.CharField(max_length=50, unique=True, blank=True)
     parent = models.ForeignKey(
@@ -308,6 +309,18 @@ class Assignment(models.Model):
     ]
     data_collection_frequency = models.CharField(
         max_length=20, choices=FREQUENCY_CHOICES, null=True, blank=True
+    )
+    data_scope = models.CharField(
+        max_length=10,
+        choices=DATA_SCOPE_CHOICES,
+        default='plant',
+        help_text=(
+            "'plant' (default): a normal, plant-specific assignment — unchanged behavior. "
+            "'company': a single assignment/response set shared across every plant in the "
+            "company instead of being duplicated per plant. The `plant` field is still set "
+            "(it anchors workflow-role resolution) but visibility/queries treat this row as "
+            "belonging to the whole company."
+        ),
     )
     selected_months = models.JSONField(default=list, blank=True)
     selected_quarters = models.JSONField(default=list, blank=True)
@@ -369,6 +382,14 @@ class Assignment(models.Model):
     def __str__(self):
         return f'{self.assignment_id} -> {self.assignee}'
 
+    @property
+    def company(self):
+        return getattr(getattr(self.plant, "created_by", None), "company", None)
+
+    @property
+    def is_company_level(self):
+        return self.data_scope == "company"
+    
     @property
     def workflow_task(self):
         return self.workflow_tasks.select_related('template', 'current_stage').order_by('-created_at').first()
@@ -665,6 +686,14 @@ class AssignmentSchedule(models.Model):
         related_name='assignment_schedules',
     )
     questions = models.ManyToManyField('BRSRQuestion', related_name='assignment_schedules')
+
+    data_scope = models.CharField(
+        max_length=10,
+        choices=Assignment.DATA_SCOPE_CHOICES,
+        default='plant',
+        help_text="Mirrors Assignment.data_scope — every Assignment this schedule "
+                  "generates is created with this scope.",
+    )
 
     workflow_template = models.ForeignKey(
         'organizations.ApprovalConfigurationTemplate',

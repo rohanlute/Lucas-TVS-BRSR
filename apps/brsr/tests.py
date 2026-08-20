@@ -6,8 +6,11 @@ from apps.accounts.models import Department
 from apps.accounts.models.role import Role
 from apps.accounts.models.user import User
 from apps.brsr.api_views import QuestionApproveAPIView, QuestionRejectAPIView, QuestionReviewCommentAPIView, QuestionSaveAPIView, QuestionSubmitAPIView
+from apps.brsr.forms import BRSRAssignmentForm
 from apps.brsr.models import Assignment, AssignmentReviewer, BRSRQuestion, BRSRSection, QuestionResponse
+from apps.brsr.services import create_assignment_and_optional_schedule
 from apps.brsr.views import AssignmentDetailView
+from apps.brsr.views import _build_brsr_data_groups, _plant_brsr_stats
 from apps.organizations.models import ApprovalConfigurationStage, ApprovalConfigurationTemplate, Plant
 from apps.organizations.workflow_configuration_engine import WorkflowConfigurationEngine
 from apps.companies.models import City, Company, Country, State
@@ -462,3 +465,159 @@ class BRSRWorkflowAPITests(TestCase):
 
         question_row = response.context_data["questions"][0]
         self.assertTrue(question_row["can_act"])
+
+
+class BRSRCompanyScopeTests(TestCase):
+    def setUp(self):
+        self.country = Country.objects.create(name="India", iso_code="IN")
+        self.state = State.objects.create(country=self.country, name="Tamil Nadu", state_code="TN")
+        self.city = City.objects.create(country=self.country, state=self.state, name="Chennai")
+
+        self.company = Company.objects.create(
+            company_code="LUCAS",
+            company_name="Lucas TVS",
+            contact_person="Admin",
+            email="admin@lucastvs.com",
+            mobile_number="9999999999",
+            billing_country=self.country,
+            billing_state=self.state,
+            billing_city=self.city,
+        )
+
+        self.department = Department.objects.create(name="ESG", code="ESG")
+
+        self.assigner_role = Role.objects.create(role_code="ESG-COORD", role_name="ESG Coordinator")
+        self.data_entry_role = Role.objects.create(role_code="DEPT-USER", role_name="Department User")
+
+        self.assigner = self._make_user("assigner", self.assigner_role, "ESG Coordinator")
+        self.data_user = self._make_user("data_user", self.data_entry_role, "Department User")
+
+        self.plant_one = Plant.objects.create(
+            name="Lucas Plant A",
+            code="LUCAS-01",
+            address="Plant A Address",
+            pincode="600001",
+            created_by=self.assigner,
+        )
+        self.plant_two = Plant.objects.create(
+            name="Lucas Plant B",
+            code="LUCAS-02",
+            address="Plant B Address",
+            pincode="600002",
+            created_by=self.assigner,
+        )
+        self.assigner.assigned_plants.add(self.plant_one, self.plant_two)
+        self.data_user.assigned_plants.add(self.plant_one, self.plant_two)
+
+        self.template = ApprovalConfigurationTemplate.objects.create(
+            company=self.company,
+            framework="BRSR",
+            name="Lucas TVS Workflow",
+        )
+        ApprovalConfigurationStage.objects.create(
+            template=self.template,
+            level=1,
+            label="Assign",
+            stage_type="question_assignment",
+            role=self.assigner_role,
+        )
+        ApprovalConfigurationStage.objects.create(
+            template=self.template,
+            level=2,
+            label="Data Entry",
+            stage_type="data_entry",
+            role=self.data_entry_role,
+        )
+
+        self.section = BRSRSection.objects.create(code="section_a", name="General Disclosures", display_order=1)
+        self.question = BRSRQuestion.objects.create(
+            question_id="a_q1",
+            section=self.section,
+            question_text="Test question?",
+            question_number="1",
+            question_type="text",
+            display_order=1,
+        )
+
+    def _make_user(self, username, role, full_name):
+        return User.objects.create_user(
+            username=username,
+            password="pass12345",
+            full_name=full_name,
+            email=f"{username}@example.com",
+            company=self.company,
+            department=self.department,
+            role=role,
+            is_active=True,
+        )
+
+    def _base_cleaned_data(self, plant, data_scope):
+        return {
+            "plant": plant,
+            "financial_year": "2024-2025",
+            "assignee": self.data_user,
+            "reviewer": None,
+            "priority": "medium",
+            "notes": "",
+            "due_date": None,
+            "data_collection_frequency": "annually",
+            "assigner": self.assigner,
+            "schedule_name": "Annual assignment",
+            "data_scope": data_scope,
+        }
+
+    def test_plant_wise_assignment_stays_on_anchor_plant_only(self):
+        assignment, schedule = create_assignment_and_optional_schedule(
+            user=self.assigner,
+            section=self.section,
+            principle=None,
+            cleaned_data=self._base_cleaned_data(self.plant_one, "plant"),
+            question_queryset=BRSRQuestion.objects.filter(pk=self.question.pk),
+        )
+
+        self.assertEqual(assignment.data_scope, "plant")
+        self.assertEqual(schedule.data_scope, "plant")
+        self.assertEqual(assignment.responses.count(), 1)
+        self.assertEqual(_plant_brsr_stats(self.plant_one)["entered"], 1)
+        self.assertEqual(_plant_brsr_stats(self.plant_two)["entered"], 0)
+        self.assertFalse(_build_brsr_data_groups([self.plant_two]))
+
+    def test_company_level_assignment_is_shared_across_company_plants(self):
+        form = BRSRAssignmentForm(
+            {
+                "plant": self.plant_one.pk,
+                "financial_year": "2024-2025",
+                "data_collection_frequency": "annually",
+                "priority": "medium",
+                "question_ids": [self.question.question_id],
+                "company_level": "on",
+            },
+            plant_queryset=Plant.objects.filter(pk__in=[self.plant_one.pk, self.plant_two.pk]),
+            user_queryset=User.objects.filter(pk__in=[self.assigner.pk, self.data_user.pk]),
+            question_queryset=BRSRQuestion.objects.filter(pk=self.question.pk),
+        )
+        self.assertTrue(form.is_valid())
+        self.assertEqual(form.cleaned_data["data_scope"], "company")
+
+        cleaned_data = dict(form.cleaned_data)
+        cleaned_data["assignee"] = self.data_user
+        cleaned_data["assigner"] = self.assigner
+
+        assignment, schedule = create_assignment_and_optional_schedule(
+            user=self.assigner,
+            section=self.section,
+            principle=None,
+            cleaned_data=cleaned_data,
+            question_queryset=form.cleaned_data["question_ids"],
+        )
+
+        self.assertEqual(assignment.data_scope, "company")
+        self.assertEqual(schedule.data_scope, "company")
+        self.assertEqual(assignment.responses.count(), 1)
+        self.assertEqual(_plant_brsr_stats(self.plant_one)["entered"], 1)
+        self.assertEqual(_plant_brsr_stats(self.plant_two)["entered"], 1)
+
+        plant_two_groups = _build_brsr_data_groups([self.plant_two])
+        self.assertTrue(plant_two_groups)
+        plant_entries = plant_two_groups[0]["questions"][0]["plant_entries"]
+        self.assertEqual(plant_entries[0]["plant_code"], self.plant_two.code)

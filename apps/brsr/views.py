@@ -104,10 +104,14 @@ def _assignment_queryset_for_user(user):
     # Check if user has a company
     if getattr(user, "company_id", None):
         return queryset.filter(plant__created_by__company_id=user.company_id)
-    
-    # For regular users, filter by assigned plants
-    plant_ids = user.assigned_plants.filter(is_active=True).values_list("id", flat=True)
-    return queryset.filter(plant_id__in=plant_ids)
+
+    assigned_plants = user.assigned_plants.filter(is_active=True)
+    plant_ids = assigned_plants.values_list("id", flat=True)
+    company_ids = list(assigned_plants.values_list("created_by__company_id", flat=True).distinct())
+    return queryset.filter(
+        Q(plant_id__in=plant_ids)
+        | Q(data_scope="company", plant__created_by__company_id__in=company_ids)
+    )
 
 
 def _resolve_brsr_workflow_template(user=None, plant=None):
@@ -244,6 +248,88 @@ def _serialize_consolidated_bundle_question(question, response=None, assignment=
         "documents": documents,
         "rendered_html": rendered_html,
     }
+
+
+def _build_consolidated_bundle_questions(assignments, user=None):
+    """Collapse bundle assignments into one combined question list."""
+    grouped_questions = {}
+
+    for assignment in assignments:
+        responses = {
+            response.question_id: response
+            for response in assignment.responses.select_related("question").prefetch_related("documents")
+        }
+        for question in assignment.questions.select_related("section", "principle").order_by("display_order", "question_number"):
+            response = responses.get(question.id)
+            if not response:
+                continue
+
+            bucket = grouped_questions.setdefault(
+                question.question_id,
+                {
+                    "question": question,
+                    "responses": [],
+                    "assignments": [],
+                    "plants": [],
+                    "documents": [],
+                },
+            )
+            bucket["responses"].append((assignment, response))
+            bucket["assignments"].append(assignment)
+            bucket["plants"].append(assignment.plant)
+            bucket["documents"].extend(
+                {
+                    "id": doc.id,
+                    "name": doc.original_name,
+                    "url": doc.document.url,
+                }
+                for doc in response.documents.all()
+            )
+
+    bundle_questions = []
+    for bucket in grouped_questions.values():
+        question = bucket["question"]
+        assignment_response_pairs = bucket["responses"]
+        latest_assignment, latest_response = max(
+            assignment_response_pairs,
+            key=lambda pair: pair[1].updated_at or timezone.now(),
+        )
+        aggregated_response = _AggregatedResponse(
+            _aggregate_response_values([pair[1].response_value or "" for pair in assignment_response_pairs]),
+            _aggregate_response_jsons([pair[1].response_json or {} for pair in assignment_response_pairs]),
+        )
+        unique_documents = []
+        seen_doc_ids = set()
+        for doc in bucket["documents"]:
+            if doc["id"] in seen_doc_ids:
+                continue
+            seen_doc_ids.add(doc["id"])
+            unique_documents.append(doc)
+
+        bundle_questions.append(
+            {
+                "question_id": question.question_id,
+                "title": question.question_text,
+                "number": question.question_number,
+                "question_type": question.question_type,
+                "status": _aggregate_response_statuses([pair[1].status for pair in assignment_response_pairs]),
+                "status_display": _aggregate_response_statuses([pair[1].status for pair in assignment_response_pairs]).replace("_", " ").title(),
+                "workflow_stage": latest_assignment.workflow_stage_label if latest_assignment else "",
+                "workflow_stage_type": latest_assignment.workflow_stage_type if latest_assignment else "",
+                "response_value": aggregated_response.response_value,
+                "response_json": aggregated_response.response_json,
+                "review_remark": latest_response.review_remark or "",
+                "documents": unique_documents,
+                "rendered_html": _render_question_readonly_html(question, aggregated_response),
+                "assignment_count": len({assignment.id for assignment in bucket["assignments"]}),
+                "plant_count": len({plant.id for plant in bucket["plants"]}),
+                "plants": sorted({plant.name for plant in bucket["plants"]}),
+                "assignment_ids": [assignment.assignment_id for assignment in bucket["assignments"]],
+            }
+        )
+
+    bundle_questions.sort(key=lambda q: (q["number"], q["question_id"]))
+    return bundle_questions
 
 
 def _reviewer_links_for_assignment(assignment):
@@ -495,7 +581,7 @@ def _build_brsr_selection_filters(user, request):
         selected_plant = plants[0]
 
     financial_years = list(
-        Assignment.objects.filter(plant__in=plants)
+        _scope_assignments_for_plants(plants)
         .order_by("-financial_year")
         .values_list("financial_year", flat=True)
         .distinct()
@@ -522,11 +608,7 @@ def _is_assignment_ready_for_pre_final(assignment):
     if task.is_completed:
         return False
     current_stage = task.current_stage
-    return bool(
-        current_stage
-        and current_stage.stage_type == "approval"
-        and assignment.overall_status == "completed"
-    )
+    return bool(current_stage and current_stage.stage_type == "approval")
 
 
 def _section_principle_assignments_for_pre_final(user, plant, section, principle, financial_year):
@@ -1051,26 +1133,61 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
     plant = cleaned_data["plant"]
     financial_year = cleaned_data["financial_year"]
     period_code = cleaned_data.get("period_code")
+    data_scope = cleaned_data.get("data_scope") or "plant"
+    if data_scope not in {"plant", "company"}:
+        raise ValueError("Invalid data_scope; must be 'plant' or 'company'.")
     question_ids = list(question_queryset.values_list("id", flat=True))
-    if _is_section_locked_for_new_assignment(user, plant, section, principle, financial_year, question_ids=question_ids):
-        existing_assignments = _plant_scope_assignment_queryset(user, plant).filter(
-            section_id=section.id, 
-            financial_year=financial_year
-        )
-        if principle:
-            existing_assignments = existing_assignments.filter(principle_id=principle.id)
-        else:
-            existing_assignments = existing_assignments.filter(principle__isnull=True)
-        
-        existing_question_ids = set()
-        for assignment in existing_assignments:
-            existing_question_ids.update(assignment.questions.values_list("id", flat=True))
-        
-        duplicate_questions = [q_id for q_id in question_ids if q_id in existing_question_ids]
-        raise ValueError(
-            f"The following questions are already assigned to this plant and financial year: {duplicate_questions}. "
-            "Please select different questions or complete the existing assignment first."
-        ) 
+
+    if data_scope == "company":
+        company = _resolve_company_for_plant(plant)
+        if not company:
+            raise ValueError(
+                "Could not resolve a company for the selected plant; a company-level "
+                "assignment requires a plant that belongs to a company."
+            )
+        if _plant_level_conflict_for_company(company, section, principle, financial_year, question_ids):
+            raise ValueError(
+                "Some of these questions already have plant-level assignment(s) within this "
+                "company for this financial year. Complete or remove those before creating a "
+                "company-level assignment covering the same questions."
+            )
+        if _is_company_section_locked_for_new_assignment(user, company, section, principle, financial_year, question_ids=question_ids):
+            existing_assignments = _company_scope_assignment_queryset(company).filter(
+                section_id=section.id, financial_year=financial_year
+            )
+            existing_assignments = existing_assignments.filter(principle_id=principle.id) if principle else existing_assignments.filter(principle__isnull=True)
+            existing_question_ids = set()
+            for assignment in existing_assignments:
+                existing_question_ids.update(assignment.questions.values_list("id", flat=True))
+            duplicate_questions = [q_id for q_id in question_ids if q_id in existing_question_ids]
+            raise ValueError(
+                f"The following questions already have a company-level assignment for this "
+                f"financial year: {duplicate_questions}. Select different questions or "
+                "complete the existing company-level assignment first."
+            )
+    else:
+        company = _resolve_company_for_plant(plant)
+        if company and _is_company_section_locked_for_new_assignment(user, company, section, principle, financial_year, question_ids=question_ids):
+            raise ValueError(
+                "These questions are already covered by a company-level assignment for this "
+                "financial year. Company-level data cannot be split into separate plant-level "
+                "assignments — use the existing company-level assignment instead."
+            )
+        if _is_section_locked_for_new_assignment(user, plant, section, principle, financial_year, question_ids=question_ids):
+            existing_assignments = _plant_scope_assignment_queryset(user, plant).filter(
+                section_id=section.id,
+                financial_year=financial_year
+            )
+            existing_assignments = existing_assignments.filter(principle_id=principle.id) if principle else existing_assignments.filter(principle__isnull=True)
+            existing_question_ids = set()
+            for assignment in existing_assignments:
+                existing_question_ids.update(assignment.questions.values_list("id", flat=True))
+            duplicate_questions = [q_id for q_id in question_ids if q_id in existing_question_ids]
+            raise ValueError(
+                f"The following questions are already assigned to this plant and financial year: {duplicate_questions}. "
+                "Please select different questions or complete the existing assignment first."
+            )
+
     force_create = cleaned_data.get("force_create", False)
     workflow_template = workflow_template_override or _resolve_brsr_workflow_template(user=user, plant=plant)
     if not workflow_template:
@@ -1078,24 +1195,11 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
     if not workflow_template.first_stage:
         raise ValueError("The configured BRSR workflow template has no stages.")
 
-    assignee = _resolve_brsr_assignee(
-        plant,
-        workflow_template,
-        selected_assignee=cleaned_data.get("assignee"),
-        current_user=user,
-    )
+    assignee = _resolve_brsr_assignee(plant, workflow_template, selected_assignee=cleaned_data.get("assignee"), current_user=user)
     if assignee is None:
-        raise ValueError(
-            "No eligible assignee matches the first stage of the configured BRSR workflow."
-        )
+        raise ValueError("No eligible assignee matches the first stage of the configured BRSR workflow.")
 
-    reviewer = _resolve_brsr_reviewer(
-        plant,
-        workflow_template,
-        selected_reviewer=cleaned_data.get("reviewer"),
-        current_user=user,
-    )
-
+    reviewer = _resolve_brsr_reviewer(plant, workflow_template, selected_reviewer=cleaned_data.get("reviewer"), current_user=user)
     if cleaned_data.get("reviewer") is not None and reviewer is None:
         raise ValueError(
             "The selected reviewer is not eligible for the review stage of this "
@@ -1113,6 +1217,7 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
         financial_year=cleaned_data["financial_year"],
         workflow_template=workflow_template,
         data_collection_frequency=cleaned_data.get("data_collection_frequency") or "",
+        data_scope=data_scope,
         assigner_content_type=user_ct,
         assigner_object_id=assigner.pk,
         assignee_content_type=user_ct,
@@ -1125,21 +1230,14 @@ def _create_brsr_assignment(*, user, section, principle, cleaned_data, question_
     )
     assignment.questions.set(question_queryset)
     if reviewer is not None:
-        AssignmentReviewer.objects.create(
-            assignment=assignment,
-            reviewer_content_type=user_ct,
-            reviewer_object_id=reviewer.pk,
-        )
+        AssignmentReviewer.objects.create(assignment=assignment, reviewer_content_type=user_ct, reviewer_object_id=reviewer.pk)
     for question in question_queryset:
-        QuestionResponse.objects.get_or_create(
-            assignment=assignment,
-            question=question,
-        )
+        QuestionResponse.objects.get_or_create(assignment=assignment, question=question)
     _ensure_assignment_workflow_task(assignment, current_user=user)
     _advance_assignment_to_entry_stage(assignment, actor=user)
     from .notifications import notify_assignment_created
     notify_assignment_created(assignment)
-    
+
     return assignment
 
 
@@ -1646,6 +1744,126 @@ def _aggregate_response_jsons(response_jsons):
     return aggregated
 
 
+def _aggregate_response_statuses(statuses):
+    """Pick the most attention-worthy workflow status from a list."""
+    worst = "draft"
+    worst_rank = _STATUS_DOT_PRIORITY.get(worst, 1)
+    for status in statuses:
+        rank = _STATUS_DOT_PRIORITY.get(status or "draft", 1)
+        if rank > worst_rank:
+            worst = status or "draft"
+            worst_rank = rank
+    return worst
+
+def _resolve_company_for_plant(plant):
+    return getattr(getattr(plant, "created_by", None), "company", None)
+
+
+def _company_ids_for_plants(plants):
+    company_ids = []
+    for plant in plants:
+        company_id = getattr(getattr(plant, "created_by", None), "company_id", None)
+        if company_id:
+            company_ids.append(company_id)
+    return list(dict.fromkeys(company_ids))
+
+
+def _scope_assignments_for_plants(plants):
+    queryset = Assignment.objects.filter(plant__in=plants)
+    company_ids = _company_ids_for_plants(plants)
+    if company_ids:
+        queryset = queryset | Assignment.objects.filter(
+            data_scope="company",
+            plant__created_by__company_id__in=company_ids,
+        )
+    return queryset.distinct()
+
+
+def _scope_assignments_for_plant(plant):
+    queryset = Assignment.objects.filter(plant=plant)
+    company = _resolve_company_for_plant(plant)
+    if company:
+        queryset = queryset | Assignment.objects.filter(
+            data_scope="company",
+            plant__created_by__company=company,
+        )
+    return queryset.distinct()
+
+
+def _company_scope_assignment_queryset(company):
+    if not company:
+        return Assignment.objects.none()
+    return Assignment.objects.filter(
+        data_scope="company",
+        plant__created_by__company=company,
+    )
+
+
+def _is_company_section_locked_for_new_assignment(user, company, section, principle, financial_year, question_ids=None):
+    """
+    Company-level equivalent of _is_section_locked_for_new_assignment:
+    - with question_ids: True if any of those questions already belong to
+      an existing company-level assignment for this section/principle/FY
+      (duplicate prevention).
+    - without question_ids: True if any existing company-level assignment
+      for this section/principle/FY has already reached Pre-Final/Final
+      Approval (lock check), mirroring the plant-level rule.
+    """
+    if not company or not section or not financial_year:
+        return False
+
+    assignments = list(
+        _company_scope_assignment_queryset(company)
+        .filter(section_id=section.id, financial_year=financial_year)
+        .select_related("plant", "section", "principle", "workflow_template")
+        .prefetch_related("questions")
+    )
+    if principle:
+        assignments = [a for a in assignments if a.principle_id == principle.id]
+    else:
+        assignments = [a for a in assignments if a.principle_id is None]
+
+    if not assignments:
+        return False
+
+    if question_ids:
+        existing_question_ids = set()
+        for assignment in assignments:
+            existing_question_ids.update(assignment.questions.values_list("id", flat=True))
+        return any(q_id in existing_question_ids for q_id in question_ids)
+
+    locked_stages = {"pre_final_approval", "final_approval"}
+    for assignment in assignments:
+        _ensure_assignment_workflow_task(assignment, current_user=user)
+        task = assignment.workflow_task
+        if not task:
+            continue
+        if task.is_completed:
+            return True
+        if task.current_stage and task.current_stage.stage_type in locked_stages:
+            return True
+    return False
+
+
+def _plant_level_conflict_for_company(company, section, principle, financial_year, question_ids):
+    """True if any of question_ids already have a plant-level assignment
+    somewhere in `company` for this section/principle/FY — used to stop a
+    company-level assignment from being created on top of plant-level data
+    that already exists for the same questions (validation requirement)."""
+    if not company or not question_ids:
+        return False
+    assignments = Assignment.objects.filter(
+        data_scope="plant",
+        plant__created_by__company=company,
+        section_id=section.id,
+        financial_year=financial_year,
+    ).prefetch_related("questions")
+    assignments = assignments.filter(principle_id=principle.id) if principle else assignments.filter(principle__isnull=True)
+    existing_question_ids = set()
+    for assignment in assignments:
+        existing_question_ids.update(assignment.questions.values_list("id", flat=True))
+    return any(q_id in existing_question_ids for q_id in question_ids)
+
 class _AggregatedResponse:
     """Lightweight stand-in for a QuestionResponse so the existing
     _render_question_readonly_html(question, response) renderer can be
@@ -1690,7 +1908,7 @@ def _aggregate_response_stats(responses_qs):
 
 
 def _plant_brsr_stats(plant, financial_year=None):
-    responses = QuestionResponse.objects.filter(assignment__plant=plant)
+    responses = QuestionResponse.objects.filter(assignment__in=_scope_assignments_for_plant(plant))
     if financial_year:
         responses = responses.filter(assignment__financial_year=financial_year)
     return _aggregate_response_stats(responses)
@@ -1711,7 +1929,7 @@ def _build_brsr_data_groups(plants, financial_year=None):
     assignment) plus an aggregated 'All periods' view — the template turns
     this into a period-selector dropdown per plant block.
     """
-    assignments = Assignment.objects.filter(plant__in=plants)
+    assignments = _scope_assignments_for_plants(plants)
     if financial_year:
         assignments = assignments.filter(financial_year=financial_year)
     assignments = assignments.select_related("plant").prefetch_related(
@@ -1731,6 +1949,17 @@ def _build_brsr_data_groups(plants, financial_year=None):
         frequency = assignment.data_collection_frequency or ""
         period_code = assignment.period_code or ""
         period_label = assignment.period_label or period_code or assignment.financial_year
+        assignment_company = _resolve_company_for_plant(assignment.plant)
+        if assignment.data_scope == "company" and assignment_company:
+            target_plants = [
+                plant
+                for plant in plants
+                if _resolve_company_for_plant(plant) == assignment_company
+            ]
+            if not target_plants and assignment.plant in plants:
+                target_plants = [assignment.plant]
+        else:
+            target_plants = [assignment.plant] if assignment.plant in plants else []
 
         for question in assignment.questions.all():
             response = responses_by_qid.get(question.id)
@@ -1741,20 +1970,21 @@ def _build_brsr_data_groups(plants, financial_year=None):
                 continue
 
             question_meta[question.id] = question
-            plant_bucket = question_plant_period_data.setdefault(question.id, {})
-            period_bucket = plant_bucket.setdefault(assignment.plant_id, {})
             key = period_code or f"__single__{assignment.id}"
-            existing = period_bucket.get(key)
-            if not existing or (response.updated_at and response.updated_at > existing["updated_at"]):
-                period_bucket[key] = {
-                    "plant": assignment.plant,
-                    "response": response,
-                    "financial_year": assignment.financial_year,
-                    "updated_at": response.updated_at,
-                    "frequency": frequency,
-                    "period_code": period_code,
-                    "period_label": period_label,
-                }
+            for plant in target_plants:
+                plant_bucket = question_plant_period_data.setdefault(question.id, {})
+                period_bucket = plant_bucket.setdefault(plant.id, {})
+                existing = period_bucket.get(key)
+                if not existing or (response.updated_at and response.updated_at > existing["updated_at"]):
+                    period_bucket[key] = {
+                        "plant": plant,
+                        "response": response,
+                        "financial_year": assignment.financial_year,
+                        "updated_at": response.updated_at,
+                        "frequency": frequency,
+                        "period_code": period_code,
+                        "period_label": period_label,
+                    }
 
     sections = {}
     for qid, question in question_meta.items():
@@ -1801,6 +2031,7 @@ def _build_brsr_data_groups(plants, financial_year=None):
                 aggregated_html = _render_question_readonly_html(question, aggregated_response)
             else:
                 aggregated_html = period_payload[0]["response_html"]
+                aggregated_response = period_entries[0]["response"]
 
             latest_entry = max(period_entries, key=lambda e: e["updated_at"] or timezone.now())
 
@@ -1812,11 +2043,13 @@ def _build_brsr_data_groups(plants, financial_year=None):
                     "frequency": latest_entry["frequency"],
                     "status": latest_entry["response"].status,
                     "status_display": latest_entry["response"].get_status_display(),
-                    "response_value": latest_entry["response"].response_value or "",
+                    "response_value": aggregated_response.response_value or "",
                     "response_html": aggregated_html,
                     "reviewed_by": str(latest_entry["response"].reviewed_by) if latest_entry["response"].reviewed_by else "",
                     "has_multiple_periods": has_multiple_periods,
                     "periods": period_payload,
+                    "aggregated_response_value": aggregated_response.response_value or "",
+                    "aggregated_response_json": aggregated_response.response_json or {},
                 }
             )
 
@@ -1831,6 +2064,167 @@ def _build_brsr_data_groups(plants, financial_year=None):
             "dot_status": _aggregate_question_dot_status(plant_entries_payload),
             "has_frequency": has_frequency,
             "plant_entries": plant_entries_payload,
+        }
+
+        if principle:
+            p_bucket = bucket["principle_map"].setdefault(
+                principle.id, {"principle": principle, "questions": []}
+            )
+            p_bucket["questions"].append(row)
+        else:
+            bucket["questions"].append(row)
+
+    ordered_sections = []
+    for bucket in sections.values():
+        bucket["questions"].sort(key=lambda r: (r["display_order"], r["number"]))
+        principles = list(bucket["principle_map"].values())
+        for p in principles:
+            p["questions"].sort(key=lambda r: (r["display_order"], r["number"]))
+        principles.sort(key=lambda p: p["principle"].principle_number)
+        ordered_sections.append(
+            {"section": bucket["section"], "principles": principles, "questions": bucket["questions"]}
+        )
+    ordered_sections.sort(key=lambda s: (s["section"].display_order, s["section"].code))
+    return ordered_sections
+
+
+def _build_brsr_company_data_groups(plants, financial_year=None):
+    """
+    Build company-wide BRSR data groups with one combined entry per question.
+    The entries inside each question aggregate all contributing plants for a
+    given period, then aggregate all periods into the default "All Plants"
+    view shown in the company page.
+    """
+    assignments = _scope_assignments_for_plants(plants)
+    if financial_year:
+        assignments = assignments.filter(financial_year=financial_year)
+    assignments = assignments.select_related("plant").prefetch_related(
+        "questions",
+        "questions__section",
+        "questions__principle",
+        "responses",
+        "responses__question",
+    )
+
+    question_meta = {}
+    # question_id -> period_key -> bucket
+    question_period_data = {}
+
+    for assignment in assignments:
+        responses_by_qid = {r.question_id: r for r in assignment.responses.all()}
+        frequency = assignment.data_collection_frequency or ""
+        period_code = assignment.period_code or ""
+        period_label = assignment.period_label or period_code or assignment.financial_year
+
+        for question in assignment.questions.all():
+            response = responses_by_qid.get(question.id)
+            if not response:
+                continue
+            has_data = bool((response.response_value or "").strip()) or bool(response.response_json)
+            if not has_data:
+                continue
+
+            question_meta[question.id] = question
+            key = period_code or f"__single__{assignment.id}"
+            bucket = question_period_data.setdefault(question.id, {})
+            period_bucket = bucket.setdefault(
+                key,
+                {
+                    "entries": [],
+                    "financial_year": assignment.financial_year,
+                    "frequency": frequency,
+                    "period_code": period_code,
+                    "period_label": period_label,
+                },
+            )
+            period_bucket["entries"].append(
+                {
+                    "plant": assignment.plant,
+                    "response": response,
+                    "financial_year": assignment.financial_year,
+                    "updated_at": response.updated_at,
+                    "frequency": frequency,
+                    "period_code": period_code,
+                    "period_label": period_label,
+                }
+            )
+
+    sections = {}
+    for qid, question in question_meta.items():
+        section = question.section
+        principle = question.principle
+        bucket = sections.setdefault(
+            section.id, {"section": section, "principle_map": {}, "questions": []}
+        )
+
+        period_map = question_period_data[qid]
+        all_period_entries = [
+            entry
+            for period_bucket in period_map.values()
+            for entry in period_bucket["entries"]
+        ]
+
+        all_frequencies = {entry["frequency"] for entry in all_period_entries if entry["frequency"]}
+        has_frequency = bool(all_frequencies)
+
+        period_payload = []
+        for _, bucket_data in sorted(
+            period_map.items(),
+            key=lambda item: _period_sort_key(item[1]["period_code"]),
+        ):
+            period_entries = bucket_data["entries"]
+            latest_period_entry = max(period_entries, key=lambda e: e["updated_at"] or timezone.now())
+            aggregated_period_response = _AggregatedResponse(
+                _aggregate_response_values([e["response"].response_value or "" for e in period_entries]),
+                _aggregate_response_jsons([e["response"].response_json or {} for e in period_entries]),
+            )
+            period_payload.append(
+                {
+                    "code": bucket_data["period_code"] or "default",
+                    "label": bucket_data["period_label"],
+                    "status": _aggregate_response_statuses([e["response"].status for e in period_entries]),
+                    "status_display": latest_period_entry["response"].get_status_display(),
+                    "response_html": _render_question_readonly_html(question, aggregated_period_response),
+                    "reviewed_by": str(latest_period_entry["response"].reviewed_by) if latest_period_entry["response"].reviewed_by else "",
+                    "financial_year": bucket_data["financial_year"],
+                }
+            )
+
+        combined_response = _AggregatedResponse(
+            _aggregate_response_values([e["response"].response_value or "" for e in all_period_entries]),
+            _aggregate_response_jsons([e["response"].response_json or {} for e in all_period_entries]),
+        )
+        latest_entry = max(all_period_entries, key=lambda e: e["updated_at"] or timezone.now())
+        combined_html = _render_question_readonly_html(question, combined_response)
+        contributing_plants = len({entry["plant"].id for entry in all_period_entries})
+
+        plant_entries_payload = [
+            {
+                "plant_name": "All Plants",
+                "plant_code": "ALL",
+                "financial_year": latest_entry["financial_year"],
+                "frequency": latest_entry["frequency"],
+                "status": _aggregate_response_statuses([e["response"].status for e in all_period_entries]),
+                "status_display": latest_entry["response"].get_status_display(),
+                "response_value": combined_response.response_value or "",
+                "response_html": combined_html,
+                "reviewed_by": str(latest_entry["response"].reviewed_by) if latest_entry["response"].reviewed_by else "",
+                "has_multiple_periods": len(period_payload) > 1,
+                "periods": period_payload,
+                "contributing_plants": contributing_plants,
+            }
+        ]
+
+        row = {
+            "question_id": question.question_id,
+            "number": question.question_number,
+            "display_order": question.display_order,
+            "title": question.question_text,
+            "sub_section": question.sub_section or "",
+            "dot_status": _aggregate_question_dot_status(plant_entries_payload),
+            "has_frequency": has_frequency,
+            "plant_entries": plant_entries_payload,
+            "contributing_plants": contributing_plants,
         }
 
         if principle:
@@ -1978,31 +2372,19 @@ class ApprovalBundleDetailView(LoginRequiredMixin, TemplateView):
         section = assignments[0].section
         principle = assignments[0].principle if principle_slug else None
 
-        bundle_assignments = []
-        question_total = 0
-        for assignment in assignments:
-            responses = {
-                response.question_id: response
-                for response in assignment.responses.select_related("question").prefetch_related("documents")
+        bundle_questions = _build_consolidated_bundle_questions(assignments, user=user)
+        question_total = len(bundle_questions)
+        bundle_assignments = [
+            {
+                "assignment": {
+                    "assignment_id": f"{company.company_name} Combined Bundle" if company.company_name else "Combined Bundle",
+                    "plant": "All Plants",
+                    "section": section,
+                    "principle": principle,
+                },
+                "questions": bundle_questions,
             }
-            questions = []
-            for question in assignment.questions.select_related("section", "principle").order_by("display_order", "question_number"):
-                response = responses.get(question.id)
-                questions.append(
-                    _serialize_consolidated_bundle_question(
-                        question,
-                        response=response,
-                        assignment=assignment,
-                        user=user,
-                    )
-                )
-            question_total += len(questions)
-            bundle_assignments.append(
-                {
-                    "assignment": _serialize_assignment(assignment, user),
-                    "questions": questions,
-                }
-            )
+        ]
 
         context.update(
             {
@@ -2013,7 +2395,7 @@ class ApprovalBundleDetailView(LoginRequiredMixin, TemplateView):
                 "financial_year": financial_year,
                 "bundle_assignments": bundle_assignments,
                 "question_total": question_total,
-                "assignment_total": len(bundle_assignments),
+                "assignment_total": len(assignments),
                 "stage_label": "Pre-Final Approval" if stage_type == "pre_final_approval" else "Final Approval",
                 "approve_url": reverse("brsr:approve_consolidated_bundle"),
                 "reject_url": reverse("brsr:reject_consolidated_bundle"),
@@ -3326,7 +3708,7 @@ class BRSRPlantDataView(LoginRequiredMixin, TemplateView):
         plant = self.plant
 
         financial_years = list(
-            Assignment.objects.filter(plant=plant)
+            _scope_assignments_for_plant(plant)
             .order_by("-financial_year")
             .values_list("financial_year", flat=True)
             .distinct()
@@ -3366,7 +3748,7 @@ class BRSRCompanyDataView(LoginRequiredMixin, TemplateView):
         plants = list(_dashboard_plant_queryset(user))
 
         financial_years = list(
-            Assignment.objects.filter(plant__in=plants)
+            _scope_assignments_for_plants(plants)
             .order_by("-financial_year")
             .values_list("financial_year", flat=True)
             .distinct()
@@ -3383,7 +3765,7 @@ class BRSRCompanyDataView(LoginRequiredMixin, TemplateView):
             "company_name": company.company_name if company else "All Plants",
             "financial_years": financial_years,
             "selected_fy": selected_fy,
-            "section_groups": _build_brsr_data_groups(plants, financial_year=selected_fy or None),
+            "section_groups": _build_brsr_company_data_groups(plants, financial_year=selected_fy or None),
             "stats": _company_brsr_stats(plants, financial_year=selected_fy or None),
             "dashboard_url": reverse("brsr:brsr_data_dashboard"),
             "page_title": "Company-wide BRSR Data",

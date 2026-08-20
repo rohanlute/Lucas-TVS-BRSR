@@ -1385,6 +1385,7 @@
       }
       
       showReviewMessage(data.message || 'Review finalized successfully.', 'success');
+      sessionStorage.setItem('brsr_workspace_message', data.message || 'Review finalized successfully.');
       
       // Handle redirect
       if (data.should_redirect && data.redirect_url) {

@@ -1200,6 +1200,17 @@
             <div class="invalid-feedback">Please select a due date.</div>
           </div>
           <div class="full">
+            <label class="choice-item" style="align-items:center;">
+              <input type="checkbox" id="assignmentCompanyLevel" name="company_level">
+              <span>
+                Company Level Assignment
+                <small style="display:block;color:var(--muted);font-weight:400;margin-top:2px;">
+                  Shared across every plant in the company instead of being created separately for a particular plant.
+                </small>
+              </span>
+            </label>
+          </div>
+          <div class="full">
             <label class="tool-label">Notes</label>
             <textarea class="workspace-textarea" rows="3" name="notes" id="assignmentNotes" placeholder="Assignment notes (optional)"></textarea>
           </div>
@@ -2593,8 +2604,10 @@
         setButtonLoading(btn, false);
         return;
       }
-      showWorkspaceMessage(data.message || 'Assignment submitted successfully.', 'success');
-      await loadWorkspace(state.sectionCode, state.principleSlug, state.questionId, state.assignmentId);
+      const message = data.message || 'Assignment submitted successfully.';
+      sessionStorage.setItem('brsr_workspace_message', message);
+      const redirectUrl = data.redirect_url || "{{ assignment_dashboard_url|escapejs }}";
+      window.location.href = redirectUrl;
     } catch (error) {
       console.error('Error submitting assignment:', error);
       alert('An error occurred while submitting the assignment. Please check the console for details.');
@@ -2820,6 +2833,23 @@
     
     const submitBtn = document.getElementById('createAssignmentBtn');
     const overlay = document.getElementById('modalLoadingOverlay');
+    const companyLevelCheckbox = document.getElementById('assignmentCompanyLevel');
+
+    const updatePlantLabel = () => {
+      const plantFieldWrap = document.getElementById('assignmentPlant')?.closest('div');
+      const label = plantFieldWrap ? plantFieldWrap.querySelector('.tool-label') : null;
+      if (label) {
+        label.innerHTML = companyLevelCheckbox && companyLevelCheckbox.checked
+          ? 'Anchor Plant <span class="required-star">*</span> <span class="field-required-text">used to resolve workflow roles; will be shared company-wide</span>'
+          : 'Plant <span class="required-star">*</span> <span class="field-required-text">required</span>';
+      }
+    };
+
+    updatePlantLabel();
+    if (companyLevelCheckbox && !companyLevelCheckbox.dataset.bound) {
+      companyLevelCheckbox.addEventListener('change', updatePlantLabel);
+      companyLevelCheckbox.dataset.bound = '1';
+    }
     
     setButtonLoading(submitBtn, true, 'Creating Assignment...');
     overlay.classList.add('active');
@@ -2856,7 +2886,6 @@
         overlay.classList.remove('active');
         return;
       }
-
       const basePayload = {
         section_code: state.sectionCode,
         principle_slug: state.principleSlug,
@@ -2870,6 +2899,7 @@
         due_date: document.getElementById('assignmentDueDate').value,
         notes: document.getElementById('assignmentNotes').value,
         data_collection_frequency: frequency,
+        data_scope: companyLevelCheckbox && companyLevelCheckbox.checked ? 'company' : 'plant',
         weekly_start_day: document.getElementById('scheduleWeeklyStart').value,
         weekly_end_day: document.getElementById('scheduleWeeklyEnd').value,
         selected_months: Array.from(document.querySelectorAll('.schedule-month:checked')).map((el) => el.value),
