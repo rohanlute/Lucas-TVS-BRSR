@@ -832,7 +832,7 @@ from django.http import JsonResponse
 
 from .models import EmissionTransaction
 from apps.organizations.models import FinancialYear
-
+from django.db.models import Sum, Q
 
 def ScopeTotalsAPIView(request):
 
@@ -893,6 +893,9 @@ def ScopeTotalsAPIView(request):
         company_id=company_id,
         financial_year_id=current_fy.id,
         financial_month_id=financial_month_id,
+    ).filter(
+        Q(assignment__isnull=True) |
+        Q(assignment__status="APPROVED")
     )
 
     # ==========================================================
@@ -928,6 +931,9 @@ def ScopeTotalsAPIView(request):
             company_id=company_id,
             financial_year_id=previous_fy.id,
             financial_month_id=financial_month_id,
+        ).filter(
+            Q(assignment__isnull=True) |
+            Q(assignment__status="APPROVED")
         )
 
         if plant_id != "ALL":

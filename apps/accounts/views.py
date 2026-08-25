@@ -646,7 +646,10 @@ class UserUpdateView(UserLocationAssignmentMixin, LoginRequiredMixin, UpdateView
                 user.company = company
 
             user.save()
-            self.sync_user_assignments(user)    
+            # Sync plant assignments only when plant assignment
+            # data was submitted.
+            if 'assigned_plants' in self.request.POST:
+                self.sync_user_assignments(user)
         messages.success(self.request, f'User "{user.get_full_name() or user.username}" updated successfully.')
         return redirect(self.get_success_url())
 

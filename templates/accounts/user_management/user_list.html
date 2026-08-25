@@ -5,139 +5,132 @@
 
 {% block extra_css %}
 <style>
-    .user-list-page .page-header-right-items-wrapper {
-        flex-wrap: wrap;
-        justify-content: flex-end;
-    }
+/* ================================
+   User Table
+   ================================ */
 
-    .user-list-page .search-form {
-        min-width: 280px;
-    }
+.user-list-page .user-table-card {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 18px;
+    overflow: hidden;
+}
 
-    .user-list-page .search-form .input-group {
-        width: 100%;
-    }
+.user-list-page .user-table-card .table-responsive {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
 
-    .user-list-page .user-table-card {
-        border-radius: 18px;
-        overflow: visible;
-    }
+.user-list-page .user-table-card table {
+    width: 100%;
+    max-width: 100%;
+    table-layout: fixed;
+    margin-bottom: 0;
+}
 
-    .user-list-page .user-table-card {
-        border-radius: 18px;
-        overflow: hidden;
-        width: 100%;
-    }
+/* Header */
+.user-list-page .user-table-card thead th {
+    padding: 1rem 1rem;
+    white-space: nowrap;
+    text-align: center;
+}
 
-    .user-list-page .user-table-card .table-responsive {
-        width: 100%;
-        overflow-x: auto;
-        overflow-y: visible;
-    }
+/* Body cells */
+.user-list-page .user-table-card tbody td {
+    padding: 1rem 1rem;
+    vertical-align: middle;
+    text-align: center;
 
-    .user-list-page .user-table-card table {
-        width: 100%;
-        margin-bottom: 0;
-        table-layout: fixed;
-    }
+    /* IMPORTANT */
+    white-space: normal !important;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
 
-    .user-list-page .user-table-card th,
-    .user-list-page .user-table-card td {
-        overflow-wrap: anywhere;
-        word-break: break-word;
-    }
+/* Column widths */
+.user-list-page .user-table-card th:nth-child(1),
+.user-list-page .user-table-card td:nth-child(1) {
+    width: 6%;
+}
 
-    .user-list-page .user-table-card th:nth-child(1),
-    .user-list-page .user-table-card td:nth-child(1) {
-        width: 6%;
-    }
+.user-list-page .user-table-card th:nth-child(2),
+.user-list-page .user-table-card td:nth-child(2) {
+    width: 20%;
+}
 
-    .user-list-page .user-table-card th:nth-child(2),
-    .user-list-page .user-table-card td:nth-child(2) {
-        width: 20%;
-    }
+.user-list-page .user-table-card th:nth-child(3),
+.user-list-page .user-table-card td:nth-child(3) {
+    width: 12%;
+}
 
-    .user-list-page .user-table-card th:nth-child(3),
-    .user-list-page .user-table-card td:nth-child(3) {
-        width: 12%;
-    }
+.user-list-page .user-table-card th:nth-child(4),
+.user-list-page .user-table-card td:nth-child(4) {
+    width: 22%;
+}
 
-    .user-list-page .user-table-card th:nth-child(4),
-    .user-list-page .user-table-card td:nth-child(4) {
-        width: 22%;
-    }
+.user-list-page .user-table-card th:nth-child(5),
+.user-list-page .user-table-card td:nth-child(5) {
+    width: 14%;
+}
 
-    .user-list-page .user-table-card th:nth-child(5),
-    .user-list-page .user-table-card td:nth-child(5) {
-        width: 14%;
-    }
+.user-list-page .user-table-card th:nth-child(6),
+.user-list-page .user-table-card td:nth-child(6) {
+    width: 10%;
+}
 
-    .user-list-page .user-table-card th:nth-child(6),
-    .user-list-page .user-table-card td:nth-child(6) {
-        width: 10%;
-    }
+.user-list-page .user-table-card th:nth-child(7),
+.user-list-page .user-table-card td:nth-child(7) {
+    width: 16%;
+}
 
-    .user-list-page .user-table-card th:nth-child(7),
-    .user-list-page .user-table-card td:nth-child(7) {
-        width: 16%;
-    }
+/* Name */
+.user-list-page .user-name-wrapper {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+}
 
-    .user-list-page .user-name-wrapper {
-        min-width: 0;
-        width: 100%;
-    }
+.user-list-page .user-meta {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+}
 
-    .user-list-page .user-meta {
-        min-width: 0;
-        max-width: 100%;
-        line-height: 1.1;
-    }
+.user-list-page .user-meta .fw-semibold {
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
 
-    .user-list-page .user-meta .fw-semibold {
-        overflow-wrap: anywhere;
-        word-break: break-word;
-    }
+/* Email */
+.user-list-page .user-email {
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    overflow: hidden;
+}
 
-    .user-list-page .user-table-card table {
-        margin-bottom: 0;
-    }
+/* Phone */
+.user-list-page .user-phone {
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
 
-    .user-list-page .user-table-card thead th {
-        padding: 1rem 1.25rem;
-        white-space: nowrap;
-        text-align: center; 
-    }
+/* Actions */
+.user-list-page .actions-cell {
+    white-space: nowrap !important;
+    overflow: visible !important;
+}
 
-    .user-list-page .user-table-card tbody td {
-        padding: 1rem 1.25rem;
-        vertical-align: middle;
-        text-align: center; 
-    }
-
-    .user-list-page .user-avatar {
-        width: 44px;
-        height: 44px;
-        flex: 0 0 44px;
-    }
-
-    .user-list-page .user-avatar img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .user-list-page .user-meta {
-        line-height: 1.1;
-    }
-
-    .user-list-page .actions-toggle {
-        width: 32px;
-        height: 32px;
-    }
-
-    .user-list-page .dropdown-menu {
-        z-index: 1060;
-    }
+.user-list-page .actions-cell .hstack {
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+}
     /* Small pagination styles */
 .common-pagination-wrapper .pagination .page-link {
     font-size: 11px;
@@ -358,9 +351,9 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td>{{ user.username }}</td>
-                                <td>{{ user.email }}</td>
-                                <td>{{ user.mobile_number|default:"-" }}</td>
+                                <td >{{ user.username }}</td>
+                                <td class="user-email">{{ user.email }}</td>
+                                <td class="user-phone">{{ user.mobile_number|default:"-" }}</td>
                                 <!-- <td>{{ user.department.name|default:'-' }}</td> -->
                                 <td>
                                     {% if user.is_active %}
@@ -369,7 +362,7 @@
                                         <span class="badge bg-soft-danger text-danger">Inactive</span>
                                     {% endif %}
                                 </td>
-                                <td class="text-end">
+                                <td class="text-end actions-cell">
                                     <div class="hstack gap-2 justify-content-end">
                                         {% if request.user|has_perm:'VIEW_USER' %}
                                         <a href="{% url 'accounts:user_view' user.pk %}" class="btn btn-sm btn-light-brand">

@@ -525,7 +525,7 @@ class EmissionAssignmentDashboardView(LoginRequiredMixin, TemplateView):
         elif user.role.role_code == "ESG-COORD":
             assignments = EmissionAssignment.objects.filter(company=user.company,plant__in=user.assigned_plants.all()).distinct()
 
-        elif user.role.role_code in ["DEPT-APPR", "PLANT-COORD"]:
+        elif user.role.role_code in ["DEPT-REVIEW", "PLANT-COORD"]:
             assignments = EmissionAssignment.objects.filter(company=user.company,reviewer=user)
         
         elif user.role.role_code == "DEPT-USER":
@@ -1354,6 +1354,18 @@ class ScopeDashboardView(ListView):
 
     paginate_by = 20
 
+    def get_queryset(self):
+        queryset = EmissionTransaction.objects.all()
+        assignment_id = self.request.GET.get("assignment")
+
+        if assignment_id:
+            queryset = queryset.filter(
+                assignment_id=assignment_id,
+                assignment__status="APPROVED",
+            )
+
+        return queryset
+
     def get_context_data(self, **kwargs):
 
         context = super().get_context_data(**kwargs)
@@ -1964,7 +1976,7 @@ from django.views import View
 from django.views import View
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.db.models import Sum
+from django.db.models import Sum, Q
 
 from .models import EmissionTransaction, EmissionAssignment
 
@@ -2039,6 +2051,9 @@ class LoadEmissionTransactionsView(View):
                     company_id=company,
                     financial_year_id=financial_year,
                     financial_month_id=financial_month,
+                ).filter(
+                    Q(assignment__isnull=True) |
+                    Q(assignment__status="APPROVED")
                 )
                 .values(
                     "activity_id",
@@ -2060,6 +2075,12 @@ class LoadEmissionTransactionsView(View):
                         company_id=company,
                         financial_year_id=financial_year,
                         financial_month_id=financial_month,
+                    )
+                    .filter(
+                        Q(assignment__isnull=True) |
+                        Q(assignment__status="APPROVED")
+                    )
+                    .filter(
                         activity_id=transaction["activity_id"],
                         source_id=transaction["source_id"],
                     )
@@ -2088,13 +2109,14 @@ class LoadEmissionTransactionsView(View):
         # ====================================================
         else:
 
-            transactions = (
-                EmissionTransaction.objects
-                .filter(
-                    company_id=company,
-                    plant_id=plant,
+            transactions = (EmissionTransaction.objects
+                .filter(company_id=company,plant_id=plant,
                     financial_year_id=financial_year,
                     financial_month_id=financial_month,
+                )
+                .filter(
+                    Q(assignment__isnull=True) |
+                    Q(assignment__status="APPROVED")
                 )
                 .select_related("activity")
             )
@@ -2184,7 +2206,7 @@ class PlantUsersAPIView(APIView):
         reviewers = (
             User.objects.filter(
                 assigned_plants__id=plant_id,
-                role__role_code="DEPT-APPR",
+                role__role_code="DEPT-REVIEW",
                 is_active=True,
             )
             .distinct()
