@@ -23,8 +23,79 @@
         overflow: visible;
     }
 
+    .user-list-page .user-table-card {
+        border-radius: 18px;
+        overflow: hidden;
+        width: 100%;
+    }
+
     .user-list-page .user-table-card .table-responsive {
-        overflow: visible;
+        width: 100%;
+        overflow-x: auto;
+        overflow-y: visible;
+    }
+
+    .user-list-page .user-table-card table {
+        width: 100%;
+        margin-bottom: 0;
+        table-layout: fixed;
+    }
+
+    .user-list-page .user-table-card th,
+    .user-list-page .user-table-card td {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    .user-list-page .user-table-card th:nth-child(1),
+    .user-list-page .user-table-card td:nth-child(1) {
+        width: 6%;
+    }
+
+    .user-list-page .user-table-card th:nth-child(2),
+    .user-list-page .user-table-card td:nth-child(2) {
+        width: 20%;
+    }
+
+    .user-list-page .user-table-card th:nth-child(3),
+    .user-list-page .user-table-card td:nth-child(3) {
+        width: 12%;
+    }
+
+    .user-list-page .user-table-card th:nth-child(4),
+    .user-list-page .user-table-card td:nth-child(4) {
+        width: 22%;
+    }
+
+    .user-list-page .user-table-card th:nth-child(5),
+    .user-list-page .user-table-card td:nth-child(5) {
+        width: 14%;
+    }
+
+    .user-list-page .user-table-card th:nth-child(6),
+    .user-list-page .user-table-card td:nth-child(6) {
+        width: 10%;
+    }
+
+    .user-list-page .user-table-card th:nth-child(7),
+    .user-list-page .user-table-card td:nth-child(7) {
+        width: 16%;
+    }
+
+    .user-list-page .user-name-wrapper {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .user-list-page .user-meta {
+        min-width: 0;
+        max-width: 100%;
+        line-height: 1.1;
+    }
+
+    .user-list-page .user-meta .fw-semibold {
+        overflow-wrap: anywhere;
+        word-break: break-word;
     }
 
     .user-list-page .user-table-card table {
@@ -274,7 +345,7 @@
                             <tr>
                                 <td>{{ page_obj.start_index|add:forloop.counter0 }}</td>
                                 <td>
-                                    <div class="hstack gap-3">
+                                    <div class="hstack gap-3 user-name-wrapper">
                                         <div class="avatar-image border-0 user-avatar">
                                             {% if user.profile_image %}
                                                 <img src="{{ user.profile_image.url }}" alt="{{ user.full_name|default:user.username }}" class="img-fluid">
