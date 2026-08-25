@@ -19,6 +19,9 @@ from django.contrib.auth import get_user_model
 from django.db.models import Sum, Q
 import logging
 import json
+from apps.common_events.constants import GOALS, GOAL, CREATED
+from apps.common_events.event_context import EventContext
+from apps.common_events.services import EventService
 
 from apps.goals.models import *
 
@@ -806,23 +809,35 @@ class AddGoalView(LoginRequiredMixin, View):
             # =====================================================
             if created:
                 try:
+                    # Existing in-app notification
                     NotificationService.notify(
                         "GOAL_CREATED",
                         goal=goal,
                         sender=request.user,
                     )
 
-                    logger.info(
-                        f"Goal creation notifications sent for "
-                        f"Goal '{goal.name}'"
+                    # Publish Goal Created event for email
+                    EventService.publish(
+                        EventContext(
+                            module=GOALS,
+                            entity=GOAL,
+                            action=CREATED,
+                            target=goal,
+                            actor=request.user,
+                            company=getattr(request.user, 'company', None),
+                            request=request,
+                        )
                     )
 
-                except Exception as notification_error:
-                    # Notification failure should NOT prevent
-                    # the Goal itself from being created.
+                    logger.info(
+                        f"Goal creation notification and email event "
+                        f"processed for Goal '{goal.name}'"
+                    )
+
+                except Exception as event_error:
                     logger.error(
-                        f"Error sending Goal creation notification: "
-                        f"{notification_error}",
+                        f"Error processing Goal creation notification/email: "
+                        f"{event_error}",
                         exc_info=True
                     )
 
