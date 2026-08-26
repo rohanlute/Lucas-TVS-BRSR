@@ -23,17 +23,17 @@
     const VALIDATORS = {
 
         alphabetic: {
-            test: (v) => /^[A-Za-z\s]+$/.test(v),
-            message: (name) => `${name} must contain only letters and spaces.`,
-            pattern: '^[A-Za-z\\s]+$',
+            test: (v) => /^[A-Za-z\s,]+$/.test(v),
+            message: (name) => `${name} must contain only letters, spaces, and commas.`,
+            pattern: '^[A-Za-z\\s,]+$',
             inputmode: 'text',
             maxlength: 100,
         },
 
         alphanumeric: {
-            test: (v) => /^[A-Za-z0-9\s]+$/.test(v),
-            message: (name) => `${name} must contain only letters, numbers, and spaces.`,
-            pattern: '^[A-Za-z0-9\\s]+$',
+            test: (v) => /^[A-Za-z0-9\s,]+$/.test(v),
+            message: (name) => `${name} must contain only letters, numbers, spaces, and commas.`,
+            pattern: '^[A-Za-z0-9\\s,]+$',
             inputmode: 'text',
             maxlength: 100,
         },
