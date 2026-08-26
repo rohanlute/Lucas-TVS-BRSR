@@ -3108,7 +3108,7 @@ class AssignmentDetailView(LoginRequiredMixin, TemplateView):
     View for showing all submitted questions for a specific assignment.
     """
     login_url = "accounts:login"
-    template_name = "brsr/assignment_detail.html "
+    template_name = "brsr/assignment_detail.html"
     success_url = "brsr:approval_dashboard"
 
     def get_context_data(self, **kwargs):
