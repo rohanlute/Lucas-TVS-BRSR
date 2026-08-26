@@ -3,11 +3,38 @@ Pulls live data from the `brsr` app (BRSRSection, BRSRPrinciple, BRSRQuestion,
 QuestionResponse) and shapes it for the report / PDF.
 """
 
-from apps.brsr.models import BRSRSection, BRSRPrinciple, BRSRQuestion, QuestionResponse
+from apps.brsr.models import Assignment, BRSRSection, BRSRPrinciple, BRSRQuestion, QuestionResponse
 import logging
 import json
 
 logger = logging.getLogger(__name__)
+
+
+def _reportable_brsr_assignments(financial_year=None,
+    assignment_id=None,plant_id=None,):
+    """
+    Return BRSR assignments that have reached
+    pre_final_approval at least once.
+
+    Once an assignment reaches pre_final_approval,
+    its data remains reportable through final_approval
+    and completed stages.
+    """
+    assignments = Assignment.objects.filter(
+        workflow_tasks__logs__to_stage__stage_type="pre_final_approval").distinct()
+
+    if financial_year:
+        assignments = assignments.filter(financial_year=financial_year)
+
+    if assignment_id:
+        assignments = assignments.filter(id=assignment_id)
+
+    if plant_id:
+        assignments = assignments.filter(plant_id=plant_id)
+
+    return assignments
+
+
 
 PRINCIPLE_COLUMNS = [f"P{i}" for i in range(1, 10)]  # ["P1", ..., "P9"]
 
@@ -538,24 +565,17 @@ def _attach_answers(questions, financial_year=None, assignment_id=None, plant_id
 
     responses = QuestionResponse.objects.filter(question_id__in=question_ids)
 
-    if assignment_id:
-        responses = responses.filter(assignment_id=assignment_id)
-        logger.info(f"Filtered by assignment_id: {assignment_id}")
-    elif financial_year or plant_id:
-        try:
-            from apps.brsr.models import Assignment
-            assignments = Assignment.objects.all()
-            if financial_year:
-                assignments = assignments.filter(financial_year=financial_year)
-            if plant_id:
-                assignments = assignments.filter(plant_id=plant_id)
-            assignment_ids = list(assignments.values_list('id', flat=True))
-            if assignment_ids:
-                responses = responses.filter(assignment_id__in=assignment_ids)
-            else:
-                responses = responses.none()   # <-- everything goes blank
-        except (ImportError, AttributeError) as e:
-            logger.warning(f"Cannot filter by financial_year/plant_id: {e}")
+    reportable_assignments = _reportable_brsr_assignments(
+        financial_year=financial_year,assignment_id=assignment_id,plant_id=plant_id,)
+
+    assignment_ids = list(reportable_assignments.values_list("id", flat=True))
+
+    if assignment_ids:
+        responses = responses.filter(assignment_id__in=assignment_ids)
+    else:
+        responses = responses.none()
+
+    logger.info(f"Filtered to {len(assignment_ids)} reportable BRSR assignments")
 
     logger.info(f"Found {responses.count()} responses total")
     response_map = {}
@@ -634,6 +654,14 @@ def get_brsr_stats(financial_year=None, assignment_id=None, plant_id=None):
         f"Getting BRSR stats for financial_year={financial_year}, "
         f"assignment_id={assignment_id}, plant_id={plant_id}"
     )
+
+    reportable_assignments = _reportable_brsr_assignments(
+        financial_year=financial_year,assignment_id=assignment_id,plant_id=plant_id,)
+
+    if not reportable_assignments.exists():
+        logger.info("No reportable BRSR assignments found. "
+            "Returning zero statistics.")
+        return 0, 0
 
     sections = BRSRSection.objects.filter(is_active=True)
 

@@ -1908,17 +1908,39 @@ def _aggregate_response_stats(responses_qs):
 
 
 def _plant_brsr_stats(plant, financial_year=None):
-    responses = QuestionResponse.objects.filter(assignment__in=_scope_assignments_for_plant(plant))
+    assignments = _reportable_brsr_assignments_for_plants([plant])
+
     if financial_year:
-        responses = responses.filter(assignment__financial_year=financial_year)
+        assignments = assignments.filter(financial_year=financial_year)
+    responses = QuestionResponse.objects.filter(assignment__in=assignments)
     return _aggregate_response_stats(responses)
 
 
 def _company_brsr_stats(plants, financial_year=None):
-    responses = QuestionResponse.objects.filter(assignment__plant__in=plants)
+    assignments = _reportable_brsr_assignments_for_plants(plants)
+
     if financial_year:
-        responses = responses.filter(assignment__financial_year=financial_year)
+        assignments = assignments.filter(financial_year=financial_year)
+    responses = QuestionResponse.objects.filter(assignment__in=assignments)
     return _aggregate_response_stats(responses)
+
+
+from django.db.models import Q
+def _reportable_brsr_assignments_for_plants(plants):
+    """
+    Return BRSR assignments whose workflow has reached
+    pre_final_approval at least once.
+
+    Once an assignment crosses into pre_final_approval,
+    its entered data remains reportable through later stages.
+    """
+    return (
+        _scope_assignments_for_plants(plants)
+        .filter(
+            workflow_tasks__logs__to_stage__stage_type="pre_final_approval"
+        )
+        .distinct()
+    )
 
 
 def _build_brsr_data_groups(plants, financial_year=None):
@@ -1929,7 +1951,7 @@ def _build_brsr_data_groups(plants, financial_year=None):
     assignment) plus an aggregated 'All periods' view — the template turns
     this into a period-selector dropdown per plant block.
     """
-    assignments = _scope_assignments_for_plants(plants)
+    assignments = _reportable_brsr_assignments_for_plants(plants)
     if financial_year:
         assignments = assignments.filter(financial_year=financial_year)
     assignments = assignments.select_related("plant").prefetch_related(
@@ -2095,7 +2117,7 @@ def _build_brsr_company_data_groups(plants, financial_year=None):
     given period, then aggregate all periods into the default "All Plants"
     view shown in the company page.
     """
-    assignments = _scope_assignments_for_plants(plants)
+    assignments = _reportable_brsr_assignments_for_plants(plants)
     if financial_year:
         assignments = assignments.filter(financial_year=financial_year)
     assignments = assignments.select_related("plant").prefetch_related(
