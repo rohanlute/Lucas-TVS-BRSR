@@ -1578,7 +1578,10 @@ function updateDonutChart(scopeData) {
   const legendHtml = scopeData.map(s => `
     <div class="item">
       <span class="name"><span class="sw" style="background: ${s.color};"></span>${s.name}</span>
-      <span><span class="value">${Math.round(s.value).toLocaleString()}</span><span class="pct">${s.pct.toFixed(1)}%</span></span>
+      <span><span class="value">${Number(s.value).toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        })}</span><span class="pct">${s.pct.toFixed(1)}%</span></span>
     </div>
   `).join('');
   document.getElementById('donutLegend').innerHTML = legendHtml;
@@ -1961,7 +1964,8 @@ if (plants.length > 0) {
     }
     
     const hasData = p.value > 0;
-    const valueDisplay = hasData ? Math.round(p.value).toLocaleString() : '—';
+    const valueDisplay = hasData ? Number(p.value).toLocaleString(undefined, {
+      minimumFractionDigits: 2, maximumFractionDigits: 2}) : '—';
     const valueUnit = hasData ? '<span class="unit">t</span>' : '<span class="unit"></span>';
     const valueClass = hasData ? '' : 'no-data';
     

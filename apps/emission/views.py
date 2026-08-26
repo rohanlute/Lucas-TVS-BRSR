@@ -25,6 +25,7 @@ from apps.organizations.workflow_configuration_engine import WorkflowConfigurati
 from django.utils import timezone
 from apps.accounts.models import User
 from decimal import Decimal
+from django.db.models import Sum, Q
 
 # Notication and Timesheet 
 from apps.common_events.event_context import EventContext
@@ -35,6 +36,23 @@ from apps.goals.services.notification import GoalNotificationService
 
 import logging
 logger = logging.getLogger(__name__)
+
+def _approved_emission_transactions_queryset():
+    """
+    Return emission transactions that are allowed to appear
+    in dashboards/reports.
+
+    Unassigned transactions are visible.
+    Assignment-linked transactions are visible only after
+    the assignment is APPROVED.
+    """
+    return EmissionTransaction.objects.filter(
+        Q(assignment__isnull=True) |
+        Q(assignment__status="APPROVED")
+    )
+
+
+
 # apps/emission/views.py - Updated EmissionsDashboardView
 
 class EmissionsDashboardView(TemplateView):
@@ -92,7 +110,7 @@ class EmissionsDashboardView(TemplateView):
         
         # ===== CALCULATE TOTALS =====
         # Total emissions in kg then convert to t
-        total_emissions_kg = EmissionTransaction.objects.filter(**filter_kwargs).aggregate(
+        total_emissions_kg = _approved_emission_transactions_queryset().filter(**filter_kwargs).aggregate(
             total=Sum('total_emission')
         )['total'] or Decimal('0')
         total_emissions_kg = Decimal(str(total_emissions_kg))
@@ -101,7 +119,7 @@ class EmissionsDashboardView(TemplateView):
         # Scope totals
         scope_totals_t = {}
         for scope in EmissionScope.objects.filter(is_active=True):
-            total_kg = EmissionTransaction.objects.filter(
+            total_kg = _approved_emission_transactions_queryset().filter(
                 **filter_kwargs,
                 activity__category__scope_id=scope.id
             ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
@@ -128,7 +146,7 @@ class EmissionsDashboardView(TemplateView):
             prev_filter = filter_kwargs.copy()
             prev_filter['financial_year_id'] = prev_fy.id
             
-            prev_total_kg = EmissionTransaction.objects.filter(**prev_filter).aggregate(
+            prev_total_kg = _approved_emission_transactions_queryset().filter(**prev_filter).aggregate(
                 total=Sum('total_emission')
             )['total'] or Decimal('0')
             prev_total_t = float(Decimal(str(prev_total_kg)) / Decimal('1000'))
@@ -138,7 +156,7 @@ class EmissionsDashboardView(TemplateView):
             
             # Scope deltas
             for scope in EmissionScope.objects.filter(is_active=True):
-                prev_kg = EmissionTransaction.objects.filter(
+                prev_kg = _approved_emission_transactions_queryset().filter(
                     **prev_filter,
                     activity__category__scope_id=scope.id
                 ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
@@ -155,14 +173,34 @@ class EmissionsDashboardView(TemplateView):
         
         # Build KPI data
         context["kpis"] = [
-            {"label": "TOTAL EMISSIONS YTD", "value": f"{total_emissions:,.0f}", "unit": "tCO₂e",
-             "delta": f"{delta_total:.1f}", "accent": "green" if delta_total < 0 else "red"},
-            {"label": "SCOPE 1 DIRECT", "value": f"{scope1_total:,.0f}", "unit": "tCO₂e",
-             "delta": f"{delta_scope1:.1f}", "accent": "teal" if delta_scope1 < 0 else "orange"},
-            {"label": "SCOPE 2 INDIRECT", "value": f"{scope2_total:,.0f}", "unit": "tCO₂e",
-             "delta": f"{delta_scope2:.1f}", "accent": "blue" if delta_scope2 < 0 else "orange"},
-            {"label": "SCOPE 3 VALUE CHAIN", "value": f"{scope3_total:,.0f}", "unit": "tCO₂e",
-             "delta": f"{delta_scope3:.1f}", "accent": "orange" if delta_scope3 < 0 else "orange"},
+            {
+                "label": "TOTAL EMISSIONS YTD",
+                "value": f"{total_emissions:,.2f}",
+                "unit": "tCO₂e",
+                "delta": f"{delta_total:.1f}",
+                "accent": "green" if delta_total < 0 else "red"
+            },
+            {
+                "label": "SCOPE 1 DIRECT",
+                "value": f"{scope1_total:,.2f}",
+                "unit": "tCO₂e",
+                "delta": f"{delta_scope1:.1f}",
+                "accent": "teal" if delta_scope1 < 0 else "orange"
+            },
+            {
+                "label": "SCOPE 2 INDIRECT",
+                "value": f"{scope2_total:,.2f}",
+                "unit": "tCO₂e",
+                "delta": f"{delta_scope2:.1f}",
+                "accent": "blue" if delta_scope2 < 0 else "orange"
+            },
+            {
+                "label": "SCOPE 3 VALUE CHAIN",
+                "value": f"{scope3_total:,.2f}",
+                "unit": "tCO₂e",
+                "delta": f"{delta_scope3:.1f}",
+                "accent": "orange" if delta_scope3 < 0 else "orange"
+            },
         ]
         
         # ===== MONTHLY TREND DATA =====
@@ -181,20 +219,20 @@ class EmissionsDashboardView(TemplateView):
                 month_filter = filter_kwargs.copy()
                 month_filter['financial_month_id'] = month.id
                 
-                s1 = float(EmissionTransaction.objects.filter(
-                    **month_filter,
-                    activity__category__scope__code='S1'
-                ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0') / Decimal('1000'))
+                s1_kg = _approved_emission_transactions_queryset().filter(
+                    **month_filter,activity__category__scope__code='S1'
+                ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
+                s1 = float(Decimal(str(s1_kg)) / Decimal('1000'))
+
+                s2_kg = _approved_emission_transactions_queryset().filter(
+                    **month_filter,activity__category__scope__code='S2'
+                ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
+                s2 = float(Decimal(str(s2_kg)) / Decimal('1000'))
                 
-                s2 = float(EmissionTransaction.objects.filter(
-                    **month_filter,
-                    activity__category__scope__code='S2'
-                ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0') / Decimal('1000'))
-                
-                s3 = float(EmissionTransaction.objects.filter(
-                    **month_filter,
-                    activity__category__scope__code='S3'
-                ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0') / Decimal('1000'))
+                s3_kg = _approved_emission_transactions_queryset().filter(
+                    **month_filter,activity__category__scope__code='S3'
+                ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
+                s3 = float(Decimal(str(s3_kg)) / Decimal('1000'))
                 
                 months.append(month.name[:3] if hasattr(month, 'name') else str(month.month_number))
                 scope1_series.append(s1)
@@ -237,13 +275,13 @@ class EmissionsDashboardView(TemplateView):
             if current_fy:
                 p_filter['financial_year_id'] = current_fy.id
             
-            total_kg = EmissionTransaction.objects.filter(**p_filter).aggregate(
+            total_kg = _approved_emission_transactions_queryset().filter(**p_filter).aggregate(
                 total=Sum('total_emission')
             )['total'] or Decimal('0')
             total_t = float(Decimal(str(total_kg)) / Decimal('1000'))
             
             # Calculate completion percentage for this plant
-            completed_sources = EmissionTransaction.objects.filter(
+            completed_sources = _approved_emission_transactions_queryset().filter(
                 **p_filter
             ).values('source_id').distinct().count()
             
@@ -376,7 +414,7 @@ class EmissionsDashboardDataView(View):
             filter_kwargs['financial_year_id'] = current_fy.id
         
         # Calculate totals
-        total_emissions_kg = EmissionTransaction.objects.filter(**filter_kwargs).aggregate(
+        total_emissions_kg = _approved_emission_transactions_queryset().filter(**filter_kwargs).aggregate(
             total=Sum('total_emission')
         )['total'] or Decimal('0')
         total_emissions_t = float(Decimal(str(total_emissions_kg)) / Decimal('1000'))
@@ -384,7 +422,7 @@ class EmissionsDashboardDataView(View):
         # Scope totals
         scope_totals_t = {}
         for scope in EmissionScope.objects.filter(is_active=True):
-            total_kg = EmissionTransaction.objects.filter(
+            total_kg = _approved_emission_transactions_queryset().filter(
                 **filter_kwargs,
                 activity__category__scope_id=scope.id
             ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
@@ -421,13 +459,13 @@ class EmissionsDashboardDataView(View):
             if current_fy:
                 p_filter['financial_year_id'] = current_fy.id
             
-            total_kg = EmissionTransaction.objects.filter(**p_filter).aggregate(
+            total_kg = _approved_emission_transactions_queryset().filter(**p_filter).aggregate(
                 total=Sum('total_emission')
             )['total'] or Decimal('0')
             total_t = float(Decimal(str(total_kg)) / Decimal('1000'))
             
             # Calculate completion percentage for this plant
-            completed_sources = EmissionTransaction.objects.filter(
+            completed_sources = _approved_emission_transactions_queryset().filter(
                 **p_filter
             ).values('source_id').distinct().count()
             
