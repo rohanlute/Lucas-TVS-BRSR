@@ -2586,14 +2586,38 @@ function switchToManualMode() {
 const downloadTemplateBtn = document.getElementById("downloadTemplateBtn");
 if (downloadTemplateBtn) {
     downloadTemplateBtn.addEventListener("click", function () {
-        const selectedScope = document.querySelector(".scope-card.selected");
-        const scopeCode = selectedScope ? selectedScope.dataset.scope : "S1";
-        const assignmentId = document.getElementById("assignmentId").value;
 
-        let url = `/emission/api/scope-template/download/?scope=${scopeCode}`;
+        const assignmentElement =
+            document.getElementById("assignmentId");
+
+        const assignmentId =
+            assignmentElement
+                ? assignmentElement.value
+                : "";
+
+        // Assignment download
         if (assignmentId) {
-            url += `&assignment=${assignmentId}`;
+
+            const url =
+                `/emission/api/scope-template/download/?assignment=${assignmentId}`;
+
+            window.location.href = url;
+
+            return;
         }
+
+        // Normal scope download
+        const selectedScope =
+            document.querySelector(".scope-card.selected");
+
+        const scopeCode =
+            selectedScope
+                ? selectedScope.dataset.scope
+                : "S1";
+
+        const url =
+            `/emission/api/scope-template/download/?scope=${scopeCode}`;
+
         window.location.href = url;
     });
 }

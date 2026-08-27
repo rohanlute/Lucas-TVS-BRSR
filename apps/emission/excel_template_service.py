@@ -16,7 +16,7 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.worksheet.datavalidation import DataValidation
 from openpyxl.utils import get_column_letter
-
+from django.db.models import Q
 # Import models from your app
 from apps.companies.models import Company
 from apps.organizations.models import (
@@ -90,6 +90,19 @@ def build_scope_template_workbook(scope, categories, company, plants,
         tuple: (BytesIO, filename)
     """
     wb = Workbook()
+
+    # ---------------------------------------------------------
+    # Get sources assigned specifically to this assignment
+    # ---------------------------------------------------------
+    assigned_source_ids = set()
+
+    if assignment:
+        assigned_source_ids = set(
+            assignment.assignment_sources.values_list(
+                "source_id",
+                flat=True,
+            )
+        )
 
     # ---------------- hidden "Lists" sheet (data validation source) --------
     lists_ws = wb.active
@@ -183,6 +196,33 @@ def build_scope_template_workbook(scope, categories, company, plants,
                "EMISSION FACTOR", "TOTAL EMISSION (tCO2e)",
                "activity_id", "source_id", "unit_id", "category_id"]
 
+
+    # =========================================================
+    # ASSIGNMENT-SPECIFIC CATEGORY FILTER
+    # =========================================================
+
+    if assignment:
+
+        assigned_source_ids = set(assignment.assignment_sources.values_list(
+                "source_id",flat=True,))
+        filtered_categories = []
+        for category in categories:
+            category_has_assigned_source = False
+            for activity in getattr(category,"activities_list",[]):
+                sources = getattr(activity,"sources_list",[])
+                if any(
+                    source
+                    and source.id in assigned_source_ids
+                    for source in sources
+                ):
+                    category_has_assigned_source = True
+                    break
+
+            if category_has_assigned_source:
+                filtered_categories.append(category)
+
+        categories = filtered_categories
+
     for category in categories:
         sheet_name = _safe_sheet_name(category.name, used_names)
         ws = wb.create_sheet(sheet_name)
@@ -213,26 +253,36 @@ def build_scope_template_workbook(scope, categories, company, plants,
         activities = getattr(category, 'activities_list', [])
         
         for activity in activities:
-            # Use sources_list instead of sources (custom attribute)
-            sources = getattr(activity, 'sources_list', [])
-            if not sources:
-                # If no sources, create a row with empty source
+            # ---------------------------------------------------------
+            # Assignment-specific source filtering
+            # ---------------------------------------------------------
+            sources = getattr(activity, "sources_list", [])
+            if assignment:
+                assigned_source_ids = set(
+                    assignment.assignment_sources.values_list(
+                        "source_id",flat=True,)
+                )
+
+                sources = [
+                    source
+                    for source in sources
+                    if source and source.id in assigned_source_ids
+                ]
+
+            # For normal/non-assignment downloads, keep existing behavior
+            elif not sources:
                 sources = [None]
+
+            # For assignment downloads, do NOT create "No Source"
+            if assignment and not sources:
+                continue
                 
             for source in sources:
                 # Get emission factor for this activity/source
-                factor = Decimal('0')
-                if hasattr(activity, 'factor_for') and callable(activity.factor_for):
+                factor = Decimal("0")
+
+                if hasattr(activity, "factor_for") and callable(activity.factor_for):
                     factor = activity.factor_for(source)
-                elif source and activity.requires_emission_factor:
-                    # Fallback: try to get factor from EmissionFactor
-                    factor_obj = EmissionFactor.objects.filter(
-                        activity=activity,
-                        is_active=True,
-                        effective_from__lte=timezone.now().date()
-                    ).order_by("-effective_from").first()
-                    if factor_obj:
-                        factor = factor_obj.emission_factor
 
                 # Activity name (locked)
                 ws.cell(row=r, column=1, value=activity.name).border = BORDER

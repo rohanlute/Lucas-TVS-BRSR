@@ -11,6 +11,7 @@ from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET, require_POST
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Q
 from decimal import Decimal
 from django.utils import timezone
 import logging
@@ -72,17 +73,38 @@ def _load_categories_for_scope(scope):
 
             activity.sources_list = sources
 
-            def factor_for(source):
-                """Get emission factor for a given source."""
-                if source and activity.requires_emission_factor:
-                    factor_obj = EmissionFactor.objects.filter(
+            def factor_for(source, activity=activity):
+                """Get current emission factor for activity + base unit."""
+
+                if not activity.requires_emission_factor:
+                    return Decimal("0")
+
+                if not activity.base_unit:
+                    return Decimal("0")
+
+                today = timezone.now().date()
+
+                factor_obj = (
+                    EmissionFactor.objects
+                    .filter(
                         activity=activity,
+                        unit=activity.base_unit,
                         is_active=True,
-                        effective_from__lte=timezone.now().date()
-                    ).order_by("-effective_from").first()
-                    if factor_obj:
-                        return factor_obj.emission_factor
-                return Decimal('0')
+                        effective_from__lte=today,
+                    )
+                    .filter(
+                        Q(effective_to__isnull=True)
+                        |
+                        Q(effective_to__gte=today)
+                    )
+                    .order_by("-effective_from")
+                    .first()
+                )
+
+                if factor_obj:
+                    return factor_obj.emission_factor
+
+                return Decimal("0")
 
             activity.factor_for = factor_for
             wrapped_activities.append(activity)
@@ -96,46 +118,147 @@ def _load_categories_for_scope(scope):
 @login_required
 @require_GET
 def download_scope_template(request):
-    """Download Excel template for a specific emission scope."""
-    scope_code = request.GET.get("scope")  # "S1", "S2", or "S3"
+    """Download Excel template for a scope or a specific assignment."""
+
     assignment_id = request.GET.get("assignment")
+    scope_code = request.GET.get("scope")
 
-    if not scope_code:
-        return JsonResponse(
-            {"success": False, "message": "Scope code is required (S1, S2, or S3)."},
-            status=400
+    # =========================================================
+    # ASSIGNMENT-BASED DOWNLOAD
+    # Assignment is the source of truth
+    # =========================================================
+    assignment = None
+
+    if assignment_id:
+
+        assignment = (
+            EmissionAssignment.objects
+            .filter(
+                id=assignment_id,
+                assignee=request.user,
+            )
+            .select_related(
+                "company",
+                "plant",
+                "scope",
+                "financial_year",
+                "financial_month",
+            )
+            .first()
         )
 
-    try:
-        scope = EmissionScope.objects.get(code=scope_code, is_active=True)
-    except EmissionScope.DoesNotExist:
-        return JsonResponse(
-            {"success": False, "message": f"Scope with code '{scope_code}' not found."},
-            status=404
+        if not assignment:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": (
+                        "Invalid assignment or you are not "
+                        "the assigned user."
+                    ),
+                },
+                status=403,
+            )
+
+        # -----------------------------------------------------
+        # Get Scope directly from Assignment
+        # -----------------------------------------------------
+        scope = assignment.scope
+
+        if not scope or not scope.is_active:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": (
+                        "No active emission scope is assigned "
+                        "to this assignment."
+                    ),
+                },
+                status=400,
+            )
+
+        # Company comes from assignment
+        company = assignment.company
+
+    # =========================================================
+    # NORMAL SCOPE DOWNLOAD
+    # Used when there is no assignment
+    # =========================================================
+    else:
+
+        if not scope_code:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": (
+                        "Scope code is required "
+                        "(S1, S2, or S3)."
+                    ),
+                },
+                status=400,
+            )
+
+        try:
+            scope = EmissionScope.objects.get(
+                code=scope_code,
+                is_active=True,
+            )
+
+        except EmissionScope.DoesNotExist:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": (
+                        f"Scope with code '{scope_code}' "
+                        "not found."
+                    ),
+                },
+                status=404,
+            )
+
+        # Existing normal-download company logic
+        company = getattr(
+            request.user,
+            "company",
+            None,
         )
+
+        if not company:
+            company = Company.objects.first()
+
+        if not company:
+            return JsonResponse(
+                {
+                    "success": False,
+                    "message": "No company found.",
+                },
+                status=400,
+            )
+
+    # =========================================================
+    # Load categories for the resolved scope
+    # =========================================================
 
     categories = _load_categories_for_scope(scope)
 
-    company = getattr(request.user, "company", None)
-    if not company:
-        company = Company.objects.first()
-
-    if not company:
-        return JsonResponse(
-            {"success": False, "message": "No company found."},
-            status=400
-        )
+    # =========================================================
+    # Existing master data
+    # =========================================================
 
     plants = Plant.objects.all().order_by("name")
-    financial_years = FinancialYear.objects.order_by("-financial_year")
-    financial_months = FinancialMonth.objects.order_by("id")
 
-    assignment = None
-    if assignment_id:
-        assignment = EmissionAssignment.objects.filter(
-            id=assignment_id,
-            company=company
-        ).first()
+    financial_years = (
+        FinancialYear.objects
+        .order_by("-financial_year")
+    )
+
+    financial_months = (
+        FinancialMonth.objects
+        .order_by("id")
+    )
+
+    # =========================================================
+    # Build Excel
+    # =========================================================
 
     buf, filename = build_scope_template_workbook(
         scope=scope,
@@ -147,11 +270,20 @@ def download_scope_template(request):
         assignment=assignment,
     )
 
+    # =========================================================
+    # Return Excel
+    # =========================================================
+
     response = HttpResponse(
         buf.read(),
-        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        content_type=(
+            "application/vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        ),
     )
-    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+    response["Content-Disposition"] = (f'attachment; filename="{filename}"')
+
     return response
 
 
