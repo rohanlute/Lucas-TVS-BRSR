@@ -1,6 +1,16 @@
 from apps.notifications.models import Notification
 from apps.goals.models import KPI, KPIPlantTarget
+from apps.common_events.constants import (
+    GOALS,
+    GOAL,
+    KPI_AT_RISK,
+    KPI_CRITICAL,
+    KPI_NEAR_TARGET,
+    KPI_TARGET_ACHIEVED,
+)
 
+from apps.common_events.event_context import EventContext
+from apps.common_events.services import EventService
 
 class GoalNotificationService:
 
@@ -62,24 +72,21 @@ class GoalNotificationService:
 
         # ---------------------------------------------------------
         # Get plant-specific Baseline / Target
+        # Fall back to KPI-level values when plant target
+        # is not configured.
         # ---------------------------------------------------------
-        if plant:
-            plant_target = (KPIPlantTarget.objects.filter(
-                    kpi=kpi,plant=plant,).first()
-            )
 
-            if not plant_target:
-                return None
-
-            baseline_value = plant_target.baseline_value
-            target_value = plant_target.target_value
-        else:
-            baseline_value = kpi.baseline_value
-            target_value = kpi.target_value
+        baseline_value = kpi.baseline_value
+        target_value = kpi.target_value
 
         if plant:
             plant_target = (
-                KPIPlantTarget.objects.filter(kpi=kpi,plant=plant,).first()
+                KPIPlantTarget.objects
+                .filter(
+                    kpi=kpi,
+                    plant=plant,
+                )
+                .first()
             )
 
             if plant_target:
@@ -221,6 +228,40 @@ class GoalNotificationService:
             ),
             is_read=False,
         )
+
+        # ---------------------------------------------------------
+        # Publish Goal KPI Event
+        # This triggers both Notification and Email handlers.
+        # ---------------------------------------------------------
+
+        kpi_event_action_map = {
+            "AT_RISK": KPI_AT_RISK,
+            "CRITICAL": KPI_CRITICAL,
+            "NEAR_TARGET": KPI_NEAR_TARGET,
+            "TARGET_ACHIEVED": KPI_TARGET_ACHIEVED,
+        }
+
+        event_action = kpi_event_action_map.get(status)
+
+        if event_action:
+            EventService.publish(
+                EventContext(
+                    module=GOALS,
+                    entity=GOAL,
+                    action=event_action,
+                    target=goal,
+                    actor=recipient,
+                    company=company,
+                    plant=plant,
+                    metadata={
+                        "kpi": kpi,
+                        "status": status,
+                        "current_value": current_value,
+                        "baseline_value": baseline_value,
+                        "target_value": target_value,
+                    },
+                )
+            )
 
         return {
             "notification": notification,
