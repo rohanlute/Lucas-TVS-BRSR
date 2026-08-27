@@ -639,6 +639,22 @@
                                     <a class="btn-primary-link" href="{% url 'emission:scope_dataentry' %}?assignment={{ assignment.id }}">
                                         Open Workspace
                                     </a>
+                                    <div class="assignment-summary-box mt-3">
+                                        <span class="section-label">Assignment Remarks</span>
+
+                                        <div class="mb-3">
+                                            <div class="fw-semibold text-dark">Reviewer Remarks</div>
+                                            <div class="text-muted">
+                                                {{ assignment.review_comments|default:"No reviewer remarks" }}
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="fw-semibold text-dark">Coordinator Remarks</div>
+                                            <div class="text-muted">
+                                                {{ assignment.coordinator_comments|default:"No coordinator remarks" }}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                             </div><!-- /assignment-grid -->

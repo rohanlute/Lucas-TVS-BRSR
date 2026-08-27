@@ -647,7 +647,7 @@ class EmissionAssignmentDashboardView(LoginRequiredMixin, TemplateView):
         assignment_stats = {
             "assignment_count": all_assignments.count(),
             "open_count": all_assignments.filter(
-                status__in=["ASSIGNED", "IN_PROGRESS", "SUBMITTED"]
+                status__in=["ASSIGNED", "IN_PROGRESS", "SUBMITTED", "REVIEW_APPROVED"]
             ).count(),
             "completed_count": all_assignments.filter(
                 status="APPROVED"
@@ -667,7 +667,7 @@ class EmissionAssignmentDashboardView(LoginRequiredMixin, TemplateView):
 
         if status_filter == "open":
             assignments = all_assignments.filter(
-                status__in=["ASSIGNED", "IN_PROGRESS", "SUBMITTED"]
+                status__in=["ASSIGNED", "IN_PROGRESS", "SUBMITTED", "REVIEW_APPROVED"]
             )
 
         elif status_filter == "completed":
