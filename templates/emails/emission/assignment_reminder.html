@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        {% if is_overdue %}
+            Emission Assignment Overdue
+        {% else %}
+            Emission Assignment Reminder
+        {% endif %}
+    </title>
+</head>
+
+<body style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+
+    <table role="presentation"
+           width="100%"
+           cellspacing="0"
+           cellpadding="0"
+           border="0"
+           style="background:#f4f7fb;padding:32px 16px;">
+
+        <tr>
+            <td align="center">
+
+                <table role="presentation"
+                       width="100%"
+                       cellspacing="0"
+                       cellpadding="0"
+                       border="0"
+                       style="max-width:640px;background:#ffffff;border-radius:18px;overflow:hidden;border:1px solid #e5e7eb;">
+
+                    <!-- ================================================= -->
+                    <!-- HEADER -->
+                    <!-- ================================================= -->
+
+                    <tr>
+                        <td style="padding:32px 32px 24px;background:linear-gradient(135deg,#0f172a 0%,#1d4ed8 100%);color:#ffffff;">
+
+                            <div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;opacity:.8;margin-bottom:8px;">
+                                {% if is_overdue %}
+                                    Overdue Assignment
+                                {% else %}
+                                    Assignment Reminder
+                                {% endif %}
+                            </div>
+
+                            <h1 style="margin:0;font-size:28px;line-height:1.2;">
+
+                                {% if is_overdue %}
+                                    Emission Assignment Overdue
+                                {% else %}
+                                    Emission Assignment Reminder
+                                {% endif %}
+
+                            </h1>
+
+                            <p style="margin:12px 0 0;font-size:15px;line-height:1.6;opacity:.92;">
+
+                                {% if is_overdue %}
+
+                                    The following emission assignment has passed
+                                    its due date and requires your attention.
+
+                                {% else %}
+
+                                    This is a reminder that an emission assignment
+                                    is approaching its due date.
+
+                                {% endif %}
+
+                            </p>
+
+                        </td>
+                    </tr>
+
+
+                    <!-- ================================================= -->
+                    <!-- BODY -->
+                    <!-- ================================================= -->
+
+                    <tr>
+                        <td style="padding:32px;">
+
+                            <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">
+
+                                Hello {{ recipient.get_full_name|default:recipient.username }},
+
+                            </p>
+
+
+                            <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#374151;">
+
+                                {% if is_overdue %}
+
+                                    The emission assignment below was due on
+                                    <strong>{{ assignment.due_date }}</strong>
+                                    and is now overdue.
+
+                                    Please complete the required activity
+                                    as soon as possible.
+
+                                {% else %}
+
+                                    This is a reminder regarding the following
+                                    emission assignment. Please complete the
+                                    required activity before the due date.
+
+                                {% endif %}
+
+                            </p>
+
+
+                            <!-- ================================================= -->
+                            <!-- ASSIGNMENT DETAILS -->
+                            <!-- ================================================= -->
+
+                            <table role="presentation"
+                                   width="100%"
+                                   cellspacing="0"
+                                   cellpadding="0"
+                                   border="0"
+                                   style="border-collapse:collapse;margin:0 0 24px;">
+
+                                <!-- Assignment ID -->
+
+                                <tr>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;width:160px;">
+                                        Assignment ID
+                                    </td>
+
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">
+                                        {{ assignment.assignment_code }}
+                                    </td>
+                                </tr>
+
+
+                                <!-- Scope -->
+
+                                <tr>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">
+                                        Scope
+                                    </td>
+
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">
+                                        {{ assignment.scope.name }}
+                                    </td>
+                                </tr>
+
+
+                                <!-- Plant -->
+
+                                <tr>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">
+                                        Plant
+                                    </td>
+
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">
+                                        {{ assignment.plant.name }}
+                                    </td>
+                                </tr>
+
+
+                                <!-- Financial Year -->
+
+                                <tr>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">
+                                        Financial Year
+                                    </td>
+
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">
+                                        {{ assignment.financial_year.financial_year }}
+                                    </td>
+                                </tr>
+
+
+                                <!-- Reporting Month -->
+
+                                <tr>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">
+                                        Reporting Month
+                                    </td>
+
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">
+                                        {{ assignment.financial_month.month_name }}
+                                    </td>
+                                </tr>
+
+
+                                <!-- Assigned By -->
+
+                                <tr>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">
+                                        Assigned By
+                                    </td>
+
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">
+                                        {{ assignment.assigner.get_full_name|default:assignment.assigner.username }}
+                                    </td>
+                                </tr>
+
+
+                                <!-- Due Date -->
+
+                                <tr>
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#6b7280;">
+                                        Due Date
+                                    </td>
+
+                                    <td style="padding:12px 0;border-bottom:1px solid #e5e7eb;color:#111827;font-weight:600;">
+                                        {{ assignment.due_date }}
+                                    </td>
+                                </tr>
+
+
+                                <!-- Status -->
+
+                                <tr>
+                                    <td style="padding:12px 0;color:#6b7280;">
+                                        Status
+                                    </td>
+
+                                    <td style="padding:12px 0;font-weight:700;">
+
+                                        {% if is_overdue %}
+                                            <span style="color:#dc2626;">
+                                                OVERDUE
+                                            </span>
+                                        {% else %}
+                                            <span style="color:#d97706;">
+                                                DUE IN {{ days_remaining }} DAY{{ days_remaining|pluralize }}
+                                            </span>
+                                        {% endif %}
+
+                                    </td>
+                                </tr>
+
+                            </table>
+
+
+                            <!-- ================================================= -->
+                            <!-- REMINDER MESSAGE -->
+                            <!-- ================================================= -->
+
+                            <div style="margin:0 0 24px;padding:16px 18px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;">
+
+                                <p style="margin:0;font-size:14px;line-height:1.7;color:#374151;">
+
+                                    {% if is_overdue %}
+
+                                        <strong>Action Required:</strong>
+                                        This assignment is overdue. Please log in
+                                        and complete the assigned activity at the
+                                        earliest.
+
+                                    {% else %}
+
+                                        <strong>Reminder:</strong>
+                                        You have {{ days_remaining }} day{{ days_remaining|pluralize }}
+                                        remaining to complete this assignment.
+
+                                    {% endif %}
+
+                                </p>
+
+                            </div>
+
+
+                            <!-- ================================================= -->
+                            <!-- BUTTON -->
+                            <!-- ================================================= -->
+
+                            <div style="text-align:center;margin:28px 0 24px;">
+
+                                <a href="{{ assignment_url }}"
+                                   style="display:inline-block;background:#1d4ed8;color:#ffffff;text-decoration:none;font-weight:700;padding:14px 28px;border-radius:10px;">
+
+                                    {% if is_overdue %}
+                                        Complete Assignment
+                                    {% else %}
+                                        View Assignment
+                                    {% endif %}
+
+                                </a>
+
+                            </div>
+
+
+                            <!-- ================================================= -->
+                            <!-- URL -->
+                            <!-- ================================================= -->
+
+                            <p style="margin:0 0 12px;font-size:14px;line-height:1.7;color:#4b5563;">
+
+                                If the button does not work, copy and paste
+                                this link into your browser:
+
+                            </p>
+
+
+                            <p style="margin:0 0 24px;font-size:14px;line-height:1.6;word-break:break-all;">
+
+                                <a href="{{ assignment_url }}"
+                                   style="color:#1d4ed8;">
+
+                                    {{ assignment_url }}
+
+                                </a>
+
+                            </p>
+
+
+                            <!-- ================================================= -->
+                            <!-- FOOTER -->
+                            <!-- ================================================= -->
+
+                            <p style="margin:0;font-size:14px;line-height:1.7;color:#6b7280;">
+
+                                This is an automated reminder from the
+                                Lucas-TVS BRSR system. Please do not reply
+                                to this email.
+
+                            </p>
+
+                        </td>
+                    </tr>
+
+
+                    <!-- ================================================= -->
+                    <!-- FOOTER BRANDING -->
+                    <!-- ================================================= -->
+
+                    <tr>
+                        <td style="padding:20px 32px;background:#f8fafc;border-top:1px solid #e5e7eb;text-align:center;">
+
+                            <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6;">
+
+                                Lucas-TVS BRSR Team<br>
+                                Emission Management System
+
+                            </p>
+
+                        </td>
+                    </tr>
+
+                </table>
+
+            </td>
+        </tr>
+
+    </table>
+
+</body>
+</html>

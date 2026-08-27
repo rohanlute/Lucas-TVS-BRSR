@@ -1,6 +1,6 @@
 from django.conf import settings
 import calendar
-from datetime import date
+from datetime import date, datetime
 from django.utils import timezone
 from apps.common_events.constants import (
     EMISSION,
@@ -470,9 +470,13 @@ class EmissionAdapter:
                 f"({assignment.assignment_code})"
             ),
 
-            "start_date": start_date,
+            "start_date": timezone.make_aware(
+                datetime.combine(start_date, datetime.min.time())
+            ),
 
-            "end_date": end_date,
+            "end_date": timezone.make_aware(
+                datetime.combine(end_date, datetime.min.time())
+            ),
 
             "status": "assigned",
 

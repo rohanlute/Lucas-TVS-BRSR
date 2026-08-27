@@ -1,7 +1,8 @@
 from django.utils import timezone
-
+from django.conf import settings
 from apps.notifications.models import Notification
 from apps.notifications.services import NotificationService
+from apps.email_master.services import EmailService
 
 
 class EmissionAssignmentReminderService:
@@ -464,7 +465,7 @@ class EmissionAssignmentReminderService:
         # Create notification
         # -------------------------------------------------
 
-        NotificationService.create(
+        notification = NotificationService.create(
 
             company=assignment.company,
 
@@ -487,6 +488,45 @@ class EmissionAssignmentReminderService:
                 f"{assignment.id}/"
             ),
         )
+
+
+        # -------------------------------------------------
+        # Send the same reminder by email
+        # -------------------------------------------------
+
+        assignment_url = (f"{settings.SITE_URL.rstrip('/')}"
+            f"/emission/assignments/{assignment.id}/"
+        )
+
+        email_sent = EmailService.send_email(
+            recipient=recipient,
+            subject=title,
+            message=message,
+            html_template="emails/emission/assignment_reminder.html",
+            context={
+                "assignment": assignment,
+                "recipient": recipient,
+                "assignment_url": assignment_url,
+                "days_remaining": days_remaining,
+                "is_overdue": days_remaining < 0,
+            },
+        )
+
+        if email_sent:
+
+            print(
+                f"✅ REMINDER email sent: "
+                f"{assignment.assignment_code} → "
+                f"{recipient.username} | {title}"
+            )
+
+        else:
+
+            print(
+                f"❌ REMINDER email failed: "
+                f"{assignment.assignment_code} → "
+                f"{recipient.username} | {title}"
+            )
 
         print(
             f"✅ {notification_type} notification created: "
