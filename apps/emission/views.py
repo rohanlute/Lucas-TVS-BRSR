@@ -25,7 +25,7 @@ from apps.organizations.workflow_configuration_engine import WorkflowConfigurati
 from django.utils import timezone
 from apps.accounts.models import User
 from decimal import Decimal
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, Count
 
 # Notication and Timesheet 
 from apps.common_events.event_context import EventContext
@@ -896,7 +896,7 @@ class ESGDisclosureView(TemplateView):
             filter_kwargs['financial_year_id'] = current_fy.id
         
         # ===== CALCULATE TOTALS IN tCO₂e =====
-        total_emissions_kg = EmissionTransaction.objects.filter(**filter_kwargs).aggregate(
+        total_emissions_kg =  _approved_emission_transactions_queryset().filter(**filter_kwargs).aggregate(
             total=Sum('total_emission')
         )['total'] or Decimal('0')
         total_emissions_kg = Decimal(str(total_emissions_kg))
@@ -905,7 +905,7 @@ class ESGDisclosureView(TemplateView):
         # Get scope totals
         scope_totals_t = {}
         for scope in EmissionScope.objects.filter(is_active=True):
-            total_kg = EmissionTransaction.objects.filter(
+            total_kg = _approved_emission_transactions_queryset().filter(
                 **filter_kwargs,
                 activity__category__scope_id=scope.id
             ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
@@ -955,7 +955,7 @@ class ESGDisclosureView(TemplateView):
                 total_sources = sources.count()
                 
                 # Get completed/transacted sources count (sources that have transactions)
-                completed_sources = EmissionTransaction.objects.filter(
+                completed_sources = _approved_emission_transactions_queryset().filter(
                     **filter_kwargs,
                     activity__category_id=category.id
                 ).values('source_id').distinct().count()
@@ -967,7 +967,7 @@ class ESGDisclosureView(TemplateView):
                     completion_pct = 0
                 
                 # Get total emission for this category
-                cat_total_kg = EmissionTransaction.objects.filter(
+                cat_total_kg = _approved_emission_transactions_queryset().filter(
                     **filter_kwargs,
                     activity__category_id=category.id
                 ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
@@ -998,7 +998,7 @@ class ESGDisclosureView(TemplateView):
         from apps.organizations.models import FinancialYear
         
         # Get distinct financial years that have transactions
-        transaction_fy_ids = EmissionTransaction.objects.filter(
+        transaction_fy_ids = _approved_emission_transactions_queryset().filter(
             **filter_kwargs
         ).values_list('financial_year_id', flat=True).distinct()
         
@@ -1020,21 +1020,21 @@ class ESGDisclosureView(TemplateView):
                 fy_filter['financial_year_id'] = fy.id
                 
                 # Get data in kg then convert to t
-                s1_kg = EmissionTransaction.objects.filter(
+                s1_kg = _approved_emission_transactions_queryset().filter(
                     **fy_filter,
                     activity__category__scope__code='S1'
                 ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
                 s1_kg = Decimal(str(s1_kg))
                 s1_t = s1_kg / Decimal('1000')
                 
-                s2_kg = EmissionTransaction.objects.filter(
+                s2_kg = _approved_emission_transactions_queryset().filter(
                     **fy_filter,
                     activity__category__scope__code='S2'
                 ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
                 s2_kg = Decimal(str(s2_kg))
                 s2_t = s2_kg / Decimal('1000')
                 
-                s3_kg = EmissionTransaction.objects.filter(
+                s3_kg = _approved_emission_transactions_queryset().filter(
                     **fy_filter,
                     activity__category__scope__code='S3'
                 ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
@@ -1047,7 +1047,7 @@ class ESGDisclosureView(TemplateView):
                 
                 # Calculate intensity
                 total_t = s1_t + s2_t + s3_t
-                fy_transaction_count = EmissionTransaction.objects.filter(**fy_filter).count() or 1
+                fy_transaction_count = _approved_emission_transactions_queryset().filter(**fy_filter).count() or 1
                 intensity = total_t / Decimal(str(fy_transaction_count)) if fy_transaction_count > 0 else Decimal('0')
                 intensity_data.append(float(intensity))
                 
@@ -1089,7 +1089,7 @@ class ESGDisclosureView(TemplateView):
         context['has_chart_data'] = len(chart_data['years']) > 0
         
         # Calculate GHG Intensity
-        transaction_count = EmissionTransaction.objects.filter(**filter_kwargs).count() or 1
+        transaction_count = _approved_emission_transactions_queryset().filter(**filter_kwargs).count() or 1
         ghg_intensity = total_emissions_t / Decimal(str(transaction_count)) if transaction_count > 0 else Decimal('0')
         context['ghg_intensity'] = ghg_intensity
         context['intensity_change'] = Decimal('-10.3')
@@ -1192,7 +1192,7 @@ class ESGDisclosureDataAPIView(View):
                 filter_kwargs['financial_year_id'] = current_fy.id
             
             # Calculate totals in kg then convert to t
-            total_emissions_kg = EmissionTransaction.objects.filter(**filter_kwargs).aggregate(
+            total_emissions_kg = _approved_emission_transactions_queryset().filter(**filter_kwargs).aggregate(
                 total=Sum('total_emission')
             )['total'] or Decimal('0')
             total_emissions_kg = Decimal(str(total_emissions_kg))
@@ -1201,7 +1201,7 @@ class ESGDisclosureDataAPIView(View):
             # Get scope totals (convert to t)
             scope_totals_t = {}
             for scope in EmissionScope.objects.filter(is_active=True):
-                total_kg = EmissionTransaction.objects.filter(
+                total_kg = _approved_emission_transactions_queryset().filter(
                     **filter_kwargs,
                     activity__category__scope_id=scope.id
                 ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
@@ -1243,7 +1243,7 @@ class ESGDisclosureDataAPIView(View):
                     total_sources = sources.count()
                     
                     # Get completed sources
-                    completed_sources = EmissionTransaction.objects.filter(
+                    completed_sources = _approved_emission_transactions_queryset().filter(
                         **filter_kwargs,
                         activity__category_id=category.id
                     ).values('source_id').distinct().count()
@@ -1255,7 +1255,7 @@ class ESGDisclosureDataAPIView(View):
                         completion_pct = 0
                     
                     # Get category total
-                    cat_total_kg = EmissionTransaction.objects.filter(
+                    cat_total_kg = _approved_emission_transactions_queryset().filter(
                         **filter_kwargs,
                         activity__category_id=category.id
                     ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
@@ -1283,7 +1283,7 @@ class ESGDisclosureDataAPIView(View):
             # ===== CHART DATA =====
             from apps.organizations.models import FinancialYear
             
-            transaction_fy_ids = EmissionTransaction.objects.filter(
+            transaction_fy_ids = _approved_emission_transactions_queryset().filter(
                 **filter_kwargs
             ).values_list('financial_year_id', flat=True).distinct()
             
@@ -1302,21 +1302,21 @@ class ESGDisclosureDataAPIView(View):
                     fy_filter = filter_kwargs.copy()
                     fy_filter['financial_year_id'] = fy.id
                     
-                    s1_kg = EmissionTransaction.objects.filter(
+                    s1_kg = _approved_emission_transactions_queryset().filter(
                         **fy_filter,
                         activity__category__scope__code='S1'
                     ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
                     s1_kg = Decimal(str(s1_kg))
                     s1_t = s1_kg / Decimal('1000')
                     
-                    s2_kg = EmissionTransaction.objects.filter(
+                    s2_kg = _approved_emission_transactions_queryset().filter(
                         **fy_filter,
                         activity__category__scope__code='S2'
                     ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
                     s2_kg = Decimal(str(s2_kg))
                     s2_t = s2_kg / Decimal('1000')
                     
-                    s3_kg = EmissionTransaction.objects.filter(
+                    s3_kg = _approved_emission_transactions_queryset().filter(
                         **fy_filter,
                         activity__category__scope__code='S3'
                     ).aggregate(total=Sum('total_emission'))['total'] or Decimal('0')
@@ -1328,7 +1328,7 @@ class ESGDisclosureDataAPIView(View):
                     scope3_chart_data.append(float(s3_t))
                     
                     total_t = s1_t + s2_t + s3_t
-                    fy_transaction_count = EmissionTransaction.objects.filter(**fy_filter).count() or 1
+                    fy_transaction_count = _approved_emission_transactions_queryset().filter(**fy_filter).count() or 1
                     intensity = total_t / Decimal(str(fy_transaction_count)) if fy_transaction_count > 0 else Decimal('0')
                     intensity_chart_data.append(float(intensity))
                     
