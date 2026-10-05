@@ -267,14 +267,6 @@ def _build_styles():
         spaceAfter=9, fontName="Times-Roman",
     ))
     styles.add(ParagraphStyle(
-        name="BRSR_Signature", fontSize=10.5, leading=15, alignment=TA_RIGHT,
-        spaceAfter=6, fontName="Times-Bold",
-    ))
-    styles.add(ParagraphStyle(
-        name="BRSR_SubjectLine", fontSize=11, leading=14, alignment=TA_LEFT,
-        spaceBefore=10, spaceAfter=10, fontName="Helvetica-Bold",
-    ))
-    styles.add(ParagraphStyle(
         name="BRSR_TOCHeading", fontSize=20, leading=24, alignment=TA_LEFT,
         textColor=colors.black, spaceAfter=26, fontName="Times-Bold",
     ))
@@ -294,46 +286,6 @@ def _build_styles():
 
 
 def _create_cover_page(story, styles, company_name, financial_year):
-    story.append(PageBreak())
-
-
-def _create_subject_page(story, styles, company_name, financial_year):
-    story.append(Spacer(1, 36))
-    story.append(Paragraph("<b><font size='28'>pwc</font></b>", styles["BRSR_BodyText"]))
-    story.append(Spacer(1, 12))
-    story.append(Paragraph("Subject: Expression of gratitude", styles["BRSR_SubjectLine"]))
-    story.append(Spacer(1, 8))
-
-    body_text = f"""
-    We, PricewaterhouseCoopers Private Limited (PwC India), are pleased to submit our
-    deliverable for the "Preparation of Business Responsibility & Sustainability Report
-    (BRSR) as per SEBI Guidelines for {_display_financial_year(financial_year)}" for
-    {company_name}.
-    """
-    story.append(Paragraph(body_text.strip(), styles["BRSR_BodyText"]))
-    story.append(Spacer(1, 6))
-
-    body_text2 = f"""
-    Leveraging our experience and expertise, and in collaboration with the {company_name}
-    team, we have developed a comprehensive Business Responsibility & Sustainability
-    Report for the {_display_financial_year(financial_year)}. We believe that our
-    deliverable meets the expectations and requirements of this project.
-    """
-    story.append(Paragraph(body_text2.strip(), styles["BRSR_BodyText"]))
-    story.append(Spacer(1, 6))
-
-    body_text3 = """
-    We express our gratitude for this opportunity and eagerly look forward to continuing
-    our partnership with you, supporting any future initiatives. We will be happy to
-    provide any clarifications or additional information necessary.
-    """
-    story.append(Paragraph(body_text3.strip(), styles["BRSR_BodyText"]))
-    story.append(Spacer(1, 32))
-
-    story.append(Paragraph("Yours sincerely,", styles["BRSR_Signature"]))
-    story.append(Spacer(1, 20))
-    story.append(Paragraph("Sandeep Mohanty", styles["BRSR_Signature"]))
-    story.append(Paragraph("Partner, PwC India", styles["BRSR_Signature"]))
     story.append(PageBreak())
 
 
@@ -722,7 +674,6 @@ def generate_brsr_pdf(financial_year=None, assignment_id=None, plant_id=None,
     story = []
 
     _create_cover_page(story, styles, company_name, financial_year)
-    _create_subject_page(story, styles, company_name, financial_year)
     _create_toc_page(story, styles)
 
     if report_sections is None:

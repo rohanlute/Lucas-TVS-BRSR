@@ -255,7 +255,7 @@ def _safe_sheet_title(title):
 
 
 def generate_brsr_excel(financial_year=None, assignment_id=None, plant_id=None,
-                         company_name="Lucas TVS Ltd", company_cin="", report_sections=None):
+                         company_name="Protegk IT", company_cin="", report_sections=None):
     """
     report_sections: optional precomputed section blocks (same shape as
     get_brsr_report_data()'s return value). Pass this in for the "All
