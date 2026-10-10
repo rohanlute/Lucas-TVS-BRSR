@@ -1,27 +1,75 @@
 """
 Pulls live data from the `brsr` app (BRSRSection, BRSRPrinciple, BRSRQuestion,
-QuestionResponse) and shapes it for the report / PDF.
+QuestionResponse) and shapes it for the report / PDF / Excel.
+
+COMPANY-WIDE ("All Plants") CONSOLIDATION
+-----------------------------------------
+get_brsr_report_data_all_plants() builds ONE report for the whole company by
+fetching every plant's answers separately and merging them field by field
+(see _combine_plant_values):
+
+  - numbers               -> SUMMED          ("23" + "34"      -> "57")
+  - percentages ("12%")   -> AVERAGED        ("60%" + "40%"    -> "50%")
+  - identical text/Yes/No -> shown ONCE      (7 plants say "Yes" -> "Yes")
+  - different text        -> kept per plant  ({"Plant A": "...", "Plant B": "..."})
+  - plants with no answer for a field are simply left out of that field.
+
+Only plants that have a submitted (reportable) assignment contribute.
+get_plants_with_data() tells the caller which plants those are, so the
+report can state exactly which plants it covers.
 """
 
-from apps.brsr.models import Assignment, BRSRSection, BRSRPrinciple, BRSRQuestion, QuestionResponse
-import logging
 import json
+import logging
+
+from django.db.models import Q
+
+from apps.brsr.models import Assignment, BRSRSection, BRSRPrinciple, BRSRQuestion, QuestionResponse
 
 logger = logging.getLogger(__name__)
 
 
-def _reportable_brsr_assignments(financial_year=None,
-    assignment_id=None,plant_id=None,):
-    """
-    Return BRSR assignments that have reached
-    pre_final_approval at least once.
+# ---------------------------------------------------------------------------
+# Which assignments / responses are reportable
+# ---------------------------------------------------------------------------
+#
+# Statuses live on TWO different models (see apps/brsr/models.py):
+#   QuestionResponse.status      draft | submitted | approved | rejected | resubmitted
+#   Assignment.assignment_status pending | in_progress | rejected | reassigned | approved
+# "submitted" exists ONLY on QuestionResponse, so reportability is decided
+# from the responses, plus an approved assignment / one that reached the
+# pre_final_approval workflow stage.
 
-    Once an assignment reaches pre_final_approval,
-    its data remains reportable through final_approval
-    and completed stages.
+REPORTABLE_RESPONSE_STATUSES = ["submitted", "resubmitted", "approved"]
+
+
+def _company_of_plant(plant_id):
+    from apps.organizations.models import Plant
+
+    plant = Plant.objects.select_related("created_by").filter(id=plant_id).first()
+    return getattr(getattr(plant, "created_by", None), "company", None)
+
+
+def _reportable_brsr_assignments(financial_year=None, assignment_id=None, plant_id=None,
+                                 scope="auto", plant_ids=None):
+    """
+    Assignments with reportable data: at least one submitted / resubmitted /
+    approved response, OR assignment_status == "approved", OR the assignment
+    reached the pre_final_approval workflow stage.
+
+    scope:
+      "auto"          plant_id given -> that plant's own (data_scope="plant")
+                      assignments PLUS company-wide (data_scope="company")
+                      assignments of the plant's company, which are shared
+                      by every plant. No plant_id -> no scope filtering.
+      "plant_only"    plant-scope assignments only (plant_id and/or plant_ids)
+      "company_only"  company-scope assignments only (anchored to plant_ids)
     """
     assignments = Assignment.objects.filter(
-        workflow_tasks__logs__to_stage__stage_type="pre_final_approval").distinct()
+        Q(responses__status__in=REPORTABLE_RESPONSE_STATUSES)
+        | Q(assignment_status="approved")
+        | Q(workflow_tasks__logs__to_stage__stage_type="pre_final_approval")
+    ).distinct()
 
     if financial_year:
         assignments = assignments.filter(financial_year=financial_year)
@@ -29,11 +77,39 @@ def _reportable_brsr_assignments(financial_year=None,
     if assignment_id:
         assignments = assignments.filter(id=assignment_id)
 
-    if plant_id:
-        assignments = assignments.filter(plant_id=plant_id)
+    if scope == "company_only":
+        assignments = assignments.filter(data_scope="company")
+        if plant_ids is not None:
+            assignments = assignments.filter(plant_id__in=list(plant_ids))
+    elif scope == "plant_only":
+        assignments = assignments.filter(data_scope="plant")
+        if plant_id:
+            assignments = assignments.filter(plant_id=plant_id)
+        if plant_ids is not None:
+            assignments = assignments.filter(plant_id__in=list(plant_ids))
+    elif plant_id:
+        scope_q = Q(plant_id=plant_id, data_scope="plant")
+        company = _company_of_plant(plant_id)
+        if company is not None:
+            scope_q |= Q(data_scope="company", plant__created_by__company=company)
+        assignments = assignments.filter(scope_q)
 
     return assignments
 
+
+def get_plants_with_data(financial_year=None, assignment_id=None, plant_ids=None):
+    """Active plants (name-sorted) that have reportable PLANT-scope data --
+    i.e. the plants an "All Plants" report really covers."""
+    from apps.organizations.models import Plant
+
+    qs = _reportable_brsr_assignments(
+        financial_year=financial_year, assignment_id=assignment_id,
+        scope="plant_only", plant_ids=plant_ids,
+    )
+    ids = set(qs.values_list("plant_id", flat=True))
+    if not ids:
+        return []
+    return list(Plant.objects.filter(id__in=ids, is_active=True).order_by("name"))
 
 
 PRINCIPLE_COLUMNS = [f"P{i}" for i in range(1, 10)]  # ["P1", ..., "P9"]
@@ -101,10 +177,8 @@ def _clean_columns(columns, financial_year=None):
     Drops blank/placeholder entries from a field's column list and resolves
     {FY0}/{FY1} tokens. The row-label column is always added separately by
     the header-building code below, so a blank string already present in
-    the schema's own `columns` creates a duplicate column and shifts every
-    answer one column out of place -- this is what caused the Accounts
-    Payables Days table to render "56" under a blank header and leave the
-    real "FY {FY1}" column empty.
+    the schema's own `columns` would create a duplicate column and shift
+    every answer one column out of place.
     """
     cleaned = [c for c in (columns or []) if str(c).strip()]
     return [_resolve_placeholders(c, financial_year) for c in cleaned]
@@ -146,7 +220,8 @@ def _has_value(value):
     if isinstance(value, str):
         return value.strip() not in ("", "-")
     if isinstance(value, bool):
-        return True
+        # A ticked box is an answer; an unticked one (False) is not.
+        return value
     if isinstance(value, (int, float)):
         return True
     if isinstance(value, (list, tuple)):
@@ -161,10 +236,8 @@ def _row_has_data(row):
     True if this top-level row (or any of its sub_questions) carries an
     actual submitted answer. Used to drop unanswered questions from the
     report entirely instead of rendering them blank, and reused by
-    get_brsr_stats() below as the single source of truth for what counts
-    as "answered" -- since for table/matrix/checkbox_group questions the
-    real answer lives in sub_questions / table_rows / matrix_rows, not in
-    the row's own top-level answer_value.
+    get_brsr_stats() as the single source of truth for what counts as
+    "answered".
     """
     if _has_value(row.get("answer_value")):
         return True
@@ -207,22 +280,10 @@ def _has_year_headers(columns):
 def _split_label_and_data_columns(columns, rows):
     """
     A schema's `columns` list sometimes includes one leading entry that's
-    really the header for the row-label column itself (e.g. "Parameter"
-    labeling rows like "Environmental and social parameters relevant to
-    the product"), not a second data column -- the row only actually has
-    one answer field ("As a percentage to total turnover").
-
-    The header-building code below always prepends a label-column slot on
-    top of whatever's in `columns`, so when `columns` already has one more
-    entry than any row has real fields for, that surplus entry ends up as
-    a phantom data-column header. The row's one real value then lands
-    under it (here, under "Parameter"), leaving the true last column
-    ("As a percentage to total turnover") blank.
-
-    Detects that surplus by comparing declared column count against the
-    actual number of answer fields per row, and returns
-    (label_header, data_columns) so the caller uses the surplus column as
-    the label header instead of manufacturing a blank one.
+    really the header for the row-label column itself, not a second data
+    column. Detects that surplus by comparing declared column count against
+    the actual number of answer fields per row, and returns
+    (label_header, data_columns).
     """
     if not rows or not columns:
         return "", columns
@@ -237,19 +298,172 @@ def _split_label_and_data_columns(columns, rows):
     return label_header, data_columns
 
 
+_MISSING = object()
+_CELL_SEPARATORS = ("_", "-", ".", ":", " ", "|", "__")
+
+
+def _ci_get(mapping, key):
+    """Case-insensitive dict lookup. Returns _MISSING if absent."""
+    if not isinstance(mapping, dict) or key is None or key == "":
+        return _MISSING
+    if key in mapping:
+        return mapping[key]
+    key_l = str(key).strip().lower()
+    for k, v in mapping.items():
+        if str(k).strip().lower() == key_l:
+            return v
+    return _MISSING
+
+
+def _as_container(raw):
+    """JSON strings -> parsed objects; everything else unchanged."""
+    if isinstance(raw, str) and raw.strip()[:1] in ("{", "["):
+        try:
+            return json.loads(raw)
+        except Exception:
+            return raw
+    return raw
+
+
+def _in_selection(selection, col):
+    """True if column `col` ("P3") is among a list / comma-string of selections."""
+    if isinstance(selection, str):
+        items = [x for x in selection.replace(";", ",").split(",")]
+    else:
+        items = list(selection)
+    return str(col).strip().upper() in {str(x).strip().upper() for x in items}
+
+
+def _matrix_cell_value(field_name, row, cell, col, response_json):
+    """
+    Value of ONE cell (policy row x P-column) of a checkbox matrix.
+
+    The tick marks can be saved in several layouts; all are tried:
+      1. a flat key per cell, named by the cell's own field name
+      2. {matrix_name: {row_key: {"P1": true, ...}}}
+      3. {matrix_name: {row_key: ["P1", "P3"]}}   (or a comma string)
+      4. {matrix_name: {"<row_key>_P1": true}}  /  flat "<row_key>_P1" keys
+      5. {matrix_name: [{"row": ..., "column": "P1", "value": true}, ...]}
+    Returns "" when nothing is found.
+    """
+    if not isinstance(response_json, dict):
+        return ""
+
+    # 1. flat per-cell name (original behaviour)
+    cell_name = _get_field_name(cell)
+    if cell_name:
+        v = _answer_for(cell_name, response_json, "")
+        if v not in ("", None):
+            return v
+
+    row_keys = [
+        k for k in (
+            row.get("id"), row.get("name"), row.get("key"),
+            row.get("value"), row.get("label"),
+        ) if k not in (None, "")
+    ]
+
+    # candidate containers: the matrix's own entry, then the top level
+    containers = []
+    if field_name:
+        raw = _ci_get(response_json, field_name)
+        if raw is not _MISSING:
+            containers.append(_as_container(raw))
+    containers.append(response_json)
+
+    for raw in containers:
+        if isinstance(raw, dict):
+            for rk in row_keys:
+                sub = _ci_get(raw, rk)
+                if sub is _MISSING:
+                    continue
+                sub = _as_container(sub)
+                if isinstance(sub, dict):
+                    v = _ci_get(sub, col)
+                    if v is not _MISSING:
+                        return v
+                elif isinstance(sub, (list, tuple, set, str)) and not isinstance(sub, bool):
+                    return _in_selection(sub, col)
+            for rk in row_keys:
+                for sep in _CELL_SEPARATORS:
+                    v = _ci_get(raw, f"{rk}{sep}{col}")
+                    if v is not _MISSING:
+                        return v
+                    v = _ci_get(raw, f"{col}{sep}{rk}")
+                    if v is not _MISSING:
+                        return v
+
+        elif isinstance(raw, (list, tuple)):
+            for item in raw:
+                if not isinstance(item, dict):
+                    continue
+                item_vals = {str(x).strip().lower() for x in item.values() if isinstance(x, (str, int))}
+                if not any(str(rk).strip().lower() in item_vals for rk in row_keys):
+                    continue
+                item_col = item.get("column") or item.get("col") or item.get("principle")
+                if item_col is not None and str(item_col).strip().upper() == str(col).upper():
+                    return item.get("value", item.get("checked", True))
+                for list_key in ("columns", "principles", "selected", "values", "checked"):
+                    if list_key in item and isinstance(item[list_key], (list, tuple, str)):
+                        return _in_selection(item[list_key], col)
+                v = _ci_get(item, col)
+                if v is not _MISSING:
+                    return v
+
+    return ""
+
+
+def _flatten_row_lists(response_json):
+    """
+    Answers for grids are often saved as a LIST of row-dicts keyed by each
+    cell's own field name, e.g.
+        {"policiesCoverage": [{"policy_csr_p1": False, ...},
+                              {"policy_coc_p1": False, ...}, ...]}
+    Returns a copy of response_json with the entries of every such list
+    merged in at the top level, so per-cell lookups by field name work.
+    Existing top-level keys are never overwritten.
+    """
+    if not isinstance(response_json, dict):
+        return response_json
+    flat = dict(response_json)
+    for value in response_json.values():
+        value = _as_container(value)
+        if isinstance(value, (list, tuple)) and value and all(isinstance(e, dict) for e in value):
+            for entry in value:
+                for k, v in entry.items():
+                    flat.setdefault(k, v)
+    return flat
+
+
 def _build_matrix_subquestion(field, response_json):
-    """Builds a principle-matrix table grouped as one sub_question."""
+    """Builds a principle-matrix (policy x P1..P9) as one sub_question."""
+    field_name = _get_field_name(field)
+    original_json = response_json
+    response_json = _flatten_row_lists(response_json)
     matrix_rows = []
+    any_value = False
+
     for row in field.get("rows", []):
         row_label = row.get("label") or ""
         values = {}
         for cell in row.get("fields", []):
             col = cell.get("column")  # "P1".."P9"
-            name = _get_field_name(cell)
-            if not col or not name:
+            if not col:
                 continue
-            values[col] = _answer_for(name, response_json, "")
+            value = _matrix_cell_value(field_name, row, cell, col, response_json)
+            values[col] = value
+            if _has_value(value):
+                any_value = True
         matrix_rows.append({"label": row_label, "values": values})
+
+    if not any_value and isinstance(original_json, dict) and original_json:
+        sample_row = (field.get("rows") or [{}])[0]
+        logger.warning(
+            "Matrix '%s' has no readable cells. Schema row sample: %s | response keys: %s",
+            _get_field_label(field),
+            json.dumps(sample_row, default=str)[:400],
+            json.dumps({k: (str(v)[:80]) for k, v in list(original_json.items())[:15]}, default=str),
+        )
 
     return {
         "question_number": "",
@@ -263,57 +477,6 @@ def _build_matrix_subquestion(field, response_json):
     }
 
 
-"""
-PATCH for apps/report/brsr_report_data.py -- _build_table_subquestion()
-
-BUG
----
-_build_table_subquestion() only recognized two answer shapes for a table
-field:
-
-  1. Flat dict at the top level of response_json, keyed by each row's
-     schema field name (e.g. {'e8_days_cy': '56', 'e8_days_py': '23'})
-     -> handled by "Case 2" (schema-driven rows/fields lookup).
-
-  2. A list of row-dicts under response_json[field_name], where each
-     dict is keyed by DISPLAY COLUMN NAME (e.g.
-     [{'S. No.': '1', 'Description of Main Activity': '...'}])
-     -> handled by "Case 1" (list-of-row-objects).
-
-A third real shape exists and wasn't handled: a list of row-dicts under
-response_json[field_name], where each dict is keyed by the row schema's
-own per-cell FIELD NAMES instead of display columns, e.g. for
-"Input material sourcing" (sc_p8_e4):
-
-    response_json['inputSourcing'] == [
-        {'e4_msme_cy': '55', 'e4_msme_py': '44'},
-        {'e4_local_cy': '44', 'e4_local_py': '55'},
-    ]
-
-Because field.get("columns") for this question is NOT empty
-(["Source", "FY {FY0}...", "FY {FY1}..."]), Case 1 uses those as
-data_cols and does `entry.get(col, "")` -- but entry's keys are
-'e4_msme_cy' etc., never equal to a column header string, so every
-lookup misses and every cell renders blank ("-"), while the row label
-still falls back to a bare serial number ("1", "2") -- exactly the
-"headers show up, every cell is a dash" symptom.
-
-FIX
----
-Before running Case 1, collect every row.fields[].name declared in this
-table's schema. If the list entries' keys overlap with those schema
-field names (rather than matching display columns), flatten the list of
-row-dicts into one flat dict and merge it into response_json, then let
-execution fall through to Case 2 -- which already knows how to look up
-each cell by its declared field name via _answer_for(). This required
-NO changes to Case 1 or Case 2's existing logic; it only adds detection
-+ a merge step before them.
-
-Apply by replacing the whole _build_table_subquestion() function in
-apps/report/brsr_report_data.py with the version below.
-"""
-
-
 def _build_table_subquestion(field, response_json, fallback_question_text, financial_year=None):
     columns = _clean_columns(field.get("columns", []), financial_year)
     rows = field.get("rows", [])
@@ -325,13 +488,9 @@ def _build_table_subquestion(field, response_json, fallback_question_text, finan
 
     raw_value = _answer_for(field_name, response_json, None) if field_name else None
 
-    # ------------------------------------------------------------------
-    # Collect every per-cell field name declared across this table's own
-    # row schema (e.g. {"e4_msme_cy", "e4_msme_py", "e4_local_cy",
-    # "e4_local_py"} for "Input material sourcing"). Used just below to
-    # tell apart "list keyed by display columns" (Case 1) from "list
-    # keyed by the row schema's own field names" (Case 1b).
-    # ------------------------------------------------------------------
+    # Every per-cell field name declared across this table's own row schema.
+    # Used to tell apart "list keyed by display columns" (Case 1) from
+    # "list keyed by the row schema's own field names" (Case 1b).
     schema_field_names = set()
     for row in rows:
         for cell in row.get("fields", []) or []:
@@ -344,22 +503,14 @@ def _build_table_subquestion(field, response_json, fallback_question_text, finan
         for entry in raw_value:
             entry_keys.update(entry.keys())
 
-        # --------------------------------------------------------------
-        # Case 1b: each list entry is keyed by the row schema's own
-        # per-cell field names rather than by display column headers.
-        # Column-name lookup (Case 1 below) always misses on this shape
-        # since these keys are never equal to a column header string --
-        # every cell would render blank. Flatten these row-dicts into
-        # one flat dict keyed by field name, merge into response_json,
-        # and fall through to the schema-driven Case 2 path below, which
-        # already knows how to look up a value by its declared
-        # row.fields[].name.
-        # --------------------------------------------------------------
+        # Case 1b: each list entry is keyed by the row schema's own per-cell
+        # field names rather than by display column headers. Flatten these
+        # row-dicts into one dict keyed by field name, merge into
+        # response_json, and fall through to the schema-driven Case 2 path.
         if schema_field_names and (entry_keys & schema_field_names):
             logger.info(
                 f"Detected list-of-row-dicts keyed by schema field names "
-                f"for '{_get_field_label(field)}' -- flattening and routing "
-                f"through schema-driven lookup instead of column-name match."
+                f"for '{_get_field_label(field)}' -- routing through schema-driven lookup."
             )
             flattened = {}
             for entry in raw_value:
@@ -367,13 +518,8 @@ def _build_table_subquestion(field, response_json, fallback_question_text, finan
             response_json = {**response_json, **flattened}
             raw_value = None  # force fallthrough past Case 1 to Case 2
 
-    # ------------------------------------------------------------------
-    # Case 1: the answer is stored as a ready-made list of row-objects,
-    # e.g. response_json["businessActivities"] = [
-    #     {"S. No.": "1", "Description of Main Activity": "...", ...},
-    #     ...
-    # ] keyed by DISPLAY COLUMN NAME, not by a schema field name.
-    # ------------------------------------------------------------------
+    # Case 1: the answer is a ready-made list of row-objects keyed by
+    # DISPLAY COLUMN NAME.
     if isinstance(raw_value, list) and raw_value and all(isinstance(r, dict) for r in raw_value):
         fallback_cols = [k for k in raw_value[0].keys() if str(k).strip()]
         table_columns = columns or fallback_cols
@@ -407,12 +553,9 @@ def _build_table_subquestion(field, response_json, fallback_question_text, finan
             "table_rows": table_rows,
         }
 
-    # ------------------------------------------------------------------
-    # Case 2 (fallback, and where Case 1b routes to): schema-driven
-    # table -- rows/columns come from validation_rules, each cell looked
-    # up individually by name against response_json (now including any
-    # flattened Case 1b values merged in above).
-    # ------------------------------------------------------------------
+    # Case 2 (fallback, and where Case 1b routes to): schema-driven table --
+    # rows/columns come from validation_rules, each cell looked up
+    # individually by name against response_json.
     label_header, columns = _split_label_and_data_columns(columns, rows)
 
     if _has_year_headers(columns):
@@ -468,7 +611,6 @@ def _expand_fields_as_subquestions(question, response, financial_year=None):
     response_json = (response.response_json if response else {}) or {}
     fallback_value = response.response_value if response else ""
 
-    # If response_json is a string, try to parse it as JSON
     if isinstance(response_json, str):
         try:
             response_json = json.loads(response_json)
@@ -521,8 +663,7 @@ def _expand_fields_as_subquestions(question, response, financial_year=None):
             continue
 
         if not field_name:
-            # If no name, try to use the field itself as the answer
-            # This handles cases where the field is the whole answer
+            # No name: the field itself is the whole answer.
             answer_value = response_json if isinstance(response_json, dict) else fallback_value
             sub_questions.append({
                 "question_number": "",
@@ -536,7 +677,6 @@ def _expand_fields_as_subquestions(question, response, financial_year=None):
 
         answer_value = _answer_for(field_name, response_json, fallback_value)
 
-        # If we still don't have an answer and there's a fallback
         if not answer_value and fallback_value:
             answer_value = fallback_value
 
@@ -552,10 +692,15 @@ def _expand_fields_as_subquestions(question, response, financial_year=None):
     return sub_questions
 
 
-def _attach_answers(questions, financial_year=None, assignment_id=None, plant_id=None):
+def _attach_answers(questions, financial_year=None, assignment_id=None, plant_id=None,
+                    scope="auto", plant_ids=None):
     """
     Takes a list of top-level BRSRQuestion objects and returns render-ready
     rows, each carrying its own answer plus a sub_questions list.
+
+    Only submitted / resubmitted / approved responses are used (drafts are
+    ignored), unless the whole assignment is approved / past
+    pre_final_approval. `scope` / `plant_ids`: see _reportable_brsr_assignments.
     """
     if not questions:
         return []
@@ -563,33 +708,39 @@ def _attach_answers(questions, financial_year=None, assignment_id=None, plant_id
     question_ids = [q.id for q in questions]
     logger.info(f"Looking for responses for {len(question_ids)} questions")
 
-    responses = QuestionResponse.objects.filter(question_id__in=question_ids)
-
     reportable_assignments = _reportable_brsr_assignments(
-        financial_year=financial_year,assignment_id=assignment_id,plant_id=plant_id,)
+        financial_year=financial_year, assignment_id=assignment_id,
+        plant_id=plant_id, scope=scope, plant_ids=plant_ids,
+    )
 
     assignment_ids = list(reportable_assignments.values_list("id", flat=True))
+    final_ids = set(
+        reportable_assignments.filter(
+            Q(assignment_status="approved")
+            | Q(workflow_tasks__logs__to_stage__stage_type="pre_final_approval")
+        ).values_list("id", flat=True)
+    ) if assignment_ids else set()
 
+    responses = QuestionResponse.objects.filter(question_id__in=question_ids)
     if assignment_ids:
-        responses = responses.filter(assignment_id__in=assignment_ids)
+        responses = responses.filter(assignment_id__in=assignment_ids).filter(
+            Q(status__in=REPORTABLE_RESPONSE_STATUSES) | Q(assignment_id__in=final_ids)
+        )
     else:
         responses = responses.none()
 
     logger.info(f"Filtered to {len(assignment_ids)} reportable BRSR assignments")
 
-    logger.info(f"Found {responses.count()} responses total")
+    # Keep only the MOST RECENTLY UPDATED response per question.
     response_map = {}
     for r in responses.select_related("assignment").order_by("-updated_at"):
         if r.question_id not in response_map:
             response_map[r.question_id] = r
-            logger.info(f"Response for question {r.question_id}: {r.response_value}")
 
-    # Build rows
     rows = []
     for q in questions:
         response = response_map.get(q.id)
 
-        # Get answer value
         answer_value = ""
         answer_json = {}
         status = "draft"
@@ -599,14 +750,13 @@ def _attach_answers(questions, financial_year=None, assignment_id=None, plant_id
             answer_json = response.response_json or {}
             status = response.status or "draft"
 
-            # If answer_json is a string, try to parse it
             if isinstance(answer_json, str):
                 try:
                     answer_json = json.loads(answer_json)
                 except Exception:
                     answer_json = {}
 
-        row_data = {
+        rows.append({
             "question": q,
             "question_id": q.question_id,
             "question_number": q.question_number or "",
@@ -621,10 +771,7 @@ def _attach_answers(questions, financial_year=None, assignment_id=None, plant_id
             "answer_json": answer_json,
             "status": status,
             "sub_questions": _expand_fields_as_subquestions(q, response, financial_year),
-        }
-
-        logger.info(f"Row for question {q.question_id}: sub_questions={len(row_data['sub_questions'])}")
-        rows.append(row_data)
+        })
 
     return rows
 
@@ -634,21 +781,10 @@ def get_brsr_stats(financial_year=None, assignment_id=None, plant_id=None):
     Returns (total_questions, answered_questions) across ALL active BRSR
     questions for this financial_year/plant.
 
-    Unlike get_brsr_report_data(), this does NOT drop unanswered questions
-    from the count -- that function filters each section down to only
-    `_row_has_data(row) == True` rows before returning them (by design,
-    since the report/PDF should only render submitted answers), which
-    means the returned structure can never be used to recover the true
-    denominator: "total" there is always silently equal to "answered".
-
-    This function queries the full active question set directly so the
-    "X of Y answered" stat has a real Y, and reuses the same
-    _row_has_data() check the report itself uses (rather than only
-    looking at a row's own top-level answer_value) so "answered" doesn't
-    miss questions whose answer actually lives in sub_questions,
-    table_rows, or matrix_rows -- e.g. table/matrix/checkbox_group
-    question types, where the top-level answer_value is always blank by
-    design and the real answer is nested.
+    Queries the full active question set directly (get_brsr_report_data()
+    drops unanswered rows, so it can't supply a real denominator) and reuses
+    _row_has_data() so answers living in sub_questions / table_rows /
+    matrix_rows are counted too.
     """
     logger.info(
         f"Getting BRSR stats for financial_year={financial_year}, "
@@ -656,11 +792,11 @@ def get_brsr_stats(financial_year=None, assignment_id=None, plant_id=None):
     )
 
     reportable_assignments = _reportable_brsr_assignments(
-        financial_year=financial_year,assignment_id=assignment_id,plant_id=plant_id,)
+        financial_year=financial_year, assignment_id=assignment_id, plant_id=plant_id,
+    )
 
     if not reportable_assignments.exists():
-        logger.info("No reportable BRSR assignments found. "
-            "Returning zero statistics.")
+        logger.info("No reportable BRSR assignments found. Returning zero statistics.")
         return 0, 0
 
     sections = BRSRSection.objects.filter(is_active=True)
@@ -669,17 +805,11 @@ def get_brsr_stats(financial_year=None, assignment_id=None, plant_id=None):
     answered = 0
 
     for section in sections:
-        questions_qs = BRSRQuestion.objects.filter(
-            section=section,
-            is_active=True
-        )
-        questions = list(questions_qs)
+        questions = list(BRSRQuestion.objects.filter(section=section, is_active=True))
 
         if section.code == "section_c":
-            # Section C - only principle-linked questions count here
             relevant_questions = [q for q in questions if q.principle_id is not None]
         else:
-            # Section A/B - only non-principle questions
             relevant_questions = [q for q in questions if q.principle_id is None]
 
         if not relevant_questions:
@@ -695,7 +825,9 @@ def get_brsr_stats(financial_year=None, assignment_id=None, plant_id=None):
 
 def get_brsr_report_data(financial_year=None, assignment_id=None, plant_id=None):
     """
-    Returns section blocks in display order.
+    Returns section blocks in display order (single plant, or -- when
+    plant_id is None -- the most recent response per question system-wide;
+    use get_brsr_report_data_all_plants() for a real company-wide report).
     """
     logger.info(
         f"Getting BRSR report data for financial_year={financial_year}, "
@@ -708,33 +840,26 @@ def get_brsr_report_data(financial_year=None, assignment_id=None, plant_id=None)
     report_sections = []
 
     for section in sections:
-        questions_qs = BRSRQuestion.objects.filter(
-            section=section,
-            is_active=True
-        ).select_related("principle").order_by("display_order", "question_number")
-
-        questions = list(questions_qs)
+        questions = list(
+            BRSRQuestion.objects.filter(section=section, is_active=True)
+            .select_related("principle")
+            .order_by("display_order", "question_number")
+        )
 
         if section.code == "section_c":
-            # Section C - Principle-wise
             principle_blocks = []
             for principle in principles:
                 p_questions = [q for q in questions if q.principle_id == principle.id]
                 if not p_questions:
                     continue
-                logger.info(f"Processing principle {principle.principle_number} with {len(p_questions)} questions")
 
                 attached_rows = _attach_answers(p_questions, financial_year, assignment_id, plant_id)
                 answered_rows = [r for r in attached_rows if _row_has_data(r)]
 
                 if not answered_rows:
-                    # Nothing submitted for this principle at all -- skip it entirely
                     continue
 
-                principle_blocks.append({
-                    "principle": principle,
-                    "rows": answered_rows,
-                })
+                principle_blocks.append({"principle": principle, "rows": answered_rows})
 
             report_sections.append({
                 "section": section,
@@ -742,14 +867,11 @@ def get_brsr_report_data(financial_year=None, assignment_id=None, plant_id=None)
                 "principle_blocks": principle_blocks,
             })
         else:
-            # Section A or B - Regular questions
             plain_questions = [q for q in questions if q.principle_id is None]
-            logger.info(f"Processing {len(plain_questions)} plain questions for section {section.code}")
 
             attached_rows = _attach_answers(plain_questions, financial_year, assignment_id, plant_id)
             answered_rows = [r for r in attached_rows if _row_has_data(r)]
 
-            # Group by sub_section
             grouped = {}
             order = []
             for row in answered_rows:
@@ -759,12 +881,10 @@ def get_brsr_report_data(financial_year=None, assignment_id=None, plant_id=None)
                     order.append(key)
                 grouped[key].append(row)
 
-            sub_sections = [{"title": key, "rows": grouped[key]} for key in order]
-
             report_sections.append({
                 "section": section,
                 "is_principle_section": False,
-                "sub_sections": sub_sections,
+                "sub_sections": [{"title": key, "rows": grouped[key]} for key in order],
             })
 
     logger.info(f"Generated {len(report_sections)} report sections")
@@ -772,29 +892,8 @@ def get_brsr_report_data(financial_year=None, assignment_id=None, plant_id=None)
 
 
 # ---------------------------------------------------------------------------
-# Cross-plant combining ("All Plants" report)
+# Cross-plant combining ("All Plants" / company-wide report)
 # ---------------------------------------------------------------------------
-#
-# get_brsr_report_data(financial_year, plant_id=None) used to be the only
-# way to get "all plants" data, and it went through _attach_answers with
-# plant_id=None -- which filters Assignments by financial_year across every
-# plant, then response_map keeps only the MOST RECENTLY UPDATED response
-# per question. That silently discards every other plant's answer for that
-# question instead of combining them.
-#
-# The functions below fetch each plant's answers separately (via the
-# existing per-plant _attach_answers/_expand_fields_as_subquestions path,
-# so table/matrix/checkbox shaping is untouched) and then merge them
-# leaf-by-leaf:
-#   - numeric answers (e.g. "23", "34") are SUMMED -> "57"
-#   - non-numeric answers (text/sentences) are kept as {plant_name: value}
-#     so nothing gets dropped
-# The merged rows keep the exact same shape (answer_value / sub_questions /
-# table_rows / matrix_rows) as a single-plant row, so the PDF/Excel/preview
-# renderers don't need new code paths -- only
-# format_combined_answer_for_display() below needs to be called wherever a
-# value is finally stringified, since a combined text answer may now be a
-# dict instead of a plain string.
 
 def _try_parse_number(value):
     """Returns a float if value looks like a plain number, else None."""
@@ -815,10 +914,24 @@ def _try_parse_number(value):
     return None
 
 
+def _is_percentage(value):
+    return isinstance(value, str) and value.strip().endswith("%")
+
+
 def _format_number(n):
     if float(n).is_integer():
         return str(int(n))
     return str(round(n, 2))
+
+
+def _comparable(value):
+    """Normalised form used to decide whether two plants gave the SAME answer."""
+    if isinstance(value, (dict, list, tuple)):
+        try:
+            return json.dumps(value, sort_keys=True, default=str).strip().lower()
+        except Exception:
+            return str(value).strip().lower()
+    return str(value).strip().lower()
 
 
 def _combine_plant_values(pairs):
@@ -826,13 +939,15 @@ def _combine_plant_values(pairs):
     pairs: [(plant_name, value), ...] -- one entry per plant for the SAME
     question/field.
 
-    - All-numeric answers are summed into one total ("23" + "34" -> "57").
-    - Any non-numeric answer means the field can't be summed, so every
-      plant's answer is kept as {plant_name: value} instead of picking one
-      and losing the rest.
     - Plants with no answer for this field are left out entirely.
-    - A single plant answering is returned as a plain scalar (not a
-      1-entry dict) since there's nothing to combine.
+    - One plant answering -> its value as-is.
+    - All numeric:
+        * any value written as a percentage ("12%") -> AVERAGE, shown as "%"
+        * otherwise -> SUM ("23" + "34" -> "57")
+    - Non-numeric (Yes/No, text):
+        * every plant gave the same answer -> that answer, shown ONCE
+        * answers differ -> the MAJORITY answer wins ("Yes" for 4 Yes / 3 No);
+          on a tie the tied answers are joined by a comma ("Yes, No")
     """
     present = [(name, v) for name, v in pairs if _has_value(v)]
     if not present:
@@ -850,9 +965,26 @@ def _combine_plant_values(pairs):
         numbers.append(n)
 
     if all_numeric:
+        if any(_is_percentage(v) for _, v in present):
+            return _format_number(sum(numbers) / len(numbers)) + "%"
         return _format_number(sum(numbers))
 
-    return {name: v for name, v in present}
+    if len({_comparable(v) for _, v in present}) == 1:
+        return present[0][1]
+
+    # Majority wins: the answer given by the most plants. If several answers
+    # tie for first place, the tied answers are shown comma-separated
+    # (free-text answers, which rarely match, therefore all appear).
+    counts = {}
+    display = {}
+    for _, v in present:
+        key = _comparable(v)
+        counts[key] = counts.get(key, 0) + 1
+        display.setdefault(key, str(v).strip())
+
+    top = max(counts.values())
+    winners = [display[k] for k, n in counts.items() if n == top]
+    return ", ".join(winners)
 
 
 def format_combined_answer_for_display(value):
@@ -897,13 +1029,10 @@ def _merge_leaf(sub_by_plant):
         return merged
 
     if sub_type == "table":
-        # Schema-driven tables (the common case) use the same fixed row
-        # template for every plant, so rows align positionally. The
-        # list-of-row-objects shape (see _build_table_subquestion Case 1)
-        # can have a different submitted row COUNT per plant -- there's no
-        # reliable cross-plant key to match those rows on, so we align
-        # positionally up to the longest plant's row count and leave
-        # shorter plants' missing cells blank rather than guessing a match.
+        # Schema-driven tables use the same fixed row template for every
+        # plant, so rows align positionally. The list-of-row-objects shape
+        # can have a different row COUNT per plant; those are aligned
+        # positionally up to the longest plant's row count.
         row_count = max((len(s.get("table_rows", [])) for s in sub_by_plant.values()), default=0)
         merged_table_rows = []
         for idx in range(row_count):
@@ -956,34 +1085,85 @@ def _merge_row_across_plants(row_by_plant):
     return merged
 
 
+def _unique_plant_labels(plants):
+    """{plant.id: label} -- plant names, made unique if two plants share one."""
+    labels = {}
+    seen = set()
+    for plant in plants:
+        label = plant.name
+        if label in seen:
+            label = f"{plant.name} ({plant.id})"
+        seen.add(label)
+        labels[plant.id] = label
+    return labels
+
+
 def get_brsr_report_data_all_plants(financial_year=None, assignment_id=None, plant_ids=None):
     """
-    Same output shape as get_brsr_report_data() (list of section blocks),
-    but for every question, the answer is combined across ALL plants
-    instead of picking one plant's most-recently-updated response:
-      - numeric answers are summed
-      - text answers are kept per-plant in a dict
+    Company-wide report. Same output shape as get_brsr_report_data(), but
+    every question's answer is combined across ALL given plants (see
+    _combine_plant_values for the rules).
 
-    plant_ids: optional list to restrict which plants are combined (e.g.
-    the caller's company's plants). Defaults to all active plants.
+    plant_ids: ALL of the company's plants (the scope). Defaults to every
+    active plant; an empty list means "no plants" -> empty report.
+
+    Two kinds of data are merged:
+      - plant-scope assignments, per plant (only plants that have submitted
+        data take part);
+      - company-scope assignments (data_scope="company"), which are ONE
+        shared answer set for the whole company -- fetched once, never
+        multiplied per plant, and labelled "Company-wide" if it has to be
+        listed next to plant answers.
     """
     from apps.organizations.models import Plant
 
-    if plant_ids:
-        plants = list(Plant.objects.filter(id__in=plant_ids, is_active=True))
-    else:
-        plants = list(Plant.objects.filter(is_active=True))
-
-    if not plants:
+    if plant_ids is not None and not list(plant_ids):
         return []
 
+    plants_qs = Plant.objects.filter(is_active=True)
+    if plant_ids:
+        plants_qs = plants_qs.filter(id__in=list(plant_ids))
+    all_plants = list(plants_qs)
+    if not all_plants:
+        return []
+
+    scope_ids = [p.id for p in all_plants]
+    labels = _unique_plant_labels(all_plants)
+    plants = get_plants_with_data(financial_year, assignment_id, scope_ids)
+    has_company_data = _reportable_brsr_assignments(
+        financial_year=financial_year, assignment_id=assignment_id,
+        scope="company_only", plant_ids=scope_ids,
+    ).exists()
+
     logger.info(
-        f"Combining BRSR report across {len(plants)} plants for "
-        f"financial_year={financial_year}, assignment_id={assignment_id}"
+        f"Combining BRSR report: {len(plants)}/{len(all_plants)} plants have plant-scope data, "
+        f"company-wide data={has_company_data}, financial_year={financial_year}"
     )
 
     sections = BRSRSection.objects.filter(is_active=True).order_by("display_order", "code")
     principles = list(BRSRPrinciple.objects.filter(is_active=True).order_by("principle_number"))
+
+    def merged_rows_for(question_list):
+        per_plant_rows = {
+            labels[plant.id]: _attach_answers(
+                question_list, financial_year, assignment_id, plant.id, scope="plant_only"
+            )
+            for plant in plants
+        }
+        if has_company_data:
+            per_plant_rows["Company-wide"] = _attach_answers(
+                question_list, financial_year, assignment_id, None,
+                scope="company_only", plant_ids=scope_ids,
+            )
+
+        merged_rows = []
+        for idx in range(len(question_list)):
+            row_by_plant = {
+                name: rows[idx] for name, rows in per_plant_rows.items() if idx < len(rows)
+            }
+            if row_by_plant:
+                merged_rows.append(_merge_row_across_plants(row_by_plant))
+        return [r for r in merged_rows if _row_has_data(r)]
 
     report_sections = []
 
@@ -1001,20 +1181,7 @@ def get_brsr_report_data_all_plants(financial_year=None, assignment_id=None, pla
                 if not p_questions:
                     continue
 
-                per_plant_rows = {
-                    plant.name: _attach_answers(p_questions, financial_year, assignment_id, plant.id)
-                    for plant in plants
-                }
-
-                merged_rows = []
-                for idx in range(len(p_questions)):
-                    row_by_plant = {
-                        name: rows[idx] for name, rows in per_plant_rows.items() if idx < len(rows)
-                    }
-                    if row_by_plant:
-                        merged_rows.append(_merge_row_across_plants(row_by_plant))
-
-                answered_rows = [r for r in merged_rows if _row_has_data(r)]
+                answered_rows = merged_rows_for(p_questions)
                 if not answered_rows:
                     continue
 
@@ -1027,21 +1194,7 @@ def get_brsr_report_data_all_plants(financial_year=None, assignment_id=None, pla
             })
         else:
             plain_questions = [q for q in questions if q.principle_id is None]
-
-            per_plant_rows = {
-                plant.name: _attach_answers(plain_questions, financial_year, assignment_id, plant.id)
-                for plant in plants
-            }
-
-            merged_rows = []
-            for idx in range(len(plain_questions)):
-                row_by_plant = {
-                    name: rows[idx] for name, rows in per_plant_rows.items() if idx < len(rows)
-                }
-                if row_by_plant:
-                    merged_rows.append(_merge_row_across_plants(row_by_plant))
-
-            answered_rows = [r for r in merged_rows if _row_has_data(r)]
+            answered_rows = merged_rows_for(plain_questions)
 
             grouped, order = {}, []
             for row in answered_rows:

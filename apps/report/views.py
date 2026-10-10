@@ -35,20 +35,13 @@ def _reporting_years():
     return years or ["2024-2025"]
 
 
+from .plant_scope import company_plants_qs
+
 def _plants(request=None):
-    """
-    Plants shown in the 'Plant' dropdown.
-    Filter by user's company if not superadmin.
-    """
-    from apps.organizations.models import Plant
-
-    if request and not request.user.is_super_admin:
-        return list(Plant.objects.filter(
-            is_active=True,
-            created_by__company=request.user.company
-        ).order_by("name"))
-
-    return list(Plant.objects.filter(is_active=True).order_by("name"))
+    if request is None:
+        from apps.organizations.models import Plant
+        return list(Plant.objects.filter(is_active=True).order_by("name"))
+    return list(company_plants_qs(request.user).order_by("name"))
 
 
 def _selected_plant_id(request, plants):

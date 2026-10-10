@@ -1,34 +1,23 @@
 """
 Builds the BRSR report as an .xlsx workbook matching the same structure as
-the PDF (brsr_pdf_reportlab.py): navy/gold styling, one sheet per Section
-A/B and per Principle, with matrix (P1-P9) and table-shaped answers
-rendered as real grids -- not flattened into a single "Answer" column.
+the PDF (brsr_pdf_reportlab.py): one sheet per Section A/B and per
+Principle, with matrix (P1-P9) and table-shaped answers rendered as real
+grids -- not flattened into a single "Answer" column.
 
---------------------------------------------------------------------------
-WHY THIS REUSES _flatten_rows FROM brsr_pdf_reportlab.py
---------------------------------------------------------------------------
-The previous Excel view built its own flat "No. | Section | Sub-section /
-Principle | Question | Type | Answer" sheet directly off report_sections,
-writing only `row.get("answer_value", "")` per top-level question -- so
-every sub_question (table cells, matrix grids, multi-field questions) was
-silently dropped, and nothing here shared logic with the PDF's rendering.
+Reuses _flatten_rows from brsr_pdf_reportlab.py so Excel + PDF can never
+structurally diverge.
 
-_flatten_rows() in brsr_pdf_reportlab.py is pure data-shaping -- it takes
-row dicts and yields ("heading"/"matrix"/"table"/"row", ...) tuples of
-plain strings/lists, with no ReportLab Paragraph/Table objects involved.
-So it's exactly as reusable here as it is there: import it, walk the same
-items, and Excel + PDF can never structurally diverge from each other
-again.
+PLANT-WISE vs OVERALL
+---------------------
+`plant_name` is printed on the Overview sheet: the selected plant's name for
+a plant-wise report, or "All Plants" for the combined report. The data
+itself comes in through `report_sections` (see views_brsr.py).
 
---------------------------------------------------------------------------
 COMBINED ("All Plants") ANSWERS
---------------------------------------------------------------------------
-Same as the PDF module: a combined answer can be a {plant_name: answer}
-dict (see brsr_report_data.format_combined_answer_for_display). Every
-cell-writing helper below routes the value through that function first,
-so a dict renders as one "Plant: answer" line per cell instead of
-Python's dict repr, and generate_brsr_excel() accepts a precomputed
-`report_sections` so the caller can pass in combined data.
+-------------------------------
+A combined answer can be a {plant_name: answer} dict (see
+brsr_report_data.format_combined_answer_for_display). Every cell-writing
+helper routes the value through that function first.
 """
 
 import io
@@ -41,16 +30,16 @@ from .brsr_pdf_reportlab import _flatten_rows, _display_financial_year, _short_c
 from .brsr_report_data import format_combined_answer_for_display
 
 # ---------------------------------------------------------------------------
-# Palette -- matches brsr_pdf_reportlab.py's NAVY/GOLD_BORDER/etc.
+# Palette -- Lucas green + gold borders (matches brsr_pdf_reportlab.py)
 # ---------------------------------------------------------------------------
-NAVY = "FF1B2A56"
+BRAND = "FF196B24"
 GOLD = "FFF4B000"
 WHITE = "FFFFFFFF"
 ORANGE = "FFF4A300"
 BODY = "FF1A1A1A"
 MUTED = "FF6B7280"
 
-NAVY_FILL = PatternFill("solid", fgColor=NAVY)
+NAVY_FILL = PatternFill("solid", fgColor=BRAND)
 THIN = Side(style="thin", color=GOLD)
 BORDER = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)
 
@@ -95,7 +84,6 @@ def _write_full_width(ws, row, text, font, height=None):
 
 def _write_section_title(ws, row, text):
     row_next = _write_full_width(ws, row, text, FONT_TITLE, height=22)
-    ws.cell(row=row, column=1).fill = NAVY_FILL
     for col in range(1, LAST_COL + 1):
         ws.cell(row=row, column=col).fill = NAVY_FILL
     return row_next
@@ -255,12 +243,16 @@ def _safe_sheet_title(title):
 
 
 def generate_brsr_excel(financial_year=None, assignment_id=None, plant_id=None,
-                         company_name="Protegk IT", company_cin="", report_sections=None):
+                        company_name="Lucas TVS Ltd", company_cin="", report_sections=None,
+                        plant_name=None, plants_included=None):
     """
     report_sections: optional precomputed section blocks (same shape as
     get_brsr_report_data()'s return value). Pass this in for the "All
     Plants" combined report instead of letting this function fetch a
     single plant's data itself.
+
+    plant_name: "All Plants" for the combined report, or the selected
+    plant's name -- printed on the Overview sheet.
     """
     if report_sections is None:
         from .brsr_report_data import get_brsr_report_data
@@ -271,12 +263,27 @@ def generate_brsr_excel(financial_year=None, assignment_id=None, plant_id=None,
 
     # --- Overview sheet -----------------------------------------------
     ov = wb.create_sheet("Overview")
-    _setup_sheet(ov)
-    ov.cell(row=1, column=1, value="Business Responsibility & Sustainability Report").font = Font(bold=True, size=15, color="FF1B2A56")
+    ov.column_dimensions["A"].width = 60
+    ov.cell(row=1, column=1, value="Business Responsibility & Sustainability Report").font = Font(bold=True, size=15, color=BRAND)
     ov.cell(row=2, column=1, value=_short_company_name(company_name)).font = Font(bold=True, size=12)
+    next_row = 3
     if company_cin:
-        ov.cell(row=3, column=1, value=f"CIN: {company_cin}").font = Font(size=10)
-    ov.cell(row=4, column=1, value=_display_financial_year(financial_year)).font = Font(size=11, bold=True, color="FF1B2A56")
+        ov.cell(row=next_row, column=1, value=f"CIN: {company_cin}").font = Font(size=10)
+        next_row += 1
+    if plant_name:
+        ov.cell(row=next_row, column=1, value=f"Plant: {plant_name}").font = Font(size=11, bold=True, color=BRAND)
+        next_row += 1
+    ov.cell(row=next_row, column=1, value=_display_financial_year(financial_year)).font = Font(size=11, bold=True, color=BRAND)
+    next_row += 1
+    if plants_included:
+        ov.cell(
+            row=next_row, column=1,
+            value=f"Consolidated across {len(plants_included)} plant{'s' if len(plants_included) != 1 else ''}:",
+        ).font = Font(size=10, bold=True)
+        next_row += 1
+        for name in plants_included:
+            ov.cell(row=next_row, column=1, value=f"  - {name}").font = Font(size=10)
+            next_row += 1
 
     section_titles = {"section_a": "Section A", "section_b": "Section B"}
 

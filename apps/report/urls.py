@@ -1,6 +1,6 @@
 # report_app/urls.py
-from django.urls import path
 from . import views
+from django.urls import path
 from .views import(
     ReportTrackDownloadView
 )
