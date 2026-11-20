@@ -4,6 +4,7 @@
 {% block title %}BRSR Project — Business Responsibility & Sustainability Reporting{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/news-feed.css' %}">
 <style>
   :root {
     --bg: #f5f7fb;
@@ -1053,6 +1054,34 @@
 
 <!-- ===== MAIN CONTENT ===== -->
 <div class="brsr-wrapper">
+
+  {% if request.user.is_authenticated %}
+  <!-- Scrollable News Line directly below the portal navigation -->
+  <section class="dashboard-news-ticker" aria-label="News and Events">
+    <div class="dashboard-news-ticker-label"><span class="ticker-live-dot"></span> NEWS &amp; EVENTS</div>
+    <div class="dashboard-news-ticker-track" tabindex="0" aria-label="Scroll through the latest news and events">
+      {% if dashboard_news_line or dashboard_upcoming_events %}
+      {% for item in dashboard_news_line %}
+      <a class="dashboard-news-ticker-item" href="{% url 'news_events:news_event_public_detail' item.pk %}">
+        <span class="ticker-type">NEWS</span>
+        <span class="ticker-title">{{ item.title }}</span>
+        <time class="ticker-date" datetime="{{ item.published_at|default:item.created_at|date:'c' }}">{{ item.published_at|default:item.created_at|date:'d M' }}</time>
+      </a>
+      {% endfor %}
+      {% for event in dashboard_upcoming_events %}
+      <a class="dashboard-news-ticker-item" href="{% url 'news_events:news_event_public_detail' event.pk %}">
+        <span class="ticker-type ticker-type-event">EVENT</span>
+        <span class="ticker-title">{{ event.title }}</span>
+        <time class="ticker-date" datetime="{{ event.start_datetime|date:'c' }}">{{ event.start_datetime|date:'d M · g:i A' }}</time>
+      </a>
+      {% endfor %}
+      {% else %}
+      <div class="dashboard-news-ticker-empty">No news updates for your plants and departments.</div>
+      {% endif %}
+    </div>
+    <a class="dashboard-news-ticker-all" href="{% url 'news_events:news_event_feed' %}">View all <i class="fas fa-chevron-right"></i></a>
+  </section>
+  {% endif %}
   
   <!-- ================= HERO - WHITE BACKGROUND ================= -->
   <div class="brsr-hero">
@@ -1119,6 +1148,63 @@
       </div>
     </div>
   </div>
+
+  {% if request.user.is_authenticated %}
+  <!-- ================= NEWS FEED & UPCOMING EVENTS ================= -->
+  <section class="news-page mb-4" aria-labelledby="dashboard-news-title">
+    <div class="news-heading">
+      <div>
+        <div class="eyebrow">Stay up to date</div>
+        <h1 id="dashboard-news-title">News &amp; Events</h1>
+        <p class="news-subtitle">Updates and important dates for your plants and departments.</p>
+      </div>
+      <a class="news-btn news-btn-outline" href="{% url 'news_events:news_event_feed' %}"><i class="fas fa-stream"></i> Open news feed</a>
+    </div>
+
+    <div class="dashboard-grid">
+      <section class="news-card" aria-labelledby="dashboard-feed-title">
+        <div class="news-card-head">
+          <div><h2 id="dashboard-feed-title">News Feed</h2><div class="small text-muted mt-1">Updates published for your plants</div></div>
+          <a class="small" href="{% url 'news_events:news_event_feed' %}">See all news <i class="fas fa-arrow-right"></i></a>
+        </div>
+        <div class="news-card-body">
+          <div class="news-list">
+            {% for item in dashboard_news_items %}
+            <article class="news-row">
+              <div class="news-date-tile"><strong>{{ item.published_at|default:item.created_at|date:'d' }}</strong><span>{{ item.published_at|default:item.created_at|date:'M' }}</span></div>
+              <div class="news-row-content">
+                <h3><a class="item-title" href="{% url 'news_events:news_event_public_detail' item.pk %}">{{ item.title }}</a></h3>
+                <p>{{ item.description|striptags|truncatechars:180 }}</p>
+                <div class="news-meta-line"><span><i class="far fa-clock"></i> {{ item.published_at|default:item.created_at|date:'d M Y' }}</span><span><i class="fas fa-paperclip"></i> {{ item.attachments.count }} files</span><span><i class="fas fa-industry"></i> {% if item.all_plants %}All plants{% else %}{{ item.plants.all|join:', '|default:'Selected plants' }}{% endif %}</span></div>
+              </div>
+            </article>
+            {% empty %}
+            <div class="empty-state"><i class="far fa-newspaper"></i><strong>No published news</strong><div class="mt-1">New announcements will show here.</div></div>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+
+      <aside class="news-card" aria-labelledby="dashboard-events-title">
+        <div class="news-card-head">
+          <div><h2 id="dashboard-events-title">Upcoming Events</h2><div class="small text-muted mt-1">All upcoming and currently active events</div></div>
+          <a class="small" href="{% url 'news_events:upcoming_events' %}">View all <i class="fas fa-arrow-right"></i></a>
+        </div>
+        <div class="news-card-body">
+          {% for event in dashboard_upcoming_events %}
+          <a href="{% url 'news_events:news_event_public_detail' event.pk %}" class="event-row text-decoration-none">
+            <div class="event-date"><strong>{{ event.start_datetime|date:'d' }}</strong><span>{{ event.start_datetime|date:'M' }}</span></div>
+            <div class="news-row-content"><h3>{{ event.title }}</h3><p>{{ event.start_datetime|date:'D, d M · g:i A' }}</p><div class="news-meta-line"><span><i class="fas fa-industry"></i> {% if event.all_plants %}All plants{% else %}{{ event.plants.all|join:', '|default:'Selected plants' }}{% endif %}</span></div></div>
+          </a>
+          {% empty %}
+          <div class="empty-state"><i class="far fa-calendar"></i><strong>No upcoming events</strong><div class="mt-1">Scheduled events for your audience will appear here.</div></div>
+          {% endfor %}
+          <a class="news-btn news-btn-outline w-100 mt-3" href="{% url 'organizations:calendar' %}"><i class="far fa-calendar-alt"></i> Open calendar</a>
+        </div>
+      </aside>
+    </div>
+  </section>
+  {% endif %}
 
   <!-- ================= WHAT IS BRSR ================= -->
   <div class="brsr-section" id="what">
@@ -1321,6 +1407,74 @@
       }
     });
   });
+
+  // Keep the News Line moving continuously in a seamless, infinite loop.
+  (function initNewsTicker() {
+    const track = document.querySelector('.dashboard-news-ticker-track');
+    if (!track || track.dataset.autoscrollReady) return;
+    const items = Array.from(track.children);
+    if (!items.length || items[0].classList.contains('dashboard-news-ticker-empty')) return;
+
+    function makeVisualCopy(item) {
+      const copy = item.cloneNode(true);
+      copy.setAttribute('aria-hidden', 'true');
+      if (copy.matches('a, button, [tabindex]')) copy.setAttribute('tabindex', '-1');
+      copy.querySelectorAll('a, button, [tabindex]').forEach(control => {
+        control.setAttribute('tabindex', '-1');
+      });
+      return copy;
+    }
+
+    // Measure the items themselves; scrollWidth is clamped to clientWidth and
+    // cannot tell us when a short list leaves unused space in the ticker.
+    const measureSequence = () => Array.from(track.children).reduce(
+      (width, item) => width + item.getBoundingClientRect().width,
+      0
+    );
+
+    // Repeat short lists until one full sequence fills the visible row.
+    let sequenceWidth = measureSequence();
+    let guard = 0;
+    while (sequenceWidth < track.clientWidth && guard < 50) {
+      items.forEach(item => track.appendChild(makeVisualCopy(item)));
+      sequenceWidth = measureSequence();
+      guard += 1;
+    }
+
+    // Add one matching sequence after the first to create a seamless loop.
+    const firstSequence = Array.from(track.children);
+    let loopBoundary = null;
+    firstSequence.forEach((item, index) => {
+      const copy = makeVisualCopy(item);
+      if (index === 0) loopBoundary = copy;
+      track.appendChild(copy);
+    });
+    track.dataset.autoscrollReady = 'true';
+    const loopWidth = loopBoundary.getBoundingClientRect().left -
+      track.firstElementChild.getBoundingClientRect().left;
+
+    /* Mark duplicated links as decorative so keyboard and screen-reader users
+       only encounter the original headlines. */
+    Array.from(track.children).slice(items.length).forEach(item => {
+      item.setAttribute('aria-hidden', 'true');
+      item.querySelectorAll('a, button, [tabindex]').forEach(control => {
+        control.setAttribute('tabindex', '-1');
+      });
+    });
+
+    let lastFrame = 0;
+
+    function animate(timestamp) {
+      if (lastFrame && loopWidth > 0) {
+        const elapsed = Math.min(timestamp - lastFrame, 50);
+        track.scrollLeft += elapsed * 0.055;
+        if (track.scrollLeft >= loopWidth) track.scrollLeft %= loopWidth;
+      }
+      lastFrame = timestamp;
+      window.requestAnimationFrame(animate);
+    }
+    window.requestAnimationFrame(animate);
+  })();
 </script>
 
 {% endblock %}

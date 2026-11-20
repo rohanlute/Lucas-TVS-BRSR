@@ -1,0 +1,527 @@
+
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}News &amp; Upcoming Events | BRSR{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/news-feed.css' %}">
+
+<style>
+.news-page {
+    padding-bottom: 24px;
+    color: #344054;
+}
+
+/* Main card */
+.news-page .news-card {
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid #e5eaf1;
+    border-radius: 10px;
+    box-shadow: 0 2px 7px rgba(16,24,40,.025);
+}
+
+/* Header */
+.news-page .news-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 15px 18px;
+    border-bottom: 1px solid #edf0f4;
+}
+
+.news-page .news-card-head h2 {
+    margin: 0;
+    color: #26364a;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.news-page .news-card-head .small {
+    color: #8995a5;
+    font-size: 10px;
+}
+
+/* Buttons */
+.news-page .news-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 9px 13px;
+    border: 1px solid #2875bd;
+    border-radius: 7px;
+    background: #2875bd;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: .2s ease;
+}
+
+.news-page .news-btn:hover {
+    background: #1e609f;
+    border-color: #1e609f;
+    color: #fff;
+}
+
+.news-page .news-btn-outline {
+    background: #fff;
+    border-color: #dce3ec;
+    color: #475467;
+}
+
+.news-page .news-btn-outline:hover {
+    background: #f3f7fc;
+    border-color: #b9cce2;
+    color: #2875bd;
+}
+
+/* Event list */
+.news-page .news-card-body {
+    padding: 8px 18px;
+}
+
+.news-page .news-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.news-page .news-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 17px 0;
+    border-bottom: 1px solid #edf0f4;
+}
+
+.news-page .news-row:last-child {
+    border-bottom: 0;
+}
+
+/* Date tile */
+.news-page .news-date-tile {
+    display: flex;
+    flex: 0 0 55px;
+    width: 55px;
+    height: 58px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #dceafa;
+    border-radius: 9px;
+    background: #f0f6ff;
+}
+
+.news-page .news-date-tile strong {
+    color: #2875bd;
+    font-size: 20px;
+    font-weight: 750;
+    line-height: 1.2;
+}
+
+.news-page .news-date-tile span {
+    margin-top: 3px;
+    color: #6d8eaf;
+    font-size: 10px;
+    font-weight: 650;
+    text-transform: uppercase;
+}
+
+/* Event content */
+.news-page .news-row-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.news-page .news-row-content h3 {
+    margin: 0 0 6px;
+    color: #344054;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.news-page .news-row-content .item-title {
+    color: #344054;
+    text-decoration: none;
+    transition: color .2s ease;
+}
+
+.news-page .news-row-content .item-title:hover {
+    color: #2875bd;
+}
+
+.news-page .news-row-content p {
+    margin: 0 0 9px;
+    color: #8792a2;
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+/* Metadata */
+.news-page .news-meta-line {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 17px;
+}
+
+.news-page .news-meta-line span,
+.news-page .news-meta-line a {
+    color: #8995a5;
+    font-size: 10px;
+    text-decoration: none;
+}
+
+.news-page .news-meta-line i {
+    margin-right: 4px;
+    color: #8ba7c3;
+}
+
+.news-page .news-meta-line a:hover {
+    color: #2875bd;
+}
+
+/* Details button */
+.news-page .event-details-btn {
+    flex-shrink: 0;
+    min-width: 72px;
+}
+
+/* Empty state */
+.news-page .empty-state {
+    padding: 55px 15px;
+    color: #8995a5;
+    text-align: center;
+}
+
+.news-page .empty-state > i {
+    display: block;
+    margin-bottom: 12px;
+    color: #bdc8d5;
+    font-size: 30px;
+}
+
+.news-page .empty-state strong {
+    display: block;
+    color: #475467;
+    font-size: 13px;
+}
+
+.news-page .empty-state div {
+    margin-top: 6px;
+    font-size: 11px;
+}
+
+/* Pagination */
+.news-page .pagination-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 13px 18px;
+    border-top: 1px solid #edf0f4;
+    color: #8995a5;
+    font-size: 10px;
+}
+
+.news-page .pagination {
+    gap: 4px;
+}
+
+.news-page .pagination .page-link {
+    min-width: 32px;
+    border: 1px solid #e1e7ef;
+    border-radius: 6px;
+    color: #52677e;
+    font-size: 10px;
+    text-align: center;
+}
+
+.news-page .pagination .page-item.active .page-link {
+    border-color: #2875bd;
+    background: #2875bd;
+    color: #fff;
+}
+
+/* Hover effect */
+.news-page .news-row:hover .news-date-tile {
+    border-color: #b9d4f0;
+    background: #eaf3ff;
+}
+
+/* Responsive */
+@media (max-width: 767px) {
+    .news-page .news-card-head {
+        align-items: flex-start;
+    }
+
+    .news-page .news-row {
+        flex-wrap: wrap;
+        gap: 11px;
+    }
+
+    .news-page .news-row-content {
+        flex-basis: calc(100% - 70px);
+    }
+
+    .news-page .event-details-btn {
+        margin-left: 66px;
+    }
+}
+
+@media (max-width: 480px) {
+    .news-page .news-card-head {
+        padding: 13px;
+    }
+
+    .news-page .news-card-body {
+        padding: 5px 12px;
+    }
+
+    .news-page .news-date-tile {
+        flex-basis: 46px;
+        width: 46px;
+        height: 50px;
+    }
+
+    .news-page .news-date-tile strong {
+        font-size: 17px;
+    }
+
+    .news-page .news-row-content h3 {
+        font-size: 12px;
+    }
+
+    .news-page .news-meta-line {
+        gap: 7px 12px;
+    }
+
+    .news-page .event-details-btn {
+        margin-left: 57px;
+    }
+
+    .news-page .pagination-wrap {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content news-page">
+
+    {% with head_title='News &amp; Upcoming Events' head_subtitle='Published news and upcoming or active events for your selected audience.' %}
+        {% include 'news_events/_page_head.html' %}
+    {% endwith %}
+
+    <section class="news-card mb-3">
+        <div class="news-card-head">
+            <div>
+                <h2>News</h2>
+                <div class="small text-muted mt-1">Published updates and scheduled news</div>
+            </div>
+            <a class="news-btn news-btn-outline" href="{% url 'news_events:news_event_feed' %}">
+                <i class="fas fa-stream"></i> Open news feed
+            </a>
+        </div>
+        <div class="news-card-body">
+            <div class="news-list">
+                {% for item in news_items %}
+                    <article class="news-row">
+                        <div class="news-date-tile">
+                            <strong>{{ item.published_at|default:item.start_datetime|default:item.created_at|date:'d' }}</strong>
+                            <span>{{ item.published_at|default:item.start_datetime|default:item.created_at|date:'M' }}</span>
+                        </div>
+                        <div class="news-row-content">
+                            <h3><a class="item-title" href="{% url 'news_events:news_event_public_detail' item.pk %}">{{ item.title }}</a></h3>
+                            <p>{{ item.description|striptags|truncatechars:260 }}</p>
+                            <div class="news-meta-line">
+                                <span><i class="far fa-clock"></i>
+                                    {% if item.status == 'SCHEDULED' %}Scheduled for {{ item.start_datetime|date:'l, d F Y · g:i A' }}{% else %}Published {{ item.published_at|default:item.created_at|date:'l, d F Y · g:i A' }}{% endif %}
+                                </span>
+                                <span><i class="fas fa-industry"></i>{% if item.all_plants %}All plants{% else %}{{ item.plants.all|join:', '|default:'Selected plants' }}{% endif %}</span>
+                            </div>
+                        </div>
+                        <a class="news-btn news-btn-outline event-details-btn" href="{% url 'news_events:news_event_public_detail' item.pk %}">Details <i class="fas fa-arrow-right"></i></a>
+                    </article>
+                {% empty %}
+                    <div class="empty-state">
+                        <i class="far fa-newspaper"></i>
+                        <strong>No news updates</strong>
+                        <div class="mt-1">Published or scheduled news for your audience will appear here.</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <section class="news-card">
+
+        <!-- Section Header -->
+        <div class="news-card-head">
+
+            <div>
+                <h2>Events Calendar</h2>
+                <div class="small text-muted mt-1">
+                    Upcoming events, ordered by start time
+                </div>
+            </div>
+
+            <a class="news-btn news-btn-outline"
+               href="{% url 'organizations:calendar' %}">
+                <i class="far fa-calendar-alt"></i>
+                Open portal calendar
+            </a>
+
+        </div>
+
+        <!-- Events -->
+        <div class="news-card-body">
+
+            <div class="news-list">
+
+                {% for event in upcoming_events %}
+
+                    <article class="news-row">
+
+                        <!-- Event Date -->
+                        <div class="news-date-tile">
+                            <strong>
+                                {{ event.start_datetime|date:'d' }}
+                            </strong>
+
+                            <span>
+                                {{ event.start_datetime|date:'M' }}
+                            </span>
+                        </div>
+
+                        <!-- Event Information -->
+                        <div class="news-row-content">
+
+                            <h3>
+                                <a class="item-title"
+                                   href="{% url 'news_events:news_event_public_detail' event.pk %}">
+                                    {{ event.title }}
+                                </a>
+                            </h3>
+
+                            <p>
+                                {{ event.description|striptags|truncatechars:260 }}
+                            </p>
+
+                            <div class="news-meta-line">
+
+                                <!-- Date and Time -->
+                                <span>
+                                    <i class="far fa-clock"></i>
+                                    {{ event.start_datetime|date:'l, d F Y · g:i A' }}
+
+                                    {% if event.end_datetime %}
+                                        – {{ event.end_datetime|date:'g:i A' }}
+                                    {% endif %}
+                                </span>
+
+                                <!-- Plant Information -->
+                                <span>
+                                    <i class="fas fa-industry"></i>
+
+                                    {% if event.all_plants %}
+                                        All plants
+                                    {% else %}
+                                        {{ event.plants.all|join:', '|default:'Selected plants' }}
+                                    {% endif %}
+                                </span>
+
+                                <!-- Meeting Link -->
+                                {% if event.meeting_link %}
+                                    <a href="{{ event.meeting_link }}"
+                                       target="_blank"
+                                       rel="noopener noreferrer">
+                                        <i class="fas fa-video"></i>
+                                        Join meeting
+                                    </a>
+                                {% endif %}
+
+                            </div>
+
+                        </div>
+
+                        <!-- Details -->
+                        <a class="news-btn news-btn-outline event-details-btn"
+                           href="{% url 'news_events:news_event_public_detail' event.pk %}">
+                            Details
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+
+                    </article>
+
+                {% empty %}
+
+                    <div class="empty-state">
+                        <i class="far fa-calendar-check"></i>
+
+                        <strong>No upcoming events</strong>
+
+                        <div class="mt-1">
+                            When events are scheduled for your audience,
+                            they will show here.
+                        </div>
+                    </div>
+
+                {% endfor %}
+
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        {% if is_paginated %}
+
+            <div class="pagination-wrap">
+
+                <span>
+                    Page {{ page_obj.number }}
+                    of {{ page_obj.paginator.num_pages }}
+                </span>
+
+                <nav aria-label="Upcoming events pagination">
+                    <ul class="pagination mb-0">
+
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                   href="?page={{ page_obj.previous_page_number }}">
+                                    Previous
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        <li class="page-item active" aria-current="page">
+                            <span class="page-link">
+                                {{ page_obj.number }}
+                            </span>
+                        </li>
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                   href="?page={{ page_obj.next_page_number }}">
+                                    Next
+                                </a>
+                            </li>
+                        {% endif %}
+
+                    </ul>
+                </nav>
+            </div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

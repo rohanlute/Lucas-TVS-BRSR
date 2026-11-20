@@ -1,0 +1,232 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% block title %}{{ news_event.title }} | News & Events{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/news-feed.css' %}">
+<style>
+.news-page .draft-publish-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 11px;
+  border: 1px solid #f1dfad;
+  border-radius: 9px;
+  background: #fffaf0;
+  color: #7a6325;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.news-page .draft-publish-note i {
+  margin-top: 2px;
+  color: #c79b2d;
+}
+</style>
+{% endblock %}
+{% block content %}
+<div class="main-content news-page">
+  {% with head_title=news_event.title edit_mode=news_event head_subtitle='News & Events · '|add:news_event.get_status_display %}
+  {% include 'news_events/_page_head.html' %}
+  {% endwith %}
+  <div class="detail-grid">
+    <div class="d-flex flex-column gap-3">
+      <section class="news-card">
+        <div class="news-card-head">
+          <div class="d-flex gap-2 align-items-center">
+            <span class="news-pill {% if news_event.is_event %}pill-amber{% else %}pill-blue{% endif %}">
+              {% if news_event.is_event %}Event{% else %}News{% endif %}
+            </span>
+            <span class="news-pill {% if news_event.status == 'PUBLISHED' %}pill-green{% elif news_event.status == 'SCHEDULED' %}pill-amber{% else %}pill-gray{% endif %}">
+              {{ news_event.get_status_display }}
+            </span>
+          </div>
+        </div>
+        <div class="news-card-body">
+          <div class="detail-description">
+            {{ news_event.description }}
+          </div>
+          {% if news_event.meeting_link %}
+          <a class="news-btn news-btn-primary mt-3" target="_blank" rel="noopener" href="{{ news_event.meeting_link }}">
+            <i class="fas fa-video"></i> Join event
+          </a>
+          {% endif %}
+        </div>
+      </section>
+      {% if news_event.attachments.all %}
+      <section class="news-card">
+        <div class="news-card-head">
+          <h2>Attachments</h2>
+        </div>
+        <div class="news-card-body d-flex flex-wrap gap-2">
+          {% for attachment in news_event.attachments.all %}
+          <a class="news-btn news-btn-outline" href="{{ attachment.file.url }}" target="_blank" rel="noopener">
+            <i class="fas fa-paperclip"></i>{{ attachment.original_name|default:attachment.file.name }}
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+      <section class="news-card">
+        <div class="news-card-head">
+          <h2>Delivery schedule</h2>
+        </div>
+        <div class="news-card-body">
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Delivery</th>
+                  <th>Channel</th>
+                  <th>Scheduled</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for delivery in delivery_schedules %}
+                <tr>
+                  <td>{{ delivery.get_delivery_type_display }}</td>
+                  <td>{{ delivery.get_channel_display }}</td>
+                  <td>{{ delivery.scheduled_for|date:'d M Y · g:i A' }}</td>
+                  <td>
+                    <span class="news-pill {% if delivery.status == 'SENT' %}pill-green{% elif delivery.status == 'FAILED' %}pill-amber{% else %}pill-gray{% endif %}">
+                      {{ delivery.get_status_display }}
+                    </span>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="4" class="text-muted py-3">No deliveries are scheduled for this item.</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+      <section class="news-card"><div class="news-card-head">
+        <h2>Activity</h2>
+      </div>
+      <div class="news-card-body">
+        <div class="news-list">
+          {% for activity in activity_logs %}
+          <div class="news-row">
+            <div class="news-date-tile">
+              <strong>{{ activity.created_at|date:'d' }}</strong>
+              <span>{{ activity.created_at|date:'M' }}</span>
+            </div>
+            <div class="news-row-content">
+              <h3>{{ activity.get_action_display }}</h3>
+              <p>{{ activity.note|default:'Item updated' }}</p>
+              <div class="news-meta-line">
+                <span>{{ activity.performed_by|default:'System' }}</span>
+                <span>{{ activity.created_at|date:'d M Y, g:i A' }}</span>
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="text-muted small">No activity has been recorded.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+    </div>
+    <aside class="d-flex flex-column gap-3">
+      <section class="news-card">
+        <div class="news-card-head">
+          <h2>Actions</h2>
+        </div>
+        <div class="news-card-body d-flex flex-column gap-2">
+          {% if news_event.status == 'ARCHIVED' %}
+          <div class="draft-publish-note" role="note">
+            <i class="fas fa-archive"></i>
+            <span>This item is archived. Restore it before editing, publishing, cancelling, or changing its attachments.</span>
+          </div>
+          {% if perms.news_feed.change_newsevent or request.user.is_superuser %}
+          <form method="post" action="{% url 'news_events:news_event_restore' news_event.pk %}">
+            {% csrf_token %}
+            <button class="news-btn news-btn-primary w-100" type="submit">
+              <i class="fas fa-box-open"></i> Restore
+            </button>
+          </form>
+          {% endif %}
+          {% else %}
+          {% if news_event.status == 'DRAFT' %}
+          <div class="draft-publish-note" role="note">
+            <i class="fas fa-info-circle"></i>
+            <span>This {% if news_event.is_event %}event{% else %}news item{% endif %} is in Draft. First save or schedule it so it can be published on the dashboard.</span>
+          </div>
+          {% endif %}
+          {% if perms.news_feed.change_newsevent or request.user.is_superuser %}
+          {% if news_event.status == 'SCHEDULED' %}
+          <form method="post" action="{% url 'news_events:news_event_publish' news_event.pk %}">
+            {% csrf_token %}
+            <button class="news-btn news-btn-primary w-100" type="submit">
+              <i class="fas fa-paper-plane"></i> Publish now
+            </button>
+          </form>
+          {% endif %}
+          {% if news_event.status != 'ARCHIVED' %}
+          <form method="post" action="{% url 'news_events:news_event_archive' news_event.pk %}">
+            {% csrf_token %}
+            <button class="news-btn news-btn-outline w-100" type="submit">
+              <i class="fas fa-box-archive"></i> Archive
+            </button>
+          </form>
+          {% endif %}
+          {% if news_event.is_event and news_event.status != 'CANCELLED' %}
+          <form method="post" action="{% url 'news_events:news_event_cancel' news_event.pk %}">
+            {% csrf_token %}
+            <button class="news-btn news-btn-outline w-100" type="submit">
+              <i class="fas fa-ban"></i> Cancel event
+            </button>
+          </form>
+          {% endif %}
+          {% endif %}
+          {% if perms.news_feed.delete_newsevent or request.user.is_superuser %}
+          <a class="news-btn news-btn-outline w-100 text-danger" href="{% url 'news_events:news_event_delete' news_event.pk %}">
+            <i class="fas fa-trash"></i> Delete
+          </a>
+          {% endif %}
+          {% endif %}
+        </div>
+      </section>
+      <section class="news-card">
+        <div class="news-card-head">
+          <h2>At a glance</h2>
+        </div>
+        <div class="news-card-body">
+          <div class="detail-fact">
+            <span>{% if news_event.is_event %}Event date{% else %}Publish date{% endif %}</span>
+            <strong>{{ news_event.start_datetime|date:'d M Y · g:i A'|default:'Not scheduled' }}</strong>
+          </div>
+          {% if news_event.end_datetime %}
+          <div class="detail-fact">
+            <span>End / expiry</span>
+            <strong>{{ news_event.end_datetime|date:'d M Y · g:i A' }}</strong>
+          </div>
+          {% endif %}
+          <div class="detail-fact">
+            <span>Audience</span>
+            <strong>
+              {% if news_event.all_plants %}All plants{% else %}{{ news_event.plants.all|join:', '|default:'Selected plants' }}{% endif %}
+            </strong>
+          </div>
+          <div class="detail-fact">
+            <span>Departments</span>
+            <strong>
+              {{ news_event.departments.all|join:', '|default:'All departments' }}
+            </strong>
+          </div>
+          <div class="detail-fact">
+            <span>Created by</span>
+            <strong>{{ news_event.created_by|default:'—' }}</strong>
+          </div>
+          <div class="detail-fact">
+            <span>Last updated</span>
+            <strong>{{ news_event.updated_at|date:'d M Y' }}</strong>
+          </div>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+{% endblock %}

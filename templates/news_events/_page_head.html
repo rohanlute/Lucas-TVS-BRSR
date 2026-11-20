@@ -1,0 +1,27 @@
+{% load static %}
+<div class="news-heading">
+  <div>
+    <div class="eyebrow">BRSR · News &amp; Events</div>
+    <h1>{{ head_title }}</h1>
+    <p class="news-subtitle">{{ head_subtitle }}</p>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <a class="news-btn news-btn-outline" href="{% url 'news_events:news_event_list' %}" onclick="if (window.history.length > 1) { window.history.back(); return false; }">
+      <i class="fas fa-arrow-left"></i> Back
+    </a>
+    {% if hide_header_action %}
+    {% elif edit_mode and edit_mode.status != 'ARCHIVED' %}
+      {% if perms.news_feed.change_newsevent or request.user.is_superuser %}
+      <a class="news-btn news-btn-primary" href="{% url 'news_events:news_event_update' edit_mode.pk %}">
+        <i class="fas fa-pen"></i> Edit news / event
+      </a>
+      {% endif %}
+    {% elif not edit_mode %}
+      {% if perms.news_feed.add_newsevent or request.user.is_superuser %}
+      <a class="news-btn news-btn-primary" href="{% url 'news_events:news_event_create' %}">
+        <i class="fas fa-plus"></i> Add news / event
+      </a>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>

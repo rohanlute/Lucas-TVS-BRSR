@@ -1,0 +1,359 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}{{ news_event.title }} | News &amp; Events{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/news-feed.css' %}">
+<style>
+.news-public-detail {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding-bottom: 36px;
+}
+
+.news-public-detail .detail-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 2px 0 18px;
+    color: #536176;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.news-public-detail .detail-back-link:hover {
+    color: #1647b8;
+}
+
+.news-public-detail .detail-hero {
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 20px;
+    padding: clamp(24px, 4vw, 42px);
+    border: 1px solid #dfe8f4;
+    border-radius: 20px;
+    background:
+        radial-gradient(circle at 90% 5%, rgba(80, 137, 236, .13), transparent 34%),
+        linear-gradient(135deg, #fff 0%, #f5f8ff 100%);
+    box-shadow: 0 8px 26px rgba(23, 43, 77, .05);
+}
+
+.news-public-detail .detail-kicker {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 12px;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 750;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+.news-public-detail .detail-kicker i {
+    color: #2857bd;
+    font-size: 15px;
+}
+
+.news-public-detail .detail-title {
+    max-width: 900px;
+    margin: 0 0 18px;
+    color: #172b4d;
+    font-size: clamp(27px, 4vw, 42px);
+    font-weight: 750;
+    letter-spacing: -.035em;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+}
+
+.news-public-detail .detail-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.news-public-detail .detail-schedule {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 24px;
+    margin-top: 24px;
+    padding-top: 19px;
+    border-top: 1px solid #e3eaf4;
+}
+
+.news-public-detail .schedule-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-width: 190px;
+    color: #536176;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.news-public-detail .schedule-item > i {
+    margin-top: 2px;
+    color: #2857bd;
+}
+
+.news-public-detail .schedule-item strong {
+    display: block;
+    margin-bottom: 2px;
+    color: #243650;
+    font-size: 11px;
+}
+
+.news-public-detail .detail-main-column {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-width: 0;
+}
+
+.news-public-detail .detail-grid {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.news-public-detail .section-heading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.news-public-detail .section-icon {
+    display: inline-grid;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    place-items: center;
+    border-radius: 10px;
+    background: #edf3ff;
+    color: #2857bd;
+}
+
+.news-public-detail .attachments-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 14px;
+}
+
+.news-public-detail .attachment-card {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #e4eaf2;
+    border-radius: 12px;
+    background: #fff;
+    color: inherit;
+    text-decoration: none;
+    transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.news-public-detail .attachment-card:hover {
+    transform: translateY(-2px);
+    border-color: #b8cbed;
+    box-shadow: 0 7px 18px rgba(23, 43, 77, .09);
+    color: inherit;
+}
+
+.news-public-detail .attachment-preview {
+    display: grid;
+    min-height: 145px;
+    place-items: center;
+    overflow: hidden;
+    background: #f3f6fb;
+    color: #5373a7;
+}
+
+.news-public-detail .attachment-preview img {
+    display: block;
+    width: 100%;
+    height: 165px;
+    object-fit: cover;
+}
+
+.news-public-detail .attachment-preview .file-icon {
+    display: grid;
+    width: 58px;
+    height: 58px;
+    place-items: center;
+    border-radius: 17px;
+    background: #e6edfb;
+    color: #2857bd;
+    font-size: 25px;
+}
+
+.news-public-detail .attachment-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 13px;
+}
+
+.news-public-detail .attachment-name {
+    overflow: hidden;
+    color: #26364a;
+    font-size: 12px;
+    font-weight: 650;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.news-public-detail .attachment-type {
+    display: block;
+    margin-top: 3px;
+    color: #8290a3;
+    font-size: 10px;
+}
+
+.news-public-detail .attachment-open {
+    flex: 0 0 auto;
+    color: #2857bd;
+}
+
+.news-public-detail .empty-attachments {
+    padding: 22px;
+    border: 1px dashed #dbe3ee;
+    border-radius: 12px;
+    color: #7b8798;
+    font-size: 13px;
+    text-align: center;
+}
+
+.news-public-detail .detail-fact strong {
+    max-width: 62%;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 767px) {
+    .news-public-detail .detail-hero {
+        border-radius: 15px;
+    }
+
+    .news-public-detail .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .news-public-detail .detail-schedule {
+        flex-direction: column;
+    }
+
+    .news-public-detail .attachments-grid {
+        grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="main-content news-page news-public-detail">
+  <a class="detail-back-link" href="{% if news_event.is_event %}{% url 'news_events:upcoming_events' %}{% else %}{% url 'news_events:news_event_feed' %}{% endif %}">
+    <i class="fas fa-arrow-left" aria-hidden="true"></i>
+    Back to {% if news_event.is_event %}events{% else %}news{% endif %}
+  </a>
+
+  <header class="detail-hero">
+    <div class="detail-kicker">
+      <i class="{% if news_event.is_event %}far fa-calendar-check{% else %}far fa-newspaper{% endif %}" aria-hidden="true"></i>
+      BRSR · News &amp; Events
+    </div>
+    <h1 class="detail-title">{{ news_event.title }}</h1>
+    <div class="detail-badges">
+      <span class="news-pill {% if news_event.is_event %}pill-amber{% else %}pill-blue{% endif %}">
+        {% if news_event.is_event %}Event{% else %}News update{% endif %}
+      </span>
+      <span class="news-pill {% if news_event.status == 'PUBLISHED' %}pill-green{% elif news_event.status == 'SCHEDULED' %}pill-amber{% else %}pill-gray{% endif %}">
+        {{ news_event.get_status_display }}
+      </span>
+    </div>
+
+    <div class="detail-schedule">
+      <div class="schedule-item">
+        <i class="far fa-clock" aria-hidden="true"></i>
+        <div>
+          <strong>{% if news_event.is_event %}Event starts{% elif news_event.status == 'SCHEDULED' %}Publish date{% else %}Published{% endif %}</strong>
+          {% if news_event.status == 'PUBLISHED' and not news_event.is_event %}
+            {{ news_event.published_at|default:news_event.created_at|date:'l, d M Y · g:i A' }}
+          {% else %}
+            {{ news_event.start_datetime|date:'l, d M Y · g:i A'|default:'Not specified' }}
+          {% endif %}
+        </div>
+      </div>
+      {% if news_event.end_datetime %}
+      <div class="schedule-item">
+        <i class="far fa-hourglass" aria-hidden="true"></i>
+        <div>
+          <strong>{% if news_event.is_event %}Event ends{% else %}Expires{% endif %}</strong>
+          {{ news_event.end_datetime|date:'l, d M Y · g:i A' }}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="detail-grid">
+    <div class="detail-main-column">
+      <section class="news-card">
+        <div class="news-card-head">
+          <div class="section-heading">
+            <span class="section-icon"><i class="far fa-align-left" aria-hidden="true"></i></span>
+            <h2>About this {% if news_event.is_event %}event{% else %}update{% endif %}</h2>
+          </div>
+        </div>
+        <div class="news-card-body">
+          <div class="detail-description">{{ news_event.description|linebreaks }}</div>
+          {% if news_event.meeting_link %}
+          <a class="news-btn news-btn-primary mt-4" href="{{ news_event.meeting_link }}" target="_blank" rel="noopener noreferrer">
+            <i class="fas fa-video" aria-hidden="true"></i>
+            Join event
+            <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
+          </a>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="news-card">
+        <div class="news-card-head">
+          <div class="section-heading">
+            <span class="section-icon"><i class="fas fa-paperclip" aria-hidden="true"></i></span>
+            <h2>Attachments</h2>
+          </div>
+        </div>
+        <div class="news-card-body">
+          <div class="attachments-grid">
+            {% for attachment in news_event.attachments.all %}
+              <a class="attachment-card" href="{{ attachment.file.url }}" target="_blank" rel="noopener noreferrer">
+                <span class="attachment-preview">
+                  {% if attachment.attachment_type == 'IMAGE' %}
+                    <img src="{{ attachment.file.url }}" alt="{{ attachment.caption|default:attachment.original_name|default:'Event or news attachment' }}" loading="lazy">
+                  {% else %}
+                    <span class="file-icon"><i class="far fa-file-lines" aria-hidden="true"></i></span>
+                  {% endif %}
+                </span>
+                <span class="attachment-info">
+                  <span class="min-w-0">
+                    <span class="attachment-name">{{ attachment.original_name|default:attachment.file.name }}</span>
+                    <span class="attachment-type">
+                      {{ attachment.get_attachment_type_display }}
+                      {% if attachment.caption %} · {{ attachment.caption }}{% endif %}
+                    </span>
+                  </span>
+                  <i class="fas fa-arrow-up-right-from-square attachment-open" aria-hidden="true"></i>
+                </span>
+              </a>
+            {% empty %}
+              <div class="empty-attachments">No attachments were added to this item.</div>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </div>
+</main> 
+{% endblock %}

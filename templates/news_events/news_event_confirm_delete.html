@@ -1,0 +1,25 @@
+{% extends 'base/base.html' %}
+{% load static %}
+{% block title %}Delete {{ news_event.title }} | BRSR{% endblock %}
+{% block extra_css %}<link rel="stylesheet" href="{% static 'css/news-feed.css' %}">{% endblock %}
+{% block content %}
+<div class="main-content news-page">
+  {% with head_title='Delete news or event' head_subtitle='This action permanently removes this item and its delivery records.' %}
+  {% include 'news_events/_page_head.html' %}
+  {% endwith %}
+  <div class="news-card" style="max-width:680px;margin:auto">
+    <div class="news-card-body text-center py-5">
+      <div class="news-stat-icon mx-auto mb-3" style="float:none;width:52px;height:52px;color:#bd3544;background:#fff0f1">
+        <i class="fas fa-trash"></i>
+      </div>
+      <h2 class="h5 fw-bold">Delete “{{ news_event.title }}”?</h2>
+      <p class="text-muted">This {% if news_event.is_event %}event{% else %}news item{% endif %} and its reminder schedule will be permanently deleted.</p>
+      <form method="post" class="d-flex justify-content-center gap-2 mt-4">
+        {% csrf_token %}
+        <a class="news-btn news-btn-outline" href="{% url 'news_events:news_event_detail' news_event.pk %}">Keep item</a>
+        <button class="news-btn btn-danger" type="submit">Delete permanently</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,742 @@
+
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}News Feed & Events | BRSR{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/news-feed.css' %}">
+
+<style>
+/* Dashboard layout */
+.news-page {
+    padding-bottom: 24px;
+    color: #344054;
+}
+
+.news-page .dashboard-hero {
+    position: relative;
+    overflow: hidden;
+    padding: 24px 28px;
+    border: 1px solid #e5eaf2;
+    border-radius: 12px;
+    background: linear-gradient(110deg, #ffffff 0%, #f5f9ff 100%);
+}
+
+.news-page .dashboard-hero::after {
+    content: "";
+    position: absolute;
+    width: 190px;
+    height: 190px;
+    right: 35px;
+    top: -100px;
+    border-radius: 50%;
+    background: rgba(40, 117, 189, .06);
+}
+
+.news-page .dashboard-hero .eyebrow {
+    color: #2875bd;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+    margin-bottom: 9px;
+}
+
+.news-page .dashboard-hero h2 {
+    position: relative;
+    z-index: 1;
+    color: #26364a;
+    font-size: 21px;
+    font-weight: 700;
+    margin: 0 0 8px;
+}
+
+.news-page .dashboard-hero p {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    color: #7b8798;
+    font-size: 12px;
+    line-height: 1.7;
+    margin-bottom: 17px;
+}
+
+.news-page .news-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 9px 14px;
+    border: 1px solid #2875bd;
+    border-radius: 7px;
+    background: #2875bd;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: .2s ease;
+}
+
+.news-page .news-btn:hover {
+    background: #1e609f;
+    border-color: #1e609f;
+    color: #fff;
+}
+
+.news-page .news-btn-outline {
+    background: #fff;
+    border-color: #dce3ec;
+    color: #475467;
+}
+
+.news-page .news-btn-outline:hover {
+    background: #f3f7fc;
+    border-color: #b9cce2;
+    color: #2875bd;
+}
+
+/* Main dashboard columns */
+.news-page .dashboard-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.75fr) minmax(270px, .9fr);
+    gap: 15px;
+    align-items: start;
+}
+
+.news-page .dashboard-grid > * {
+    min-width: 0;
+}
+
+/* Common cards */
+.news-page .news-card {
+    overflow: hidden;
+    border: 1px solid #e5eaf1;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 2px 7px rgba(16, 24, 40, .025);
+}
+
+.news-page .news-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid #edf0f4;
+}
+
+.news-page .news-card-head h2 {
+    margin: 0;
+    color: #26364a;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.news-page .news-card-head .small {
+    color: #8a96a6;
+    font-size: 10px;
+}
+
+.news-page .news-card-head a {
+    color: #2875bd;
+    font-size: 11px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.news-page .news-card-body {
+    padding: 14px 16px;
+}
+
+/* News line */
+.news-page .news-line {
+    display: flex;
+    gap: 10px;
+    padding: 13px 15px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+
+.news-page .news-line-item {
+    flex: 0 0 190px;
+    min-width: 0;
+    padding: 11px 12px;
+    border: 1px solid #e9edf3;
+    border-radius: 8px;
+    background: #fbfcfe;
+}
+
+.news-page .news-line-item strong {
+    display: block;
+    overflow: hidden;
+    color: #344054;
+    font-size: 11px;
+    font-weight: 650;
+    line-height: 1.5;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.news-page .news-line-item span {
+    display: block;
+    margin-top: 5px;
+    color: #929dad;
+    font-size: 9px;
+}
+
+/* Search */
+.news-page .news-search-form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.news-page .news-search-form .form-control {
+    min-width: 0;
+    height: 35px;
+    border: 1px solid #dfe5ed;
+    border-radius: 7px;
+    font-size: 11px;
+    box-shadow: none;
+}
+
+.news-page .news-search-form .form-control:focus {
+    border-color: #78a9d8;
+}
+
+/* News feed items */
+.news-page .news-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.news-page .news-row {
+    display: flex;
+    gap: 13px;
+    padding: 15px 0;
+    border-bottom: 1px solid #edf0f4;
+}
+
+.news-page .news-row:last-child {
+    border-bottom: 0;
+}
+
+.news-page .news-date-tile,
+.news-page .event-date {
+    display: flex;
+    flex: 0 0 46px;
+    width: 46px;
+    height: 49px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #dceafa;
+    border-radius: 8px;
+    background: #f0f6ff;
+}
+
+.news-page .news-date-tile strong,
+.news-page .event-date strong {
+    color: #2875bd;
+    font-size: 17px;
+    font-weight: 750;
+    line-height: 1.2;
+}
+
+.news-page .news-date-tile span,
+.news-page .event-date span {
+    color: #6d8eaf;
+    font-size: 9px;
+    font-weight: 650;
+    text-transform: uppercase;
+}
+
+.news-page .news-row-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.news-page .news-row-content h3,
+.news-page .news-row-content .item-title {
+    margin: 0 0 5px;
+    color: #344054;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.5;
+}
+
+.news-page .news-row-content p {
+    margin: 0 0 8px;
+    color: #8792a2;
+    font-size: 10px;
+    line-height: 1.65;
+}
+
+.news-page .news-meta-line {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px 15px;
+}
+
+.news-page .news-meta-line span {
+    color: #8995a5;
+    font-size: 9px;
+}
+
+.news-page .news-meta-line i {
+    margin-right: 3px;
+    color: #8ba7c3;
+}
+
+/* Upcoming events */
+.news-page .event-row {
+    display: flex;
+    gap: 11px;
+    padding: 13px 0;
+    border-bottom: 1px solid #edf0f4;
+}
+
+.news-page .event-row:first-child {
+    padding-top: 2px;
+}
+
+.news-page .event-row:last-of-type {
+    border-bottom: 0;
+}
+
+.news-page .event-row .news-row-content h3 {
+    font-size: 11px;
+}
+
+.news-page .event-row .news-row-content p {
+    margin-bottom: 6px;
+}
+
+.news-page .event-date {
+    flex-basis: 43px;
+    width: 43px;
+    height: 46px;
+}
+
+/* Status and count pills */
+.news-page .news-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 9px;
+    font-weight: 650;
+    white-space: nowrap;
+}
+
+.news-page .pill-blue {
+    background: #eaf3ff;
+    color: #2463a6;
+}
+
+.news-page .pill-green {
+    background: #e8f7ee;
+    color: #24734a;
+}
+
+.news-page .pill-amber {
+    background: #fff4d9;
+    color: #98600b;
+}
+
+.news-page .pill-gray {
+    background: #f0f2f5;
+    color: #667085;
+}
+
+/* Empty state */
+.news-page .empty-state {
+    padding: 28px 12px;
+    color: #8995a5;
+    text-align: center;
+    font-size: 11px;
+}
+
+.news-page .empty-state > i {
+    display: block;
+    margin-bottom: 9px;
+    color: #bdc8d5;
+    font-size: 25px;
+}
+
+.news-page .empty-state strong {
+    display: block;
+    color: #475467;
+    font-size: 12px;
+}
+
+.news-page .empty-state div {
+    margin-top: 5px;
+    font-size: 10px;
+}
+
+/* Pagination */
+.news-page .pagination-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    color: #8995a5;
+    font-size: 10px;
+}
+
+.news-page .pagination {
+    gap: 4px;
+}
+
+.news-page .pagination .page-link {
+    min-width: 30px;
+    border: 1px solid #e1e7ef;
+    border-radius: 6px;
+    color: #52677e;
+    font-size: 10px;
+    text-align: center;
+}
+
+.news-page .pagination .page-item.active .page-link {
+    border-color: #2875bd;
+    background: #2875bd;
+    color: #fff;
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+    .news-page .dashboard-grid {
+        grid-template-columns: minmax(0, 1.4fr) minmax(250px, .8fr);
+    }
+}
+
+@media (max-width: 850px) {
+    .news-page .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 575px) {
+    .news-page .dashboard-hero {
+        padding: 18px;
+    }
+
+    .news-page .dashboard-hero h2 {
+        font-size: 17px;
+    }
+
+    .news-page .news-card-head,
+    .news-page .news-card-body {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .news-page .news-line {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    .news-page .news-row {
+        gap: 9px;
+    }
+
+    .news-page .news-meta-line {
+        gap: 6px 10px;
+    }
+
+    .news-page .pagination-wrap {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content news-page">
+
+    {% with head_title='News Feed & Events' head_subtitle='Updates and important dates for your BRSR work.' %}
+        {% include 'news_events/_page_head.html' %}
+    {% endwith %}
+
+    <!-- BRSR Hero -->
+    <section class="news-card dashboard-hero mb-3">
+        <div class="eyebrow">SEBI mandated · NGRBC aligned</div>
+
+        <h2>Reporting how business creates value, responsibly.</h2>
+
+        <p>
+            BRSR brings environmental, social, and governance performance
+            into one comparable, verifiable framework. Keep up with the
+            latest internal updates and key dates below.
+        </p>
+
+        <a class="news-btn" href="{% url 'brsr:brsr_list' %}">
+            <i class="fas fa-arrow-right"></i>
+            Explore BRSR workspace
+        </a>
+    </section>
+
+    <!-- Dashboard columns -->
+    <div class="dashboard-grid">
+
+        <!-- Left column -->
+        <div class="d-flex flex-column gap-3">
+
+            <!-- News Line -->
+            <section class="news-card">
+
+                <div class="news-card-head">
+                    <div>
+                        <h2>News Line</h2>
+                        <div class="small text-muted mt-1">
+                            The latest announcements
+                        </div>
+                    </div>
+
+                    <a href="{% url 'news_events:news_event_list' %}">
+                        Manage <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <div class="news-line">
+
+                    {% for item in news_events %}
+                        {% if not item.is_event and item.show_in_news_line %}
+                            <div class="news-line-item">
+                                <a class="item-title" href="{% url 'news_events:news_event_public_detail' item.pk %}"><strong>{{ item.title|truncatechars:55 }}</strong></a>
+
+                                <span>
+                                    {{ item.published_at|default:item.start_datetime|date:'d M Y' }}
+                                    · News
+                                </span>
+                            </div>
+                        {% endif %}
+                    {% empty %}
+                        <div class="empty-state w-100">
+                            No updates have been published yet.
+                        </div>
+                    {% endfor %}
+
+                </div>
+            </section>
+
+            <!-- News Feed -->
+            <section class="news-card">
+
+                <div class="news-card-head">
+                    <div>
+                        <h2>News Feed</h2>
+                        <div class="small text-muted mt-1">
+                            Updates published for your plants
+                        </div>
+                    </div>
+
+                    <span class="news-pill pill-blue">
+                        {{ page_obj.paginator.count }} updates
+                    </span>
+                </div>
+
+                <div class="news-card-body">
+
+                    <form method="get" class="news-search-form">
+                        <input
+                            class="form-control"
+                            type="search"
+                            name="q"
+                            value="{{ request.GET.q|default:'' }}"
+                            placeholder="Search updates"
+                            aria-label="Search updates">
+
+                        <button class="news-btn news-btn-outline" type="submit">
+                            <i class="fas fa-search"></i>
+                            Search
+                        </button>
+                    </form>
+
+                    <div class="news-list">
+                        {% for item in news_events %}
+                            {% if not item.is_event %}
+                                <article class="news-row">
+                                    <div class="news-date-tile">
+                                        <strong>
+                                            {{ item.published_at|default:item.start_datetime|date:'d' }}
+                                        </strong>
+
+                                        <span>
+                                            {{ item.published_at|default:item.start_datetime|date:'M' }}
+                                        </span>
+                                    </div>
+
+                                    <div class="news-row-content">
+
+                                        <h3 class="item-title">
+                                            <a href="{% url 'news_events:news_event_public_detail' item.pk %}" class="item-title">
+                                            {{ item.title }}
+                                            </a>
+                                        </h3>
+
+                                        <p>
+                                            {{ item.description|striptags|truncatechars:220 }}
+                                        </p>
+
+                                        <div class="news-meta-line">
+
+                                            <span>
+                                                <i class="far fa-clock"></i>
+                                                {{ item.published_at|default:item.start_datetime|date:'d M Y, g:i A' }}
+                                            </span>
+
+                                            <span>
+                                                <i class="fas fa-paperclip"></i>
+                                                {{ item.attachments.count }} files
+                                            </span>
+
+                                            <span>
+                                                <i class="fas fa-industry"></i>
+                                                {% if item.all_plants %}
+                                                    All plants
+                                                {% else %}
+                                                    {{ item.plants.all|join:', '|default:'Your plant' }}
+                                                {% endif %}
+                                            </span>
+
+                                        </div>
+                                    </div>
+
+                                </article>
+
+                            {% endif %}
+
+                        {% empty %}
+
+                            <div class="empty-state">
+                                <i class="far fa-newspaper"></i>
+                                <strong>No updates yet</strong>
+                                <div class="mt-1">
+                                    Published news for your audience will appear here.
+                                </div>
+                            </div>
+
+                        {% endfor %}
+
+                    </div>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- Right column: Upcoming Events -->
+        <aside class="news-card">
+
+            <div class="news-card-head">
+                <div>
+                    <h2>Upcoming Events</h2>
+                    <div class="small text-muted mt-1">
+                        Your next important dates
+                    </div>
+                </div>
+
+                <a href="{% url 'news_events:upcoming_events' %}">
+                    View all
+                </a>
+            </div>
+
+            <div class="news-card-body">
+
+                {% for event in upcoming_events %}
+
+                    <article class="event-row">
+
+                        <div class="event-date">
+                            <strong>{{ event.start_datetime|date:'d' }}</strong>
+                            <span>{{ event.start_datetime|date:'M' }}</span>
+                        </div>
+
+                        <div class="news-row-content">
+
+                            <h3><a class="item-title" href="{% url 'news_events:news_event_public_detail' event.pk %}">{{ event.title }}</a></h3>
+
+                            <p>
+                                {{ event.start_datetime|date:'D, d M · g:i A' }}
+                            </p>
+
+                            <div class="news-meta-line">
+                                <span>
+                                    <i class="fas fa-map-marker-alt"></i>
+
+                                    {% if event.all_plants %}
+                                        All plants
+                                    {% else %}
+                                        {{ event.plants.all|join:', '|default:'Selected plants' }}
+                                    {% endif %}
+                                </span>
+                            </div>
+
+                        </div>
+
+                    </article>
+
+                {% empty %}
+
+                    <div class="empty-state">
+                        <i class="far fa-calendar"></i>
+                        <strong>No upcoming events</strong>
+                        <div class="mt-1">
+                            Newly scheduled events will appear here.
+                        </div>
+                    </div>
+
+                {% endfor %}
+
+                <a class="news-btn news-btn-outline w-100 mt-3"
+                   href="{% url 'organizations:calendar' %}">
+                    <i class="far fa-calendar-alt"></i>
+                    Open calendar
+                </a>
+
+            </div>
+        </aside>
+
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+
+        <div class="pagination-wrap news-card mt-3">
+
+            <span>
+                Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+            </span>
+
+            <nav aria-label="News feed pagination">
+                <ul class="pagination mb-0">
+
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="?page={{ page_obj.previous_page_number }}&amp;q={{ request.GET.q|urlencode }}">
+                                Previous
+                            </a>
+                        </li>
+                    {% endif %}
+                    <li class="page-item active" aria-current="page">
+                        <span class="page-link">{{ page_obj.number }}</span>
+                    </li>
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="?page={{ page_obj.next_page_number }}&amp;q={{ request.GET.q|urlencode }}">
+                                Next
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

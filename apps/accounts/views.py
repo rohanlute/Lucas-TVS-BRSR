@@ -1259,13 +1259,6 @@ class BRSRDashboardView(TemplateView):
                 "category": "ehs", 
                 "icon": "💉"
             },
-            "11-19": {
-                "title": "World Toilet Day", 
-                "focus": "Water, sanitation, hygiene", 
-                "desc": "Advocates for safe sanitation and water management.", 
-                "category": "esg", 
-                "icon": "🚽"
-            },
             "11-25": {
                 "title": "International Day for Elimination of Violence Against Women", 
                 "focus": "Workplace/social responsibility", 
@@ -1526,6 +1519,69 @@ class BRSRDashboardView(TemplateView):
         
         # User assignments (mock data)
         context['user_assignments'] = 2 if self.request.user.is_authenticated else 0
+
+        # News and Events dashboard widgets use the same plant/department
+        # audience rules as the News Feed module. Anonymous visitors receive
+        # empty collections because the BRSR overview page is public.
+        context['dashboard_news_line'] = []
+        context['dashboard_news_items'] = []
+        context['dashboard_upcoming_events'] = []
+        if self.request.user.is_authenticated:
+            from apps.news_feed.models import NewsEvent
+            from apps.news_feed.views import audience_scoped_news_events
+
+            now = timezone.now()
+            can_review_all_audiences = (
+                self.request.user.is_superuser
+                or getattr(self.request.user, "is_super_admin", False)
+            )
+
+            def apply_dashboard_audience(queryset):
+                if can_review_all_audiences:
+                    return queryset
+                return audience_scoped_news_events(queryset, self.request.user)
+
+            published_news = NewsEvent.objects.filter(
+                is_event=False,
+                status=NewsEvent.Status.PUBLISHED,
+            ).filter(
+                Q(published_at__isnull=True) | Q(published_at__lte=now)
+            ).filter(
+                Q(end_datetime__isnull=True) | Q(end_datetime__gte=now)
+            )
+            published_news = apply_dashboard_audience(published_news).prefetch_related(
+                'plants', 'departments', 'attachments'
+            )
+
+            # The dashboard ticker contains every published news item visible
+            # to this user's plant/department audience.
+            context['dashboard_news_line'] = published_news.order_by(
+                '-published_at', '-created_at'
+            )
+            context['dashboard_news_items'] = published_news.order_by(
+                '-published_at', '-created_at'
+            )[:4]
+            # Include all upcoming events, regardless of how far away they
+            # are, plus events that are still running. If no end time is set,
+            # keep the event visible through its start date.
+            context['dashboard_upcoming_events'] = apply_dashboard_audience(
+                NewsEvent.objects.filter(
+                    is_event=True,
+                    status__in=[
+                        NewsEvent.Status.PUBLISHED,
+                        NewsEvent.Status.SCHEDULED,
+                    ],
+                ).filter(
+                    Q(start_datetime__gt=now)
+                    | Q(end_datetime__gte=now)
+                    | Q(
+                        end_datetime__isnull=True,
+                        start_datetime__date__gte=timezone.localdate(),
+                    )
+                )
+            ).prefetch_related('plants', 'departments', 'reminder_rules').order_by(
+                'start_datetime'
+            )[:5]
         
         return context
 

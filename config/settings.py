@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'apps.calculator',
     'apps.emission',
     'apps.goals',
+    'apps.news_feed',
     # 
     'rest_framework',
     'channels',

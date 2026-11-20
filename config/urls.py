@@ -32,6 +32,7 @@ urlpatterns = [
     path("emission/", include('apps.emission.urls')),
     path("goals/", include("apps.goals.urls")),
     path("report/", include("apps.report.urls")),
+    path("news_feed/", include("apps.news_feed.urls")),
 ]
 
 

@@ -1,0 +1,1210 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}
+    {% if object %}Edit{% else %}Add{% endif %} News or Event | BRSR
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/news-feed.css' %}">
+<style>
+.news-page {
+    --nf-primary: #0d9488;
+    --nf-primary-dark: #0f766e;
+    --nf-primary-soft: #e8f6f3;
+    --nf-text: #263445;
+    --nf-muted: #7d8999;
+    --nf-border: #e5eaf0;
+    --nf-surface: #ffffff;
+    --nf-background: #f5f7fb;
+    --nf-danger: #dc5353;
+    color: var(--nf-text);
+    background: var(--nf-background);
+    min-height: 100vh;
+    padding: 22px 24px 36px;
+}
+
+.news-page *,
+.news-page *::before,
+.news-page *::after {
+    box-sizing: border-box;
+}
+
+.news-page .form-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 310px;
+    gap: 22px;
+    align-items: start;
+}
+
+.news-page .news-card {
+    background: var(--nf-surface);
+    border: 1px solid var(--nf-border);
+    border-radius: 14px;
+    box-shadow: 0 3px 14px rgba(31, 48, 71, .045);
+    overflow: hidden;
+}
+
+.news-page .form-section {
+    padding: 27px 30px;
+    border-bottom: 1px solid #edf0f4;
+}
+
+.news-page .form-section:last-of-type {
+    border-bottom: 0;
+}
+
+.news-page .form-section-title {
+    display: flex;
+    align-items: flex-start;
+    gap: 13px;
+    margin-bottom: 23px;
+}
+
+.news-page .step-number {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: var(--nf-primary-soft);
+    color: var(--nf-primary-dark);
+    font-size: 14px;
+    font-weight: 750;
+}
+
+.news-page .form-section-title h2 {
+    margin: 1px 0 5px;
+    color: #263445;
+    font-size: 16px;
+    line-height: 1.35;
+    font-weight: 700;
+}
+
+.news-page .form-section-title p {
+    margin: 0;
+    color: var(--nf-muted);
+    font-size: 12.5px;
+    line-height: 1.55;
+}
+
+.news-page .field-label {
+    display: block;
+    margin: 0 0 8px;
+    color: #344256;
+    font-size: 12.5px;
+    font-weight: 650;
+}
+
+.news-page .field-help {
+    margin-top: 7px;
+    color: var(--nf-muted);
+    font-size: 11.5px;
+    line-height: 1.55;
+}
+
+.news-page .content-type-switch {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    min-height: 43px;
+    padding: 3px;
+    border: 1px solid #dce3eb;
+    border-radius: 8px;
+    background: #fff;
+}
+
+.news-page .content-type-option {
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #9ca7b8;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+
+.news-page .content-type-option.is-active {
+    background: #eef5ff;
+    color: #2864e8;
+    box-shadow: 0 1px 4px rgba(40, 100, 232, .12);
+}
+
+.news-page .content-type-option:focus-visible {
+    outline: 3px solid rgba(40, 100, 232, .18);
+    outline-offset: 1px;
+}
+
+.news-page .content-type-native-wrap {
+    position: relative;
+}
+
+.news-page select.content-type-native {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+}
+
+.news-page .form-control,
+.news-page .form-select,
+.news-page select,
+.news-page input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.news-page textarea {
+    width: 100%;
+    min-height: 43px;
+    padding: 10px 12px;
+    border: 1px solid #dce3eb;
+    border-radius: 8px;
+    background: #fff;
+    color: #344256;
+    font-size: 13px;
+    box-shadow: none;
+    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+.news-page textarea {
+    min-height: 132px;
+    resize: vertical;
+}
+
+.news-page input:focus,
+.news-page select:focus,
+.news-page textarea:focus {
+    border-color: var(--nf-primary) !important;
+    outline: 0;
+    box-shadow: 0 0 0 3px rgba(13, 148, 136, .11) !important;
+}
+
+.news-page input[type="checkbox"],
+.news-page input[type="radio"] {
+    width: 17px;
+    height: 17px;
+    margin: 0;
+    accent-color: var(--nf-primary);
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+.news-page .reminder-chip-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.news-page .reminder-chip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    margin: 0;
+}
+
+.news-page .reminder-chip input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+}
+
+.news-page .reminder-chip span {
+    display: inline-flex;
+    min-height: 37px;
+    align-items: center;
+    justify-content: center;
+    padding: 0 14px;
+    border: 1px solid #cfd8e5;
+    border-radius: 22px;
+    background: #fff;
+    color: #263445;
+    font-size: 12px;
+    transition: color .18s ease, background .18s ease, border-color .18s ease;
+}
+
+.news-page .reminder-chip input:checked + span {
+    border-color: #2860ed;
+    background: #2860ed;
+    color: #fff;
+}
+
+.news-page .reminder-chip input:focus-visible + span {
+    outline: 3px solid rgba(40, 96, 237, .25);
+    outline-offset: 2px;
+}
+
+.news-page input[type="file"] {
+    min-height: auto;
+    padding: 16px;
+    border: 1.5px dashed #b9cbd5;
+    border-radius: 10px;
+    background: #f8fbfd;
+    color: #667587;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.news-page input[type="file"]:hover {
+    border-color: var(--nf-primary);
+    background: #f2faf8;
+}
+
+.news-page .check-panel {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--nf-border);
+    border-radius: 10px;
+    background: #fbfcfe;
+    transition: border-color .18s ease, background .18s ease;
+}
+
+.news-page .check-panel:hover {
+    border-color: #b7ded8;
+    background: #f6fbfa;
+}
+
+.news-page .check-panel > div:first-child {
+    padding-top: 1px;
+    line-height: 1;
+}
+
+.news-page .check-panel label {
+    margin: 0;
+    color: #344256;
+    font-size: 12.5px;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+/* Plant and department assignment cards (matching Create User UI) */
+.news-page .location-assignment-section {
+    border: 1px solid #dfe6ef;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #fff 0%, #fbfcfe 100%);
+    padding: 16px;
+}
+.news-page .assignment-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px;
+    margin-bottom: 12px;
+    border: 1px solid #e3e8f0;
+    border-radius: 11px;
+    background: #eef2f7;
+}
+.news-page .assignment-panel {
+    padding: 13px;
+    border: 1px solid #dde4ee;
+    border-radius: 12px;
+    background: #fff;
+}
+.news-page .assignment-group-title {
+    margin-bottom: 5px;
+    color: #263445;
+    font-size: 14px;
+    font-weight: 700;
+}
+.news-page .assignment-group-note {
+    margin-bottom: 12px;
+    color: #7d8999;
+    font-size: 11.5px;
+}
+.news-page .assignment-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+}
+.news-page .assignment-node {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-width: 0;
+    padding: 11px 12px;
+    margin: 0;
+    border: 1px solid #dde4ee;
+    border-radius: 11px;
+    background: #fff;
+    cursor: pointer;
+    transition: all .16s ease;
+}
+.news-page .assignment-node:hover {
+    border-color: #9fc8c3;
+    background: #f8fcfb;
+}
+.news-page .assignment-node.is-selected {
+    border-color: #0d9488;
+    background: #eaf7f5;
+    box-shadow: inset 0 0 0 1px rgba(13,148,136,.07);
+}
+.news-page .assignment-node input[type="checkbox"] {
+    flex: 0 0 auto;
+    margin-top: 2px;
+}
+.news-page .assignment-node-label {
+    min-width: 0;
+    color: #263445;
+    font-size: 12.5px;
+    font-weight: 650;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+.news-page .assignment-node-label small {
+    display: block;
+    margin-top: 3px;
+    color: #8793a3;
+    font-size: 10.5px;
+    font-weight: 400;
+}
+.news-page .assignment-empty {
+    padding: 14px;
+    color: #8491a3;
+    font-size: 12px;
+    text-align: center;
+}
+.news-page .assignment-toolbar .btn {
+    border-radius: 7px;
+    font-size: 11.5px;
+    font-weight: 600;
+}
+@media (max-width: 991.98px) {
+    .news-page .assignment-grid { grid-template-columns: 1fr; }
+}
+
+.news-page .reminder-rule {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 36px;
+    gap: 10px;
+    align-items: center;
+    padding: 12px;
+    margin-bottom: 9px;
+    border: 1px solid var(--nf-border);
+    border-radius: 10px;
+    background: #fbfcfe;
+}
+
+.news-page .reminder-rule .reminder-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 8px;
+    background: #fff0f0;
+    color: var(--nf-danger);
+}
+
+.news-page .reminder-rule .reminder-remove:hover {
+    background: #ffe2e2;
+}
+
+.news-page #add-reminder {
+    color: var(--nf-primary-dark);
+    font-weight: 650;
+    text-decoration: none;
+}
+
+.news-page #add-reminder:hover {
+    color: var(--nf-primary);
+    text-decoration: underline;
+}
+
+.news-page .form-layout > aside {
+    position: sticky;
+    top: 18px;
+}
+
+.news-page .news-card-head {
+    padding: 17px 19px;
+    border-bottom: 1px solid #edf0f4;
+    background: #fff;
+}
+
+.news-page .news-card-head h2 {
+    margin: 0;
+    color: #2c3a4d;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.news-page .news-card-body {
+    padding: 18px 19px;
+}
+
+.news-page .schedule-timeline {
+    position: relative;
+    padding-left: 20px;
+    border-left: none !important;
+}
+
+.news-page .schedule-timeline::before {
+    content: "";
+    position: absolute;
+    left: 4.5px;
+    top: 7px;
+    bottom: var(--schedule-timeline-bottom, 5px);
+    width: 1px;
+    background: #dce9e7;
+    z-index: 1;
+}
+
+.news-page .schedule-step {
+    position: relative;
+    padding: 0 0 20px 0;
+    border-left: none !important;
+}
+
+.news-page .schedule-step:last-child {
+    padding-bottom: 0;
+    border-left-color: none !important;
+}
+
+.news-page .schedule-step::before {
+    content: "";
+    position: absolute;
+    left: -20px;
+    top: 2px;
+    width: 10px;
+    height: 10px;
+    box-sizing: border-box;
+    border: 2px solid var(--nf-primary);
+    border-radius: 50%;
+    background: #fff;
+    z-index: 2;
+}
+
+.news-page .schedule-step strong {
+    display: block;
+    margin-bottom: 4px;
+    color: #344256;
+    font-size: 12.5px;
+    font-weight: 700;
+}
+
+.news-page .schedule-step span {
+    display: block;
+    color: var(--nf-muted);
+    font-size: 11.5px;
+    line-height: 1.5;
+}
+
+.news-page .status-note {
+    display: flex;
+    gap: 9px;
+    margin-top: 13px;
+    padding: 11px;
+    border-radius: 9px;
+    background: #f2f8f8;
+    color: #58716f;
+    font-size: 11.5px;
+    line-height: 1.55;
+}
+
+.news-page .status-note i {
+    margin-top: 2px;
+    color: var(--nf-primary-dark);
+}
+
+.news-page .attachment-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    max-width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--nf-border);
+    border-radius: 8px;
+    background: #f8fafc;
+    font-size: 11.5px;
+}
+
+.news-page .attachment-chip a {
+    overflow-wrap: anywhere;
+}
+
+.news-page .attachment-chip .remove-attachment {
+    flex: 0 0 auto;
+    padding: 0 3px;
+    border: 0;
+    background: transparent;
+    color: var(--nf-danger);
+    font-size: 17px;
+    line-height: 1;
+}
+
+.news-page .field-errors,
+.news-page .errorlist {
+    margin: 6px 0 0;
+    padding: 0;
+    color: var(--nf-danger);
+    font-size: 11.5px;
+    list-style: none;
+}
+
+.news-page .alert-danger {
+    border: 1px solid #f2caca;
+    border-radius: 10px;
+    font-size: 13px;
+}
+
+.news-page .form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 19px 30px;
+    border-top: 1px solid #edf0f4;
+    background: #fbfcfe;
+}
+
+.news-page .news-btn {
+    display: inline-flex;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 9px 16px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 650;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all .18s ease;
+}
+
+.news-page .news-btn-outline {
+    border-color: #dce3eb;
+    background: #fff;
+    color: #536174;
+}
+
+.news-page .news-btn-outline:hover {
+    border-color: #bdc9d5;
+    background: #f7f9fb;
+    color: #263445;
+}
+
+.news-page .news-btn-primary {
+    border-color: var(--nf-primary);
+    background: var(--nf-primary);
+    color: #fff;
+    box-shadow: 0 3px 8px rgba(13, 148, 136, .16);
+}
+
+.news-page .news-btn-primary:hover {
+    border-color: var(--nf-primary-dark);
+    background: var(--nf-primary-dark);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.news-page .news-btn:focus-visible,
+.news-page button:focus-visible {
+    outline: 3px solid rgba(13, 148, 136, .2);
+    outline-offset: 2px;
+}
+
+.news-page #plant-select-wrap.opacity-50 {
+    opacity: .5;
+}
+
+@media (max-width: 1100px) {
+    .news-page .form-layout {
+        grid-template-columns: minmax(0, 1fr) 275px;
+        gap: 16px;
+    }
+}
+
+@media (max-width: 850px) {
+    .news-page {
+        padding: 16px;
+    }
+
+    .news-page .form-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .news-page .form-layout > aside {
+        position: static;
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 576px) {
+    .news-page {
+        padding: 12px;
+    }
+
+    .news-page .form-section {
+        padding: 21px 17px;
+    }
+
+    .news-page .form-actions {
+        padding: 16px 17px;
+        justify-content: stretch;
+    }
+
+    .news-page .form-actions .news-btn {
+        flex: 1 1 100%;
+    }
+
+    .news-page .form-layout > aside {
+        grid-template-columns: 1fr;
+    }
+
+    .news-page .reminder-rule {
+        grid-template-columns: 1fr 1fr 34px;
+        gap: 7px;
+        padding: 9px;
+    }
+
+    .news-page .reminder-rule .reminder-remove {
+        width: 34px;
+        height: 36px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content news-page">
+    {% with head_subtitle='Write the update, choose who should see it, and configure reminders.' %}
+      {% if object %}
+        {% with head_title='Edit News / Event' hide_header_action=object %}
+          {% include 'news_events/_page_head.html' %}
+        {% endwith %}
+      {% else %}
+        {% with head_title='Add News / Event' %}
+        {% include 'news_events/_page_head.html' %}
+        {% endwith %}
+      {% endif %}
+    {% endwith %}
+
+    {% if form.non_field_errors %}
+    <div class="alert alert-danger mb-3" role="alert">
+        {{ form.non_field_errors }}
+    </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" id="news-event-form" novalidate>
+        {% csrf_token %}
+        {{ form.status }}
+        {% if form.status.errors %}<div class="field-errors mb-2">{{ form.status.errors }}</div>{% endif %}
+
+        <div class="form-layout">
+            <div class="news-card">
+                <!-- SECTION 1: NEWS DETAILS -->
+                <section class="form-section">
+                    <div class="form-section-title">
+                        <span class="step-number">01</span>
+                        <div>
+                            <h2>News details</h2>
+                            <p>Start with a clear headline and the information users need.</p>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="field-label" for="{{ form.is_event.id_for_label }}">
+                                {{ form.is_event.label }}
+                            </label>
+                            <div class="content-type-switch" role="radiogroup" aria-label="Content type">
+                                <button class="content-type-option" type="button" role="radio" data-content-type="False" aria-checked="false">News</button>
+                                <button class="content-type-option" type="button" role="radio" data-content-type="True" aria-checked="false">Event</button>
+                            </div>
+                            <div class="content-type-native-wrap">{{ form.is_event }}</div>
+                            {% if form.is_event.errors %}
+                            <div class="field-errors">{{ form.is_event.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-8">
+                            <label class="field-label" for="{{ form.title.id_for_label }}">Title</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}
+                            <div class="field-errors">{{ form.title.errors }}</div>
+                            {% endif %}
+                            <div class="field-help">Shown as the headline in the News Line and the News Feed.</div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="field-label" for="{{ form.description.id_for_label }}">Description</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                            <div class="field-errors">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-12 event-only">
+                            <label class="field-label" for="{{ form.meeting_link.id_for_label }}">
+                                Meeting link <span class="text-muted fw-normal">(optional)</span>
+                            </label>
+                            {{ form.meeting_link }}
+                            {% if form.meeting_link.errors %}
+                            <div class="field-errors">{{ form.meeting_link.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 2: ATTACHMENTS -->
+                <section class="form-section">
+                    <div class="form-section-title">
+                        <span class="step-number">02</span>
+                        <div>
+                            <h2>Attachments</h2>
+                            <p>Share supporting documents, spreadsheets, or images.</p>
+                        </div>
+                    </div>
+
+                    {% if existing_attachments %}
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        {% for attachment in existing_attachments %}
+                        <div class="attachment-chip">
+                            <i class="fas fa-paperclip text-secondary"></i>
+                            <a href="{{ attachment.file.url }}" target="_blank" rel="noopener">
+                                {{ attachment.original_name|default:attachment.file.name }}
+                            </a>
+                            <button
+                                class="remove-attachment"
+                                type="submit"
+                                formaction="{% url 'news_events:news_event_attachment_delete' attachment.pk %}"
+                                formmethod="post"
+                                formnovalidate
+                                aria-label="Remove attachment"
+                                title="Remove attachment"
+                            >&times;</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <label class="field-label" for="{{ attachment_form.files.id_for_label }}">
+                        Upload documents or images
+                    </label>
+                    {{ attachment_form.files }}
+                    {% if attachment_form.files.errors %}
+                    <div class="field-errors">{{ attachment_form.files.errors }}</div>
+                    {% endif %}
+                    <div class="field-help">
+                        You can select multiple files at once. PDF, DOCX, XLSX, JPG, or PNG · up to 10 MB per file.
+                    </div>
+                </section>
+
+                <!-- SECTION 3: DATE AND TIME -->
+                <section class="form-section">
+                    <div class="form-section-title">
+                        <span class="step-number">03</span>
+                        <div>
+                            <h2>
+                                <span class="event-only">Event date &amp; time</span>
+                                <span class="news-only">Publication schedule</span>
+                            </h2>
+                            <p>Set when this content goes live or when the event takes place.</p>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="field-label" for="{{ form.start_datetime.id_for_label }}">
+                                <span class="event-only">Event starts</span>
+                                <span class="news-only">Publish at</span>
+                            </label>
+                            {{ form.start_datetime }}
+                            {% if form.start_datetime.errors %}
+                            <div class="field-errors">{{ form.start_datetime.errors }}</div>
+                            {% endif %}
+                            {% if form.start_datetime.help_text %}
+                            <div class="field-help">{{ form.start_datetime.help_text }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 event-only">
+                            <label class="field-label" for="{{ form.end_datetime.id_for_label }}">Event ends</label>
+                            {{ form.end_datetime }}
+                            {% if form.end_datetime.errors %}
+                            <div class="field-errors">{{ form.end_datetime.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 news-only">
+                            <label class="field-label" for="{{ form.end_datetime.id_for_label }}">Optional expiry</label>
+                            {{ form.end_datetime }}
+                            {% if form.end_datetime.errors %}
+                            <div class="field-errors">{{ form.end_datetime.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-12 event-only">
+                            <div class="field-help">
+                                Events automatically disappear from Upcoming Events after their end date and time, or their start time if no end is set.
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SECTION 4: AUDIENCE -->
+                <section class="form-section">
+                    <div class="form-section-title">
+                        <span class="step-number">04</span>
+                        <div>
+                            <h2>Who should see this?</h2>
+                            <p>Choose the plant and department audience for this update.</p>
+                        </div>
+                    </div>
+
+
+                    <div class="location-assignment-section">
+                        <div class="assignment-group-title">Select plants</div>
+                        <div class="assignment-group-note">Choose one or more plants for this announcement.</div>
+
+                        <div class="assignment-toolbar">
+                            <button type="button" class="btn btn-outline-primary btn-sm" data-select-all="plants">
+                                <i class="fas fa-check-square me-1"></i>Select all
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-deselect-all="plants">
+                                <i class="far fa-square me-1"></i>Deselect all
+                            </button>
+                            <span class="ms-auto align-self-center small text-muted" id="plant-selection-count" aria-live="polite"></span>
+                        </div>
+
+                        <div class="assignment-panel" id="plantPanel">
+                            {% if form.plants %}
+                            <div class="assignment-grid" id="plant-assignment-grid">
+                                {% for choice in form.plants %}
+                                <label class="assignment-node {% if choice.data.selected %}is-selected{% endif %}" for="{{ choice.id_for_label }}">
+                                    <input type="checkbox" name="{{ form.plants.html_name }}" value="{{ choice.data.value }}" id="{{ choice.id_for_label }}" {% if choice.data.selected %}checked{% endif %}>
+                                    <span class="assignment-node-label">{{ choice.choice_label }}</span>
+                                </label>
+                                {% empty %}
+                                <div class="assignment-empty">No plants available.</div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div class="assignment-empty">No plants available.</div>
+                            {% endif %}
+                        </div>
+                        {% if form.plants.errors %}
+                        <div class="field-errors">{{ form.plants.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="location-assignment-section mt-3">
+                        <div class="assignment-group-title">Select departments</div>
+                        <div class="assignment-group-note">Choose the departments that should receive this update. Leave all unchecked to include every department.</div>
+
+                        <div class="assignment-toolbar">
+                            <button type="button" class="btn btn-outline-primary btn-sm" data-select-all="departments">
+                                <i class="fas fa-check-square me-1"></i>Select all
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" data-deselect-all="departments">
+                                <i class="far fa-square me-1"></i>Deselect all
+                            </button>
+                            <span class="ms-auto align-self-center small text-muted" id="department-selection-count" aria-live="polite"></span>
+                        </div>
+
+                        <div class="assignment-panel" id="departmentPanel">
+                            <div class="assignment-grid" id="department-assignment-grid">
+                                {% for choice in form.departments %}
+                                <label class="assignment-node {% if choice.data.selected %}is-selected{% endif %}" for="{{ choice.id_for_label }}">
+                                    <input type="checkbox" name="{{ form.departments.html_name }}" value="{{ choice.data.value }}" id="{{ choice.id_for_label }}" {% if choice.data.selected %}checked{% endif %}>
+                                    <span class="assignment-node-label">{{ choice.choice_label }}</span>
+                                </label>
+                                {% empty %}
+                                <div class="assignment-empty">No departments available.</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% if form.departments.errors %}
+                        <div class="field-errors">{{ form.departments.errors }}</div>
+                        {% endif %}
+                    </div>
+                </section>
+
+                <!-- SECTION 5: AUTOMATIC REMINDERS -->
+                <section class="form-section event-only">
+                    <div class="form-section-title">
+                        <span class="step-number">05</span>
+                        <div>
+                            <h2>Automated reminders</h2>
+                            <p>Set reminder timing for the selected plant and department audience.</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-1">
+                        <label class="field-label">{{ form.reminder_days.label }}</label>
+                        <div class="field-help mb-2">Pick one or more. For example, 5 days sends a reminder 5 days before the event date.</div>
+                        <div class="reminder-chip-list" role="group" aria-label="Reminder lead time">
+                            {% for choice in form.reminder_days %}
+                            <label class="reminder-chip" for="{{ choice.id_for_label }}">
+                                {{ choice.tag }}<span>{{ choice.choice_label|cut:" before" }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        {% if form.reminder_days.errors %}<div class="field-errors">{{ form.reminder_days.errors }}</div>{% endif %}
+
+                        <label class="field-label mt-3">{{ form.reminder_send_time.label }}</label>
+                        <div class="reminder-chip-list" role="radiogroup" aria-label="Reminder send time">
+                            {% for choice in form.reminder_send_time %}
+                            <label class="reminder-chip" for="{{ choice.id_for_label }}">
+                                {{ choice.tag }}<span>{{ choice.choice_label }}</span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        {% if form.reminder_send_time.errors %}<div class="field-errors">{{ form.reminder_send_time.errors }}</div>{% endif %}
+                    </div>
+                </section>
+
+                <!-- FORM ACTIONS -->
+                <div class="form-actions">
+                    <a class="news-btn news-btn-outline"
+                       href="{% if object %}{% url 'news_events:news_event_detail' object.pk %}{% else %}{% url 'news_events:news_event_list' %}{% endif %}">
+                        Cancel
+                    </a>
+
+                    <button class="news-btn news-btn-outline"
+                            name="action" value="save_draft" type="submit">
+                        <i class="far fa-save"></i> Save as draft
+                    </button>
+
+                    <button class="news-btn news-btn-primary"
+                            name="action" value="schedule" type="submit">
+                        <i class="far fa-paper-plane"></i> Save / schedule
+                    </button>
+                </div>
+            </div>
+
+            <!-- RIGHT SIDEBAR -->
+            <aside class="d-flex flex-column gap-3">
+                <section class="news-card">
+                    <div class="news-card-head">
+                        <h2><i class="far fa-calendar-alt me-2 text-success"></i>Delivery schedule</h2>
+                    </div>
+                    <div class="news-card-body">
+                        <div class="schedule-timeline">
+                            <div class="schedule-step">
+                                <strong>Announcement</strong>
+                                <span>When the item is published.</span>
+                            </div>
+                            <div class="schedule-step event-only">
+                                <strong>Reminder</strong>
+                                <span>Before the event, using the selected lead time.</span>
+                            </div>
+                            <div class="schedule-step event-only">
+                                <strong>Event day</strong>
+                                <span>Shown in the upcoming events timeline.</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="news-card">
+                    <div class="news-card-head">
+                        <h2><i class="fas fa-bell me-2 text-success"></i>Automatic delivery</h2>
+                    </div>
+                    <div class="news-card-body">
+                        <div class="status-note">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Email and in-app channels are enabled automatically. Announcement and reminder dates follow the publication or event schedule.</span>
+                        </div>
+                    </div>
+                </section>
+
+                {% if object %}
+                <section class="news-card">
+                    <div class="news-card-head">
+                        <h2><i class="fas fa-paperclip me-2 text-success"></i>Current attachments</h2>
+                    </div>
+                    <div class="news-card-body">
+                        {% for attachment in existing_attachments %}
+                        <div class="small py-2 border-bottom">
+                            <i class="fas fa-file-alt me-2 text-secondary"></i>
+                            <a href="{{ attachment.file.url }}" target="_blank" rel="noopener">
+                                {{ attachment.original_name|default:attachment.file.name }}
+                            </a>
+                        </div>
+                        {% empty %}
+                        <div class="small text-muted">No attachments yet.</div>
+                        {% endfor %}
+                    </div>
+                </section>
+                {% endif %}
+            </aside>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    "use strict";
+
+    const form = document.getElementById("news-event-form");
+    if (!form) return;
+
+    const type = document.getElementById("{{ form.is_event.id_for_label }}");
+    const allPlants = document.getElementById("{{ form.all_plants.id_for_label }}");
+    const typeOptions = Array.from(document.querySelectorAll(".content-type-option"));
+
+    if (type) {
+        type.classList.add("content-type-native");
+    }
+
+    function syncContentType() {
+        const value = type ? type.value : "False";
+        typeOptions.forEach(function (option) {
+            const isActive = option.dataset.contentType === value;
+            option.classList.toggle("is-active", isActive);
+            option.setAttribute("aria-checked", isActive ? "true" : "false");
+            option.tabIndex = isActive ? 0 : -1;
+        });
+    }
+
+    typeOptions.forEach(function (option) {
+        option.addEventListener("click", function () {
+            if (!type) return;
+            type.value = option.dataset.contentType;
+            syncContentType();
+            type.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+
+        option.addEventListener("keydown", function (event) {
+            if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+            event.preventDefault();
+            const nextValue = option.dataset.contentType === "False" ? "True" : "False";
+            if (!type) return;
+            type.value = nextValue;
+            syncContentType();
+            type.dispatchEvent(new Event("change", { bubbles: true }));
+            const nextOption = typeOptions.find(function (item) {
+                return item.dataset.contentType === nextValue;
+            });
+            if (nextOption) nextOption.focus();
+        });
+    });
+
+    if (type) type.addEventListener("change", syncContentType);
+    syncContentType();
+
+    function updateFormMode() {
+        const eventMode = type && type.value === "True";
+
+        document.querySelectorAll(".event-only").forEach(function (element) {
+            element.classList.toggle("d-none", !eventMode);
+        });
+
+        document.querySelectorAll(".news-only").forEach(function (element) {
+            element.classList.toggle("d-none", eventMode);
+        });
+
+        syncScheduleTimeline();
+
+        const plantWrap = document.getElementById("plant-select-wrap");
+        if (plantWrap) {
+            plantWrap.classList.toggle("opacity-50", Boolean(allPlants && allPlants.checked));
+        }
+
+    }
+
+    function syncScheduleTimeline() {
+        const timeline = document.querySelector(".schedule-timeline");
+        if (!timeline) return;
+
+        const visibleSteps = Array.from(timeline.querySelectorAll(".schedule-step"))
+            .filter(function (step) { return !step.classList.contains("d-none"); });
+        const lastStep = visibleSteps[visibleSteps.length - 1];
+        if (!lastStep) return;
+
+        const timelineRect = timeline.getBoundingClientRect();
+        const lastStepRect = lastStep.getBoundingClientRect();
+        const lastDotCenter = lastStepRect.top - timelineRect.top + 7;
+        const bottom = Math.max(0, timelineRect.height - lastDotCenter);
+        timeline.style.setProperty("--schedule-timeline-bottom", bottom + "px");
+    }
+
+    if (type) type.addEventListener("change", updateFormMode);
+    if (allPlants) allPlants.addEventListener("change", updateFormMode);
+    updateFormMode();
+    window.addEventListener("resize", syncScheduleTimeline);
+
+    // Plant and department checkbox cards, styled like the Create User assignment UI.
+    function syncAssignmentCards(groupName) {
+        const gridId = groupName === "plants" ? "plant-assignment-grid" : "department-assignment-grid";
+        const countId = groupName === "plants" ? "plant-selection-count" : "department-selection-count";
+        const grid = document.getElementById(gridId);
+        if (!grid) return;
+
+        const checkboxes = Array.from(grid.querySelectorAll('input[type="checkbox"]'));
+        let selected = 0;
+        checkboxes.forEach(function (checkbox) {
+            const card = checkbox.closest(".assignment-node");
+            if (card) card.classList.toggle("is-selected", checkbox.checked);
+            if (checkbox.checked) selected++;
+        });
+
+        const count = document.getElementById(countId);
+        if (count) count.textContent = selected + " selected";
+    }
+
+    ["plants", "departments"].forEach(function (groupName) {
+        const gridId = groupName === "plants" ? "plant-assignment-grid" : "department-assignment-grid";
+        const grid = document.getElementById(gridId);
+        if (!grid) return;
+
+        grid.addEventListener("change", function (event) {
+            if (event.target.matches('input[type="checkbox"]')) syncAssignmentCards(groupName);
+        });
+
+        document.querySelectorAll('[data-select-all="' + groupName + '"]').forEach(function (button) {
+            button.addEventListener("click", function () {
+                grid.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
+                    checkbox.checked = true;
+                    checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+                });
+                syncAssignmentCards(groupName);
+            });
+        });
+
+        document.querySelectorAll('[data-deselect-all="' + groupName + '"]').forEach(function (button) {
+            button.addEventListener("click", function () {
+                grid.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
+                    checkbox.checked = false;
+                    checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+                });
+                syncAssignmentCards(groupName);
+            });
+        });
+
+        syncAssignmentCards(groupName);
+    });
+
+    // Keep plant cards visually disabled when All plants is selected.
+    function syncAllPlantsState() {
+        const grid = document.getElementById("plant-assignment-grid");
+        if (!grid || !allPlants) return;
+        grid.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
+            checkbox.disabled = allPlants.checked;
+        });
+        grid.classList.toggle("opacity-50", allPlants.checked);
+    }
+    if (allPlants) {
+        allPlants.addEventListener("change", syncAllPlantsState);
+        syncAllPlantsState();
+    }
+
+})();
+</script>
+{% endblock %}

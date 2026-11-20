@@ -1,0 +1,459 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block title %}News & Events Master | BRSR{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/news-feed.css' %}">
+<style>
+   .news-page {
+      padding-top: 22px !important;
+      padding-bottom: 2rem !important;
+      background: #f6f8fb;
+   }
+   .news-page .news-heading {
+      align-items: flex-end;
+      margin-bottom: 18px;
+   }
+   .news-page .news-heading .eyebrow {
+      display: none;
+   }
+   .news-page .news-heading h1 {
+      margin: 0 0 5px;
+      font-size: 24px;
+      line-height: 1.2;
+   }
+   .news-page .news-subtitle {
+      font-size: 13px;
+   }
+   .news-page .master-breadcrumb {
+      margin-bottom: 8px;
+      color: #96a0b2;
+      font-size: 11px;
+      font-weight: 650;
+   }
+   .news-page .master-breadcrumb span {
+      color: #7f8a9a;
+   }
+   .news-page .master-actions {
+      align-items: center;
+   }
+   .news-page .master-actions .news-btn {
+      min-height: 42px;
+      padding: 9px 15px;
+      font-size: 13px;
+      border-radius: 8px;
+   }
+   .news-page .news-stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 16px;
+   }
+   .news-page .news-stat {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-width: 0;
+      min-height: 82px;
+      padding: 14px 16px;
+      border-radius: 12px;
+   }
+   .news-page .news-stat-icon {
+      order: 2;
+      flex: 0 0 44px;
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: #edf4ff;
+      color: #3978de;
+      font-size: 16px;
+      float: none;
+   }
+   .news-page .news-stat:nth-child(2) .news-stat-icon {
+      background: #edf5ff;
+      color: #477ed8;
+   }
+   .news-page .news-stat:nth-child(3) .news-stat-icon {
+      background: #fff4e2;
+      color: #d99a3e;
+   }
+   .news-page .news-stat:nth-child(4) .news-stat-icon {
+      background: #fff0e9;
+      color: #dc7b55;
+   }
+   .news-page .news-stat-label {
+      color: #8d98a8;
+      font-size: 12px;
+   }
+   .news-page .news-stat-value {
+      margin-top: 5px;
+      color: #26364d;
+      font-size: 24px;
+      line-height: 1.15;
+   }
+   .news-page .master-card {
+      border-radius: 12px;
+      overflow: hidden;
+   }
+   .news-page .news-toolbar {
+      padding: 14px 16px;
+      border-bottom: 1px solid #edf0f4;
+   }
+   .news-page .news-filters form {
+      gap: 8px !important;
+   }
+   .news-page .news-filters .form-control,
+   .news-page .news-filters .form-select {
+      height: 40px;
+      min-height: 40px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12.5px;
+   }
+   .news-page .news-filters input[type="search"] {
+      width: 210px;
+      min-width: 210px;
+   }
+   .news-page .news-filters .form-select {
+      width: 145px;
+      min-width: 145px;
+      padding-right: 30px;
+   }
+   .news-page .news-filters .filter-button {
+      height: 40px;
+      min-height: 40px;
+      padding: 8px 13px;
+      font-size: 12.5px;
+      border-radius: 8px;
+   }
+   .news-page .status-tabs {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 10px 16px 0;
+      border-bottom: 0;
+   }
+   .news-page .status-tab {
+      display: inline-flex;
+      align-items: center;
+      height: 32px;
+      padding: 0 12px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: #6f7b8d;
+      background: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+   }
+   .news-page .status-tab.active {
+      border-color: #dbe7fb;
+      background: #edf4ff;
+      color: #3975d7;
+   }
+   .news-page .news-table-wrap {
+      margin-top: 10px;
+      border-top: 1px solid #edf0f4;
+   }
+   .news-page .news-table {
+      min-width: 1080px;
+      table-layout: fixed;
+   }
+   .news-page .news-table th {
+      height: 44px;
+      padding: 10px 12px;
+      background: #fbfcfe;
+      color: #8792a3;
+      font-size: 10px;
+      font-weight: 750;
+      letter-spacing: 0.02em;
+   }
+   .news-page .news-table td {
+      height: 64px;
+      padding: 9px 12px;
+      border-bottom: 1px solid #edf1f5;
+      color: #5d6878;
+      font-size: 12px;
+   }
+   .news-page .news-table th:nth-child(1) {
+      width: 31%;
+   }
+   .news-page .news-table th:nth-child(2) {
+      width: 9%;
+   }
+   .news-page .news-table th:nth-child(3) {
+      width: 11%;
+   }
+   .news-page .news-table th:nth-child(4) {
+      width: 12%;
+   }
+   .news-page .news-table th:nth-child(5) {
+      width: 8%;
+   }
+   .news-page .news-table th:nth-child(6) {
+      width: 9%;
+   }
+   .news-page .news-table th:nth-child(7) {
+      width: 10%;
+   }
+   .news-page .news-table th:last-child,
+   .news-page .news-table td:last-child {
+      width: 46px;
+      text-align: center;
+   }
+   .news-page .item-title {
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.35;
+   }
+   .news-page .item-meta {
+      max-width: none;
+      margin-top: 3px;
+      font-size: 10.5px;
+      line-height: 1.35;
+   }
+   .news-page .news-pill {
+      min-height: 23px;
+      padding: 4px 8px;
+      font-size: 10.5px;
+   }
+   .news-page .date-primary {
+      display: block;
+      color: #536175;
+      font-size: 11.5px;
+      font-weight: 650;
+   }
+   .news-page .date-time {
+      display: block;
+      margin-top: 3px;
+      color: #97a1af;
+      font-size: 10.5px;
+   }
+   .news-page .table-action {
+      display: inline-grid;
+      width: 32px;
+      height: 32px;
+      place-items: center;
+      border: 0;
+      border-radius: 8px;
+      background: #f7f9fc;
+      color: #8994a4;
+      text-decoration: none;
+   }
+   .news-page .table-action:hover {
+      background: #edf4ff;
+      color: #3975d7;
+   }
+   .news-page .file-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      color: #3975d7;
+      font-size: 12px;
+      font-weight: 600;
+   }
+   .news-page .file-count i {
+      display: inline-block;
+      width: 14px;
+      color: #3975d7;
+      font-size: 14px;
+      line-height: 1;
+   }
+   .news-page .reminder-count {
+      color: #7d8796;
+      font-size: 12px;
+   }
+   .news-page .pagination-wrap {
+      min-height: 56px;
+      padding: 10px 16px;
+      border-top: 1px solid #edf0f4;
+      font-size: 12px;
+   }
+   .news-page .pagination {
+      gap: 3px;
+   }
+   .news-page .page-link {
+      min-width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      padding: 0 8px;
+      border: 1px solid #edf0f4;
+      border-radius: 8px !important;
+      font-size: 12px;
+   }
+   .news-page .page-item.active .page-link {
+      background: #3975d7;
+      border-color: #3975d7;
+   }
+   .news-page .pagination-arrow {
+      width: 32px;
+      height: 32px;
+      border: 1px solid #edf0f4;
+      border-radius: 8px;
+      background: #fff;
+      color: #7e8998;
+   }
+   .news-page .pagination-arrow.disabled {
+      color: #c3cad4;
+   }
+   .news-page .page-size {
+      height: 32px;
+      border: 1px solid #edf0f4;
+      border-radius: 8px;
+      background: #fff;
+      color: #7e8998;
+      font-size: 12px;
+   }
+   @media (max-width: 991.98px) {
+      .news-page .news-stats {
+         grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .news-page .news-heading {
+         align-items: flex-start;
+      }
+      .news-page .news-filters,
+      .news-page .news-filters form {
+         width: 100%;
+      }
+   }
+   @media (max-width: 575.98px) {
+      .news-page .news-stats {
+         gap: 8px;
+      }
+      .news-page .news-stat {
+         min-height: 64px;
+         padding: 10px;
+      }
+      .news-page .news-heading {
+         flex-direction: column;
+      }
+      .news-page .master-actions {
+         width: 100%;
+      }
+      .news-page .news-filters form {
+         display: grid !important;
+         grid-template-columns: 1fr 1fr;
+      }
+      .news-page .news-filters input[type="search"] {
+         grid-column: 1/-1;
+         width: 100%;
+         min-width: 0;
+      }
+      .news-page .news-filters .form-select {
+         width: 100%;
+         min-width: 0;
+      }
+      .news-page .filter-button {
+         grid-column: 1/-1;
+      }
+      .news-page .status-tabs {
+         overflow-x: auto;
+      }
+      .news-page .pagination-wrap {
+         align-items: flex-start;
+      }
+   }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content news-page">
+  <div class="master-breadcrumb">Applications / <span>News &amp; Events</span></div>
+  <div class="news-heading">
+    <div>
+      <h1>News Feed Master</h1>
+      <p class="news-subtitle">Create news and events, choose the plants that see them, and set reminders.</p>
+    </div>
+    <div class="master-actions d-flex flex-wrap gap-2">
+      {% if perms.news_feed.add_newsevent or request.user.is_superuser %}
+      <a class="news-btn news-btn-primary" href="{% url 'news_events:news_event_create' %}"><i class="fas fa-plus"></i> Add News / Event</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="news-stats">
+    <div class="news-card news-stat"><span class="news-stat-icon"><i class="fas fa-layer-group" aria-hidden="true"></i></span><div><div class="news-stat-label">All items</div><div class="news-stat-value">{{ total_items|default:0 }}</div></div></div>
+    <div class="news-card news-stat"><span class="news-stat-icon"><i class="fas fa-newspaper" aria-hidden="true"></i></span><div><div class="news-stat-label">News</div><div class="news-stat-value">{{ news_count|default:0 }}</div></div></div>
+    <div class="news-card news-stat"><span class="news-stat-icon"><i class="fas fa-calendar-day" aria-hidden="true"></i></span><div><div class="news-stat-label">Events</div><div class="news-stat-value">{{ event_count|default:0 }}</div></div></div>
+    <div class="news-card news-stat"><span class="news-stat-icon"><i class="fas fa-clock" aria-hidden="true"></i></span><div><div class="news-stat-label">Scheduled</div><div class="news-stat-value">{{ scheduled_count|default:0 }}</div></div></div>
+  </div>
+
+  <section class="news-card master-card">
+    <div class="news-toolbar">
+      <div class="news-filters">
+        <form method="get" class="d-flex flex-wrap gap-2" role="search">
+          <input class="form-control" type="search" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Search title or details" aria-label="Search news and events">
+          <select class="form-select" name="type" aria-label="Content type">
+            <option value="">All types</option>
+            <option value="news" {% if request.GET.type == 'news' %}selected{% endif %}>News</option>
+            <option value="event" {% if request.GET.type == 'event' %}selected{% endif %}>Event</option>
+          </select>
+          <select class="form-select" name="status" aria-label="Status">
+            <option value="">All statuses</option>
+            <option value="DRAFT" {% if request.GET.status == 'DRAFT' %}selected{% endif %}>Draft</option>
+            <option value="SCHEDULED" {% if request.GET.status == 'SCHEDULED' %}selected{% endif %}>Scheduled</option>
+            <option value="PUBLISHED" {% if request.GET.status == 'PUBLISHED' %}selected{% endif %}>Published</option>
+            <option value="ARCHIVED" {% if request.GET.status == 'ARCHIVED' %}selected{% endif %}>Archived</option>
+            <option value="CANCELLED" {% if request.GET.status == 'CANCELLED' %}selected{% endif %}>Cancelled</option>
+          </select>
+          <button class="news-btn news-btn-outline filter-button" type="submit"><i class="fas fa-filter" aria-hidden="true"></i> Filter</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="status-tabs" role="tablist" aria-label="News and event filters">
+      <a class="status-tab {% if not request.GET.status and not request.GET.type %}active{% endif %}" href="?">All <span class="ms-1">{{ total_items|default:0 }}</span></a>
+      <a class="status-tab {% if request.GET.status == 'PUBLISHED' %}active{% endif %}" href="?status=PUBLISHED">Published <span class="ms-1">{{ published_count|default:0 }}</span></a>
+      <a class="status-tab {% if request.GET.status == 'SCHEDULED' %}active{% endif %}" href="?status=SCHEDULED">Scheduled <span class="ms-1">{{ scheduled_count|default:0 }}</span></a>
+      <a class="status-tab {% if request.GET.status == 'DRAFT' %}active{% endif %}" href="?status=DRAFT">Draft <span class="ms-1">{{ draft_count|default:0 }}</span></a>
+      <a class="status-tab {% if request.GET.status == 'CANCELLED' %}active{% endif %}" href="?status=CANCELLED">Rejected <span class="ms-1">{{ cancelled_count|default:0 }}</span></a>
+    </div>
+
+    <div class="news-table-wrap">
+      <table class="news-table">
+        <thead><tr><th scope="col">Title</th><th scope="col">Type</th><th scope="col">Plants</th><th scope="col">Date &amp; time</th><th scope="col">Files</th><th scope="col">Reminder</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+        <tbody>
+          {% for item in news_events %}
+          <tr>
+            <td><a class="item-title" href="{% url 'news_events:news_event_detail' item.pk %}">{{ item.title }}</a><span class="item-meta">{{ item.description|striptags|truncatechars:85 }}</span></td>
+            <td><span class="news-pill {% if item.is_event %}pill-amber{% else %}pill-blue{% endif %}">{% if item.is_event %}Event{% else %}News{% endif %}</span></td>
+            <td>{% if item.all_plants %}<span class="news-pill pill-green">All plants</span>{% else %}<span class="item-meta">{{ item.plants.all|join:', '|default:'Selected plants' }}</span>{% endif %}</td>
+            <td>{% if item.start_datetime %}<span class="date-primary">{{ item.start_datetime|date:'d-M-Y' }}</span><span class="date-time">{{ item.start_datetime|date:'g:i A' }}</span>{% else %}<span class="text-muted">Not scheduled</span>{% endif %}</td>
+            <td><span class="file-count"><i class="fas fa-paperclip" aria-hidden="true"></i><span>{{ item.attachments.count }}</span></span></td>
+            <td><span class="reminder-count"><i class="far fa-bell me-1" aria-hidden="true"></i>{{ item.reminder_rules.count|default:'—' }}</span></td>
+            <td><span class="news-pill {% if item.status == 'PUBLISHED' %}pill-green{% elif item.status == 'SCHEDULED' %}pill-amber{% else %}pill-gray{% endif %}">{{ item.get_status_display }}</span></td>
+            <td><a class="table-action" href="{% url 'news_events:news_event_detail' item.pk %}" aria-label="Open {{ item.title }}"><i class="far fa-eye" aria-hidden="true"></i></a></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="8"><div class="empty-state"><i class="far fa-newspaper" aria-hidden="true"></i><strong>No matching news or events</strong><div class="mt-1">Try changing your filters or create the first item.</div></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if is_paginated %}
+    <div class="pagination-wrap">
+      <span>Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} items</span>
+      <nav aria-label="News and events pagination">
+        <div class="d-flex align-items-center gap-2">
+          {% if page_obj.has_previous %}
+          <a class="pagination-arrow d-grid place-items-center text-decoration-none" href="?page={{ page_obj.previous_page_number }}&amp;q={{ request.GET.q|urlencode }}&amp;type={{ request.GET.type|urlencode }}&amp;status={{ request.GET.status|urlencode }}" aria-label="Previous page"><i class="fas fa-chevron-left"></i></a>
+          {% else %}
+          <span class="pagination-arrow disabled d-grid place-items-center"><i class="fas fa-chevron-left"></i></span>
+          {% endif %}
+          <span class="page-size d-inline-flex align-items-center px-2">{{ page_obj.number }}</span>
+          {% if page_obj.has_next %}
+          <a class="pagination-arrow d-grid place-items-center text-decoration-none" href="?page={{ page_obj.next_page_number }}&amp;q={{ request.GET.q|urlencode }}&amp;type={{ request.GET.type|urlencode }}&amp;status={{ request.GET.status|urlencode }}" aria-label="Next page"><i class="fas fa-chevron-right"></i></a>
+          {% else %}
+          <span class="pagination-arrow disabled d-grid place-items-center"><i class="fas fa-chevron-right"></i></span>
+          {% endif %}
+        </div>
+      </nav>
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
