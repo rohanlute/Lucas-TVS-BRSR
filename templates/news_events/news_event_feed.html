@@ -350,6 +350,56 @@
     color: #667085;
 }
 
+/* Feed view toggle */
+.news-page .feed-view-toggle {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    padding: 4px;
+    margin-bottom: 14px;
+    border: 1px solid #e3e9f1;
+    border-radius: 9px;
+    background: #f7f9fc;
+}
+
+.news-page .feed-view-toggle a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: #667085;
+    font-size: 10px;
+    font-weight: 650;
+    text-decoration: none;
+    transition: .2s ease;
+}
+
+.news-page .feed-view-toggle a:hover {
+    background: #edf3fb;
+    color: #2875bd;
+}
+
+.news-page .feed-view-toggle a.active {
+    background: #2875bd;
+    color: #fff;
+    box-shadow: 0 2px 5px rgba(40, 117, 189, .16);
+}
+
+.news-page .expired-row .news-date-tile {
+    border-color: #e5e7eb;
+    background: #f5f6f8;
+}
+
+.news-page .expired-row .news-date-tile strong {
+    color: #667085;
+}
+
+.news-page .expired-row .news-date-tile span {
+    color: #98a2b3;
+}
+
 /* Empty state */
 .news-page .empty-state {
     padding: 28px 12px;
@@ -496,10 +546,6 @@
                             The latest announcements
                         </div>
                     </div>
-
-                    <a href="{% url 'news_events:news_event_list' %}">
-                        Manage <i class="fas fa-arrow-right"></i>
-                    </a>
                 </div>
 
                 <div class="news-line">
@@ -525,24 +571,45 @@
             </section>
 
             <!-- News Feed -->
-            <section class="news-card">
+            <section class="news-card" id="news-event-feed">
 
                 <div class="news-card-head">
                     <div>
-                        <h2>News Feed</h2>
+                        <h2>{% if request.GET.feed == 'expired' %}Expired News &amp; Events{% else %}Upcoming News &amp; Events{% endif %}</h2>
                         <div class="small text-muted mt-1">
-                            Updates published for your plants
+                            {% if request.GET.feed == 'expired' %}
+                                Recently expired items from your assigned audience
+                            {% else %}
+                                Current updates and upcoming events for your plants
+                            {% endif %}
                         </div>
                     </div>
 
-                    <span class="news-pill pill-blue">
-                        {{ page_obj.paginator.count }} updates
+                    <span class="news-pill {% if request.GET.feed == 'expired' %}pill-gray{% else %}pill-blue{% endif %}">
+                        {{ page_obj.paginator.count }} items
                     </span>
                 </div>
 
                 <div class="news-card-body">
 
+                    <nav class="feed-view-toggle" aria-label="Select news and events view">
+                        <a href="?feed=upcoming{% if request.GET.q %}&amp;q={{ request.GET.q|urlencode }}{% endif %}"
+                           class="{% if request.GET.feed != 'expired' %}active{% endif %}"
+                           {% if request.GET.feed != 'expired' %}aria-current="page"{% endif %}>
+                            <i class="far fa-calendar-check" aria-hidden="true"></i>
+                            Upcoming News / Events
+                        </a>
+                        <a href="?feed=expired{% if request.GET.q %}&amp;q={{ request.GET.q|urlencode }}{% endif %}"
+                           class="{% if request.GET.feed == 'expired' %}active{% endif %}"
+                           {% if request.GET.feed == 'expired' %}aria-current="page"{% endif %}>
+                            <i class="far fa-clock" aria-hidden="true"></i>
+                            Expired News / Events
+                        </a>
+                    </nav>
+                    <p class="small text-muted mb-2" id="feed-loading-status" role="status" aria-live="polite" hidden></p>
+
                     <form method="get" class="news-search-form">
+                        <input type="hidden" name="feed" value="{{ request.GET.feed|default:'upcoming' }}">
                         <input
                             class="form-control"
                             type="search"
@@ -559,70 +626,85 @@
 
                     <div class="news-list">
                         {% for item in news_events %}
-                            {% if not item.is_event %}
-                                <article class="news-row">
-                                    <div class="news-date-tile">
-                                        <strong>
-                                            {{ item.published_at|default:item.start_datetime|date:'d' }}
-                                        </strong>
+                            <article class="news-row {% if request.GET.feed == 'expired' %}expired-row{% endif %}">
+                                <div class="news-date-tile">
+                                    <strong>
+                                        {% if item.is_event %}
+                                            {{ item.start_datetime|date:'d' }}
+                                        {% else %}
+                                            {{ item.published_at|default:item.start_datetime|default:item.created_at|date:'d' }}
+                                        {% endif %}
+                                    </strong>
+                                    <span>
+                                        {% if item.is_event %}
+                                            {{ item.start_datetime|date:'M' }}
+                                        {% else %}
+                                            {{ item.published_at|default:item.start_datetime|default:item.created_at|date:'M' }}
+                                        {% endif %}
+                                    </span>
+                                </div>
+
+                                <div class="news-row-content">
+                                    <h3 class="item-title">
+                                        <a href="{% url 'news_events:news_event_public_detail' item.pk %}" class="item-title">
+                                            {{ item.title }}
+                                        </a>
+                                    </h3>
+
+                                    <p>{{ item.description|striptags|truncatechars:220 }}</p>
+
+                                    <div class="news-meta-line">
+                                        <span>
+                                            <i class="far fa-clock"></i>
+                                            {% if item.is_event %}
+                                                {{ item.start_datetime|date:'d M Y, g:i A' }}
+                                            {% else %}
+                                                {{ item.published_at|default:item.start_datetime|default:item.created_at|date:'d M Y, g:i A' }}
+                                            {% endif %}
+                                        </span>
 
                                         <span>
-                                            {{ item.published_at|default:item.start_datetime|date:'M' }}
+                                            <i class="fas fa-tag"></i>
+                                            {% if item.is_event %}Event{% else %}News{% endif %}
                                         </span>
+
+                                        <span>
+                                            <i class="fas fa-paperclip"></i>
+                                            {{ item.attachments.count }} files
+                                        </span>
+
+                                        <span>
+                                            <i class="fas fa-industry"></i>
+                                            {% if item.all_plants %}
+                                                All plants
+                                            {% else %}
+                                                {{ item.plants.all|join:', '|default:'Your plant' }}
+                                            {% endif %}
+                                        </span>
+
+                                        {% if request.GET.feed == 'expired' %}
+                                            <span class="news-pill pill-gray">Expired</span>
+                                        {% endif %}
                                     </div>
-
-                                    <div class="news-row-content">
-
-                                        <h3 class="item-title">
-                                            <a href="{% url 'news_events:news_event_public_detail' item.pk %}" class="item-title">
-                                            {{ item.title }}
-                                            </a>
-                                        </h3>
-
-                                        <p>
-                                            {{ item.description|striptags|truncatechars:220 }}
-                                        </p>
-
-                                        <div class="news-meta-line">
-
-                                            <span>
-                                                <i class="far fa-clock"></i>
-                                                {{ item.published_at|default:item.start_datetime|date:'d M Y, g:i A' }}
-                                            </span>
-
-                                            <span>
-                                                <i class="fas fa-paperclip"></i>
-                                                {{ item.attachments.count }} files
-                                            </span>
-
-                                            <span>
-                                                <i class="fas fa-industry"></i>
-                                                {% if item.all_plants %}
-                                                    All plants
-                                                {% else %}
-                                                    {{ item.plants.all|join:', '|default:'Your plant' }}
-                                                {% endif %}
-                                            </span>
-
-                                        </div>
-                                    </div>
-
-                                </article>
-
-                            {% endif %}
-
-                        {% empty %}
-
-                            <div class="empty-state">
-                                <i class="far fa-newspaper"></i>
-                                <strong>No updates yet</strong>
-                                <div class="mt-1">
-                                    Published news for your audience will appear here.
                                 </div>
+                            </article>
+                        {% empty %}
+                            <div class="empty-state">
+                                {% if request.GET.feed == 'expired' %}
+                                    <i class="far fa-clock"></i>
+                                    <strong>No expired news or events</strong>
+                                    <div class="mt-1">
+                                        Recently expired items will appear here for reference.
+                                    </div>
+                                {% else %}
+                                    <i class="far fa-newspaper"></i>
+                                    <strong>No upcoming news or events</strong>
+                                    <div class="mt-1">
+                                        Current published updates and upcoming events for your audience will appear here.
+                                    </div>
+                                {% endif %}
                             </div>
-
                         {% endfor %}
-
                     </div>
                 </div>
             </section>
@@ -706,7 +788,7 @@
     <!-- Pagination -->
     {% if is_paginated %}
 
-        <div class="pagination-wrap news-card mt-3">
+        <div class="pagination-wrap news-card mt-3" id="news-feed-pagination">
 
             <span>
                 Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
@@ -718,7 +800,7 @@
                     {% if page_obj.has_previous %}
                         <li class="page-item">
                             <a class="page-link"
-                               href="?page={{ page_obj.previous_page_number }}&amp;q={{ request.GET.q|urlencode }}">
+                               href="?page={{ page_obj.previous_page_number }}&amp;feed={{ request.GET.feed|default:'upcoming' }}&amp;q={{ request.GET.q|urlencode }}">
                                 Previous
                             </a>
                         </li>
@@ -729,7 +811,7 @@
                     {% if page_obj.has_next %}
                         <li class="page-item">
                             <a class="page-link"
-                               href="?page={{ page_obj.next_page_number }}&amp;q={{ request.GET.q|urlencode }}">
+                               href="?page={{ page_obj.next_page_number }}&amp;feed={{ request.GET.feed|default:'upcoming' }}&amp;q={{ request.GET.q|urlencode }}">
                                 Next
                             </a>
                         </li>
@@ -739,4 +821,95 @@
         </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(() => {
+const feedId = "news-event-feed";
+const paginationId = "news-feed-pagination";
+let requestInProgress = false;
+
+const setFeedStatus = (feed, message, visible) => {
+    const status = feed.querySelector("#feed-loading-status");
+    if (status) {
+        status.textContent = message;
+        status.hidden = !visible;
+    }
+};
+
+const loadFeed = async (url, addHistoryEntry) => {
+    if (requestInProgress) return;
+
+    const currentFeed = document.getElementById(feedId);
+    if (!currentFeed) return;
+
+    requestInProgress = true;
+    currentFeed.setAttribute("aria-busy", "true");
+    setFeedStatus(currentFeed, "Loading news and events...", true);
+
+    try {
+        const response = await fetch(url, {
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+        });
+        if (!response.ok) {
+            throw new Error(`Feed request failed (${response.status}).`);
+        }
+
+        const page = new DOMParser().parseFromString(
+            await response.text(),
+            "text/html"
+        );
+        const nextFeed = page.getElementById(feedId);
+        if (!nextFeed) {
+            throw new Error("The updated news feed could not be loaded.");
+        }
+
+        currentFeed.replaceWith(nextFeed);
+
+        const currentPagination = document.getElementById(paginationId);
+        const nextPagination = page.getElementById(paginationId);
+        if (currentPagination && nextPagination) {
+            currentPagination.replaceWith(nextPagination);
+        } else if (currentPagination) {
+            currentPagination.remove();
+        } else if (nextPagination) {
+            document.querySelector(".news-page .dashboard-grid")
+                .insertAdjacentElement("afterend", nextPagination);
+        }
+
+        if (addHistoryEntry) {
+            window.history.pushState({}, "", url);
+        }
+    } catch (error) {
+        currentFeed.removeAttribute("aria-busy");
+        setFeedStatus(
+            currentFeed,
+            "Unable to update the feed. Please try again.",
+            true
+        );
+        console.error(error);
+    } finally {
+        requestInProgress = false;
+    }
+};
+
+document.addEventListener("click", (event) => {
+    if (!(event.target instanceof Element)) return;
+
+    const link = event.target.closest(`#${feedId} .feed-view-toggle a`);
+    if (!link || event.button !== 0 || event.metaKey || event.ctrlKey ||
+        event.shiftKey || event.altKey) {
+        return;
+    }
+
+    event.preventDefault();
+    loadFeed(link.href, true);
+});
+
+window.addEventListener("popstate", () => {
+    loadFeed(window.location.href, false);
+});
+})();
+</script>
 {% endblock %}

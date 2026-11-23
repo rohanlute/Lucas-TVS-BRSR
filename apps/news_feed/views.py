@@ -358,8 +358,8 @@ class NewsEventListView(LoginRequiredMixin, NewsEventPermissionRequiredMixin, Li
         return context
 
 
-class NewsEventFeedView(LoginRequiredMixin, NewsEventAudienceQuerysetMixin, ListView,):
-    """User-facing feed with published News and announced upcoming Events."""
+class NewsEventFeedView(LoginRequiredMixin,NewsEventAudienceQuerysetMixin,ListView,):
+    """User-facing feed for upcoming and recently expired News/Events."""
 
     model = NewsEvent
     template_name = "news_events/news_event_feed.html"
@@ -367,22 +367,114 @@ class NewsEventFeedView(LoginRequiredMixin, NewsEventAudienceQuerysetMixin, List
     paginate_by = 15
 
     def get_queryset(self):
-        queryset = super().get_queryset().filter(
-            is_event=False,
-            status=NewsEvent.Status.PUBLISHED,
-        )
-        queryset = queryset.select_related("created_by").prefetch_related(
-            "plants", "departments", "attachments"
-        )
+        now = timezone.now()
+        today = timezone.localdate(now)
+
+        feed_mode = self.request.GET.get("feed", "upcoming").lower()
         search = self.request.GET.get("q", "").strip()
+
+        queryset = NewsEvent.objects.filter(
+            status__in=[
+                NewsEvent.Status.PUBLISHED,
+                NewsEvent.Status.SCHEDULED,
+            ]
+        )
+
+        if feed_mode == "expired":
+            cutoff = now - timedelta(days=180)
+
+            expired_news = Q(
+                is_event=False,
+                status=NewsEvent.Status.PUBLISHED,
+                end_datetime__gte=cutoff,
+                end_datetime__lt=now,
+            )
+
+            expired_events = Q(
+                is_event=True,
+                end_datetime__gte=cutoff,
+                end_datetime__lt=now,
+            ) | Q(
+                is_event=True,
+                end_datetime__isnull=True,
+                start_datetime__date__gte=cutoff.date(),
+                start_datetime__date__lt=today,
+            )
+
+            queryset = queryset.filter(
+                expired_news | expired_events
+            )
+
+        else:
+            visible_news = (
+                Q(
+                    is_event=False,
+                    status=NewsEvent.Status.PUBLISHED,
+                )
+                & (
+                    Q(published_at__isnull=True)
+                    | Q(published_at__lte=now)
+                )
+                & (
+                    Q(end_datetime__isnull=True)
+                    | Q(end_datetime__gte=now)
+                )
+            ) | Q(
+                is_event=False,
+                status=NewsEvent.Status.SCHEDULED,
+                start_datetime__gte=now,
+            )
+
+            visible_events = Q(
+                is_event=True,
+                status__in=[
+                    NewsEvent.Status.PUBLISHED,
+                    NewsEvent.Status.SCHEDULED,
+                ],
+            ) & (
+                Q(start_datetime__gt=now)
+                | Q(end_datetime__gte=now)
+                | Q(
+                    end_datetime__isnull=True,
+                    start_datetime__date__gte=today,
+                )
+            )
+
+            queryset = queryset.filter(
+                visible_news | visible_events
+            )
+
+        queryset = audience_scoped_news_events(
+            queryset,
+            self.request.user,
+        )
+
         if search:
             queryset = queryset.filter(
-                Q(title__icontains=search) | Q(description__icontains=search)
+                Q(title__icontains=search)
+                | Q(description__icontains=search)
             )
-        return queryset
+
+        return queryset.select_related(
+            "created_by"
+        ).prefetch_related(
+            "plants",
+            "departments",
+            "attachments",
+        ).order_by(
+            "-end_datetime",
+            "-start_datetime",
+            "-published_at",
+            "-created_at",
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+        context["feed_mode"] = self.request.GET.get(
+            "feed", "upcoming"
+        ).lower()
+
         context["upcoming_events"] = audience_scoped_news_events(
             upcoming_event_queryset(
                 NewsEvent.objects.filter(
@@ -394,9 +486,14 @@ class NewsEventFeedView(LoginRequiredMixin, NewsEventAudienceQuerysetMixin, List
                 )
             ),
             self.request.user,
-        ).select_related("created_by").prefetch_related(
-            "plants", "departments", "attachments"
+        ).select_related(
+            "created_by"
+        ).prefetch_related(
+            "plants",
+            "departments",
+            "attachments",
         ).order_by("start_datetime")[:5]
+
         return context
 
 
@@ -474,8 +571,9 @@ class NewsEventDetailView(LoginRequiredMixin, NewsEventPermissionRequiredMixin, 
         return context
 
 
+
 class NewsEventPublicDetailView(LoginRequiredMixin, DetailView):
-    """Read-only detail page for news/events visible to the signed-in user."""
+    """Read-only detail page for published News/Events, including expired items."""
 
     model = NewsEvent
     template_name = "news_events/news_event_public_detail.html"
@@ -483,6 +581,8 @@ class NewsEventPublicDetailView(LoginRequiredMixin, DetailView):
 
     def get_queryset(self):
         now = timezone.now()
+
+        # Allow published news even if its end date has passed.
         visible_news = (
             Q(is_event=False, status=NewsEvent.Status.PUBLISHED)
             & (Q(published_at__isnull=True) | Q(published_at__lte=now))
@@ -491,29 +591,48 @@ class NewsEventPublicDetailView(LoginRequiredMixin, DetailView):
             status=NewsEvent.Status.SCHEDULED,
             start_datetime__gte=now,
         )
+
+        # Allow published and scheduled events, including expired events.
         visible_events = Q(
             is_event=True,
-            status__in=[NewsEvent.Status.PUBLISHED, NewsEvent.Status.SCHEDULED],
+            status__in=[
+                NewsEvent.Status.PUBLISHED,
+                NewsEvent.Status.SCHEDULED,
+            ],
         )
+
         queryset = NewsEvent.objects.filter(visible_news | visible_events)
-        queryset = queryset.filter(
-            Q(end_datetime__isnull=True) | Q(end_datetime__gte=now)
-        )
-        queryset = queryset.filter(
-            Q(is_event=False) | Q(
-                Q(start_datetime__gt=now)
-                | Q(end_datetime__gte=now)
-                | Q(
-                    end_datetime__isnull=True,
-                    start_datetime__date__gte=timezone.localdate(now),
-                )
-            )
-        )
+
+        # Continue enforcing plant and department audience restrictions.
         return audience_scoped_news_events(
             queryset, self.request.user
-        ).select_related("created_by").prefetch_related(
-            "plants", "departments", "attachments"
+        ).select_related(
+            "created_by"
+        ).prefetch_related(
+            "plants",
+            "departments",
+            "attachments",
         )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        news_event = self.object
+        now = timezone.now()
+
+        is_expired = False
+
+        if news_event.end_datetime:
+            is_expired = news_event.end_datetime < now
+
+        elif news_event.is_event and news_event.start_datetime:
+            is_expired = (
+                news_event.start_datetime.date() < timezone.localdate(now)
+            )
+
+        context["is_expired"] = is_expired
+
+        return context
 
 # Create and update views with reminder choices and multiple file upload
 class NewsEventMultiFormProcessingMixin:

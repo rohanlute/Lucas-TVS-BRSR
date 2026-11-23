@@ -252,9 +252,10 @@
 
 {% block content %}
 <main class="main-content news-page news-public-detail">
-  <a class="detail-back-link" href="{% if news_event.is_event %}{% url 'news_events:upcoming_events' %}{% else %}{% url 'news_events:news_event_feed' %}{% endif %}">
+
+  <a class="detail-back-link" href="{% url 'accounts:dashboard' %}">
     <i class="fas fa-arrow-left" aria-hidden="true"></i>
-    Back to {% if news_event.is_event %}events{% else %}news{% endif %}
+    Back to Dashboard
   </a>
 
   <header class="detail-hero">
@@ -267,16 +268,33 @@
       <span class="news-pill {% if news_event.is_event %}pill-amber{% else %}pill-blue{% endif %}">
         {% if news_event.is_event %}Event{% else %}News update{% endif %}
       </span>
-      <span class="news-pill {% if news_event.status == 'PUBLISHED' %}pill-green{% elif news_event.status == 'SCHEDULED' %}pill-amber{% else %}pill-gray{% endif %}">
-        {{ news_event.get_status_display }}
-      </span>
+
+      {% if is_expired %}
+        <span class="news-pill pill-gray">
+          <i class="fas fa-clock"></i> Expired
+        </span>
+      {% else %}
+        <span class="news-pill {% if news_event.status == 'PUBLISHED' %}pill-green{% elif news_event.status == 'SCHEDULED' %}pill-amber{% else %}pill-gray{% endif %}">
+          {{ news_event.get_status_display }}
+        </span>
+      {% endif %}
+
     </div>
 
     <div class="detail-schedule">
       <div class="schedule-item">
         <i class="far fa-clock" aria-hidden="true"></i>
         <div>
-          <strong>{% if news_event.is_event %}Event starts{% elif news_event.status == 'SCHEDULED' %}Publish date{% else %}Published{% endif %}</strong>
+          <strong>
+            {% if news_event.is_event %}
+              Event starts
+            {% elif news_event.status == 'SCHEDULED' %}
+              Publish date
+            {% else %}
+              Published
+            {% endif %}
+          </strong>
+
           {% if news_event.status == 'PUBLISHED' and not news_event.is_event %}
             {{ news_event.published_at|default:news_event.created_at|date:'l, d M Y · g:i A' }}
           {% else %}
@@ -285,69 +303,125 @@
         </div>
       </div>
       {% if news_event.end_datetime %}
-      <div class="schedule-item">
-        <i class="far fa-hourglass" aria-hidden="true"></i>
-        <div>
-          <strong>{% if news_event.is_event %}Event ends{% else %}Expires{% endif %}</strong>
-          {{ news_event.end_datetime|date:'l, d M Y · g:i A' }}
+        <div class="schedule-item">
+          <i class="far fa-hourglass" aria-hidden="true"></i>
+          <div>
+            <strong>
+              {% if news_event.is_event %}Event ends{% else %}Expires{% endif %}
+            </strong>
+            {{ news_event.end_datetime|date:'l, d M Y · g:i A' }}
+          </div>
         </div>
-      </div>
       {% endif %}
     </div>
   </header>
 
+  {% if is_expired %}
+    <div class="alert alert-warning d-flex align-items-center gap-2 mb-3" role="alert">
+      <i class="fas fa-exclamation-circle" aria-hidden="true"></i>
+      <div>
+        <strong>
+          This {{ news_event.is_event|yesno:"event,news update" }} has expired.
+        </strong>
+        You can still view its details and attachments for reference.
+      </div>
+    </div>
+  {% endif %}
+
   <div class="detail-grid">
     <div class="detail-main-column">
+      <!-- News / Event Description -->
       <section class="news-card">
         <div class="news-card-head">
           <div class="section-heading">
-            <span class="section-icon"><i class="far fa-align-left" aria-hidden="true"></i></span>
-            <h2>About this {% if news_event.is_event %}event{% else %}update{% endif %}</h2>
+            <span class="section-icon">
+              <i class="far fa-align-left" aria-hidden="true"></i>
+            </span>
+            <h2>
+              About this {% if news_event.is_event %}event{% else %}update{% endif %}
+            </h2>
           </div>
         </div>
         <div class="news-card-body">
-          <div class="detail-description">{{ news_event.description|linebreaks }}</div>
-          {% if news_event.meeting_link %}
-          <a class="news-btn news-btn-primary mt-4" href="{{ news_event.meeting_link }}" target="_blank" rel="noopener noreferrer">
-            <i class="fas fa-video" aria-hidden="true"></i>
-            Join event
-            <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
-          </a>
+
+          <div class="detail-description">
+            {{ news_event.description|linebreaks }}
+          </div>
+
+          {% if news_event.meeting_link and not is_expired %}
+            <a class="news-btn news-btn-primary mt-4"
+               href="{{ news_event.meeting_link }}"
+               target="_blank"
+               rel="noopener noreferrer">
+
+              <i class="fas fa-video" aria-hidden="true"></i>
+              Join event
+              <i class="fas fa-arrow-up-right-from-square" aria-hidden="true"></i>
+
+            </a>
           {% endif %}
         </div>
       </section>
 
+      <!-- Attachments -->
       <section class="news-card">
         <div class="news-card-head">
           <div class="section-heading">
-            <span class="section-icon"><i class="fas fa-paperclip" aria-hidden="true"></i></span>
+            <span class="section-icon">
+              <i class="fas fa-paperclip" aria-hidden="true"></i>
+            </span>
             <h2>Attachments</h2>
           </div>
         </div>
         <div class="news-card-body">
           <div class="attachments-grid">
             {% for attachment in news_event.attachments.all %}
-              <a class="attachment-card" href="{{ attachment.file.url }}" target="_blank" rel="noopener noreferrer">
+              <a class="attachment-card"
+                 href="{{ attachment.file.url }}"
+                 target="_blank"
+                 rel="noopener noreferrer">
+
                 <span class="attachment-preview">
                   {% if attachment.attachment_type == 'IMAGE' %}
-                    <img src="{{ attachment.file.url }}" alt="{{ attachment.caption|default:attachment.original_name|default:'Event or news attachment' }}" loading="lazy">
+
+                    <img
+                      src="{{ attachment.file.url }}"
+                      alt="{{ attachment.caption|default:attachment.original_name|default:'Event or news attachment' }}"
+                      loading="lazy">
+
                   {% else %}
-                    <span class="file-icon"><i class="far fa-file-lines" aria-hidden="true"></i></span>
+
+                    <span class="file-icon">
+                      <i class="far fa-file-lines" aria-hidden="true"></i>
+                    </span>
+
                   {% endif %}
                 </span>
                 <span class="attachment-info">
                   <span class="min-w-0">
-                    <span class="attachment-name">{{ attachment.original_name|default:attachment.file.name }}</span>
+
+                    <span class="attachment-name">
+                      {{ attachment.original_name|default:attachment.file.name }}
+                    </span>
+
                     <span class="attachment-type">
                       {{ attachment.get_attachment_type_display }}
-                      {% if attachment.caption %} · {{ attachment.caption }}{% endif %}
+                      {% if attachment.caption %}
+                        · {{ attachment.caption }}
+                      {% endif %}
                     </span>
                   </span>
-                  <i class="fas fa-arrow-up-right-from-square attachment-open" aria-hidden="true"></i>
+
+                  <i class="fas fa-arrow-up-right-from-square attachment-open"
+                     aria-hidden="true"></i>
+
                 </span>
               </a>
             {% empty %}
-              <div class="empty-attachments">No attachments were added to this item.</div>
+
+              <div class="empty-attachments">
+                No attachments were added to this item.
+              </div>
             {% endfor %}
           </div>
         </div>
@@ -355,5 +429,5 @@
     </div>
 
   </div>
-</main> 
+</main>
 {% endblock %}
