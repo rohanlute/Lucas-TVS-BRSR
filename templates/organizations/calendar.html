@@ -97,7 +97,8 @@
     align-items: center;
     gap: 8px;
   }
-  .nav-btn {
+  .nav-btn,
+  .year-nav-btn {
     width: 34px;
     height: 34px;
     border-radius: 8px;
@@ -111,31 +112,19 @@
     transition: all 0.2s;
     font-size: 16px;
   }
-  .nav-btn:hover {
+  .year-nav-btn {
+    font-size: 14px;
+  }
+  .nav-btn:hover,
+  .year-nav-btn:hover {
     background: var(--gray-50);
     border-color: var(--gray-300);
+  }
+  .nav-btn:hover {
     transform: scale(1.02);
   }
   .nav-btn:active {
     transform: scale(0.95);
-  }
-  .year-nav-btn {
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
-    border: 1px solid var(--gray-200);
-    background: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: var(--gray-600);
-    transition: all 0.2s;
-    font-size: 14px;
-  }
-  .year-nav-btn:hover {
-    background: var(--gray-50);
-    border-color: var(--gray-300);
   }
   .date-display {
     font-weight: 700;
@@ -305,50 +294,78 @@
     gap: 2px;
     overflow: hidden;
   }
+
   .cal-cell:last-child {
     border-right: none;
   }
+
   .cal-cell:hover {
     background: var(--gray-50);
   }
+
   .cal-cell.dim {
     background: #fafbfc;
   }
+
   .cal-cell.dim:hover {
     background: #f8f9fa;
   }
+
   .cal-cell.has-esg {
     background: var(--esg-light-bg);
     border-left: 4px solid var(--esg-primary);
   }
+
   .cal-cell.has-esg:hover {
     background: #e6f7ef;
   }
+
   .cal-cell.has-ehs {
     background: var(--red-light);
     border-left: 4px solid var(--red);
   }
+
   .cal-cell.has-ehs:hover {
     background: #fce4e4;
   }
+
   .cal-cell.has-national {
     background: var(--orange-light);
     border-left: 4px solid var(--orange);
   }
+
   .cal-cell.has-national:hover {
     background: #fde68a;
   }
+
+  /* Database Upcoming Events */
+  .cal-cell.has-upcoming {
+    background: var(--blue-light);
+    border-left: 4px solid var(--blue);
+  }
+
+  .cal-cell.has-upcoming:hover {
+    background: #dbeafe;
+  }
+
   .cal-cell.today-cell {
     background: #f0f9ff;
   }
+
   .cal-cell.today-cell.has-esg {
     background: #dbeafe;
   }
+
   .cal-cell.today-cell.has-ehs {
     background: #fecaca;
   }
+
   .cal-cell.today-cell.has-national {
     background: #fcd34d;
+  }
+
+  .cal-cell.today-cell.has-upcoming {
+    background: #bfdbfe;
   }
 
   .cell-date {
@@ -365,15 +382,18 @@
     margin-bottom: 3px;
     transition: all 0.2s;
   }
+
   .cell-date.today {
     background: var(--esg-primary);
     color: white;
     font-weight: 700;
   }
+
   .cal-cell.dim .cell-date {
     color: var(--gray-300);
   }
 
+  /* ===== Event Chips ===== */
   .event-chip {
     font-size: 8.5px;
     font-weight: 600;
@@ -392,43 +412,63 @@
     transition: all 0.2s;
     border: none;
   }
+
   .event-chip:hover {
     transform: scale(1.02);
     box-shadow: var(--shadow-md);
   }
+
   .event-chip .title {
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
   .event-chip .emoji {
     flex-shrink: 0;
     font-size: 9px;
   }
+
   .chip-esg {
     background: var(--esg-primary);
     color: white;
   }
+
   .chip-esg:hover {
     background: var(--esg-primary-dark);
   }
+
   .chip-ehs {
     background: var(--red);
     color: white;
   }
+
   .chip-ehs:hover {
     background: #b91c1c;
   }
+
   .chip-national {
     background: var(--orange);
     color: white;
   }
+
   .chip-national:hover {
     background: #d97706;
   }
+
+  .chip-upcoming {
+    background: var(--blue);
+    color: white;
+  }
+
+  .chip-upcoming:hover {
+    background: #1d4ed8;
+  }
+
   .chip-more {
     background: var(--gray-500);
     color: white;
   }
+
   .chip-more:hover {
     background: var(--gray-600);
   }
@@ -458,6 +498,7 @@
     box-shadow: var(--shadow-sm);
     flex-wrap: wrap;
   }
+
   .esg-legend-title {
     font-weight: 700;
     font-size: 13px;
@@ -466,6 +507,7 @@
     align-items: center;
     gap: 8px;
   }
+
   .esg-legend-item {
     display: flex;
     align-items: center;
@@ -473,26 +515,36 @@
     font-size: 11px;
     color: var(--gray-600);
   }
+
   .legend-dot {
     width: 10px;
     height: 10px;
     border-radius: 50%;
     flex-shrink: 0;
   }
+
   .legend-dot.esg {
     background: var(--esg-primary);
   }
+
   .legend-dot.ehs {
     background: var(--red);
   }
+
   .legend-dot.national {
     background: var(--orange);
   }
+
+  .legend-dot.upcoming {
+    background: var(--blue);
+  }
+
   .esg-legend-count {
     margin-left: auto;
     font-size: 12px;
     color: var(--gray-500);
   }
+
   .esg-legend-count strong {
     color: var(--esg-primary);
     font-weight: 700;
@@ -519,14 +571,17 @@
     text-align: center;
     line-height: 1.6;
   }
+
   .toast.show {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
+
   .toast .toast-title {
     font-weight: 700;
     font-size: 15px;
   }
+
   .toast .toast-sub {
     opacity: 0.8;
     font-size: 13px;
@@ -540,27 +595,33 @@
       padding: 20px;
       gap: 20px;
     }
+
     .sidebar {
       width: 160px;
     }
   }
+
   @media (max-width: 768px) {
     .topbar {
       padding: 10px 16px;
       gap: 12px;
       flex-wrap: wrap;
     }
+
     .brand {
       font-size: 16px;
     }
+
     .date-display {
       font-size: 15px;
       min-width: 100px;
     }
+
     .app {
       padding: 12px;
       flex-direction: column;
     }
+
     .sidebar {
       width: 100%;
       position: static;
@@ -570,90 +631,114 @@
       padding: 0 0 12px;
       border-bottom: 1px solid var(--gray-200);
     }
+
     .sidebar-label {
       display: none;
     }
+
     .view-item {
       padding: 6px 12px;
       font-size: 13px;
     }
+
     .sidebar-stats {
       display: none;
     }
+
     .cal-cell {
       min-height: 70px;
       padding: 4px;
     }
+
     .event-chip {
       font-size: 6.5px;
       height: 15px;
       padding: 1px 4px;
     }
+
     .event-chip .title {
       font-size: 6px;
     }
+
     .event-chip .emoji {
       font-size: 7px;
     }
+
     .event-focus {
       display: none;
     }
+
     .cell-date {
       width: 22px;
       height: 22px;
       font-size: 12px;
     }
+
     .esg-legend {
       padding: 10px 14px;
       gap: 10px;
       font-size: 11px;
     }
+
     .esg-legend-title {
       font-size: 12px;
     }
+
     .esg-legend-item {
       font-size: 11px;
     }
+
     .esg-legend-count {
       font-size: 11px;
     }
+
     .year-display {
       font-size: 12px;
       padding: 2px 6px;
     }
-    .nav-btn, .year-nav-btn {
+
+    .nav-btn,
+    .year-nav-btn {
       width: 30px;
       height: 30px;
       font-size: 14px;
     }
   }
+
   @media (max-width: 480px) {
     .topbar-controls {
       flex-wrap: wrap;
       justify-content: center;
     }
+
     .date-display {
       font-size: 13px;
       min-width: 80px;
     }
+
     .cal-weekdays div {
       font-size: 9px;
       padding: 6px 4px;
     }
+
     .cal-cell {
       min-height: 60px;
     }
+
     .event-chip {
       height: 13px;
       font-size: 5.5px;
       padding: 1px 3px;
     }
+
     .event-chip .title {
       font-size: 5px;
     }
+
     .event-chip .emoji {
       font-size: 6px;
     }
+
     .cell-date {
       width: 18px;
       height: 18px;
@@ -664,32 +749,44 @@
 {% endblock %}
 
 {% block content %}
+
+<!-- Django database events -->
+{{ calendar_events_json|json_script:"calendar-events-data" }}
+
 <!-- ===== Top Bar ===== -->
 <div class="topbar">
   <div class="brand">
     <div class="brand-icon">🌱</div>
     <span>ESG Calendar</span>
   </div>
+
   <div class="topbar-divider"></div>
+
   <div class="topbar-controls">
     <button class="nav-btn" onclick="shiftMonth(-1)" title="Previous month">‹</button>
     <button class="nav-btn" onclick="shiftMonth(1)" title="Next month">›</button>
     <button class="today-btn" onclick="goToday()">Today</button>
+
     <div class="topbar-divider"></div>
+
     <button class="year-nav-btn" onclick="goToPreviousYear()" title="Previous year">«</button>
     <div class="year-display" id="yearDisplay">2026</div>
     <button class="year-nav-btn" onclick="goToNextYear()" title="Next year">»</button>
   </div>
+
   <div class="date-display" id="topMonthLabel">October 2026</div>
 </div>
 
 <!-- ===== App ===== -->
 <div class="app">
+
   <!-- Sidebar -->
   <div class="sidebar">
     <div class="sidebar-label">Navigation</div>
+
     <div class="view-item active" id="viewMonthBtn">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2">
         <rect x="3" y="4" width="18" height="18" rx="2"/>
         <path d="M3 10h18M8 2v4M16 2v4"/>
       </svg>
@@ -701,10 +798,12 @@
         <span><span class="stat-dot"></span>Total Events</span>
         <strong id="esgCount">0</strong>
       </div>
+
       <div class="stat-item">
         <span>📌 This Month</span>
         <strong id="monthCount">0</strong>
       </div>
+
       <div class="stat-item">
         <span>⚠️ EHS Related</span>
         <strong id="ehsCount">0</strong>
@@ -724,25 +823,36 @@
         <div>Sat</div>
         <div>Sun</div>
       </div>
+
       <div class="cal-body" id="calBody"></div>
     </div>
 
+    <!-- Legend -->
     <div class="esg-legend">
       <div class="esg-legend-title">
         <span>📅</span> Event Types
       </div>
+
       <div class="esg-legend-item">
         <span class="legend-dot esg"></span>
         <span>ESG</span>
       </div>
+
       <div class="esg-legend-item">
         <span class="legend-dot ehs"></span>
         <span>EHS</span>
       </div>
+
       <div class="esg-legend-item">
         <span class="legend-dot national"></span>
         <span>National</span>
       </div>
+
+      <div class="esg-legend-item">
+        <span class="legend-dot upcoming"></span>
+        <span>News &amp; Events</span>
+      </div>
+
       <div class="esg-legend-count">
         <strong id="legendCount">0</strong> events tracked
       </div>
@@ -753,150 +863,594 @@
 <!-- Toast -->
 <div class="toast" id="toast">
   <div class="toast-title" id="toastTitle">📅 Event Name</div>
-  <div class="toast-sub" id="toastSub">Relevance description</div>
+  <div class="toast-sub" id="toastSub">Event description</div>
 </div>
 
 <script>
   // =====================================================================
-  // COMPLETE ESG DATE DATA (MATCHES BRSRDashboardView)
+  // STATIC ESG DATE DATA
   // =====================================================================
+
   function getESGDates(year) {
     return {
       // January
       "1-26": [
-        { title: "🇮🇳 Republic Day", focus: "National celebration", desc: "Celebrates the adoption of the Constitution of India.", category: "national", icon: "🇮🇳" },
-        { title: "International Day of Clean Energy", focus: "Renewable energy, Scope 2", desc: "Advocates for renewable energy and energy efficiency worldwide.", category: "esg", icon: "⚡" }
+        {
+          title: "🇮🇳 Republic Day",
+          focus: "National celebration",
+          desc: "Celebrates the adoption of the Constitution of India.",
+          category: "national",
+          icon: "🇮🇳"
+        },
+        {
+          title: "International Day of Clean Energy",
+          focus: "Renewable energy, Scope 2",
+          desc: "Advocates for renewable energy and energy efficiency worldwide.",
+          category: "esg",
+          icon: "⚡"
+        }
       ],
-      "1-28": [{ title: "Data Privacy Day", focus: "Data governance, stakeholder privacy", desc: "Raises awareness about privacy and data protection rights.", category: "esg", icon: "🔒" }],
-      
+
+      "1-28": [{
+        title: "Data Privacy Day",
+        focus: "Data governance, stakeholder privacy",
+        desc: "Raises awareness about privacy and data protection rights.",
+        category: "esg",
+        icon: "🔒"
+      }],
+
       // February
-      "2-2": [{ title: "World Wetlands Day", focus: "Water, biodiversity, ecosystems", desc: "Highlights the importance of wetlands to humanity and the planet.", category: "esg", icon: "🌿" }],
-      "2-4": [{ title: "World Cancer Day", focus: "Employee health & wellbeing", desc: "Raises awareness about cancer prevention and treatment.", category: "ehs", icon: "🎗️" }],
-      "2-11": [{ title: "International Day of Women and Girls in Science", focus: "Diversity, inclusion, STEM", desc: "Promotes full and equal access to science for women and girls.", category: "esg", icon: "👩‍🔬" }],
-      
+      "2-2": [{
+        title: "World Wetlands Day",
+        focus: "Water, biodiversity, ecosystems",
+        desc: "Highlights the importance of wetlands to humanity and the planet.",
+        category: "esg",
+        icon: "🌿"
+      }],
+
+      "2-4": [{
+        title: "World Cancer Day",
+        focus: "Employee health & wellbeing",
+        desc: "Raises awareness about cancer prevention and treatment.",
+        category: "ehs",
+        icon: "🎗️"
+      }],
+
+      "2-11": [{
+        title: "International Day of Women and Girls in Science",
+        focus: "Diversity, inclusion, STEM",
+        desc: "Promotes full and equal access to science for women and girls.",
+        category: "esg",
+        icon: "👩‍🔬"
+      }],
+
       // March
-      "3-3": [{ title: "World Wildlife Day", focus: "Biodiversity", desc: "Celebrates and raises awareness of the world's wild animals and plants.", category: "esg", icon: "🐘" }],
-      "3-8": [{ title: "International Women's Day", focus: "Gender diversity, inclusion", desc: "Celebrates women's achievements and calls for gender equality.", category: "esg", icon: "👩" }],
-      "3-18": [{ title: "Global Recycling Day", focus: "Waste management, circular economy", desc: "Promotes recycling and the circular economy to reduce waste.", category: "esg", icon: "♻️" }],
-      "3-21": [{ title: "International Day of Forests", focus: "Biodiversity, forests", desc: "Raises awareness of the importance of all types of forests.", category: "esg", icon: "🌳" }],
-      "3-22": [{ title: "World Water Day", focus: "Water consumption, water conservation", desc: "Advocates for sustainable management of freshwater resources.", category: "esg", icon: "💧" }],
-      "3-30": [{ title: "International Day of Zero Waste", focus: "Waste reduction, circular economy", desc: "Promotes zero-waste initiatives and circular economy.", category: "esg", icon: "🚮" }],
-      
+      "3-3": [{
+        title: "World Wildlife Day",
+        focus: "Biodiversity",
+        desc: "Celebrates and raises awareness of the world's wild animals and plants.",
+        category: "esg",
+        icon: "🐘"
+      }],
+
+      "3-8": [{
+        title: "International Women's Day",
+        focus: "Gender diversity, inclusion",
+        desc: "Celebrates women's achievements and calls for gender equality.",
+        category: "esg",
+        icon: "👩"
+      }],
+
+      "3-18": [{
+        title: "Global Recycling Day",
+        focus: "Waste management, circular economy",
+        desc: "Promotes recycling and the circular economy to reduce waste.",
+        category: "esg",
+        icon: "♻️"
+      }],
+
+      "3-21": [{
+        title: "International Day of Forests",
+        focus: "Biodiversity, forests",
+        desc: "Raises awareness of the importance of all types of forests.",
+        category: "esg",
+        icon: "🌳"
+      }],
+
+      "3-22": [{
+        title: "World Water Day",
+        focus: "Water consumption, water conservation",
+        desc: "Advocates for sustainable management of freshwater resources.",
+        category: "esg",
+        icon: "💧"
+      }],
+
+      "3-30": [{
+        title: "International Day of Zero Waste",
+        focus: "Waste reduction, circular economy",
+        desc: "Promotes zero-waste initiatives and circular economy.",
+        category: "esg",
+        icon: "🚮"
+      }],
+
       // April
-      "4-7": [{ title: "World Health Day", focus: "Occupational & employee health", desc: "Raises awareness about global health and wellbeing issues.", category: "ehs", icon: "🏥" }],
-      "4-22": [{ title: "Earth Day", focus: "Environment, climate action", desc: "Demonstrates support for environmental protection and climate action.", category: "esg", icon: "🌍" }],
-      "4-28": [{ title: "World Day for Safety and Health at Work", focus: "EHS, occupational safety, workplace hazards", desc: "Promotes the prevention of occupational accidents and diseases.", category: "ehs", icon: "🛡️" }],
-      
+      "4-7": [{
+        title: "World Health Day",
+        focus: "Occupational & employee health",
+        desc: "Raises awareness about global health and wellbeing issues.",
+        category: "ehs",
+        icon: "🏥"
+      }],
+
+      "4-22": [{
+        title: "Earth Day",
+        focus: "Environment, climate action",
+        desc: "Demonstrates support for environmental protection and climate action.",
+        category: "esg",
+        icon: "🌍"
+      }],
+
+      "4-28": [{
+        title: "World Day for Safety and Health at Work",
+        focus: "EHS, occupational safety, workplace hazards",
+        desc: "Promotes the prevention of occupational accidents and diseases.",
+        category: "ehs",
+        icon: "🛡️"
+      }],
+
       // May
-      "5-1": [{ title: "International Workers' Day", focus: "Labour practices, worker welfare", desc: "Celebrates the labor movement and worker rights globally.", category: "esg", icon: "👷" }],
-      "5-22": [{ title: "International Day for Biological Diversity", focus: "Biodiversity", desc: "Promotes biodiversity and sustainable ecosystems.", category: "esg", icon: "🦋" }],
-      "5-28": [{ title: "International Day of Action for Women's Health", focus: "Employee health, gender", desc: "Advocates for women's health and reproductive rights.", category: "ehs", icon: "💪" }],
-      
+      "5-1": [{
+        title: "International Workers' Day",
+        focus: "Labour practices, worker welfare",
+        desc: "Celebrates the labor movement and worker rights globally.",
+        category: "esg",
+        icon: "👷"
+      }],
+
+      "5-22": [{
+        title: "International Day for Biological Diversity",
+        focus: "Biodiversity",
+        desc: "Promotes biodiversity and sustainable ecosystems.",
+        category: "esg",
+        icon: "🦋"
+      }],
+
+      "5-28": [{
+        title: "International Day of Action for Women's Health",
+        focus: "Employee health, gender",
+        desc: "Advocates for women's health and reproductive rights.",
+        category: "ehs",
+        icon: "💪"
+      }],
+
       // June
-      "6-5": [{ title: "World Environment Day", focus: "Environmental management, pollution, climate", desc: "Encourages worldwide awareness and action for the environment.", category: "esg", icon: "🌱" }],
-      "6-8": [{ title: "World Oceans Day", focus: "Water, marine ecosystems", desc: "Raises awareness of the importance of oceans and marine life.", category: "esg", icon: "🌊" }],
-      "6-12": [{ title: "World Day Against Child Labour", focus: "Human rights, supply chain", desc: "Aims to eliminate child labor and protect children.", category: "esg", icon: "👶" }],
-      "6-17": [{ title: "World Day to Combat Desertification and Drought", focus: "Water, land, climate", desc: "Highlights land degradation and solutions to combat it.", category: "esg", icon: "🏜️" }],
-      "6-26": [{ title: "International Day Against Drug Abuse", focus: "Employee health & safety", desc: "Promotes drug abuse prevention and treatment in workplaces.", category: "ehs", icon: "🚫" }],
-      
+      "6-5": [{
+        title: "World Environment Day",
+        focus: "Environmental management, pollution, climate",
+        desc: "Encourages worldwide awareness and action for the environment.",
+        category: "esg",
+        icon: "🌱"
+      }],
+
+      "6-8": [{
+        title: "World Oceans Day",
+        focus: "Water, marine ecosystems",
+        desc: "Raises awareness of the importance of oceans and marine life.",
+        category: "esg",
+        icon: "🌊"
+      }],
+
+      "6-12": [{
+        title: "World Day Against Child Labour",
+        focus: "Human rights, supply chain",
+        desc: "Aims to eliminate child labor and protect children.",
+        category: "esg",
+        icon: "👶"
+      }],
+
+      "6-17": [{
+        title: "World Day to Combat Desertification and Drought",
+        focus: "Water, land, climate",
+        desc: "Highlights land degradation and solutions to combat it.",
+        category: "esg",
+        icon: "🏜️"
+      }],
+
+      "6-26": [{
+        title: "International Day Against Drug Abuse",
+        focus: "Employee health & safety",
+        desc: "Promotes drug abuse prevention and treatment in workplaces.",
+        category: "ehs",
+        icon: "🚫"
+      }],
+
       // July
-      "7-7": [{ title: "World Kiswahili Language Day", focus: "Cultural diversity", desc: "Promotes the preservation and usage of the Kiswahili language.", category: "esg", icon: "🗣️" }],
-      "7-15": [{ title: "World Youth Skills Day", focus: "Skill development, employability", desc: "Highlights the importance of equipping youth with skills for employment.", category: "esg", icon: "🎓" }],
-      "7-28": [{ title: "World Nature Conservation Day", focus: "Environment, biodiversity", desc: "Encourages sustainable practices to protect nature.", category: "esg", icon: "🌿" }],
-      "7-30": [{ title: "World Day Against Trafficking in Persons", focus: "Human rights, supply chain", desc: "Raises awareness of human trafficking and promotes prevention.", category: "esg", icon: "⛓️" }],
-      
-      // August - Matches BRSRDashboardView
-      "8-9": [{ title: "International Day of the World's Indigenous Peoples", focus: "Social responsibility, human rights", desc: "Celebrates indigenous peoples and their contributions.", category: "esg", icon: "🏹" }],
-      "8-12": [{ title: "International Youth Day", focus: "Social development, employment", desc: "Celebrates the role of youth in society and development.", category: "esg", icon: "🧑‍🎓" }],
-      "8-13": [{ title: "World Organ Donation Day", focus: "Health awareness, social responsibility", desc: "Raises awareness about organ donation and encourages people to become organ donors to save lives.", category: "ehs", icon: "❤️" }],
-      "8-14": [{ title: "International Cat Day", focus: "Animal welfare, biodiversity", desc: "Celebrates the bond between humans and cats, raises awareness about cat welfare, and promotes responsible pet ownership.", category: "esg", icon: "🐱" }],
-      "8-15": [{ title: "🇮🇳 Independence Day", focus: "National celebration", desc: "Marks India's independence from British rule in 1947.", category: "national", icon: "🇮🇳" }],
-      "8-19": [{ title: "World Humanitarian Day", focus: "Social responsibility", desc: "Honors humanitarian workers and celebrates their efforts.", category: "esg", icon: "🤝" }],
-      "8-29": [{ title: "International Day Against Nuclear Tests", focus: "Environmental / safety awareness", desc: "Raises awareness about the effects of nuclear weapon test explosions.", category: "esg", icon: "☢️" }],
-      
+      "7-7": [{
+        title: "World Kiswahili Language Day",
+        focus: "Cultural diversity",
+        desc: "Promotes the preservation and usage of the Kiswahili language.",
+        category: "esg",
+        icon: "🗣️"
+      }],
+
+      "7-15": [{
+        title: "World Youth Skills Day",
+        focus: "Skill development, employability",
+        desc: "Highlights the importance of equipping youth with skills for employment.",
+        category: "esg",
+        icon: "🎓"
+      }],
+
+      "7-28": [{
+        title: "World Nature Conservation Day",
+        focus: "Environment, biodiversity",
+        desc: "Encourages sustainable practices to protect nature.",
+        category: "esg",
+        icon: "🌿"
+      }],
+
+      "7-30": [{
+        title: "World Day Against Trafficking in Persons",
+        focus: "Human rights, supply chain",
+        desc: "Raises awareness of human trafficking and promotes prevention.",
+        category: "esg",
+        icon: "⛓️"
+      }],
+
+      // August
+      "8-9": [{
+        title: "International Day of the World's Indigenous Peoples",
+        focus: "Social responsibility, human rights",
+        desc: "Celebrates indigenous peoples and their contributions.",
+        category: "esg",
+        icon: "🏹"
+      }],
+
+      "8-12": [{
+        title: "International Youth Day",
+        focus: "Social development, employment",
+        desc: "Celebrates the role of youth in society and development.",
+        category: "esg",
+        icon: "🧑‍🎓"
+      }],
+
+      "8-13": [{
+        title: "World Organ Donation Day",
+        focus: "Health awareness, social responsibility",
+        desc: "Raises awareness about organ donation and encourages people to become organ donors to save lives.",
+        category: "ehs",
+        icon: "❤️"
+      }],
+
+      "8-14": [{
+        title: "International Cat Day",
+        focus: "Animal welfare, biodiversity",
+        desc: "Celebrates the bond between humans and cats, raises awareness about cat welfare, and promotes responsible pet ownership.",
+        category: "esg",
+        icon: "🐱"
+      }],
+
+      "8-15": [{
+        title: "🇮🇳 Independence Day",
+        focus: "National celebration",
+        desc: "Marks India's independence from British rule in 1947.",
+        category: "national",
+        icon: "🇮🇳"
+      }],
+
+      "8-19": [{
+        title: "World Humanitarian Day",
+        focus: "Social responsibility",
+        desc: "Honors humanitarian workers and celebrates their efforts.",
+        category: "esg",
+        icon: "🤝"
+      }],
+
+      "8-29": [{
+        title: "International Day Against Nuclear Tests",
+        focus: "Environmental / safety awareness",
+        desc: "Raises awareness about the effects of nuclear weapon test explosions.",
+        category: "esg",
+        icon: "☢️"
+      }],
+
       // September
-      "9-7": [{ title: "International Day of Clean Air for Blue Skies", focus: "Air emissions, pollution", desc: "Advocates for clean air and reducing air pollution.", category: "esg", icon: "🌤️" }],
-      "9-16": [{ title: "World Ozone Day", focus: "Ozone, refrigerants, environmental management", desc: "Celebrates the Montreal Protocol and efforts to protect the ozone layer.", category: "esg", icon: "🛡️" }],
-      "9-22": [{ title: "World Car-Free Day", focus: "Transport emissions, Scope 3", desc: "Promotes reducing car dependency and encouraging public transport.", category: "esg", icon: "🚶" }],
-      "9-25": [{ title: "World Environmental Health Day", focus: "Environmental health, EHS", desc: "Promotes environmental health awareness and disease prevention.", category: "ehs", icon: "🏥" }],
-      
+      "9-7": [{
+        title: "International Day of Clean Air for Blue Skies",
+        focus: "Air emissions, pollution",
+        desc: "Advocates for clean air and reducing air pollution.",
+        category: "esg",
+        icon: "🌤️"
+      }],
+
+      "9-16": [{
+        title: "World Ozone Day",
+        focus: "Ozone, refrigerants, environmental management",
+        desc: "Celebrates the Montreal Protocol and efforts to protect the ozone layer.",
+        category: "esg",
+        icon: "🛡️"
+      }],
+
+      "9-22": [{
+        title: "World Car-Free Day",
+        focus: "Transport emissions, Scope 3",
+        desc: "Promotes reducing car dependency and encouraging public transport.",
+        category: "esg",
+        icon: "🚶"
+      }],
+
+      "9-25": [{
+        title: "World Environmental Health Day",
+        focus: "Environmental health, EHS",
+        desc: "Promotes environmental health awareness and disease prevention.",
+        category: "ehs",
+        icon: "🏥"
+      }],
+
       // October
-      "10-1": [{ title: "International Day of Older Persons", focus: "Social responsibility, inclusion", desc: "Celebrates older persons and raises awareness of aging issues.", category: "esg", icon: "👴" }],
-      "10-4": [{ title: "World Animal Day", focus: "Biodiversity", desc: "Raises awareness about animal welfare and protection.", category: "esg", icon: "🐾" }],
-      "10-10": [{ title: "World Mental Health Day", focus: "Employee wellbeing", desc: "Promotes mental health awareness and support for all.", category: "ehs", icon: "🧠" }],
-      "10-13": [{ title: "International Day for Disaster Risk Reduction", focus: "Emergency preparedness, EHS", desc: "Promotes reducing disaster risks and building resilience.", category: "ehs", icon: "⚠️" }],
-      "10-16": [{ title: "World Food Day", focus: "Food security, community", desc: "Advocates for global food security and sustainable food systems.", category: "esg", icon: "🍲" }],
-      "10-24": [{ title: "United Nations Day", focus: "Sustainability / SDGs", desc: "Marks the anniversary of the UN Charter and the SDGs.", category: "esg", icon: "🌐" }],
-      
+      "10-1": [{
+        title: "International Day of Older Persons",
+        focus: "Social responsibility, inclusion",
+        desc: "Celebrates older persons and raises awareness of aging issues.",
+        category: "esg",
+        icon: "👴"
+      }],
+
+      "10-4": [{
+        title: "World Animal Day",
+        focus: "Biodiversity",
+        desc: "Raises awareness about animal welfare and protection.",
+        category: "esg",
+        icon: "🐾"
+      }],
+
+      "10-10": [{
+        title: "World Mental Health Day",
+        focus: "Employee wellbeing",
+        desc: "Promotes mental health awareness and support for all.",
+        category: "ehs",
+        icon: "🧠"
+      }],
+
+      "10-13": [{
+        title: "International Day for Disaster Risk Reduction",
+        focus: "Emergency preparedness, EHS",
+        desc: "Promotes reducing disaster risks and building resilience.",
+        category: "ehs",
+        icon: "⚠️"
+      }],
+
+      "10-16": [{
+        title: "World Food Day",
+        focus: "Food security, community",
+        desc: "Advocates for global food security and sustainable food systems.",
+        category: "esg",
+        icon: "🍲"
+      }],
+
+      "10-24": [{
+        title: "United Nations Day",
+        focus: "Sustainability / SDGs",
+        desc: "Marks the anniversary of the UN Charter and the SDGs.",
+        category: "esg",
+        icon: "🌐"
+      }],
+
       // November
-      "11-6": [{ title: "International Day for Preventing Exploitation of Environment in War", focus: "Environmental protection", desc: "Protects the environment during armed conflicts.", category: "esg", icon: "☮️" }],
-      "11-14": [{ title: "World Diabetes Day", focus: "Employee health", desc: "Raises awareness about diabetes prevention and management.", category: "ehs", icon: "💉" }],
-      "11-19": [{ title: "World Toilet Day", focus: "Water, sanitation, hygiene", desc: "Advocates for safe sanitation and water management.", category: "esg", icon: "🚽" }],
-      "11-25": [{ title: "International Day for Elimination of Violence Against Women", focus: "Workplace/social responsibility", desc: "Promotes ending violence against women and girls globally.", category: "esg", icon: "✊" }],
-      
+      "11-6": [{
+        title: "International Day for Preventing Exploitation of Environment in War",
+        focus: "Environmental protection",
+        desc: "Protects the environment during armed conflicts.",
+        category: "esg",
+        icon: "☮️"
+      }],
+
+      "11-14": [{
+        title: "World Diabetes Day",
+        focus: "Employee health",
+        desc: "Raises awareness about diabetes prevention and management.",
+        category: "ehs",
+        icon: "💉"
+      }],
+
+      "11-19": [{
+        title: "World Toilet Day",
+        focus: "Water, sanitation, hygiene",
+        desc: "Advocates for safe sanitation and water management.",
+        category: "esg",
+        icon: "🚽"
+      }],
+
+      "11-25": [{
+        title: "International Day for Elimination of Violence Against Women",
+        focus: "Workplace/social responsibility",
+        desc: "Promotes ending violence against women and girls globally.",
+        category: "esg",
+        icon: "✊"
+      }],
+
       // December
-      "12-3": [{ title: "International Day of Persons with Disabilities", focus: "Inclusion, accessibility", desc: "Promotes the rights and well-being of persons with disabilities.", category: "esg", icon: "♿" }],
-      "12-5": [{ title: "World Soil Day", focus: "Land, environment, biodiversity", desc: "Highlights the importance of soil health and conservation.", category: "esg", icon: "🌾" }],
-      "12-9": [{ title: "International Anti-Corruption Day", focus: "Governance, ethics, anti-corruption", desc: "Raises awareness about corruption and promotes integrity.", category: "esg", icon: "⚖️" }],
-      "12-10": [{ title: "Human Rights Day", focus: "Human rights, labour practices", desc: "Celebrates the adoption of the Universal Declaration of Human Rights.", category: "esg", icon: "✋" }],
-      "12-11": [{ title: "International Mountain Day", focus: "Biodiversity, ecosystems", desc: "Acknowledges the importance of mountains for life and climate.", category: "esg", icon: "⛰️" }]
+      "12-3": [{
+        title: "International Day of Persons with Disabilities",
+        focus: "Inclusion, accessibility",
+        desc: "Promotes the rights and well-being of persons with disabilities.",
+        category: "esg",
+        icon: "♿"
+      }],
+
+      "12-5": [{
+        title: "World Soil Day",
+        focus: "Land, environment, biodiversity",
+        desc: "Highlights the importance of soil health and conservation.",
+        category: "esg",
+        icon: "🌾"
+      }],
+
+      "12-9": [{
+        title: "International Anti-Corruption Day",
+        focus: "Governance, ethics, anti-corruption",
+        desc: "Raises awareness about corruption and promotes integrity.",
+        category: "esg",
+        icon: "⚖️"
+      }],
+
+      "12-10": [{
+        title: "Human Rights Day",
+        focus: "Human rights, labour practices",
+        desc: "Celebrates the adoption of the Universal Declaration of Human Rights.",
+        category: "esg",
+        icon: "✋"
+      }],
+
+      "12-11": [{
+        title: "International Mountain Day",
+        focus: "Biodiversity, ecosystems",
+        desc: "Acknowledges the importance of mountains for life and climate.",
+        category: "esg",
+        icon: "⛰️"
+      }]
     };
   }
 
   // =====================================================================
+  // DATABASE EVENTS
+  // =====================================================================
+
+  const databaseEvents = JSON.parse(
+    document.getElementById('calendar-events-data')?.textContent || '{}'
+  );
+
+  // =====================================================================
   // STATE
   // =====================================================================
+
   let currentYear = new Date().getFullYear();
   let currentMonth = new Date().getMonth();
+
   const today = new Date();
-  const todayKey = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
 
-  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const todayKey =
+    `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
 
-  function pad(n) { return n.toString().padStart(2, '0'); }
+  const monthNames = [
+    "January", "February", "March", "April",
+    "May", "June", "July", "August",
+    "September", "October", "November", "December"
+  ];
+
+  function pad(n) {
+    return n.toString().padStart(2, '0');
+  }
+
+  // =====================================================================
+  // EVENT HELPERS
+  // =====================================================================
+
+  function getEventChipClass(category) {
+    const classes = {
+      esg: 'chip-esg',
+      ehs: 'chip-ehs',
+      national: 'chip-national',
+      upcoming: 'chip-upcoming'
+    };
+
+    return classes[category] || 'chip-esg';
+  }
+
+  function getEventDetails(ev, dateKey) {
+    let details = `📝 ${ev.desc || ev.focus || 'No description available.'}`;
+
+    if (ev.category === 'upcoming') {
+      details += `\n\n📅 Date: ${dateKey}`;
+
+      if (ev.start) {
+        details += `\n🕒 Start: ${ev.start}`;
+      }
+
+      if (ev.end) {
+        details += `\n🕒 End: ${ev.end}`;
+      }
+
+      if (ev.status) {
+        details += `\n📌 Status: ${ev.status}`;
+      }
+    } else if (ev.focus) {
+      details += `\n\n🎯 ${ev.focus}`;
+    }
+
+    return details;
+  }
+
+  function showEventDetails(ev, dateKey) {
+    showToast(
+      `${ev.icon || '📅'} ${ev.title}`,
+      getEventDetails(ev, dateKey)
+    );
+  }
 
   // =====================================================================
   // BUILD CALENDAR
   // =====================================================================
+
   function buildCalendar() {
     const calBody = document.getElementById('calBody');
     calBody.innerHTML = '';
-    
-    document.getElementById('topMonthLabel').textContent = `${monthNames[currentMonth]} ${currentYear}`;
+
+    document.getElementById('topMonthLabel').textContent =
+      `${monthNames[currentMonth]} ${currentYear}`;
+
     document.getElementById('yearDisplay').textContent = currentYear;
 
     const firstOfMonth = new Date(currentYear, currentMonth, 1);
-    let startWeekday = (firstOfMonth.getDay() + 6) % 7;
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const daysInPrevMonth = new Date(currentYear, currentMonth, 0).getDate();
+    const startWeekday = (firstOfMonth.getDay() + 6) % 7;
 
-    let cells = [];
+    const daysInMonth =
+      new Date(currentYear, currentMonth + 1, 0).getDate();
+
+    const daysInPrevMonth =
+      new Date(currentYear, currentMonth, 0).getDate();
+
+    const cells = [];
+
     for (let i = startWeekday - 1; i >= 0; i--) {
-      cells.push({ day: daysInPrevMonth - i, dim: true });
+      cells.push({
+        day: daysInPrevMonth - i,
+        dim: true
+      });
     }
     for (let d = 1; d <= daysInMonth; d++) {
-      cells.push({ day: d, dim: false });
+      cells.push({
+        day: d,
+        dim: false
+      });
     }
     const totalCellsNeeded = cells.length <= 35 ? 35 : 42;
     let nextDay = 1;
     while (cells.length < totalCellsNeeded) {
-      cells.push({ day: nextDay, dim: true });
+      cells.push({
+        day: nextDay,
+        dim: true
+      });
+
       nextDay++;
     }
 
     const rows = totalCellsNeeded / 7;
     calBody.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
 
-    let esgCount = 0;
-    let monthCount = 0;
-    let ehsCount = 0;
+    let totalEventCount = 0;
+    let monthEventCount = 0;
+    let ehsEventCount = 0;
+
     const esgDates = getESGDates(currentYear);
 
     for (let r = 0; r < rows; r++) {
       const rowDiv = document.createElement('div');
       rowDiv.className = 'cal-row';
+
       for (let c = 0; c < 7; c++) {
         const cellData = cells[r * 7 + c];
+
         const cellDiv = document.createElement('div');
         cellDiv.className = 'cal-cell' + (cellData.dim ? ' dim' : '');
 
@@ -906,143 +1460,286 @@
 
         if (!cellData.dim) {
           const monthNum = currentMonth + 1;
-          dateKey = `${currentYear}-${pad(monthNum)}-${pad(cellData.day)}`;
+
+          dateKey =
+            `${currentYear}-${pad(monthNum)}-${pad(cellData.day)}`;
+
           const esgKey = `${monthNum}-${cellData.day}`;
-          events = esgDates[esgKey] || [];
+
+          const staticEvents = esgDates[esgKey] || [];
+          const upcomingEvents = databaseEvents[dateKey] || [];
+
+          // Combine static and database events
+          events = [...staticEvents, ...upcomingEvents];
+
           isToday = dateKey === todayKey;
-          
+
           if (events.length > 0) {
             const hasESG = events.some(e => e.category === 'esg');
             const hasEHS = events.some(e => e.category === 'ehs');
             const hasNational = events.some(e => e.category === 'national');
-            
-            if (hasESG) cellDiv.classList.add('has-esg');
-            if (hasEHS) cellDiv.classList.add('has-ehs');
-            if (hasNational) cellDiv.classList.add('has-national');
-            
-            if (hasEHS) ehsCount++;
-            esgCount += events.length;
-            if (monthNum === currentMonth + 1) monthCount += events.length;
+            const hasUpcoming = events.some(e => e.category === 'upcoming');
+
+            if (hasESG) {
+              cellDiv.classList.add('has-esg');
+            }
+
+            if (hasEHS) {
+              cellDiv.classList.add('has-ehs');
+            }
+
+            if (hasNational) {
+              cellDiv.classList.add('has-national');
+            }
+
+            if (hasUpcoming) {
+              cellDiv.classList.add('has-upcoming');
+            }
+
+            totalEventCount += events.length;
+            monthEventCount += events.length;
+
+            ehsEventCount += events.filter(
+              e => e.category === 'ehs'
+            ).length;
           }
+
           if (isToday) {
             cellDiv.classList.add('today-cell');
           }
         }
 
+        // Date number
         const dateSpan = document.createElement('div');
-        dateSpan.className = 'cell-date' + (isToday ? ' today' : '');
+
+        dateSpan.className =
+          'cell-date' + (isToday ? ' today' : '');
+
         dateSpan.textContent = cellData.day;
+
         cellDiv.appendChild(dateSpan);
 
+        // Event chips
         if (events.length > 0) {
           const displayEvents = events.slice(0, 3);
+
           displayEvents.forEach(ev => {
             const chip = document.createElement('div');
-            const chipClass = ev.category === 'esg' ? 'chip-esg' : (ev.category === 'ehs' ? 'chip-ehs' : 'chip-national');
-            chip.className = `event-chip ${chipClass}`;
-            chip.innerHTML = `<span class="emoji">${ev.icon || '📅'}</span><span class="title">${ev.title}</span>`;
-            chip.title = `Click for details: ${ev.focus}`;
+
+            chip.className =
+              `event-chip ${getEventChipClass(ev.category)}`;
+
+            const emoji = document.createElement('span');
+            emoji.className = 'emoji';
+            emoji.textContent = ev.icon || '📅';
+
+            const title = document.createElement('span');
+            title.className = 'title';
+            title.textContent = ev.title || 'Untitled Event';
+
+            chip.appendChild(emoji);
+            chip.appendChild(title);
+
+            chip.title =
+              `Click for details: ${ev.focus || ev.title || 'Event'}`;
+
             chip.onclick = (e) => {
               e.stopPropagation();
-              showToast(`📅 ${ev.title}`, `📝 ${ev.desc || ev.focus}\n\n🎯 ${ev.focus}`);
+              if (ev.url) {
+                window.location.href = ev.url;
+                return;
+              }
+              showEventDetails(ev, dateKey);
             };
+
             cellDiv.appendChild(chip);
           });
 
+          // More events indicator
           if (events.length > 3) {
             const moreChip = document.createElement('div');
+
             moreChip.className = 'event-chip chip-more';
-            moreChip.innerHTML = `<span class="title">+${events.length - 3} more</span>`;
+
+            const moreTitle = document.createElement('span');
+            moreTitle.className = 'title';
+            moreTitle.textContent = `+${events.length - 3} more`;
+
+            moreChip.appendChild(moreTitle);
+
             moreChip.onclick = (e) => {
               e.stopPropagation();
-              const allTitles = events.map(ev => `${ev.icon || '📅'} ${ev.title}\n   ${ev.desc || ev.focus}`).join('\n\n');
-              showToast(`📅 ${events.length} Events`, allTitles);
+
+              const allTitles = events.map(ev => {
+                return `${ev.icon || '📅'} ${ev.title}\n${getEventDetails(ev, dateKey)}`;
+              }).join('\n\n');
+
+              showToast(
+                `📅 ${events.length} Events`,
+                allTitles
+              );
             };
+
             cellDiv.appendChild(moreChip);
           }
 
+          // Event focus
           const focusSpan = document.createElement('div');
+
           focusSpan.className = 'event-focus';
-          focusSpan.textContent = events[0].focus;
+          focusSpan.textContent =
+            events[0].focus || events[0].desc || '';
+
           cellDiv.appendChild(focusSpan);
         }
 
+        // Day click
         cellDiv.onclick = () => {
-          if (events.length > 0) {
-            if (events.length === 1) {
-              showToast(`📅 ${events[0].title}`, `📝 ${events[0].desc || events[0].focus}\n\n🎯 ${events[0].focus}`);
-            } else {
-              const allTitles = events.map(ev => `${ev.icon || '📅'} ${ev.title}\n   ${ev.desc || ev.focus}`).join('\n\n');
-              showToast(`📅 ${events.length} Events on ${cellData.day} ${monthNames[currentMonth]}`, allTitles);
-            }
+          if (events.length === 1) {
+            showEventDetails(events[0], dateKey);
+          } else if (events.length > 1) {
+            const allTitles = events.map(ev => {
+              return `${ev.icon || '📅'} ${ev.title}\n${getEventDetails(ev, dateKey)}`;
+            }).join('\n\n');
+
+            showToast(
+              `📅 ${events.length} Events on ${cellData.day} ${monthNames[currentMonth]}`,
+              allTitles
+            );
           } else {
-            showToast('📅 No events', `${monthNames[currentMonth]} ${cellData.day}, ${currentYear}`);
+            showToast(
+              '📅 No events',
+              `${monthNames[currentMonth]} ${cellData.day}, ${currentYear}`
+            );
           }
         };
 
         rowDiv.appendChild(cellDiv);
       }
+
       calBody.appendChild(rowDiv);
     }
 
-    document.getElementById('esgCount').textContent = esgCount;
-    document.getElementById('monthCount').textContent = monthCount;
-    document.getElementById('ehsCount').textContent = ehsCount;
-    document.getElementById('legendCount').textContent = Object.keys(esgDates).length;
+    // Sidebar statistics
+    document.getElementById('esgCount').textContent =
+      totalEventCount;
+
+    document.getElementById('monthCount').textContent =
+      monthEventCount;
+
+    document.getElementById('ehsCount').textContent =
+      ehsEventCount;
+
+    // Count all static events
+    const totalStaticEvents = Object.values(esgDates)
+      .reduce((total, events) => total + events.length, 0);
+
+    // Count all database events
+    const totalDatabaseEvents = Object.values(databaseEvents)
+      .reduce((total, events) => total + events.length, 0);
+
+    document.getElementById('legendCount').textContent =
+      totalStaticEvents + totalDatabaseEvents;
   }
 
   // =====================================================================
   // NAVIGATION
   // =====================================================================
+
   function shiftMonth(delta) {
     currentMonth += delta;
-    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
-    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+
+    if (currentMonth < 0) {
+      currentMonth = 11;
+      currentYear--;
+    }
+
+    if (currentMonth > 11) {
+      currentMonth = 0;
+      currentYear++;
+    }
+
     buildCalendar();
   }
 
   function goToday() {
     const d = new Date();
+
     currentYear = d.getFullYear();
     currentMonth = d.getMonth();
+
     buildCalendar();
-    showToast('📅 Today', `${monthNames[currentMonth]} ${d.getDate()}, ${currentYear}`);
+
+    showToast(
+      '📅 Today',
+      `${monthNames[currentMonth]} ${d.getDate()}, ${currentYear}`
+    );
   }
 
   function goToNextYear() {
     currentYear++;
+
     buildCalendar();
-    showToast('📅 Year Changed', `Now viewing ${currentYear}`);
+
+    showToast(
+      '📅 Year Changed',
+      `Now viewing ${currentYear}`
+    );
   }
 
   function goToPreviousYear() {
     currentYear--;
+
     buildCalendar();
-    showToast('📅 Year Changed', `Now viewing ${currentYear}`);
+
+    showToast(
+      '📅 Year Changed',
+      `Now viewing ${currentYear}`
+    );
   }
 
   // =====================================================================
   // TOAST
   // =====================================================================
+
   function showToast(title, sub) {
     const toast = document.getElementById('toast');
+
     document.getElementById('toastTitle').textContent = title;
     document.getElementById('toastSub').textContent = sub || '';
+
     toast.classList.add('show');
+
     clearTimeout(toast._timeout);
+
     toast._timeout = setTimeout(() => {
       toast.classList.remove('show');
-    }, 4000);
+    }, 5000);
   }
 
   // =====================================================================
   // KEYBOARD SHORTCUTS
   // =====================================================================
+
   document.addEventListener('keydown', (e) => {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-    if (e.key === 'ArrowLeft') shiftMonth(-1);
-    if (e.key === 'ArrowRight') shiftMonth(1);
-    if (e.key === 't' || e.key === 'T') goToday();
+    if (
+      e.target.tagName === 'INPUT' ||
+      e.target.tagName === 'TEXTAREA'
+    ) {
+      return;
+    }
+
+    if (e.key === 'ArrowLeft') {
+      shiftMonth(-1);
+    }
+
+    if (e.key === 'ArrowRight') {
+      shiftMonth(1);
+    }
+
+    if (e.key === 't' || e.key === 'T') {
+      goToday();
+    }
   });
 
   // =====================================================================
@@ -1051,8 +1748,16 @@
   buildCalendar();
 
   setTimeout(() => {
-    const count = Object.keys(getESGDates(currentYear)).length;
-    showToast('🌱 ESG Calendar Ready', `Tracking ${count} global events for ${currentYear}`);
+    const staticCount = Object.values(getESGDates(currentYear))
+      .reduce((total, events) => total + events.length, 0);
+
+    const databaseCount = Object.values(databaseEvents)
+      .reduce((total, events) => total + events.length, 0);
+
+    showToast(
+      '🌱 ESG Calendar Ready',
+      `Tracking ${staticCount} global events and ${databaseCount} news/event entries for ${currentYear}`
+    );
   }, 500);
 </script>
 {% endblock %}

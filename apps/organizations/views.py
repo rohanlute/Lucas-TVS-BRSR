@@ -29,6 +29,8 @@ from .forms import FinancialYearForm
 from django.db import transaction
 from apps.companies.models import Company
 from .workflow_configuration_engine import WorkflowConfigurationEngine
+from apps.news_feed.models import *
+from apps.news_feed.views import (audience_scoped_news_events, upcoming_event_queryset)
 
 class CanAccessOrganizationMixin(UserPassesTestMixin):
 
@@ -237,32 +239,145 @@ class FinancialYearUpdateView(LoginRequiredMixin, UpdateView):
         print(form.errors)
         return super().form_invalid(form)
 
-class CalendarWeekView(TemplateView):
+class CalendarWeekView(LoginRequiredMixin, TemplateView):
     template_name = "organizations/calendar.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        context["events"] = [
-            {
-                "title": "Stretch",
-                "start": "2025-06-30T08:00:00",
-                "end": "2025-06-30T09:00:00",
-                "color": "#ef4444",
-            },
-            {
-                "title": "Power Strength",
-                "start": "2025-06-30T09:00:00",
-                "end": "2025-06-30T10:00:00",
-                "color": "#16a34a",
-            },
-            {
-                "title": "Pilates Mat",
-                "start": "2025-07-01T07:30:00",
-                "end": "2025-07-01T08:40:00",
-                "color": "#3b82f6",
-            },
-        ]
+        now = timezone.now()
+        today = timezone.localdate(now)
+
+        # Fetch published and scheduled upcoming events
+        queryset = NewsEvent.objects.filter(
+            is_event=True,
+            status__in=[
+                NewsEvent.Status.PUBLISHED,
+                NewsEvent.Status.SCHEDULED,
+            ],
+        )
+
+        # Include future events and currently active events
+        queryset = upcoming_event_queryset(queryset, now)
+
+        # Apply plant and department audience restrictions
+        queryset = audience_scoped_news_events(
+            queryset,
+            self.request.user,
+        )
+
+        queryset = queryset.select_related(
+            "created_by"
+        ).prefetch_related(
+            "plants",
+            "departments",
+        ).order_by("start_datetime")
+
+        calendar_events = {}
+
+        for event in queryset:
+            if not event.start_datetime:
+                continue
+
+            start_date = timezone.localtime(event.start_datetime).date()
+
+            end_date = (
+                timezone.localtime(event.end_datetime).date()
+                if event.end_datetime
+                else start_date
+            )
+
+            display_start = max(start_date, today)
+
+            current_date = display_start
+
+            while current_date <= end_date:
+                date_key = current_date.strftime("%Y-%m-%d")
+
+                calendar_events.setdefault(date_key, []).append({
+                    "id": event.pk,
+                    "title": event.title,
+                    "desc": event.description or "",
+                    "focus": "Upcoming Event",
+                    "category": "upcoming",
+                    "icon": "📅",
+                    "status": event.get_status_display(),
+                    "url": f"/news_feed/view/{event.pk}/",
+                    "start": timezone.localtime(event.start_datetime).strftime("%I:%M %p"),
+                    "end": (
+                        timezone.localtime(event.end_datetime).strftime("%I:%M %p")
+                        if event.end_datetime
+                        else ""
+                    ),
+                })
+
+                current_date += timedelta(days=1)
+
+        # Scheduled news and published news that remains active are also
+        # represented on the calendar, on their publish date through expiry.
+        news_queryset = NewsEvent.objects.filter(is_event=False).filter(
+            (
+                Q(status=NewsEvent.Status.PUBLISHED)
+                & (Q(published_at__isnull=True) | Q(published_at__lte=now))
+            )
+            | Q(
+                status=NewsEvent.Status.SCHEDULED,
+                start_datetime__gte=now,
+            )
+        ).filter(
+            Q(end_datetime__isnull=True) | Q(end_datetime__gte=now)
+        )
+        news_queryset = audience_scoped_news_events(
+            news_queryset, self.request.user
+        ).select_related("created_by").prefetch_related("plants", "departments")
+
+        for news_item in news_queryset:
+            occurrence_datetime = (
+                news_item.start_datetime
+                if news_item.status == NewsEvent.Status.SCHEDULED
+                else news_item.published_at
+                or news_item.start_datetime
+                or news_item.created_at
+            )
+            if not occurrence_datetime:
+                continue
+
+            start_date = timezone.localtime(occurrence_datetime).date()
+            end_date = (
+                timezone.localtime(news_item.end_datetime).date()
+                if news_item.end_datetime
+                else start_date
+            )
+            current_date = start_date
+
+            while current_date <= end_date:
+                date_key = current_date.strftime("%Y-%m-%d")
+                calendar_events.setdefault(date_key, []).append({
+                    "id": news_item.pk,
+                    "title": news_item.title,
+                    "desc": news_item.description or "",
+                    "focus": "News update",
+                    "category": "upcoming",
+                    "icon": "📰",
+                    "status": news_item.get_status_display(),
+                    "start": timezone.localtime(occurrence_datetime).strftime("%I:%M %p"),
+                    "end": (
+                        timezone.localtime(news_item.end_datetime).strftime("%I:%M %p")
+                        if news_item.end_datetime
+                        else ""
+                    ),
+                    "url": f"/news_feed/view/{news_item.pk}/",
+                })
+                current_date += timedelta(days=1)
+
+        # json_script serializes the value in the template, so pass the Python
+        # object here; pre-encoding it would make the browser parse a string.
+        context["calendar_events_json"] = calendar_events
+
+        context["upcoming_event_count"] = sum(
+            len(events)
+            for events in calendar_events.values()
+        )
 
         return context
 
