@@ -1015,10 +1015,15 @@
                         <h2><i class="fas fa-bell me-2 text-success"></i>Automatic delivery</h2>
                     </div>
                     <div class="news-card-body">
-                        <div class="status-note">
-                            <i class="fas fa-info-circle"></i>
-                            <span>Email and in-app channels are enabled automatically. Announcement and reminder dates follow the publication or event schedule.</span>
-                        </div>
+                        <label class="check-panel" for="{{ form.send_email.id_for_label }}">
+                            <div>{{ form.send_email }}</div>
+                            <div>
+                                <span class="field-label">{{ form.send_email.label }}</span>
+                                <div class="field-help">Send announcements and configured event reminders to users matching the selected plant and department audience.</div>
+                                {% if form.send_email.errors %}<div class="field-errors">{{ form.send_email.errors }}</div>{% endif %}
+                            </div>
+                        </label>
+                        <div class="field-help mt-2">In-app and News Line entries are created automatically. Emails are sent when their scheduled delivery time arrives.</div>
                     </div>
                 </section>
 

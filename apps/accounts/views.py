@@ -19,7 +19,11 @@ from apps.organizations.models import Plant
 from apps.email_master.services import EmailService
 from django.http import HttpResponseRedirect
 from django.template.loader import render_to_string
-from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.http import (
+    url_has_allowed_host_and_scheme,
+    urlsafe_base64_encode,
+    urlsafe_base64_decode,
+)
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes, force_str
 from django.conf import settings
@@ -43,7 +47,11 @@ class LoginView(View):
     template_name = 'base/login.html'
 
     def get(self, request):
-        return render(request, self.template_name)
+        return render(
+            request,
+            self.template_name,
+            {'next_url': request.GET.get('next', '')},
+        )
 
     def post(self, request):
         username = (request.POST.get('username') or '').strip()
@@ -64,7 +72,11 @@ class LoginView(View):
                     request,
                     'This account is inactive. Please contact the administrator.'
                 )
-                return render(request, self.template_name)
+                return render(
+                    request,
+                    self.template_name,
+                    {'next_url': request.POST.get('next', '')},
+                )
 
             # Login the user
             login(request, user)
@@ -80,6 +92,13 @@ class LoginView(View):
                 user.company.save(update_fields=['last_login'])
             
             messages.success(request, f'Welcome back, {user.get_full_name() or user.username}!')
+            next_url = request.POST.get('next', '')
+            if next_url and url_has_allowed_host_and_scheme(
+                next_url,
+                allowed_hosts={request.get_host()},
+                require_https=request.is_secure(),
+            ):
+                return redirect(next_url)
             return redirect('accounts:dashboard')
 
         inactive_user = User.objects.filter(username=username).only('is_active').first()
@@ -88,10 +107,18 @@ class LoginView(View):
                 request,
                 'This account is inactive. Please contact the administrator.'
             )
-            return render(request, self.template_name)
+            return render(
+                request,
+                self.template_name,
+                {'next_url': request.POST.get('next', '')},
+            )
 
         messages.error(request, 'Invalid Username or Password')
-        return render(request, self.template_name)
+        return render(
+            request,
+            self.template_name,
+            {'next_url': request.POST.get('next', '')},
+        )
 
 # -----------------------------------------------
 # ============= LOGOUT ==========================

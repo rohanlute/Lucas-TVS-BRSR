@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News Update</title>
+</head>
+
+<body style="margin:0; padding:0; background-color:#f4f7fb; font-family:Arial, Helvetica, sans-serif; color:#26364b;">
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+           style="background-color:#f4f7fb; padding:30px 15px;">
+        <tr>
+            <td align="center">
+
+                <!-- Main Container -->
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                       style="max-width:640px; background-color:#ffffff; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden;">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#173b68,#245be8); padding:30px 35px; color:#ffffff;">
+
+                            <p style="margin:0 0 12px; font-size:12px; font-weight:bold; letter-spacing:1.5px; color:#c9dcff;">
+                                NEWS UPDATE
+                            </p>
+
+                            <h1 style="margin:0; font-size:25px; line-height:1.4; font-weight:700; color:#ffffff;">
+                                Latest News & Announcements
+                            </h1>
+
+                            <p style="margin:10px 0 0; font-size:14px; line-height:1.6; color:#e5edff;">
+                                Stay updated with the latest news and important announcements.
+                            </p>
+
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding:32px 35px;">
+
+                            <!-- News Label -->
+                            <table role="presentation" cellspacing="0" cellpadding="0" style="margin-bottom:18px;">
+                                <tr>
+                                    <td style="padding:6px 12px; background-color:#eff6ff; border-radius:20px;">
+                                        <span style="font-size:11px; font-weight:bold; letter-spacing:0.8px; color:#245be8;">
+                                            LATEST NEWS
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- News Title -->
+                            <h2 style="margin:0 0 18px; font-size:23px; line-height:1.4; color:#173b68;">
+                                {{ content.title }}
+                            </h2>
+
+                            <!-- Divider -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                <tr>
+                                    <td style="height:3px; width:55px; background-color:#245be8; border-radius:3px;"></td>
+                                    <td></td>
+                                </tr>
+                            </table>
+
+                            <!-- News Description -->
+                            <div style="margin-top:22px; font-size:15px; line-height:1.8; color:#526176; white-space:pre-line;">
+                                {{ content.description }}
+                            </div>
+
+                            <!-- Call to Action -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                   style="margin-top:30px;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="{{ detail_url }}"
+                                           style="display:inline-block; padding:13px 28px; background-color:#245be8; color:#ffffff; text-decoration:none; font-size:14px; font-weight:bold; border-radius:7px;">
+                                            Read Full News
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin:25px 0 0; font-size:13px; line-height:1.7; color:#718096; text-align:center;">
+                                Stay informed and connected with the latest updates.
+                            </p>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding:20px 30px; background-color:#f8fafc; border-top:1px solid #e8edf3; text-align:center;">
+
+                            <p style="margin:0; font-size:12px; line-height:1.6; color:#8793a3;">
+                                This is an automated news notification.
+                            </p>
+
+                            <p style="margin:7px 0 0; font-size:12px; color:#a0aab8;">
+                                © Lucas TVS | BRSR Portal
+                            </p>
+
+                        </td>
+                    </tr>
+
+                </table>
+                <!-- End Main Container -->
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>

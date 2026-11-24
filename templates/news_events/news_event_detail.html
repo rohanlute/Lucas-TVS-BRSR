@@ -65,43 +65,6 @@
         </div>
       </section>
       {% endif %}
-      <section class="news-card">
-        <div class="news-card-head">
-          <h2>Delivery schedule</h2>
-        </div>
-        <div class="news-card-body">
-          <div class="table-responsive">
-            <table class="table table-sm align-middle mb-0">
-              <thead>
-                <tr>
-                  <th>Delivery</th>
-                  <th>Channel</th>
-                  <th>Scheduled</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for delivery in delivery_schedules %}
-                <tr>
-                  <td>{{ delivery.get_delivery_type_display }}</td>
-                  <td>{{ delivery.get_channel_display }}</td>
-                  <td>{{ delivery.scheduled_for|date:'d M Y · g:i A' }}</td>
-                  <td>
-                    <span class="news-pill {% if delivery.status == 'SENT' %}pill-green{% elif delivery.status == 'FAILED' %}pill-amber{% else %}pill-gray{% endif %}">
-                      {{ delivery.get_status_display }}
-                    </span>
-                  </td>
-                </tr>
-                {% empty %}
-                <tr>
-                  <td colspan="4" class="text-muted py-3">No deliveries are scheduled for this item.</td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
       <section class="news-card"><div class="news-card-head">
         <h2>Activity</h2>
       </div>

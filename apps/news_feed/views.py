@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+import logging
+from threading import Thread
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
@@ -14,6 +16,9 @@ from django.views import View
 from django.views.generic import *
 from .forms import *
 from .models import *
+
+
+logger = logging.getLogger(__name__)
 
 
 def get_related_ids(user, relation_names):
@@ -130,9 +135,14 @@ def _aware_datetime(day, send_time):
 def _create_delivery(content, delivery_type, channel, scheduled_for, reminder_rule=None):
     """Create/update a delivery slot without duplicating an existing slot."""
     now = timezone.now()
+    # Announcement slots are due immediately when their publication time is
+    # now or in the past. Only missed reminders should be skipped.
     status = (
         NewsEventDelivery.Status.SKIPPED
-        if scheduled_for < now
+        if (
+            scheduled_for < now
+            and delivery_type == NewsEventDelivery.DeliveryType.REMINDER
+        )
         else NewsEventDelivery.Status.PENDING
     )
     defaults = {"status": status, "reminder_rule": reminder_rule}
@@ -158,6 +168,40 @@ def _create_delivery(content, delivery_type, channel, scheduled_for, reminder_ru
     return delivery
 
 
+def send_published_announcement_now(content):
+    """Start due announcement delivery in the background for any item type."""
+    now = timezone.now()
+    delivery = content.delivery_schedules.filter(
+        delivery_type=NewsEventDelivery.DeliveryType.ANNOUNCEMENT,
+        channel=NewsEventDelivery.Channel.EMAIL,
+        status=NewsEventDelivery.Status.PENDING,
+        scheduled_for__lte=now,
+    ).order_by("scheduled_for", "pk").first()
+    if not delivery:
+        return False
+
+    try:
+        # This immediate-publish path must not depend on a running Celery
+        # worker. The task's conditional DB claim prevents duplicate sending
+        # if the periodic Celery dispatcher picks up the same row.
+        from .tasks import run_email_delivery_in_background
+
+        Thread(
+            target=run_email_delivery_in_background,
+            args=(delivery.pk,),
+            name=f"news-event-email-{delivery.pk}",
+            daemon=True,
+        ).start()
+        return True
+    except Exception as exc:
+        logger.warning(
+            "Could not start background News/Event delivery %s: %s",
+            delivery.pk,
+            exc,
+        )
+        return False
+
+
 def refresh_delivery_schedules(content):
     """Rebuild pending delivery rows after a News/Event is saved.
 
@@ -178,9 +222,9 @@ def refresh_delivery_schedules(content):
         return
     now = timezone.now()
     if content.is_event:
-        announcement_time = now
+        announcement_time = content.published_at or now
     elif content.status == NewsEvent.Status.SCHEDULED and content.start_datetime:
-        announcement_time = content.start_datetime
+        announcement_time = max(content.start_datetime, now)
     else:
         announcement_time = content.published_at or now
 
@@ -208,7 +252,7 @@ def refresh_delivery_schedules(content):
 
     if content.start_datetime:
         for rule in content.reminder_rules.filter(is_active=True):
-            reminder_day = content.start_datetime.date() - timedelta(
+            reminder_day = timezone.localtime(content.start_datetime).date() - timedelta(
                 days=rule.days_before
             )
             reminder_datetime = _aware_datetime(reminder_day, rule.send_time)
@@ -575,6 +619,7 @@ class NewsEventDetailView(LoginRequiredMixin, NewsEventPermissionRequiredMixin, 
 class NewsEventPublicDetailView(LoginRequiredMixin, DetailView):
     """Read-only detail page for published News/Events, including expired items."""
 
+    login_url = reverse_lazy("accounts:login")
     model = NewsEvent
     template_name = "news_events/news_event_public_detail.html"
     context_object_name = "news_event"
@@ -691,8 +736,6 @@ class NewsEventMultiFormProcessingMixin:
         with transaction.atomic():
             self.object = form.save(commit=False)
 
-            # Delivery channels are automatic for every News/Event item.
-            self.object.send_email = True
             self.object.send_in_app = True
             self.object.show_in_news_line = True
 
@@ -773,6 +816,21 @@ class NewsEventMultiFormProcessingMixin:
                     NewsEventActivity.Action.PUBLISHED,
                     user,
                     note="News/Event published.",
+                )
+
+        if (
+            self.object.status == NewsEvent.Status.PUBLISHED
+            and old_status != NewsEvent.Status.PUBLISHED
+        ):
+            if self.object.send_email:
+                queued = send_published_announcement_now(self.object)
+                self.success_message = (
+                    "News/Event published successfully. Email notification "
+                    + (
+                        "queued for background delivery."
+                        if queued
+                        else "will be processed."
+                    )
                 )
 
         messages.success(self.request, self.success_message)
@@ -882,6 +940,17 @@ class PublishNewsEventView(NewsEventStatusActionView):
                 NewsEventActivity.Action.PUBLISHED,
                 user,
                 note="News/Event manually published.",
+            )
+
+        if content.send_email:
+            queued = send_published_announcement_now(content)
+            self.success_message = (
+                "News/Event published successfully. Email notification "
+                + (
+                    "queued for background delivery."
+                    if queued
+                    else "will be processed."
+                )
             )
 
 

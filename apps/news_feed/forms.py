@@ -67,6 +67,7 @@ class NewsEventForm(BootstrapFormMixin, forms.ModelForm):
             "all_plants",
             "plants",
             "departments",
+            "send_email",
             "reminder_days",
             "reminder_send_time",
             "status",
@@ -96,6 +97,7 @@ class NewsEventForm(BootstrapFormMixin, forms.ModelForm):
             "all_plants": forms.CheckboxInput(),
             "plants": forms.SelectMultiple(attrs={"size": 6}),
             "departments": forms.SelectMultiple(attrs={"size": 6}),
+            "send_email": forms.CheckboxInput(),
             "status": forms.HiddenInput(),
         }
         labels = {
@@ -106,6 +108,7 @@ class NewsEventForm(BootstrapFormMixin, forms.ModelForm):
             "all_plants": "All plants",
             "plants": "Select plants",
             "departments": "Select departments",
+            "send_email": "Send email notification",
         }
         help_texts = {
             "start_datetime": (

@@ -1,6 +1,9 @@
 from datetime import timedelta
+from urllib.parse import parse_qs, urlsplit
 
+from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.urls import reverse
 from django.utils import timezone
 
 from .forms import NewsEventForm
@@ -67,3 +70,65 @@ class UpcomingEventTests(TestCase):
             delivery_type=NewsEventDelivery.DeliveryType.EXPIRY
         )
         self.assertEqual(expiry.scheduled_for, end_time)
+
+
+class NewsEventEmailLinkTests(TestCase):
+    def test_email_detail_redirects_to_login_then_returns_to_detail(self):
+        user = get_user_model().objects.create_user(
+            username="email-link-user",
+            password="test-password",
+        )
+        content = NewsEvent.objects.create(
+            title="Email link event",
+            description="Details from the email",
+            status=NewsEvent.Status.PUBLISHED,
+            all_plants=True,
+        )
+        detail_url = reverse(
+            "news_events:news_event_public_detail",
+            kwargs={"pk": content.pk},
+        )
+
+        response = self.client.get(detail_url)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(urlsplit(response.url).path, reverse("accounts:login"))
+        self.assertEqual(
+            parse_qs(urlsplit(response.url).query)["next"],
+            [detail_url],
+        )
+
+        response = self.client.post(
+            reverse("accounts:login"),
+            {
+                "username": user.username,
+                "password": "test-password",
+                "next": detail_url,
+            },
+        )
+        self.assertRedirects(
+            response,
+            detail_url,
+            fetch_redirect_response=False,
+        )
+        self.assertEqual(self.client.get(detail_url).status_code, 200)
+
+    def test_login_rejects_external_next_url(self):
+        user = get_user_model().objects.create_user(
+            username="email-link-user",
+            password="test-password",
+        )
+
+        response = self.client.post(
+            reverse("accounts:login"),
+            {
+                "username": user.username,
+                "password": "test-password",
+                "next": "https://example.com/",
+            },
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("accounts:dashboard"),
+            fetch_redirect_response=False,
+        )

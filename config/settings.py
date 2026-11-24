@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 from celery.schedules import crontab
 
@@ -187,7 +188,7 @@ EMAIL_HOST_USER = 'support@fireinspector.co.in'
 EMAIL_HOST_PASSWORD = 'Support@Fire'
 DEFAULT_FROM_EMAIL = 'BRSR <support@fireinspector.co.in>'
 
-SITE_URL = "http://127.0.0.1:8000/"
+SITE_URL = os.environ.get("SITE_URL", "http://127.0.0.1:8000").rstrip("/")
 
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
@@ -200,5 +201,9 @@ CELERY_BEAT_SCHEDULE = {
     "brsr-generate-scheduled-assignments": {
         "task": "brsr.generate_scheduled_assignments",
         "schedule": crontab(hour=1, minute=0),
+    },
+    "news-feed-dispatch-due-email-deliveries": {
+        "task": "news_feed.dispatch_due_email_deliveries",
+        "schedule": crontab(minute="*"),
     },
 }
