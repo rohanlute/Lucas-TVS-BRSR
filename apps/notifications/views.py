@@ -39,6 +39,9 @@ class NotificationListView(LoginRequiredMixin, TemplateView):
         if notification_filter == "brsr":
             notifications = notifications.filter(module=Notification.ModuleChoices.BRSR)
 
+        if notification_filter == "news_feed":
+            notifications = notifications.filter(module=Notification.ModuleChoices.NEWS_FEED)
+
         if notification_filter == "emission":
             notifications = notifications.filter(module=Notification.ModuleChoices.EMISSION)
 

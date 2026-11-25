@@ -3,6 +3,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.db import transaction
+from django.utils import timezone
 from .models import *
 
 
@@ -165,11 +166,35 @@ class NewsEventForm(BootstrapFormMixin, forms.ModelForm):
         all_plants = cleaned_data.get("all_plants")
         plants = cleaned_data.get("plants")
 
-        if end_datetime and start_datetime and end_datetime <= start_datetime:
-            self.add_error(
-                "end_datetime",
-                "End date/time must be later than the start date/time.",
+        start_date = None
+        if start_datetime:
+            start_date = (
+                timezone.localtime(start_datetime).date()
+                if timezone.is_aware(start_datetime)
+                else start_datetime.date()
             )
+            if start_date < timezone.localdate():
+                self.add_error(
+                    "start_datetime",
+                    "Date cannot be earlier than today.",
+                )
+
+        if start_datetime and end_datetime:
+            end_date = (
+                timezone.localtime(end_datetime).date()
+                if timezone.is_aware(end_datetime)
+                else end_datetime.date()
+            )
+            if end_date < start_date:
+                self.add_error(
+                    "end_datetime",
+                    "Expiry date cannot be before the publish date.",
+                )
+            elif end_datetime <= start_datetime:
+                self.add_error(
+                    "end_datetime",
+                    "End date/time must be later than the start date/time.",
+                )
 
         if is_event and not start_datetime:
             self.add_error(

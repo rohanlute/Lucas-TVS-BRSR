@@ -4,7 +4,7 @@ import logging
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.db.models import QuerySet
+from django.db.models import Q, QuerySet
 from django.urls import reverse
 from django.utils import timezone
 
@@ -16,38 +16,37 @@ from .models import NewsEvent, NewsEventActivity
 logger = logging.getLogger(__name__)
 
 
-def get_news_event_recipient_emails(content):
-    """Return active email addresses matching the selected audience.
-
-    If the creator belongs to a company, recipients are limited to that
-    company. No company field is added to the News/Events module itself.
-    """
+def get_news_event_recipients(content):
+    """Return active users narrowed only by the item's plant/department audience."""
     user_model = get_user_model()
     user_fields = {field.name for field in user_model._meta.get_fields()}
-    recipients = user_model.objects.filter(is_active=True).exclude(
-        email__isnull=True
-    ).exclude(email="")
-
-    creator = content.created_by
-    if (
-        creator
-        and getattr(creator, "company_id", None)
-        and "company" in user_fields
-    ):
-        recipients = recipients.filter(company_id=creator.company_id)
+    recipients = user_model.objects.filter(is_active=True)
 
     plant_ids = list(
         content.plants.filter(is_active=True).values_list("pk", flat=True)
     )
     if not content.all_plants:
         if not plant_ids:
-            return []
-        if "assigned_plants" in user_fields:
-            recipients = recipients.filter(assigned_plants__in=plant_ids)
-        elif "plant" in user_fields:
-            recipients = recipients.filter(plant_id__in=plant_ids)
-        else:
-            return []
+            return recipients.none()
+        active_plant_ids = list(
+            content.plants.model.objects.filter(is_active=True).values_list(
+                "pk", flat=True
+            )
+        )
+        targets_all_active_plants = bool(active_plant_ids) and set(
+            plant_ids
+        ).issuperset(set(active_plant_ids))
+
+        if not targets_all_active_plants:
+            if "assigned_plants" in user_fields:
+                recipients = recipients.filter(
+                    Q(assigned_plants__in=plant_ids)
+                    | Q(assigned_plants__isnull=True)
+                )
+            elif "plant" in user_fields:
+                recipients = recipients.filter(plant_id__in=plant_ids)
+            else:
+                return recipients.none()
 
     department_ids = list(
         content.departments.filter(is_active=True).values_list("pk", flat=True)
@@ -60,8 +59,17 @@ def get_news_event_recipient_emails(content):
         else:
             return []
 
+    return recipients.order_by().distinct()
+
+
+def get_news_event_recipient_emails(content):
+    """Return unique active recipient email addresses for an item."""
     return list(
-        recipients.order_by().values_list("email", flat=True).distinct()
+        get_news_event_recipients(content)
+        .exclude(email__isnull=True)
+        .exclude(email="")
+        .values_list("email", flat=True)
+        .distinct()
     )
 
 

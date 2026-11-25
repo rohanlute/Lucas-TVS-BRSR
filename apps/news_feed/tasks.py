@@ -1,22 +1,25 @@
 import logging
 from celery import shared_task
 from django.db import close_old_connections, transaction
-from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
 from .email_delivery import send_delivery_email
 from .models import NewsEvent, NewsEventActivity, NewsEventDelivery
+from .notification_delivery import send_delivery_notification
 
 
 logger = logging.getLogger(__name__)
 
 
 def _claim_and_send_delivery(delivery_id):
-    """Claim one pending email delivery and process it exactly once."""
+    """Claim one pending email or in-app delivery exactly once."""
     now = timezone.now()
     claimed = NewsEventDelivery.objects.filter(
         pk=delivery_id,
-        channel=NewsEventDelivery.Channel.EMAIL,
+        channel__in=[
+            NewsEventDelivery.Channel.EMAIL,
+            NewsEventDelivery.Channel.IN_APP,
+        ],
         status=NewsEventDelivery.Status.PENDING,
     ).update(
         status=NewsEventDelivery.Status.PROCESSING,
@@ -58,9 +61,11 @@ def _claim_and_send_delivery(delivery_id):
                 else:
                     content.refresh_from_db()
 
+        if delivery.channel == NewsEventDelivery.Channel.IN_APP:
+            return send_delivery_notification(delivery)
         return send_delivery_email(delivery)
     except Exception as exc:
-        logger.exception("News/Event email delivery %s failed", delivery_id)
+        logger.exception("News/Event delivery %s failed", delivery_id)
         NewsEventDelivery.objects.filter(pk=delivery_id).update(
             status=NewsEventDelivery.Status.FAILED,
             error_message=str(exc)[:4000],
@@ -69,8 +74,8 @@ def _claim_and_send_delivery(delivery_id):
         return 0
 
 
-def run_email_delivery_in_background(delivery_id):
-    """Local fallback when the Celery broker is unavailable."""
+def run_news_event_delivery_in_background(delivery_id):
+    """Process a publish-time email or bell delivery outside the web request."""
     close_old_connections()
     try:
         return _claim_and_send_delivery(delivery_id)
@@ -86,7 +91,7 @@ def send_news_event_email_delivery(delivery_id):
 
 @shared_task(ignore_result=True, name="news_feed.dispatch_due_email_deliveries")
 def dispatch_due_email_deliveries(batch_size=100):
-    """Claim and process due email announcement/reminder rows."""
+    """Claim and process due email and in-app announcement/reminder rows."""
     now = timezone.now()
 
     # Publication is a content lifecycle action and must happen even if the
@@ -115,7 +120,10 @@ def dispatch_due_email_deliveries(batch_size=100):
                 )
 
     eligible = NewsEventDelivery.objects.filter(
-        channel=NewsEventDelivery.Channel.EMAIL,
+        channel__in=[
+            NewsEventDelivery.Channel.EMAIL,
+            NewsEventDelivery.Channel.IN_APP,
+        ],
         delivery_type__in=[
             NewsEventDelivery.DeliveryType.ANNOUNCEMENT,
             NewsEventDelivery.DeliveryType.REMINDER,

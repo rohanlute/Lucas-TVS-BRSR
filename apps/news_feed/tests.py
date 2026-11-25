@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 from urllib.parse import parse_qs, urlsplit
 
 from django.contrib.auth import get_user_model
@@ -6,14 +6,56 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.accounts.models import Department
+from apps.organizations.models import Plant
+
 from .forms import NewsEventForm
 from .models import NewsEvent, NewsEventDelivery
+from .email_delivery import get_news_event_recipients
 from .views import refresh_delivery_schedules, upcoming_event_queryset
 
 
 class NewsEventFormTests(TestCase):
     def test_auto_remove_is_not_a_form_option(self):
         self.assertNotIn("auto_remove_after_date", NewsEventForm().fields)
+
+    def test_start_datetime_cannot_be_before_today(self):
+        yesterday = timezone.localdate() - timedelta(days=1)
+        form = NewsEventForm(data={
+            "is_event": "False",
+            "title": "News item",
+            "description": "Details",
+            "start_datetime": yesterday.strftime("%Y-%m-%dT12:00"),
+            "all_plants": "on",
+            "status": NewsEvent.Status.DRAFT,
+        })
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("Date cannot be earlier than today.", form.errors["start_datetime"])
+
+    def test_expiry_datetime_cannot_be_before_publish_date(self):
+        today = timezone.localdate()
+        start = timezone.make_aware(
+            datetime.combine(today + timedelta(days=2), datetime.min.time())
+        )
+        expiry = timezone.make_aware(
+            datetime.combine(today + timedelta(days=1), datetime.min.time())
+        )
+        form = NewsEventForm(data={
+            "is_event": "False",
+            "title": "News item",
+            "description": "Details",
+            "start_datetime": timezone.localtime(start).strftime("%Y-%m-%dT%H:%M"),
+            "end_datetime": timezone.localtime(expiry).strftime("%Y-%m-%dT%H:%M"),
+            "all_plants": "on",
+            "status": NewsEvent.Status.DRAFT,
+        })
+
+        self.assertFalse(form.is_valid())
+        self.assertIn(
+            "Expiry date cannot be before the publish date.",
+            form.errors["end_datetime"],
+        )
 
 
 class UpcomingEventTests(TestCase):
@@ -70,6 +112,39 @@ class UpcomingEventTests(TestCase):
             delivery_type=NewsEventDelivery.DeliveryType.EXPIRY
         )
         self.assertEqual(expiry.scheduled_for, end_time)
+
+
+class NewsEventRecipientTests(TestCase):
+    def test_unassigned_user_receives_when_item_targets_all_active_plants(self):
+        department = Department.objects.create(
+            name="Environment, Health & Safety",
+            code="EHS",
+        )
+        user = get_user_model().objects.create_user(
+            username="divya",
+            password="test-password",
+            department=department,
+            is_active=True,
+        )
+        plants = [
+            Plant.objects.create(
+                name=f"Plant {index}",
+                code=f"P-{index}",
+                address="Test address",
+                pincode="000000",
+            )
+            for index in range(1, 3)
+        ]
+        content = NewsEvent.objects.create(
+            title="All plant announcement",
+            description="Details",
+            status=NewsEvent.Status.PUBLISHED,
+            all_plants=False,
+        )
+        content.plants.set(plants)
+        content.departments.set([department])
+
+        self.assertIn(user, get_news_event_recipients(content))
 
 
 class NewsEventEmailLinkTests(TestCase):

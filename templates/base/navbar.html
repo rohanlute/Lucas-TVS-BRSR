@@ -709,7 +709,7 @@
                                      data-notification-id="{{ notification.id }}"
                                      data-assignment-id="{{ notification.reference_id|default:'' }}"
                                      onclick="handleNotificationClick({{ notification.id }},
-                                            this,'{{ notification.reference_id|default:'' }}','{{ notification.module }}')">
+                                            this,'{{ notification.reference_id|default:'' }}','{{ notification.module }}','{{ notification.action_url|default:''|escapejs }}')">
                                     
                                     {% if request.user.profile_image %}
                                         <img src="{{ request.user.profile_image.url }}" 
@@ -729,6 +729,8 @@
                                         <div class="notification-assigned">
                                             {% if notification.module == "GOALS" %}
                                                 Created by:
+                                            {% elif notification.module == "NEWS_FEED" %}
+                                                News &amp; Events:
                                             {% else %}
                                                 Assigned by:
                                             {% endif %}
@@ -1294,8 +1296,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ====== NOTIFICATION CLICK HANDLER ======
-    window.handleNotificationClick = function(notificationId,element,referenceId,module) {
+    window.handleNotificationClick = function(notificationId,element,referenceId,module,actionUrl) {
         const redirect = () => {
+            if (module === 'NEWS_FEED' && actionUrl) {
+                window.location.href = actionUrl;
+                return;
+            }
             // Goal notifications
             if (module === 'GOALS') {
                 window.location.href = '/goals/';

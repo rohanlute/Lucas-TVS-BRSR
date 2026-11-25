@@ -17,6 +17,7 @@ class Notification(models.Model):
         GOALS = "GOALS", "Goals & KPI"
         QUESTIONS = "QUESTIONS", "Questions"
         BRSR = "BRSR", "BRSR"
+        NEWS_FEED = "NEWS_FEED", "News & Events"
 
     class NotificationTypeChoices(models.TextChoices):
         ASSIGNED = "ASSIGNED", "Assigned"

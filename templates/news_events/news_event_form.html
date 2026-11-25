@@ -1063,6 +1063,41 @@
     const type = document.getElementById("{{ form.is_event.id_for_label }}");
     const allPlants = document.getElementById("{{ form.all_plants.id_for_label }}");
     const typeOptions = Array.from(document.querySelectorAll(".content-type-option"));
+    const startDateFields = Array.from(form.querySelectorAll('[name="start_datetime"]'));
+    const endDateFields = Array.from(form.querySelectorAll('[name="end_datetime"]'));
+
+    function localDateTimeStartOfDay(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return year + "-" + month + "-" + day + "T00:00";
+    }
+
+    function getVisibleDateField(fields) {
+        return fields.find(function (field) {
+            return field.getClientRects().length > 0;
+        }) || fields[0];
+    }
+
+    function syncDateBounds() {
+        const today = localDateTimeStartOfDay(new Date());
+        startDateFields.forEach(function (field) {
+            field.min = today;
+        });
+
+        const startDateField = getVisibleDateField(startDateFields);
+        const earliestExpiry = startDateField && startDateField.value > today
+            ? startDateField.value
+            : today;
+        endDateFields.forEach(function (field) {
+            field.min = earliestExpiry;
+        });
+    }
+
+    startDateFields.forEach(function (field) {
+        field.addEventListener("input", syncDateBounds);
+        field.addEventListener("change", syncDateBounds);
+    });
 
     if (type) {
         type.classList.add("content-type-native");
@@ -1115,6 +1150,7 @@
             element.classList.toggle("d-none", eventMode);
         });
 
+        syncDateBounds();
         syncScheduleTimeline();
 
         const plantWrap = document.getElementById("plant-select-wrap");
@@ -1143,6 +1179,7 @@
     if (type) type.addEventListener("change", updateFormMode);
     if (allPlants) allPlants.addEventListener("change", updateFormMode);
     updateFormMode();
+    syncDateBounds();
     window.addEventListener("resize", syncScheduleTimeline);
 
     // Plant and department checkbox cards, styled like the Create User assignment UI.

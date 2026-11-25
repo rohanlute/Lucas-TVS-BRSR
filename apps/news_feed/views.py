@@ -169,34 +169,40 @@ def _create_delivery(content, delivery_type, channel, scheduled_for, reminder_ru
 
 
 def send_published_announcement_now(content):
-    """Start due announcement delivery in the background for any item type."""
+    """Start due email and bell announcement deliveries in background."""
     now = timezone.now()
-    delivery = content.delivery_schedules.filter(
+    deliveries = list(content.delivery_schedules.filter(
         delivery_type=NewsEventDelivery.DeliveryType.ANNOUNCEMENT,
-        channel=NewsEventDelivery.Channel.EMAIL,
+        channel__in=[
+            NewsEventDelivery.Channel.EMAIL,
+            NewsEventDelivery.Channel.IN_APP,
+        ],
         status=NewsEventDelivery.Status.PENDING,
         scheduled_for__lte=now,
-    ).order_by("scheduled_for", "pk").first()
-    if not delivery:
+    ).order_by("scheduled_for", "pk"))
+    if not deliveries:
         return False
 
     try:
         # This immediate-publish path must not depend on a running Celery
         # worker. The task's conditional DB claim prevents duplicate sending
         # if the periodic Celery dispatcher picks up the same row.
-        from .tasks import run_email_delivery_in_background
+        from .tasks import run_news_event_delivery_in_background
 
-        Thread(
-            target=run_email_delivery_in_background,
-            args=(delivery.pk,),
-            name=f"news-event-email-{delivery.pk}",
-            daemon=True,
-        ).start()
-        return True
+        started = False
+        for delivery in deliveries:
+            Thread(
+                target=run_news_event_delivery_in_background,
+                args=(delivery.pk,),
+                name=f"news-event-delivery-{delivery.pk}",
+                daemon=True,
+            ).start()
+            started = True
+        return started
     except Exception as exc:
         logger.warning(
-            "Could not start background News/Event delivery %s: %s",
-            delivery.pk,
+            "Could not start all background News/Event deliveries for item %s: %s",
+            content.pk,
             exc,
         )
         return False
@@ -822,12 +828,12 @@ class NewsEventMultiFormProcessingMixin:
             self.object.status == NewsEvent.Status.PUBLISHED
             and old_status != NewsEvent.Status.PUBLISHED
         ):
-            if self.object.send_email:
+            if self.object.send_email or self.object.send_in_app:
                 queued = send_published_announcement_now(self.object)
                 self.success_message = (
-                    "News/Event published successfully. Email notification "
+                    "News/Event published successfully. Email and bell notifications "
                     + (
-                        "queued for background delivery."
+                        "started in the background."
                         if queued
                         else "will be processed."
                     )
@@ -942,12 +948,12 @@ class PublishNewsEventView(NewsEventStatusActionView):
                 note="News/Event manually published.",
             )
 
-        if content.send_email:
+        if content.send_email or content.send_in_app:
             queued = send_published_announcement_now(content)
             self.success_message = (
-                "News/Event published successfully. Email notification "
+                "News/Event published successfully. Email and bell notifications "
                 + (
-                    "queued for background delivery."
+                    "started in the background."
                     if queued
                     else "will be processed."
                 )
