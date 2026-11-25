@@ -41,6 +41,9 @@ class Command(BaseCommand):
             ('ACCESS_SCOPE_DATA_ENTRY', 'Access Scope Data Entry', 'Can access scope data entry', 'VIEW', 'Emission', 2),
             ('VIEW_ASSIGNMENT_DASHBOARD', 'View Assignment Dashboard', 'view assignment dashboard', 'VIEW', 'Emission', 3),
             ('VIEW_EMISSION_REPORT', 'View Emission Report', 'View Emission Report', 'VIEW', 'Emission', 4),
+
+            #News Feed Module
+            ('ACCESS_NEWS_FEED', 'Access News Feed Module', 'Can access news feed module', 'MODULE_ACCESS', 'News Feed', 0),
         ]
 
         created = 0

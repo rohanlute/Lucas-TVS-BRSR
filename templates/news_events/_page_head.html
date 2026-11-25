@@ -1,4 +1,5 @@
 {% load static %}
+{% load permission_tags %}
 <div class="news-heading">
   <div>
     <div class="eyebrow">BRSR · News &amp; Events</div>
@@ -11,13 +12,13 @@
     </a>
     {% if hide_header_action %}
     {% elif edit_mode and edit_mode.status != 'ARCHIVED' %}
-      {% if perms.news_feed.change_newsevent or request.user.is_superuser %}
+      {% if request.user|has_perm:'ACCESS_NEWS_FEED' or request.user.is_superuser %}
       <a class="news-btn news-btn-primary" href="{% url 'news_events:news_event_update' edit_mode.pk %}">
         <i class="fas fa-pen"></i> Edit news / event
       </a>
       {% endif %}
     {% elif not edit_mode %}
-      {% if perms.news_feed.add_newsevent or request.user.is_superuser %}
+      {% if request.user|has_perm:'ACCESS_NEWS_FEED' or request.user.is_superuser %}
       <a class="news-btn news-btn-primary" href="{% url 'news_events:news_event_create' %}">
         <i class="fas fa-plus"></i> Add news / event
       </a>

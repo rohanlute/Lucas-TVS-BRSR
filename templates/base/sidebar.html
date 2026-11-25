@@ -309,7 +309,7 @@
                         {% endif %}
                         <li class="nxl-item"><a class="nxl-link" href="{% url 'organizations:calendar' %}"><i class="fas fa-calendar-day"></i> Calendar</a></li>
                         <li class="nxl-item"><a class="nxl-link" href="{% url 'news_events:news_event_feed' %}"><i class="fas fa-newspaper"></i> News Feed</a></li>
-                        <li class="nxl-item"><a class="nxl-link" href="{% url 'news_events:news_event_list' %}"><i class="fas fa-bullhorn"></i> News &amp; Events Master</a></li>
+                        {% if request.user|has_perm:'ACCESS_NEWS_FEED' %}<li class="nxl-item"><a class="nxl-link" href="{% url 'news_events:news_event_list' %}"><i class="fas fa-bullhorn"></i> News &amp; Events Master</a></li>{% endif %}
                     </ul>
                 </li>
             </ul>

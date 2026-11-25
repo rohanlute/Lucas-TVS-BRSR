@@ -360,7 +360,7 @@ class NewsEventListView(LoginRequiredMixin, NewsEventPermissionRequiredMixin, Li
     """Management list for news and events across the selected plants."""
 
     model = NewsEvent
-    permission_required = "news_feed.view_newsevent"
+    permission_required = "ACCESS_NEWS_FEED"
     template_name = "news_events/news_event_list.html"
     context_object_name = "news_events"
     paginate_by = 20
@@ -595,7 +595,7 @@ class UpcomingEventsListView(LoginRequiredMixin, NewsEventAudienceQuerysetMixin,
 # Detail view
 class NewsEventDetailView(LoginRequiredMixin, NewsEventPermissionRequiredMixin, DetailView,):
     model = NewsEvent
-    permission_required = "news_feed.view_newsevent"
+    permission_required = "ACCESS_NEWS_FEED"
     template_name = "news_events/news_event_detail.html"
     context_object_name = "news_event"
 
@@ -861,7 +861,7 @@ class NewsEventMultiFormProcessingMixin:
 class NewsEventCreateView(LoginRequiredMixin, NewsEventPermissionRequiredMixin, NewsEventMultiFormProcessingMixin, CreateView,):
     model = NewsEvent
     form_class = NewsEventForm
-    permission_required = "news_feed.add_newsevent"
+    permission_required = "ACCESS_NEWS_FEED"
     template_name = "news_events/news_event_form.html"
     is_update_view = False
     success_message = "News/Event created successfully."
@@ -870,7 +870,7 @@ class NewsEventCreateView(LoginRequiredMixin, NewsEventPermissionRequiredMixin, 
 class NewsEventUpdateView(LoginRequiredMixin, NewsEventPermissionRequiredMixin, NewsEventMultiFormProcessingMixin, UpdateView,):
     model = NewsEvent
     form_class = NewsEventForm
-    permission_required = "news_feed.change_newsevent"
+    permission_required = "ACCESS_NEWS_FEED"
     template_name = "news_events/news_event_form.html"
     is_update_view = True
     success_message = "News/Event updated successfully."
@@ -889,7 +889,7 @@ class NewsEventStatusActionView(LoginRequiredMixin, NewsEventPermissionRequiredM
     """Base POST-only status action for one News/Event."""
 
     model = NewsEvent
-    permission_required = "news_feed.change_newsevent"
+    permission_required = "ACCESS_NEWS_FEED"
     success_message = "News/Event status updated."
 
     def post(self, request, *args, **kwargs):
@@ -1061,7 +1061,7 @@ class RestoreNewsEventView(NewsEventStatusActionView):
 
 class NewsEventDeleteView(LoginRequiredMixin, NewsEventPermissionRequiredMixin, DeleteView,):
     model = NewsEvent
-    permission_required = "news_feed.delete_newsevent"
+    permission_required = "ACCESS_NEWS_FEED"
     template_name = "news_events/news_event_confirm_delete.html"
     success_url = reverse_lazy("news_events:news_event_list")
     context_object_name = "news_event"
@@ -1076,7 +1076,7 @@ class NewsEventDeleteView(LoginRequiredMixin, NewsEventPermissionRequiredMixin, 
 
 # Attachment delete action
 class NewsEventAttachmentDeleteView(LoginRequiredMixin, NewsEventPermissionRequiredMixin, View,):
-    permission_required = "news_feed.change_newsevent"
+    permission_required = "ACCESS_NEWS_FEED"
 
     def post(self, request, *args, **kwargs):
         attachment = get_object_or_404(
