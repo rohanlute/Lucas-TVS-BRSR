@@ -16,6 +16,7 @@ from django.views import View
 from django.views.generic import *
 from .forms import *
 from .models import *
+from django.utils.dateparse import parse_date
 
 
 logger = logging.getLogger(__name__)
@@ -374,9 +375,13 @@ class NewsEventListView(LoginRequiredMixin, NewsEventPermissionRequiredMixin, Li
         item_type = self.request.GET.get("type", "").strip().lower()
         status = self.request.GET.get("status", "").strip().upper()
 
+        from_date = parse_date(self.request.GET.get("from_date", ""))
+        to_date = parse_date(self.request.GET.get("to_date", ""))
+
         if search:
             queryset = queryset.filter(
-                Q(title__icontains=search) | Q(description__icontains=search)
+                Q(title__icontains=search) |
+                Q(description__icontains=search)
             )
         if item_type == "news":
             queryset = queryset.filter(is_event=False)
@@ -385,7 +390,17 @@ class NewsEventListView(LoginRequiredMixin, NewsEventPermissionRequiredMixin, Li
         if status in NewsEvent.Status.values:
             queryset = queryset.filter(status=status)
 
-        return queryset
+        if from_date:
+            queryset = queryset.filter(
+                start_datetime__date__gte=from_date
+            )
+
+        if to_date:
+            queryset = queryset.filter(
+                start_datetime__date__lte=to_date
+            )
+
+        return queryset.order_by("-start_datetime", "-created_at")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -884,13 +884,15 @@
                             {% if form.plants %}
                             <div class="assignment-grid" id="plant-assignment-grid">
                                 {% for choice in form.plants %}
-                                <label class="assignment-node {% if choice.data.selected %}is-selected{% endif %}" for="{{ choice.id_for_label }}">
+                                <label class="assignment-node {% if choice.data.selected %}is-selected{% endif %}">
                                     <input type="checkbox" name="{{ form.plants.html_name }}" value="{{ choice.data.value }}" id="{{ choice.id_for_label }}" {% if choice.data.selected %}checked{% endif %}>
-                                    <span class="assignment-node-label">{{ choice.choice_label }}</span>
+                                    <span class="assignment-node-label">
+                                        {{ choice.choice_label }}
+                                    </span>
                                 </label>
-                                {% empty %}
+                            {% empty %}
                                 <div class="assignment-empty">No plants available.</div>
-                                {% endfor %}
+                            {% endfor %}
                             </div>
                             {% else %}
                             <div class="assignment-empty">No plants available.</div>
@@ -918,13 +920,15 @@
                         <div class="assignment-panel" id="departmentPanel">
                             <div class="assignment-grid" id="department-assignment-grid">
                                 {% for choice in form.departments %}
-                                <label class="assignment-node {% if choice.data.selected %}is-selected{% endif %}" for="{{ choice.id_for_label }}">
+                                <label class="assignment-node {% if choice.data.selected %}is-selected{% endif %}">
                                     <input type="checkbox" name="{{ form.departments.html_name }}" value="{{ choice.data.value }}" id="{{ choice.id_for_label }}" {% if choice.data.selected %}checked{% endif %}>
-                                    <span class="assignment-node-label">{{ choice.choice_label }}</span>
+                                    <span class="assignment-node-label">
+                                        {{ choice.choice_label }}
+                                    </span>
                                 </label>
-                                {% empty %}
+                            {% empty %}
                                 <div class="assignment-empty">No departments available.</div>
-                                {% endfor %}
+                            {% endfor %}
                             </div>
                         </div>
                         {% if form.departments.errors %}

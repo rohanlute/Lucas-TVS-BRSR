@@ -58,6 +58,51 @@ class NewsEventFormTests(TestCase):
         )
 
 
+class NewsEventListDateFilterTests(TestCase):
+    def test_date_range_filters_by_displayed_start_datetime(self):
+        user = get_user_model().objects.create_superuser(
+            username="news-list-admin",
+            email="news-list-admin@example.com",
+            password="test-password",
+        )
+        self.client.force_login(user)
+
+        today = timezone.localdate()
+        matching_date = today - timedelta(days=2)
+        outside_date = today - timedelta(days=5)
+
+        matching_item = NewsEvent.objects.create(
+            title="Matching date",
+            description="Details",
+            start_datetime=timezone.make_aware(
+                datetime.combine(matching_date, datetime.min.time())
+            ),
+            status=NewsEvent.Status.PUBLISHED,
+        )
+        NewsEvent.objects.create(
+            title="Outside date",
+            description="Details",
+            start_datetime=timezone.make_aware(
+                datetime.combine(outside_date, datetime.min.time())
+            ),
+            status=NewsEvent.Status.PUBLISHED,
+        )
+
+        response = self.client.get(
+            reverse("news_events:news_event_list"),
+            {
+                "from_date": matching_date.isoformat(),
+                "to_date": matching_date.isoformat(),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            list(response.context["news_events"]),
+            [matching_item],
+        )
+
+
 class UpcomingEventTests(TestCase):
     def create_event(self, *, starts_at, ends_at=None, auto_remove=True):
         return NewsEvent.objects.create(

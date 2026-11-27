@@ -316,6 +316,21 @@
 	 color: #7e8998;
 	 font-size: 12px;
 }
+.news-page .news-filters .date-filter {
+    width: 145px;
+    min-width: 145px;
+    height: 40px;
+    min-height: 40px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 12.5px;
+}
+@media (max-width: 575.98px) {
+    .news-page .news-filters .date-filter {
+        width: 100%;
+        min-width: 0;
+    }
+}
  @media (max-width: 991.98px) {
 	 .news-page .news-stats {
 		 grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -408,6 +423,8 @@
             <option value="ARCHIVED" {% if request.GET.status == 'ARCHIVED' %}selected{% endif %}>Archived</option>
             <option value="CANCELLED" {% if request.GET.status == 'CANCELLED' %}selected{% endif %}>Cancelled</option>
           </select>
+		  <input class="form-control date-filter" type="date" name="from_date" value="{{ request.GET.from_date|default:'' }}" aria-label="From date" title="From date">
+		  <input class="form-control date-filter" type="date" name="to_date" value="{{ request.GET.to_date|default:'' }}" aria-label="To date" title="To date">
           <button class="news-btn news-btn-outline filter-button" type="submit"><i class="fas fa-filter" aria-hidden="true"></i> Filter</button>
 		  <a class="news-btn news-btn-outline filter-button" href="{% url 'news_events:news_event_list' %}"><i class="fas fa-redo"></i></a>
         </form>
@@ -482,13 +499,13 @@
       <nav aria-label="News and events pagination">
         <div class="d-flex align-items-center gap-2">
           {% if page_obj.has_previous %}
-          <a class="pagination-arrow d-grid place-items-center text-decoration-none" href="?page={{ page_obj.previous_page_number }}&amp;q={{ request.GET.q|urlencode }}&amp;type={{ request.GET.type|urlencode }}&amp;status={{ request.GET.status|urlencode }}" aria-label="Previous page"><i class="fas fa-chevron-left"></i></a>
+          <a class="pagination-arrow d-grid place-items-center text-decoration-none" href="?page={{ page_obj.previous_page_number }}&amp;q={{ request.GET.q|urlencode }}&amp;type={{ request.GET.type|urlencode }}&amp;status={{ request.GET.status|urlencode }}&amp;from_date={{ request.GET.from_date|urlencode }}&amp;to_date={{ request.GET.to_date|urlencode }}" aria-label="Previous page"><i class="fas fa-chevron-left"></i></a>
           {% else %}
           <span class="pagination-arrow disabled d-grid place-items-center"><i class="fas fa-chevron-left"></i></span>
           {% endif %}
           <span class="page-size d-inline-flex align-items-center px-2">{{ page_obj.number }}</span>
           {% if page_obj.has_next %}
-          <a class="pagination-arrow d-grid place-items-center text-decoration-none" href="?page={{ page_obj.next_page_number }}&amp;q={{ request.GET.q|urlencode }}&amp;type={{ request.GET.type|urlencode }}&amp;status={{ request.GET.status|urlencode }}" aria-label="Next page"><i class="fas fa-chevron-right"></i></a>
+          <a class="pagination-arrow d-grid place-items-center text-decoration-none" href="?page={{ page_obj.next_page_number }}&amp;q={{ request.GET.q|urlencode }}&amp;type={{ request.GET.type|urlencode }}&amp;status={{ request.GET.status|urlencode }}&amp;from_date={{ request.GET.from_date|urlencode }}&amp;to_date={{ request.GET.to_date|urlencode }}" aria-label="Next page"><i class="fas fa-chevron-right"></i></a>
           {% else %}
           <span class="pagination-arrow disabled d-grid place-items-center"><i class="fas fa-chevron-right"></i></span>
           {% endif %}
